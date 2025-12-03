@@ -178,21 +178,34 @@ export default function SiteVisitPage() {
             yPos += 8;
 
             const body = items.map(item => [
-              checklistState[item] ? '☑' : '☐', 
               item, 
               remarksState[item] || ' '
             ]);
             doc.autoTable({ 
               startY: yPos, 
-              head: [['Status', 'Item', 'Remarks']],
+              head: [['Item', 'Remarks']],
               body, 
               theme: 'grid', 
               headStyles: { fillColor: [240, 240, 240], textColor: 0 },
               columnStyles: { 
-                0: { cellWidth: 10, halign: 'center' }, 
-                1: { cellWidth: 80 } ,
-                2: { cellWidth: 'auto'}
-              } 
+                0: { cellWidth: 80 } ,
+                1: { cellWidth: 'auto'}
+              },
+              didDrawCell: (data: any) => {
+                if(data.column.index === 0 && data.section === 'body') {
+                    const itemText = items[data.row.index];
+                    const isChecked = checklistState[itemText] || false;
+                    doc.setLineWidth(0.2);
+                    doc.rect(data.cell.x + 2, data.cell.y + 2, 4, 4);
+                    if(isChecked) {
+                        doc.setFont('ZapfDingbats');
+                        doc.text('✓', data.cell.x + 3, data.cell.y + 5);
+                        doc.setFont('helvetica');
+                    }
+                    data.cell.text = ' ' + itemText;
+                    data.cell.styles.padding.left = 8;
+                }
+              }
             });
             yPos = doc.autoTable.previous.finalY + 5;
         });
