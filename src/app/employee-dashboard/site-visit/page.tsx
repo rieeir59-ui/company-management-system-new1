@@ -118,33 +118,42 @@ export default function SiteVisitPage() {
             return;
         }
 
-        const checklistData = Object.entries(checklistSections).map(([title, items]) => ({
-            category: title,
-            items: items.map(item => ({
-                item,
-                checked: checklistState[item] || false,
-                remarks: remarksState[item] || ''
-            }))
-        }));
-
         const dataToSave = {
-            basicInfo,
-            checklist: checklistData,
-            observations,
-            issues,
-            recommendations,
-            pictureComments: pictures.map(p => ({ id: p.id, comment: p.comment, fileName: p.file?.name }))
+            fileName: 'Site Visit Proforma',
+            projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
+            employeeId: currentUser.record,
+            employeeName: currentUser.name,
+            createdAt: serverTimestamp(),
+            data: [
+                {
+                    category: 'Basic Information',
+                    items: Object.entries(basicInfo).map(([key, value]) => `${key}: ${value}`),
+                },
+                ...Object.entries(checklistSections).map(([title, items]) => ({
+                    category: title,
+                    items: items.map(item => `${item}: ${checklistState[item] ? 'Yes' : 'No'}, Remarks: ${remarksState[item] || ''}`)
+                })),
+                {
+                    category: 'Observations',
+                    items: [observations],
+                },
+                {
+                    category: 'Issues Identified',
+                    items: [issues],
+                },
+                {
+                    category: 'Actions & Recommendations',
+                    items: [recommendations],
+                },
+                {
+                    category: 'Pictures',
+                    items: pictures.map(p => `Comment: ${p.comment}, File: ${p.file?.name || 'No file'}`)
+                }
+            ]
         };
 
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Site Visit Proforma',
-                projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-                data: dataToSave,
-                createdAt: serverTimestamp(),
-            });
+            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
             toast({ title: 'Record Saved', description: 'The site visit proforma has been saved.' });
         } catch (error) {
             console.error(error);
