@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -126,13 +127,7 @@ export default function SiteVisitPage() {
             data: [
                 {
                     category: 'Basic Information',
-                    items: [
-                      `Site Name: ${basicInfo.siteName}`,
-                      `City: ${basicInfo.city}`,
-                      `Date: ${basicInfo.date}`,
-                      `Number of visits: ${basicInfo.visitNumber}`,
-                      `Architect Name: ${basicInfo.architectName}`
-                    ]
+                    items: Object.entries(basicInfo).map(([key, value]) => `${key}: ${value}`)
                 },
                 ...Object.entries(checklistSections).map(([title, items]) => ({
                     category: title,
@@ -182,12 +177,13 @@ export default function SiteVisitPage() {
         doc.autoTable({
             startY: yPos,
             theme: 'plain',
-            body: Object.entries(basicInfo).map(([key, value]) => {
-              const formattedKey = key === 'visitNumber' 
-                ? 'Number of visits' 
-                : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-              return [formattedKey, value];
-            }),
+            body: [
+              ['Site Name', basicInfo.siteName],
+              ['City', basicInfo.city],
+              ['Date', basicInfo.date],
+              ['Number of visits', basicInfo.visitNumber],
+              ['Architect Name', basicInfo.architectName],
+            ],
         });
         yPos = doc.autoTable.previous.finalY + 10;
         
