@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/context/EmployeeContext';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 
 type TaskRecord = {
@@ -172,6 +173,31 @@ function SavedRecordsComponent() {
             const body: (string | number)[][] = [];
 
             if (section.items && Array.isArray(section.items)) {
+                 if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures') {
+                    const tableBody = section.items.map((item: any) => [item.Item, item.Status, item.Remarks]);
+                    if (tableBody.length > 0) {
+                        (doc as any).autoTable({
+                            head: [[section.category]],
+                            body: [], // Empty body for main title
+                            startY: yPos,
+                            theme: 'plain',
+                            headStyles: { fontStyle: 'bold', fontSize: 12, textColor: [45, 95, 51] },
+                        });
+                        yPos = (doc as any).autoTable.previous.finalY + 2;
+
+                        (doc as any).autoTable({
+                             head: [['Item', 'Status', 'Remarks']],
+                            body: tableBody,
+                            startY: yPos,
+                            theme: 'grid',
+                            headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
+                            styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+                        });
+                        yPos = (doc as any).autoTable.previous.finalY + 10;
+                    }
+                    return;
+                }
+
                 section.items.forEach((item: any) => {
                      let label: string;
                      let value: string;
@@ -403,43 +429,70 @@ function SavedRecordsComponent() {
                 </AlertDialogContent>
             </AlertDialog>
             
-             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent className="max-w-3xl">
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent className="max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
                         <DialogDescription>{viewingRecord?.fileName} - Saved by {viewingRecord?.employeeName} on {viewingRecord && new Date(viewingRecord.createdAt).toLocaleDateString()}</DialogDescription>
                     </DialogHeader>
-                    <div className="max-h-[60vh] overflow-y-auto p-1">
-                        {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => (
-                             <div key={index} className="mb-4">
-                                <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
-                                <Table>
-                                    <TableBody>
-                                        {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
-                                            if (typeof item === 'string') {
-                                                 const parts = item.split(':');
-                                                 const label = parts[0];
-                                                 const value = parts.slice(1).join(':').trim();
-                                                 return (
+                    <div className="max-h-[70vh] overflow-y-auto p-1">
+                        {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => {
+                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+                                return (
+                                    <div key={index} className="mb-4">
+                                        <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-1/2">Item</TableHead>
+                                                    <TableHead className="w-1/4">Status</TableHead>
+                                                    <TableHead className="w-1/4">Remarks</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {section.items.map((item: any, itemIndex: number) => (
                                                     <TableRow key={itemIndex}>
-                                                        <TableCell className="font-medium w-1/3">{label}</TableCell>
-                                                        <TableCell>{value}</TableCell>
+                                                        <TableCell>{item.Item}</TableCell>
+                                                        <TableCell>{item.Status}</TableCell>
+                                                        <TableCell>{item.Remarks}</TableCell>
                                                     </TableRow>
-                                                 )
-                                            } else if (typeof item === 'object' && item !== null && item.label) {
-                                                return (
-                                                    <TableRow key={itemIndex}>
-                                                        <TableCell className="font-medium w-1/3">{item.label}</TableCell>
-                                                        <TableCell>{item.value}</TableCell>
-                                                    </TableRow>
-                                                )
-                                            }
-                                            return null;
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        ))}
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                );
+                            }
+                            return (
+                                 <div key={index} className="mb-4">
+                                    <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                    <Table>
+                                        <TableBody>
+                                            {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
+                                                if (typeof item === 'string') {
+                                                    const parts = item.split(':');
+                                                    const label = parts[0];
+                                                    const value = parts.slice(1).join(':').trim();
+                                                    return (
+                                                        <TableRow key={itemIndex}>
+                                                            <TableCell className="font-medium w-1/3">{label}</TableCell>
+                                                            <TableCell>{value}</TableCell>
+                                                        </TableRow>
+                                                    )
+                                                } else if (typeof item === 'object' && item !== null && (item.label || item.comment)) {
+                                                    return (
+                                                        <TableRow key={itemIndex}>
+                                                            <TableCell className="font-medium w-1/3">{item.label || item.comment}</TableCell>
+                                                            <TableCell>{item.value || (item.url && <Link href={item.url} target="_blank" className="text-primary hover:underline">View File</Link>)}</TableCell>
+                                                        </TableRow>
+                                                    )
+                                                }
+                                                return null;
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )
+                        })}
                     </div>
                      <DialogFooter>
                         <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
