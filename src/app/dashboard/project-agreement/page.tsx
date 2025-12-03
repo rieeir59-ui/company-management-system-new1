@@ -183,6 +183,12 @@ export default function ProjectAgreementPage() {
             doc.text(splitText, 14 + indent, yPos);
             yPos += (splitText.length * 4) + spaceAfter;
         };
+        
+        const addList = (items: string[]) => {
+            items.forEach(item => {
+                addText(`• ${item}`, false, 5, 10, 5);
+            });
+        };
 
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
         addText(`Made as of the day ${day || '________________'}`);
@@ -190,21 +196,56 @@ export default function ProjectAgreementPage() {
         addText(`For the Design of: ${designOf || '________________'}`);
         addText(`Address: ${address || '________________'}`);
         
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: yPos, theme: 'plain', styles: { fontSize: 10 },
-            body: [['Covered Area of Project:', coveredArea], ['Consultancy Charges:', consultancyCharges], ['Sales Tax @ 16%:', salesTax], ['Withholding Tax @ 10%:', withholdingTax], ['Final Consultancy Charges:', finalCharges]],
+            body: [
+                ['Covered Area of Project:', coveredArea], 
+                ['Consultancy Charges:', consultancyCharges], 
+                ['Sales Tax @ 16%:', salesTax], 
+                ['Withholding Tax @ 10%:', withholdingTax], 
+                ['Final Consultancy Charges:', finalCharges]
+            ],
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
         addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
         const paymentBody = paymentSchedule.map(item => [item.description, item.percentage]);
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: yPos,
             body: paymentBody,
             theme: 'plain',
             styles: { fontSize: 10, cellPadding: 1 }
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
+
+        addText('Project Management', true, 0, 12, 8);
+        addText('Top Supervision:', true, 2, 10, 5);
+        addList(agreementText.topSupervision);
+
+        addText('Detailed Supervision:', true, 2, 10, 5);
+        addText(agreementText.detailedSupervision, false, 5);
+
+        addText('Please Note:', true, 0, 12, 8);
+        addList(agreementText.notes);
+        addText(agreementText.extraServicesNote, true, 2);
+        
+        addText("Architect's Responsibilities", true, 0, 12, 8);
+        addList(agreementText.architectResponsibilities);
+
+        addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
+        addList(agreementText.notResponsible);
+
+        addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
+        addList(agreementText.termination);
+
+        addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
+        addList(agreementText.compensation);
+
+        yPos += 10;
+        addText('____________________', false, 0, 10, 2);
+        addText('Architect', false, 0, 10, 15);
+        addText('____________________', false, 0, 10, 2);
+        addText('Client', false, 0, 10, 5);
 
 
         doc.save('Project-Agreement.pdf');
@@ -314,3 +355,4 @@ export default function ProjectAgreementPage() {
         </div>
     );
 }
+
