@@ -50,6 +50,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
     </div>
 );
 
+
 type PictureRow = { 
   id: number; 
   file: File | null;
@@ -166,7 +167,7 @@ export default function SiteVisitPage() {
 
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Detailed Site Visit Proforma – Architect Visit', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('Detailed Site Visit Proforma (Architect Visit)', pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
         doc.autoTable({
@@ -276,7 +277,7 @@ export default function SiteVisitPage() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma – Architect Visit</CardTitle>
+                <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma (Architect Visit)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="p-6 border rounded-lg space-y-4">
@@ -343,3 +344,4 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
+

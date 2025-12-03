@@ -26,7 +26,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-                 <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-start">
+                <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-start">
                     <div className="flex items-center gap-3">
                         <Checkbox
                           id={item.replace(/\s+/g, '-')}
@@ -133,8 +133,6 @@ export default function SiteVisitPage() {
             observations,
             issues,
             recommendations,
-            // Pictures are not saved in Firestore, only their comments for now if needed.
-            // For simplicity, we are excluding picture file data from Firestore save.
             pictureComments: pictures.map(p => ({id: p.id, comment: p.comment}))
         };
 
@@ -169,7 +167,7 @@ export default function SiteVisitPage() {
 
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Detailed Site Visit Proforma – Architect Visit', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('Detailed Site Visit Proforma (Architect Visit)', pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
         doc.autoTable({
@@ -279,7 +277,7 @@ export default function SiteVisitPage() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma – Architect Visit</CardTitle>
+                <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma (Architect Visit)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
                 <div className="p-6 border rounded-lg space-y-4">
@@ -346,3 +344,4 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
+
