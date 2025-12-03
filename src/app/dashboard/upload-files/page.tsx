@@ -15,9 +15,6 @@ import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { useFileRecords } from "@/context/FileContext";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { useFirebase } from "@/firebase/provider";
-
 
 type FileUpload = {
   id: number;
@@ -42,10 +39,7 @@ const UploadForm = ({ category }: { category: string }) => {
     const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: ''}]);
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
-    const { user: currentUser } = useCurrentUser();
     const { addFileRecord } = useFileRecords();
-    const { firebaseApp } = useFirebase();
-    const storage = getStorage(firebaseApp);
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -72,7 +66,7 @@ const UploadForm = ({ category }: { category: string }) => {
         }
     };
 
-    const handleUpload = (upload: FileUpload) => {
+    const handleUpload = async (upload: FileUpload) => {
         if (!upload.file || !upload.customName) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a custom name and choose a file.' });
             return;
@@ -81,52 +75,35 @@ const UploadForm = ({ category }: { category: string }) => {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a bank name for the Banks category.' });
             return;
         }
-        if (!currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-            return;
-        }
         
-        const filePath = `${category}/${Date.now()}_${upload.file.name}`;
-        const storageRef = ref(storage, filePath);
-        const uploadTask = uploadBytesResumable(storageRef, upload.file);
-
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
 
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        const recordData = {
+            category: category,
+            bankName: upload.bankName,
+            customName: upload.customName,
+            originalName: upload.file.name,
+            fileType: upload.file.type,
+            size: upload.file.size,
+        };
+        
+        try {
+            await addFileRecord(recordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
-            },
-            (error) => {
-                console.error("Upload failed:", error);
-                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                     const newRecord = {
-                        category: category,
-                        bankName: upload.bankName,
-                        customName: upload.customName,
-                        originalName: upload.file!.name,
-                        fileType: upload.file!.type,
-                        size: upload.file!.size,
-                        fileUrl: downloadURL
-                    };
-                    addFileRecord(newRecord);
-                    
-                    setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
-                    toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
+            });
+            
+            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
+            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
 
-                    setTimeout(() => {
-                        setUploads(prev => {
-                            const remaining = prev.filter(up => up.id !== upload.id);
-                            return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
-                        });
-                    }, 2000);
+            setTimeout(() => {
+                setUploads(prev => {
+                    const remaining = prev.filter(up => up.id !== upload.id);
+                    return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
                 });
-            }
-        );
+            }, 2000);
+        } catch (error) {
+             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+        }
     };
 
     return (
@@ -161,7 +138,7 @@ const UploadForm = ({ category }: { category: string }) => {
                     </div>
                     
                     <div className="lg:col-span-3">
-                        {(upload.isUploading || upload.progress === 100) && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
+                        {(upload.isUploading || upload.isUploaded) && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
                         {upload.error && <p className="text-destructive text-sm text-center mb-2">{upload.error}</p>}
                         <Button onClick={() => handleUpload(upload)} className="w-full" disabled={!upload.file || upload.isUploading || upload.isUploaded}>
                             <FileUp className="mr-2 h-4 w-4" />

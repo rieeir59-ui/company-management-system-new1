@@ -24,6 +24,7 @@ type FileUpload = {
   isUploading?: boolean;
   progress?: number;
   isUploaded?: boolean;
+  error?: string;
 };
 
 const categories = [
@@ -35,52 +36,10 @@ const categories = [
 const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const UploadForm = ({ category }: { category: string }) => {
-    const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: '', isUploading: false, progress: 0, isUploaded: false }]);
+    const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: '' }]);
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
-    const { user: currentUser } = useCurrentUser();
     const { addFileRecord } = useFileRecords();
-
-    const handleSingleFileUpload = useCallback((upload: FileUpload) => {
-        if (!upload.file || !currentUser || upload.isUploaded) return;
-
-        const newRecord = {
-            id: String(Date.now()), // Ensure unique ID
-            category: category,
-            bankName: upload.bankName,
-            customName: upload.customName,
-            originalName: upload.file!.name,
-            fileType: upload.file!.type,
-            size: upload.file!.size,
-            createdAt: new Date(),
-            employeeName: currentUser.name,
-            employeeId: currentUser.record,
-            fileUrl: URL.createObjectURL(upload.file!)
-        };
-        addFileRecord(newRecord);
-        
-        // Mark as uploaded immediately to prevent re-adding
-        setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploaded: true } : up));
-
-        toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
-
-        // Set a timeout to remove the completed upload from the UI
-        setTimeout(() => {
-            setUploads(prev => {
-                const remaining = prev.filter(up => up.id !== upload.id);
-                return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '', isUploading: false, progress: 0, isUploaded: false }];
-            });
-        }, 2000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [category, currentUser, toast]);
-
-    useEffect(() => {
-        uploads.forEach(upload => {
-            if (upload.progress === 100 && !upload.isUploaded) {
-                handleSingleFileUpload(upload);
-            }
-        });
-    }, [uploads, handleSingleFileUpload]);
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -94,7 +53,7 @@ const UploadForm = ({ category }: { category: string }) => {
     };
 
     const addFileUpload = () => {
-        setUploads(prev => [...prev, { id: Date.now(), file: null, customName: '', bankName: '', isUploading: false, progress: 0, isUploaded: false }]);
+        setUploads(prev => [...prev, { id: Date.now(), file: null, customName: '', bankName: '' }]);
     };
 
     const removeFileUpload = (id: number) => {
@@ -107,7 +66,7 @@ const UploadForm = ({ category }: { category: string }) => {
         }
     };
 
-    const handleUpload = (upload: FileUpload) => {
+    const handleUpload = async (upload: FileUpload) => {
         if (!upload.file || !upload.customName) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a custom name and choose a file.' });
             return;
@@ -116,26 +75,35 @@ const UploadForm = ({ category }: { category: string }) => {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a bank name for the Banks category.' });
             return;
         }
-        if (!currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
-            return;
+
+        setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
+
+        const recordData = {
+            category: category,
+            bankName: upload.bankName,
+            customName: upload.customName,
+            originalName: upload.file.name,
+            fileType: upload.file.type,
+            size: upload.file.size,
+        };
+
+        try {
+            await addFileRecord(recordData, upload.file, (progress) => {
+                setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
+            });
+
+            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
+            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
+
+            setTimeout(() => {
+                setUploads(prev => {
+                    const remaining = prev.filter(up => up.id !== upload.id);
+                    return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
+                });
+            }, 2000);
+        } catch (error) {
+            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
         }
-        
-        setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0 } : up));
-        
-        const interval = setInterval(() => {
-            setUploads(prev => prev.map(up => {
-                if (up.id === upload.id && up.isUploading) {
-                    const newProgress = (up.progress || 0) + 10;
-                    if (newProgress >= 100) {
-                        clearInterval(interval);
-                        return { ...up, isUploading: false, progress: 100 };
-                    }
-                    return { ...up, progress: newProgress };
-                }
-                return up;
-            }));
-        }, 200);
     };
 
     return (
@@ -149,7 +117,7 @@ const UploadForm = ({ category }: { category: string }) => {
                     {category === 'Banks' && (
                         <div className="space-y-2">
                             <Label htmlFor={`bank-${upload.id}`}>Bank Name</Label>
-                             <CreatableSelect
+                            <CreatableSelect
                                 options={banks}
                                 value={upload.bankName}
                                 onChange={(value) => handleFieldChange(upload.id, 'bankName', value)}
@@ -170,10 +138,11 @@ const UploadForm = ({ category }: { category: string }) => {
                     </div>
                     
                     <div className="lg:col-span-3">
-                        {upload.isUploading && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
-                        <Button onClick={() => handleUpload(upload)} className="w-full" disabled={!upload.file || upload.isUploading}>
+                        {(upload.isUploading || upload.isUploaded) && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
+                        {upload.error && <p className="text-destructive text-sm text-center mb-2">{upload.error}</p>}
+                        <Button onClick={() => handleUpload(upload)} className="w-full" disabled={!upload.file || upload.isUploading || upload.isUploaded}>
                             <FileUp className="mr-2 h-4 w-4" />
-                            {upload.isUploading ? `Uploading... ${upload.progress?.toFixed(0)}%` : 'Upload'}
+                            {upload.isUploading ? `Uploading... ${upload.progress?.toFixed(0)}%` : (upload.isUploaded ? 'Uploaded!' : 'Upload')}
                         </Button>
                     </div>
 

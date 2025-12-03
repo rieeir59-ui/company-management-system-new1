@@ -16,7 +16,7 @@ import {
   FirestoreError,
   orderBy
 } from 'firebase/firestore';
-import { getStorage, ref, deleteObject } from "firebase/storage";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
@@ -37,7 +37,7 @@ export type UploadedFile = {
 
 type FileContextType = {
   fileRecords: UploadedFile[];
-  addFileRecord: (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<void>;
+  addFileRecord: (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>, file: File, onProgress: (progress: number) => void) => Promise<string | undefined>;
   updateFileRecord: (id: string, updatedData: Partial<UploadedFile>) => Promise<void>;
   deleteFileRecord: (id: string) => Promise<void>;
   isLoading: boolean;
@@ -94,32 +94,54 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading]);
 
-  const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
-    if (!firestore || !currentUser) {
+  const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName' | 'fileUrl'>, file: File, onProgress: (progress: number) => void): Promise<string | undefined> => {
+    if (!firestore || !currentUser || !firebaseApp) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to upload files.' });
         return;
     }
-    
-    const dataToSave = {
-        ...record,
-        employeeId: currentUser.record,
-        employeeName: currentUser.name,
-        createdAt: serverTimestamp(),
-    };
+    const storage = getStorage(firebaseApp);
+    const filePath = `${record.category}/${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, filePath);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    try {
-        await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
-        // The real-time listener will update the state, no need to call setFileRecords here.
-    } catch(serverError) {
-        console.error("Error adding file record:", serverError);
-        const permissionError = new FirestorePermissionError({
-            path: `uploadedFiles`,
-            operation: 'create',
-            requestResourceData: dataToSave,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
-  }, [firestore, currentUser, toast]);
+    return new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                onProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                reject(error);
+            },
+            async () => {
+                try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    const dataToSave = {
+                        ...record,
+                        fileUrl: downloadURL,
+                        employeeId: currentUser.record,
+                        employeeName: currentUser.name,
+                        createdAt: serverTimestamp(),
+                    };
+                    await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
+                    resolve(downloadURL);
+                } catch (serverError) {
+                    console.error("Error adding file record:", serverError);
+                    const permissionError = new FirestorePermissionError({
+                        path: `uploadedFiles`,
+                        operation: 'create',
+                        requestResourceData: record,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    reject(serverError);
+                }
+            }
+        );
+    });
+  }, [firestore, currentUser, firebaseApp, toast]);
+
 
   const updateFileRecord = useCallback(async (id: string, updatedData: Partial<UploadedFile>) => {
      if (!firestore) return;
@@ -146,13 +168,14 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     // Delete from Storage first
     if (docToDelete.fileUrl && docToDelete.fileUrl.startsWith('https://firebasestorage.googleapis.com')) {
         const storage = getStorage(firebaseApp);
-        const fileRef = ref(storage, docToDelete.fileUrl);
         try {
+            const fileRef = ref(storage, docToDelete.fileUrl);
             await deleteObject(fileRef);
         } catch (storageError: any) {
              if (storageError.code !== 'storage/object-not-found') {
                 console.error("Error deleting file from Storage:", storageError);
                 toast({ variant: 'destructive', title: 'Storage Error', description: 'Could not delete the file from storage.' });
+                // We might still want to proceed to delete the Firestore record
              }
         }
     }
