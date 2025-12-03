@@ -72,11 +72,11 @@ function SavedRecordsComponent() {
     const { employees } = useEmployees();
     const { records, isLoading, error, deleteRecord, updateTaskStatus } = useRecords();
 
-    const [recordToDelete, setRecordToDelete = useState<SavedRecord | null>(null);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen = useState(false);
-    const [selectedCategory, setSelectedCategory = useState<string | null>(null);
-    const [viewingRecord, setViewingRecord = useState<SavedRecord | null>(null);
-    const [isViewDialogOpen, setIsViewDialogOpen = useState(false);
+    const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     
     const searchParams = useSearchParams();
     const filterParam = searchParams.get('filter');
@@ -171,7 +171,7 @@ function SavedRecordsComponent() {
         dataArray.forEach((section: any) => {
             if (yPos > 260) { doc.addPage(); yPos = 20; }
 
-            if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+            if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
                 const tableBody = section.items.map((item: any) => [item.Item, item.Status, item.Remarks]);
                 if (tableBody.length > 0) {
                     (doc as any).autoTable({
@@ -492,7 +492,7 @@ function SavedRecordsComponent() {
                                                       return (
                                                           <TableRow key={itemIndex}>
                                                               <TableCell className="font-medium w-1/3">{item.label || item.comment}</TableCell>
-                                                              <TableCell>{item.value || (item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">View File <ExternalLink className="h-3 w-3/></a>)}</TableCell>
+                                                              <TableCell>{item.value || (item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">View File <ExternalLink className="h-3 w-3"/></a>)}</TableCell>
                                                           </TableRow>
                                                       )
                                                   }
