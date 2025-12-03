@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -118,7 +117,7 @@ export default function SiteVisitPage() {
             return;
         }
 
-         const dataToSave = {
+        const dataToSave = {
             fileName: 'Site Visit Proforma',
             projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
             employeeId: currentUser.record,
@@ -127,10 +126,13 @@ export default function SiteVisitPage() {
             data: [
                 {
                     category: 'Basic Information',
-                    items: Object.entries(basicInfo).map(([key, value]) => {
-                        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                        return `${formattedKey}: ${value}`;
-                    }),
+                    items: [
+                      `Site Name: ${basicInfo.siteName}`,
+                      `City: ${basicInfo.city}`,
+                      `Date: ${basicInfo.date}`,
+                      `Number of visits: ${basicInfo.visitNumber}`,
+                      `Architect Name: ${basicInfo.architectName}`
+                    ]
                 },
                 ...Object.entries(checklistSections).map(([title, items]) => ({
                     category: title,
@@ -181,7 +183,9 @@ export default function SiteVisitPage() {
             startY: yPos,
             theme: 'plain',
             body: Object.entries(basicInfo).map(([key, value]) => {
-              const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              const formattedKey = key === 'visitNumber' 
+                ? 'Number of visits' 
+                : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
               return [formattedKey, value];
             }),
         });
