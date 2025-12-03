@@ -26,18 +26,25 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
             {items.map((item) => (
-                <div key={item} className="flex items-center gap-2">
-                    <Checkbox id={item.replace(/\s+/g, '-')} checked={checklistState[item] || false} onCheckedChange={(checked) => onCheckboxChange(item, !!checked)} />
-                    <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal flex-1 flex items-center gap-2">
-                        <span>{item}</span>
-                    </Label>
-                    <Input
-                      type="text"
-                      placeholder="Remarks"
-                      value={remarksState[item] || ''}
-                      onChange={(e) => onRemarkChange(item, e.target.value)}
-                      className="h-7 text-xs"
+                <div key={item} className="flex items-start gap-2">
+                    <Checkbox
+                      id={item.replace(/\s+/g, '-')}
+                      checked={checklistState[item] || false}
+                      onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
+                      className="mt-1"
                     />
+                    <div className="grid gap-1.5 leading-none flex-1">
+                      <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
+                          {item}
+                      </Label>
+                      <Input
+                        type="text"
+                        placeholder="Remarks"
+                        value={remarksState[item] || ''}
+                        onChange={(e) => onRemarkChange(item, e.target.value)}
+                        className="h-7 text-xs"
+                      />
+                    </div>
                 </div>
             ))}
         </div>
@@ -202,10 +209,13 @@ export default function SiteVisitPage() {
                         doc.text('✓', data.cell.x + 3, data.cell.y + 5);
                         doc.setFont('helvetica');
                     }
-                    if (!data.cell.styles) data.cell.styles = {};
-                    if (!data.cell.styles.padding) data.cell.styles.padding = {};
+                    if (!data.cell.styles) {
+                        data.cell.styles = {};
+                    }
+                    if (!data.cell.styles.padding) {
+                        data.cell.styles.padding = {};
+                    }
                     data.cell.styles.padding.left = 8;
-                    data.cell.text = ' ' + itemText;
                 }
               }
             });
