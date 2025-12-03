@@ -35,6 +35,14 @@
         { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
+     {
+      "collectionGroup": "savedRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "employeeId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
     {
       "collectionGroup": "savedRecords",
       "queryScope": "COLLECTION",
@@ -56,14 +64,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "fileName", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "savedRecords",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     },
