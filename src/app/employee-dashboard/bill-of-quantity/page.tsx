@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -13,11 +12,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +24,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useRecords } from '@/context/RecordContext';
 
 interface BillItem {
     id: number;
@@ -121,8 +117,8 @@ const initialData: BillItem[] = [
 export default function Page() {
   const image = PlaceHolderImages.find(p => p.id === 'bill-of-quantity');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
   const { user: currentUser } = useCurrentUser();
+  const { addRecord } = useRecords();
 
   const [items, setItems] = useState<BillItem[]>(initialData);
   const [isSaveOpen, setIsSaveOpen] = useState(false);
@@ -146,35 +142,26 @@ export default function Page() {
   }, [items]);
 
   const handleSave = () => {
-    if (!firestore || !currentUser) {
+    if (!currentUser) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
       return;
     }
 
     const dataToSave = {
-        employeeId: currentUser.record,
-        employeeName: currentUser.name,
         fileName: 'Bill of Quantity',
         projectName: projectName,
-        data: {
+        data: [{
             category: 'Bill of Quantity',
             items: items.map(item => JSON.stringify(item)),
-        },
-        createdAt: serverTimestamp(),
+        }],
     };
 
-    addDoc(collection(firestore, 'savedRecords'), dataToSave)
+    addRecord(dataToSave as any)
         .then(() => {
-            toast({ title: 'Record Saved', description: 'The Bill of Quantity has been saved.' });
             setIsSaveOpen(false);
         })
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        .catch(() => {
+            // Error is handled by the context
         });
   };
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -61,6 +60,7 @@ type PictureRow = {
   progress?: number;
   downloadURL?: string;
   error?: string;
+  isUploaded?: boolean;
 };
 
 export default function SiteVisitPage() {
@@ -137,7 +137,7 @@ export default function SiteVisitPage() {
                 ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
                 ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
                 ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                { category: 'Pictures', items: [] } // Placeholder for pictures
+                { category: 'Pictures', items: [] as { comment: string; url: string }[] } // Placeholder for pictures
             ]
         };
 

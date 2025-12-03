@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -16,7 +15,8 @@ import {
   type Timestamp,
   FirestoreError,
   orderBy,
-  where
+  where,
+  type DocumentReference
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -34,7 +34,7 @@ export type SavedRecord = {
 
 type RecordContextType = {
   records: SavedRecord[];
-  addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<any>;
+  addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
@@ -129,8 +129,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     try {
       const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
-      // Manually add to state to trigger immediate UI update
-      setRecords(prev => [{ ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev]);
+      // Manually add to state to trigger immediate UI update, converting server timestamp to Date
+      setRecords(prev => [{ ...recordData, ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev]);
       return docRef;
     } catch (serverError) {
       console.error(serverError);
