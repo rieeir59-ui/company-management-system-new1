@@ -17,7 +17,6 @@ import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useRecords } from '@/context/RecordContext';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -96,7 +95,8 @@ const initialPaymentSchedule = [
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { firestore } = useFirebase();
+    const { user: currentUser } = useCurrentUser();
     
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
@@ -130,6 +130,11 @@ export default function ProjectAgreementPage() {
     };
 
     const handleSave = async () => {
+        if (!currentUser || !firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
+            return;
+        }
+
         const recordData = {
             fileName: 'Project Agreement',
             projectName: designOf || 'Untitled Project Agreement',
@@ -147,8 +152,25 @@ export default function ProjectAgreementPage() {
                 { category: "Compensation", items: agreementText.compensation },
             ]
         };
-        
-        await addRecord(recordData);
+
+        const dataToSave = {
+            ...recordData,
+            employeeId: currentUser.record,
+            employeeName: currentUser.name,
+            createdAt: serverTimestamp(),
+        };
+
+        try {
+            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
+            toast({ title: 'Record Saved', description: "The project agreement has been saved." });
+        } catch (serverError) {
+             const permissionError = new FirestorePermissionError({
+                path: 'savedRecords',
+                operation: 'create',
+                requestResourceData: dataToSave,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
     }
 
     const handleDownloadPdf = () => {
