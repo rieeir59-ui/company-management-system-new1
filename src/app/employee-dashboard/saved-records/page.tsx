@@ -2,8 +2,6 @@
 'use client';
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
-import { useFirebase } from '@/firebase/provider';
-import { collection, query, where, getDocs, orderBy, type Timestamp, onSnapshot, FirestoreError, doc, deleteDoc } from 'firebase/firestore';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -19,9 +17,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { useCurrentUser } from '@/context/UserContext';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import Link from 'next/link';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import jsPDF from 'jspdf';
@@ -32,7 +36,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
 
 const timelineFileNames = [
     'Timeline Schedule',
@@ -49,96 +52,6 @@ const timelineFileNames = [
     'UBL Timeline',
 ];
 
-const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
-    let yPos = 20;
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-    yPos += 10;
-    
-    doc.setFontSize(10);
-    
-    const headerData = [
-        [`File: ${record.fileName}`],
-        [`Saved by: ${record.employeeName}`],
-        [`Date: ${new Date(record.createdAt).toLocaleDateString()}`],
-    ];
-
-    (doc as any).autoTable({
-        startY: yPos,
-        theme: 'plain',
-        body: headerData,
-        styles: { fontSize: 10 },
-    });
-
-    yPos = (doc as any).autoTable.previous.finalY + 10;
-    
-    const dataArray = Array.isArray(record.data) ? record.data : [record.data];
-
-    dataArray.forEach((section: any) => {
-        if (yPos > 260) {
-            doc.addPage();
-            yPos = 20;
-        }
-
-        const body: (string | number)[][] = [];
-
-        if (section.items && Array.isArray(section.items)) {
-            section.items.forEach((item: any) => {
-                let parsedItem = {};
-                let isParsed = false;
-                try {
-                    if (typeof item === 'string') {
-                        // Check if it's a JSON string before parsing
-                        if (item.trim().startsWith('{') && item.trim().endsWith('}')) {
-                            parsedItem = JSON.parse(item);
-                            isParsed = true;
-                        }
-                    } else if (typeof item === 'object' && item !== null) {
-                        parsedItem = item;
-                        isParsed = true;
-                    }
-                } catch {}
-
-                if (isParsed) {
-                     Object.entries(parsedItem).forEach(([key, value]) => {
-                        if (typeof value !== 'object' && value !== null && key !== 'id' && key !== 'isHeader') {
-                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                            body.push([formattedKey, String(value)]);
-                        }
-                    });
-                } else {
-                     const parts = String(item).split(':');
-                    if (parts.length > 1) {
-                        body.push([parts[0], parts.slice(1).join(':').trim()]);
-                    } else {
-                        body.push([item, '']);
-                    }
-                }
-            });
-        }
-        
-        if (body.length > 0) {
-            (doc as any).autoTable({
-                head: [[section.category || 'Details']],
-                body: body,
-                startY: yPos,
-                theme: 'grid',
-                headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
-                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        }
-    });
-}
-
-const handleDownload = (record: SavedRecord) => {
-    const doc = new jsPDF() as any;
-    generateDefaultPdf(doc, record);
-    doc.output('dataurlnewwindow');
-};
-
 function SavedRecordsPageComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
     const { user: currentUser, isUserLoading } = useCurrentUser();
@@ -146,6 +59,9 @@ function SavedRecordsPageComponent() {
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
     const searchParams = useSearchParams();
     const filterParam = searchParams.get('filter');
 
@@ -196,6 +112,80 @@ function SavedRecordsPageComponent() {
         return grouped;
     }, [myRecords]);
 
+    const openViewDialog = (e: React.MouseEvent, record: SavedRecord) => {
+        e.stopPropagation();
+        setViewingRecord(record);
+        setIsViewDialogOpen(true);
+    };
+    
+    const handleDownload = (record: SavedRecord) => {
+        const doc = new jsPDF() as any;
+        generateDefaultPdf(doc, record);
+        doc.output('dataurlnewwindow');
+    };
+
+    const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
+        let yPos = 20;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 10;
+        
+        doc.setFontSize(10);
+        
+        const headerData = [
+            ['File', record.fileName],
+            ['Saved by', record.employeeName],
+            ['Date', new Date(record.createdAt).toLocaleDateString()],
+        ];
+
+        (doc as any).autoTable({
+            startY: yPos,
+            theme: 'plain',
+            body: headerData,
+            styles: { fontSize: 10 },
+        });
+
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
+        const dataArray = Array.isArray(record.data) ? record.data : [record.data];
+
+        dataArray.forEach((section: any) => {
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+
+            const body: (string | number)[][] = [];
+
+            if (section.items && Array.isArray(section.items)) {
+                section.items.forEach((item: any) => {
+                     let label: string;
+                     let value: string;
+                    if(typeof item === 'object' && item !== null && item.label && item.value) {
+                       label = item.label;
+                       value = item.value;
+                       body.push([label, value]);
+                    } else if (typeof item === 'string') {
+                         const parts = item.split(':');
+                         if (parts.length > 1) {
+                            body.push([parts[0], parts.slice(1).join(':').trim()]);
+                        }
+                    }
+                });
+            }
+            
+            if (body.length > 0) {
+                (doc as any).autoTable({
+                    head: [[section.category || 'Details']],
+                    body: body,
+                    startY: yPos,
+                    theme: 'grid',
+                    headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
+                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+                });
+                yPos = (doc as any).autoTable.previous.finalY + 10;
+            }
+        });
+    }
 
     if (isLoading || isUserLoading) {
         return (
@@ -251,7 +241,7 @@ function SavedRecordsPageComponent() {
                                             groupedRecords[selectedCategory].map(record => {
                                                 const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
                                                 return (
-                                                    <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                    <TableRow key={record.id} onClick={(e) => openViewDialog(e, record)} className="cursor-pointer">
                                                         <TableCell className="font-medium">{record.projectName}</TableCell>
                                                         <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
                                                         <TableCell className="text-right">
@@ -329,6 +319,50 @@ function SavedRecordsPageComponent() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
+                        <DialogDescription>{viewingRecord?.fileName} - Saved by {viewingRecord?.employeeName} on {viewingRecord && new Date(viewingRecord.createdAt).toLocaleDateString()}</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                        {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => (
+                             <div key={index} className="mb-4">
+                                <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                <Table>
+                                    <TableBody>
+                                        {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
+                                            if (typeof item === 'string') {
+                                                 const parts = item.split(':');
+                                                 const label = parts[0];
+                                                 const value = parts.slice(1).join(':').trim();
+                                                 return (
+                                                    <TableRow key={itemIndex}>
+                                                        <TableCell className="font-medium w-1/3">{label}</TableCell>
+                                                        <TableCell>{value}</TableCell>
+                                                    </TableRow>
+                                                 )
+                                            } else if (typeof item === 'object' && item !== null && item.label) {
+                                                return (
+                                                    <TableRow key={itemIndex}>
+                                                        <TableCell className="font-medium w-1/3">{item.label}</TableCell>
+                                                        <TableCell>{item.value}</TableCell>
+                                                    </TableRow>
+                                                )
+                                            }
+                                            return null;
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ))}
+                    </div>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                        <Button onClick={() => viewingRecord && handleDownload(viewingRecord)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

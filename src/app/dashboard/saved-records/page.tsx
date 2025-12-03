@@ -1,9 +1,10 @@
+
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, CheckCircle2, Clock, XCircle } from "lucide-react";
 import {
@@ -16,6 +17,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+  DialogContent,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { useCurrentUser } from '@/context/UserContext';
 import Link from 'next/link';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
@@ -24,26 +33,11 @@ import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/context/EmployeeContext';
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
+import { useSearchParams } from 'next/navigation';
 
-
-type SavedRecordData = {
-    category: string;
-    items: (string | Record<string, any>)[];
-    [key: string]: any;
-};
-
-type SavedRecord = {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    fileName: string;
-    projectName: string;
-    createdAt: Date;
-    data: SavedRecordData[] | Record<string, any>;
-};
 
 type TaskRecord = {
     id: string;
@@ -55,14 +49,6 @@ type TaskRecord = {
     endDate: string;
     status: 'not-started' | 'in-progress' | 'completed';
 };
-
-// Dummy Data
-const dummyRecords: SavedRecord[] = [
-    {id: '1', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Project Checklist', projectName: 'Alpha Tower', createdAt: new Date(), data: [{category: 'Checklist', items: ['Item 1', 'Item 2']}]},
-    {id: '2', employeeId: 'EMP-005', employeeName: 'Imran Abbas', fileName: 'Bill of Quantity', projectName: 'Beta Complex', createdAt: new Date(), data: [{category: 'BOQ', items: ['Cement: 100 bags']}]},
-    {id: '3', employeeId: 'EMP-004', employeeName: 'Rabiya Eman', fileName: 'Task Assignment', projectName: 'Alpha Tower - Foundation', createdAt: new Date(), data: [{category: 'Task Assignment', items: ['taskName: Foundation Work', 'assignedTo: Imran Abbas', 'status: in-progress']}]},
-];
-
 
 const StatusIcon = ({ status }: { status: TaskRecord['status'] }) => {
     switch (status) {
@@ -77,107 +63,30 @@ const StatusIcon = ({ status }: { status: TaskRecord['status'] }) => {
     }
 };
 
-const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
-    let yPos = 20;
-
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-    yPos += 10;
-    
-    doc.setFontSize(10);
-    
-    const headerData = [
-        [`File: ${record.fileName}`],
-        [`Saved by: ${record.employeeName}`],
-        [`Date: ${record.createdAt.toLocaleDateString()}`],
-    ];
-
-    (doc as any).autoTable({
-        startY: yPos,
-        theme: 'plain',
-        body: headerData,
-        styles: { fontSize: 10 },
-    });
-
-    yPos = (doc as any).autoTable.previous.finalY + 10;
-    
-    const dataArray = Array.isArray(record.data) ? record.data : [record.data];
-
-    dataArray.forEach((section: any) => {
-        if (yPos > 260) {
-            doc.addPage();
-            yPos = 20;
-        }
-
-        const body: (string | number)[][] = [];
-
-        if (section.items && Array.isArray(section.items)) {
-            section.items.forEach((item: any) => {
-                let parsedItem = {};
-                let isParsed = false;
-                try {
-                    if (typeof item === 'string') {
-                        parsedItem = JSON.parse(item);
-                        isParsed = true;
-                    } else if (typeof item === 'object' && item !== null) {
-                        parsedItem = item;
-                        isParsed = true;
-                    }
-                } catch {}
-
-                if (isParsed) {
-                     Object.entries(parsedItem).forEach(([key, value]) => {
-                        if (typeof value !== 'object' && value !== null && key !== 'id' && key !== 'isHeader') {
-                            const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                            body.push([formattedKey, String(value)]);
-                        }
-                    });
-                } else {
-                     const parts = String(item).split(':');
-                    if (parts.length > 1) {
-                        body.push([parts[0], parts.slice(1).join(':').trim()]);
-                    } else {
-                        body.push([item, '']);
-                    }
-                }
-            });
-        }
-        
-        if (body.length > 0) {
-            (doc as any).autoTable({
-                head: [[section.category || 'Details']],
-                body: body,
-                startY: yPos,
-                theme: 'grid',
-                headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
-                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        }
-    });
-}
-
-
-const handleDownload = (record: SavedRecord) => {
-    const doc = new jsPDF() as any;
-    generateDefaultPdf(doc, record);
-    doc.output('dataurlnewwindow');
-};
-
-export default function SavedRecordsPage() {
+function SavedRecordsComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
     const { employees } = useEmployees();
+    const { records, isLoading, error, deleteRecord, updateTaskStatus } = useRecords();
 
-    const [records, setRecords] = useState<SavedRecord[]>(dummyRecords);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+    const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
+    const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     
+    const searchParams = useSearchParams();
+    const filterParam = searchParams.get('filter');
+
+    useEffect(() => {
+        if(filterParam) {
+            setSelectedCategory(filterParam);
+        } else {
+            setSelectedCategory(null);
+        }
+    }, [filterParam]);
+
     const openDeleteDialog = (e: React.MouseEvent, record: SavedRecord) => {
         e.stopPropagation();
         setRecordToDelete(record);
@@ -186,35 +95,18 @@ export default function SavedRecordsPage() {
 
     const confirmDelete = async () => {
         if (!recordToDelete) return;
-        setRecords(prev => prev.filter(r => r.id !== recordToDelete.id));
-        toast({ title: 'Record Deleted', description: 'The record has been deleted (simulation).' });
+        deleteRecord(recordToDelete.id);
         setIsDeleteDialogOpen(false);
         setRecordToDelete(null);
     };
     
     const handleStatusChange = async (taskId: string, newStatus: TaskRecord['status']) => {
-        setRecords(prevRecords => prevRecords.map(rec => {
-            if(rec.id === taskId) {
-                const newData = rec.data.map((d: any) => {
-                    if (d.category === 'Task Assignment') {
-                        return {
-                            ...d,
-                            items: d.items.map((item: string) => item.startsWith('status:') ? `status: ${newStatus}` : item)
-                        }
-                    }
-                    return d;
-                });
-                return {...rec, data: newData};
-            }
-            return rec;
-        }));
-
+        await updateTaskStatus(taskId, newStatus);
         toast({
             title: 'Status Updated',
             description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
         });
       };
-
 
     const groupedRecords = useMemo(() => {
         const grouped = records.reduce((acc, record) => {
@@ -234,7 +126,81 @@ export default function SavedRecordsPage() {
         
         return grouped;
     }, [records]);
+    
+    const openViewDialog = (e: React.MouseEvent, record: SavedRecord) => {
+        e.stopPropagation();
+        setViewingRecord(record);
+        setIsViewDialogOpen(true);
+    };
+    
+    const handleDownload = (record: SavedRecord) => {
+        const doc = new jsPDF() as any;
+        generateDefaultPdf(doc, record);
+        doc.output('dataurlnewwindow');
+    };
 
+    const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
+        let yPos = 20;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 10;
+        
+        doc.setFontSize(10);
+        
+        const headerData = [
+            ['File', record.fileName],
+            ['Saved by', record.employeeName],
+            ['Date', new Date(record.createdAt).toLocaleDateString()],
+        ];
+
+        (doc as any).autoTable({
+            startY: yPos,
+            theme: 'plain',
+            body: headerData,
+            styles: { fontSize: 10 },
+        });
+
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
+        const dataArray = Array.isArray(record.data) ? record.data : [record.data];
+
+        dataArray.forEach((section: any) => {
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+
+            const body: (string | number)[][] = [];
+
+            if (section.items && Array.isArray(section.items)) {
+                section.items.forEach((item: any) => {
+                     let label: string;
+                     let value: string;
+                    if(typeof item === 'object' && item !== null && item.label && item.value) {
+                       label = item.label;
+                       value = item.value;
+                       body.push([label, value]);
+                    } else if (typeof item === 'string') {
+                         const parts = item.split(':');
+                         if (parts.length > 1) {
+                            body.push([parts[0], parts.slice(1).join(':').trim()]);
+                        }
+                    }
+                });
+            }
+            
+            if (body.length > 0) {
+                (doc as any).autoTable({
+                    head: [[section.category || 'Details']],
+                    body: body,
+                    startY: yPos,
+                    theme: 'grid',
+                    headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
+                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+                });
+                yPos = (doc as any).autoTable.previous.finalY + 10;
+            }
+        });
+    }
 
     if (isLoading || isUserLoading) {
         return (
@@ -246,8 +212,9 @@ export default function SavedRecordsPage() {
     }
 
     const parseTaskData = (record: SavedRecord): TaskRecord => {
-        const items: string[] = Array.isArray(record.data) && record.data[0]?.items ? record.data[0].items : [];
-        const findValue = (key: string) => (items.find(item => item.startsWith(key))?.split(':')[1] || '').trim();
+        const data = Array.isArray(record.data) ? record.data[0] : record.data;
+        const items = data?.items || [];
+        const findValue = (key: string) => (items.find((item: string) => item.startsWith(key))?.split(':')[1] || '').trim();
         
         return {
             id: record.id,
@@ -361,7 +328,7 @@ export default function SavedRecordsPage() {
                                                 groupedRecords[selectedCategory].map(record => {
                                                     const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
                                                     return (
-                                                        <TableRow key={record.id} onClick={() => handleDownload(record)} className="cursor-pointer">
+                                                        <TableRow key={record.id} onClick={(e) => openViewDialog(e, record)} className="cursor-pointer">
                                                             <TableCell>{record.employeeName}</TableCell>
                                                             <TableCell className="font-medium">{record.projectName}</TableCell>
                                                             <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
@@ -420,6 +387,7 @@ export default function SavedRecordsPage() {
                     </div>
                 )}
             </div>
+            
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -434,6 +402,59 @@ export default function SavedRecordsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
+                        <DialogDescription>{viewingRecord?.fileName} - Saved by {viewingRecord?.employeeName} on {viewingRecord && new Date(viewingRecord.createdAt).toLocaleDateString()}</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                        {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => (
+                             <div key={index} className="mb-4">
+                                <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                <Table>
+                                    <TableBody>
+                                        {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
+                                            if (typeof item === 'string') {
+                                                 const parts = item.split(':');
+                                                 const label = parts[0];
+                                                 const value = parts.slice(1).join(':').trim();
+                                                 return (
+                                                    <TableRow key={itemIndex}>
+                                                        <TableCell className="font-medium w-1/3">{label}</TableCell>
+                                                        <TableCell>{value}</TableCell>
+                                                    </TableRow>
+                                                 )
+                                            } else if (typeof item === 'object' && item !== null && item.label) {
+                                                return (
+                                                    <TableRow key={itemIndex}>
+                                                        <TableCell className="font-medium w-1/3">{item.label}</TableCell>
+                                                        <TableCell>{item.value}</TableCell>
+                                                    </TableRow>
+                                                )
+                                            }
+                                            return null;
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ))}
+                    </div>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                        <Button onClick={() => viewingRecord && handleDownload(viewingRecord)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
+}
+
+export default function SavedRecordsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">Loading...</div>}>
+            <SavedRecordsComponent />
+        </Suspense>
+    )
 }
