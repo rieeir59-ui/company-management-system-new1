@@ -26,7 +26,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-                 <div key={item} className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-8 gap-y-2 items-start py-2 border-b last:border-b-0">
+                <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 items-start py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                          <Checkbox
                           id={item.replace(/\s+/g, '-')}
@@ -37,7 +37,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                             {item}
                         </Label>
                     </div>
-                     <Textarea
+                    <Textarea
                       placeholder="Remarks..."
                       value={remarksState[item] || ''}
                       onChange={(e) => onRemarkChange(item, e.target.value)}
