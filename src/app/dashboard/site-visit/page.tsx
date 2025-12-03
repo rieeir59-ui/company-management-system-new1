@@ -18,6 +18,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { useFirebase } from '@/firebase/provider';
 import { Progress } from '@/components/ui/progress';
 import { useRecords } from '@/context/RecordContext';
+import { doc, updateDoc } from 'firebase/firestore';
 
 type RemarksState = Record<string, string>;
 
@@ -65,7 +66,7 @@ type PictureRow = {
 export default function SiteVisitPage() {
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
-    const { firebaseApp } = useFirebase();
+    const { firebaseApp, firestore } = useFirebase();
     const storage = firebaseApp ? getStorage(firebaseApp) : null;
     const { addRecord } = useRecords();
 
@@ -121,66 +122,66 @@ export default function SiteVisitPage() {
     };
 
     const handleSave = async () => {
-        if (!currentUser || !storage) {
+        if (!currentUser || !firestore || !storage) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
 
-        const pictureUploadPromises = pictures
-            .filter(p => p.file && !p.downloadURL)
-            .map(p => {
-                return new Promise<PictureRow>((resolve, reject) => {
-                    const filePath = `site-visits/${Date.now()}_${p.file!.name}`;
-                    const storageRef = ref(storage, filePath);
-                    const uploadTask = uploadBytesResumable(storageRef, p.file!);
-
-                    uploadTask.on('state_changed', 
-                        (snapshot) => {
-                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: true, progress } : up));
-                        },
-                        (error) => {
-                            console.error("Upload failed:", error);
-                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
-                            reject(error);
-                        },
-                        async () => {
-                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            const updatedPic = { ...p, isUploading: false, downloadURL };
-                            setPictures(prev => prev.map(up => up.id === p.id ? updatedPic : up));
-                            resolve(updatedPic);
-                        }
-                    );
-                });
-            });
+        const dataToSave = {
+            fileName: 'Site Visit Proforma',
+            projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
+            data: [
+                { category: 'Basic Information', items: Object.entries(basicInfo).map(([key, value]) => ({ label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), value: value }))},
+                ...Object.entries(checklistSections).map(([title, items]) => ({ category: title, items: items.map(item => ({ Item: item, Status: checklistState[item] ? 'Yes' : 'No', Remarks: remarksState[item] || 'N/A' }))})),
+                ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
+                ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
+                ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
+                ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
+                { category: 'Pictures', items: [] } // Placeholder for pictures
+            ]
+        };
 
         try {
-            const uploadedPicturesResults = await Promise.all(pictureUploadPromises);
+            // Save text data immediately
+            const savedDocRef = await addRecord(dataToSave as any);
             
-            const allPicturesFinalState = pictures.map(p => {
-                const uploaded = uploadedPicturesResults.find(up => up.id === p.id);
-                return uploaded || p;
+            // Now handle file uploads in the background
+            pictures.filter(p => p.file).forEach(p => {
+                const upload = p as Required<PictureRow>; // Ensure file is not null
+                const filePath = `site-visits/${Date.now()}_${upload.file.name}`;
+                const storageRef = ref(storage, filePath);
+                const uploadTask = uploadBytesResumable(storageRef, upload.file);
+
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress } : up));
+                    },
+                    (error) => {
+                        console.error("Upload failed:", error);
+                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+                    },
+                    async () => {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
+                        
+                        // Update the existing Firestore document with the new image URL
+                        if (savedDocRef) {
+                            const newPictureData = { comment: upload.comment, url: downloadURL };
+                            const docData = (await (await getDoc(savedDocRef)).data())?.data || [];
+                            const pictureSection = docData.find((s:any) => s.category === 'Pictures');
+                            if (pictureSection) {
+                                pictureSection.items.push(newPictureData);
+                                await updateDoc(savedDocRef, { data: docData });
+                            }
+                        }
+                    }
+                );
             });
-
-            const dataToSave = {
-                fileName: 'Site Visit Proforma',
-                projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-                data: [
-                    { category: 'Basic Information', items: Object.entries(basicInfo).map(([key, value]) => ({ label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), value: value }))},
-                    ...Object.entries(checklistSections).map(([title, items]) => ({ category: title, items: items.map(item => ({ Item: item, Status: checklistState[item] ? 'Yes' : 'No', Remarks: remarksState[item] || 'N/A' }))})),
-                    ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
-                    ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
-                    ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
-                    ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                    ...(allPicturesFinalState.filter(p => p.downloadURL).length > 0 ? [{ category: 'Pictures', items: allPicturesFinalState.filter(p => p.downloadURL).map(p => ({ comment: p.comment, url: p.downloadURL })) }] : [])
-                ]
-            };
-
-            await addRecord(dataToSave as any);
 
         } catch (error) {
             console.error("An error occurred during save:", error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'An error occurred while saving. Please check the console.' });
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the initial record.' });
         }
     };
     
@@ -379,5 +380,3 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
-
-    
