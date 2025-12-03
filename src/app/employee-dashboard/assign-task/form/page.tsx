@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import type jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 function AssignTaskForm() {
     const searchParams = useSearchParams();
@@ -39,6 +41,7 @@ function AssignTaskForm() {
     const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
     const { employees } = useEmployees();
+    const { addRecord } = useRecords();
 
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -74,9 +77,6 @@ function AssignTaskForm() {
         };
 
         const recordToSave = {
-            uid: currentUser.uid, 
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: "Task Assignment",
             projectName: projectName || `Task: ${taskName}`,
             data: [{
@@ -90,19 +90,11 @@ function AssignTaskForm() {
                     return `${key}: ${value}`;
                 })
             }],
-            createdAt: serverTimestamp(),
         };
 
         addDoc(collection(firestore, 'tasks'), dataToSave)
             .then(() => {
-                 addDoc(collection(firestore, 'savedRecords'), recordToSave).catch(serverError => {
-                    const permissionError = new FirestorePermissionError({
-                        path: 'savedRecords',
-                        operation: 'create',
-                        requestResourceData: recordToSave,
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                });
+                 addRecord(recordToSave as any);
 
                 toast({ title: 'Task Assigned', description: `Task "${taskName}" has been assigned and recorded.` });
                 setIsSaveOpen(false);

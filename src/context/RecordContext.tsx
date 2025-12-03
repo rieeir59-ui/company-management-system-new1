@@ -119,35 +119,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
     const collectionRef = collection(firestore, 'savedRecords');
     
-    // Helper to deeply stringify any objects within the data arrays
-    const stringifyNestedObjects = (data: any): any => {
-      if (Array.isArray(data)) {
-        return data.map(stringifyNestedObjects);
-      }
-      if (typeof data === 'object' && data !== null) {
-        // If it looks like it's already structured for display (label/value), keep it
-        if ('label' in data && 'value' in data) {
-           return data;
-        }
-        return JSON.stringify(data);
-      }
-      return data;
-    };
-
-    const processedData = Array.isArray(recordData.data) ? recordData.data.map(section => {
-        if (typeof section === 'object' && section !== null) {
-            return {
-                ...section,
-                items: Array.isArray(section.items) ? section.items.map(stringifyNestedObjects) : section.items,
-            };
-        }
-        return section;
-    }) : recordData.data;
-
-
     const dataToSave = {
       ...recordData,
-      data: processedData,
       employeeId: currentUser.record,
       employeeName: currentUser.name,
       createdAt: serverTimestamp(),
@@ -156,6 +129,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     try {
       const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
+      // Manually add to state to trigger immediate UI update
+      setRecords(prev => [{ ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev]);
       return docRef;
     } catch (serverError) {
       console.error(serverError);
