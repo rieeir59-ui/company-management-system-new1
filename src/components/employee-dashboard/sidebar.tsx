@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -65,6 +65,7 @@ import {
   Save,
   Eye,
   Archive,
+  Search as SearchIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -72,7 +73,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-
+import { Input } from '@/components/ui/input';
 
 const menuItems = [
     { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -238,6 +239,7 @@ export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -247,6 +249,10 @@ export default function EmployeeDashboardSidebar() {
     });
     router.push('/login');
   }, [logout, router, toast]);
+
+  const filteredMenuItems = menuItems.filter(item =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -267,11 +273,20 @@ export default function EmployeeDashboardSidebar() {
                 </Avatar>
                 <p className="font-semibold text-sidebar-foreground">{currentUser.name}</p>
               </div>
-              <SidebarSeparator />
             </>
           )}
+          <div className="relative px-2 mb-2 group-data-[collapsible=icon]:hidden">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+            <Input 
+                placeholder="Search..."
+                className="pl-8 bg-sidebar-accent border-sidebar-border h-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <SidebarSeparator />
           <MemoizedSidebarMenu 
-            menuItems={menuItems} 
+            menuItems={filteredMenuItems} 
             bankTimelineItems={bankTimelineItems} 
             savedRecordsItems={savedRecordsItems}
           />
