@@ -142,6 +142,7 @@ export default function ProjectAgreementPage() {
             { category: "Top Supervision", items: agreementText.topSupervision },
             { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
             { category: "Notes", items: agreementText.notes },
+            { category: "Extra Services Note", items: [agreementText.extraServicesNote] },
             { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities },
             { category: "Not Responsible For", items: agreementText.notResponsible },
             { category: "Termination", items: agreementText.termination },

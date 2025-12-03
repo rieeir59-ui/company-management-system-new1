@@ -142,6 +142,7 @@ export default function ProjectAgreementPage() {
             { category: "Top Supervision", items: agreementText.topSupervision },
             { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
             { category: "Notes", items: agreementText.notes },
+            { category: "Extra Services Note", items: [agreementText.extraServicesNote] },
             { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities },
             { category: "Not Responsible For", items: agreementText.notResponsible },
             { category: "Termination", items: agreementText.termination },
@@ -161,7 +162,7 @@ export default function ProjectAgreementPage() {
             await addDoc(collection(firestore, 'savedRecords'), dataToSave);
             toast({ title: "Record Saved", description: "The project agreement has been successfully saved." });
         } catch (serverError) {
-            const permissionError = new FirestorePermissionError({
+             const permissionError = new FirestorePermissionError({
                 path: `savedRecords`,
                 operation: 'create',
                 requestResourceData: dataToSave,
