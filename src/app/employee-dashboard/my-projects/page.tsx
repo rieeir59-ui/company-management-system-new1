@@ -266,9 +266,9 @@ function MyProjectsComponent() {
         data: [{
             category: 'My Projects',
             items: [
-                `Work Schedule Start: ${schedule.start}`,
-                `Work Schedule End: ${schedule.end}`,
-                ...rows.map(r => `Project: ${r.projectName}, Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`)
+                { label: 'Work Schedule Start', value: schedule.start },
+                { label: 'Work Schedule End', value: schedule.end },
+                ...rows.map(r => ({ label: `Project: ${r.projectName}`, value: `Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`}))
             ],
             remarks: remarks,
         }]
