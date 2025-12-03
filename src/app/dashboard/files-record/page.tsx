@@ -176,9 +176,9 @@ export default function FilesRecordPage() {
                                     {files[selectedCategory].map(file => (
                                         <TableRow key={file.id}>
                                             <TableCell className="font-medium">
-                                                <Link href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary flex items-center gap-1">
+                                                <a href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary flex items-center gap-1">
                                                     {file.customName} <ExternalLink className="h-3 w-3" />
-                                                </Link>
+                                                </a>
                                             </TableCell>
                                             {selectedCategory === 'Banks' && <TableCell>{file.bankName || 'N/A'}</TableCell>}
                                             <TableCell className="text-muted-foreground">{file.originalName}</TableCell>
