@@ -130,7 +130,7 @@ export default function ProjectAgreementPage() {
     };
 
     const handleSave = async () => {
-         if (!currentUser || !firestore) {
+        if (!currentUser || !firestore) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
@@ -244,6 +244,7 @@ export default function ProjectAgreementPage() {
         addList(agreementText.compensation);
 
         yPos += 10;
+        if (yPos > 270) { doc.addPage(); yPos = 20; }
         addText('____________________', false, 0, 10, 2);
         addText('Architect', false, 0, 10, 15);
         addText('____________________', false, 0, 10, 2);
