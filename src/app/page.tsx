@@ -1,74 +1,67 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import Header from '@/components/layout/header';
-import { employees } from '@/lib/employees';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function Hero() {
+  const image = PlaceHolderImages.find(p => p.id === 'hero-architecture');
+  return (
+    <section className="relative h-[60vh] flex items-center justify-center text-white">
+      <Image 
+        src={image?.imageUrl || ''}
+        alt={image?.description || 'Architectural building'}
+        fill
+        className="object-cover"
+        priority
+        data-ai-hint={image?.imageHint}
+      />
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative z-10 text-center p-4">
+        <h1 className="text-4xl md:text-6xl font-headline animate-in fade-in-0 slide-in-from-top-10 duration-1000">ISBAH HASSAN & ASSOCIATES</h1>
+        <Button asChild size="lg" className="mt-8 animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-500">
+          <Link href="/login">Start Now</Link>
+        </Button>
+      </div>
+    </section>
+  )
+}
+
+export default function HomePage() {
+  const { user, isUserLoading } = useCurrentUser();
   const router = useRouter();
-  const { toast } = useToast();
-  const { login } = useCurrentUser();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const employee = employees.find(emp => emp.email === email && emp.password === password);
-    
-    if (employee) {
-        login({ ...employee, uid: employee.record });
-        toast({
-            title: 'Login Successful',
-            description: `Welcome back, ${employee.name}!`,
-        });
-        if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
-            router.push('/dashboard');
-        } else {
-            router.push('/employee-dashboard');
-        }
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'Invalid email or password.',
-        });
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      if (['ceo', 'admin', 'software-engineer'].includes(user.department)) {
+          router.push('/dashboard');
+      } else {
+          router.push('/employee-dashboard');
+      }
     }
-  };
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <div className="flex-grow flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" type="submit">Login</Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+      <main className="flex-grow">
+        <Hero />
+        {/* Add other sections for the homepage here */}
+      </main>
     </div>
   );
 }
