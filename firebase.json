@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "source": ".",
+    "rewrites": [
+      {
+        "source": "**",
+        "apphosting": {
+          "backendId": "studi",
+          "region": "us-central1"
+        }
+      }
+    ]
+  }
+}
