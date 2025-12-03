@@ -19,7 +19,9 @@ import Image from 'next/image';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
-const ChecklistSection = ({ title, items, checklistState, onCheckboxChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void }) => (
+type RemarksState = Record<string, string>;
+
+const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
@@ -28,8 +30,14 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange }: { 
                     <Checkbox id={item.replace(/\s+/g, '-')} checked={checklistState[item] || false} onCheckedChange={(checked) => onCheckboxChange(item, !!checked)} />
                     <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal flex-1 flex items-center gap-2">
                         <span>{item}</span>
-                        <div className="flex-grow border-b border-dashed border-gray-400"></div>
                     </Label>
+                    <Input
+                      type="text"
+                      placeholder="Remarks"
+                      value={remarksState[item] || ''}
+                      onChange={(e) => onRemarkChange(item, e.target.value)}
+                      className="h-7 text-xs"
+                    />
                 </div>
             ))}
         </div>
@@ -53,6 +61,7 @@ export default function SiteVisitPage() {
     });
 
     const [checklistState, setChecklistState] = useState<Record<string, boolean>>({});
+    const [remarksState, setRemarksState] = useState<RemarksState>({});
 
     const [observations, setObservations] = useState('');
     const [issues, setIssues] = useState('');
@@ -65,6 +74,10 @@ export default function SiteVisitPage() {
 
     const handleCheckboxChange = (item: string, checked: boolean) => {
         setChecklistState(prev => ({...prev, [item]: checked }));
+    };
+
+    const handleRemarkChange = (item: string, value: string) => {
+        setRemarksState(prev => ({ ...prev, [item]: value }));
     };
 
     const addPictureRow = () => setPictures([...pictures, { id: Date.now(), file: null, previewUrl: '', comment: '' }]);
@@ -99,12 +112,14 @@ export default function SiteVisitPage() {
         }
 
         const checkedItems = Object.entries(checklistState).filter(([, checked]) => checked).map(([item]) => item);
+        const remarkItems = Object.entries(remarksState).filter(([, remark]) => remark).map(([item, remark]) => `${item}: ${remark}`);
 
         const dataToSave = {
             category: 'Site Visit Proforma',
             items: [
                 JSON.stringify({type: 'basicInfo', data: basicInfo}),
                 JSON.stringify({type: 'checklist', data: checkedItems}),
+                JSON.stringify({type: 'remarks', data: remarkItems }),
                 JSON.stringify({type: 'observations', data: observations}),
                 JSON.stringify({type: 'issues', data: issues}),
                 JSON.stringify({type: 'recommendations', data: recommendations}),
@@ -162,13 +177,19 @@ export default function SiteVisitPage() {
             doc.text(title, margin, yPos);
             yPos += 8;
 
-            const body = items.map(item => [checklistState[item] ? '☑' : '☐', item, '__________________']);
+            const body = items.map(item => [
+              checklistState[item] ? '☑' : '☐', 
+              item, 
+              remarksState[item] || ' '
+            ]);
             doc.autoTable({ 
               startY: yPos, 
+              head: [['Status', 'Item', 'Remarks']],
               body, 
-              theme: 'plain', 
+              theme: 'grid', 
+              headStyles: { fillColor: [240, 240, 240], textColor: 0 },
               columnStyles: { 
-                0: { cellWidth: 10 }, 
+                0: { cellWidth: 10, halign: 'center' }, 
                 1: { cellWidth: 80 } ,
                 2: { cellWidth: 'auto'}
               } 
@@ -261,7 +282,15 @@ export default function SiteVisitPage() {
                 </div>
 
                 {Object.entries(checklistSections).map(([title, items]) => (
-                    <ChecklistSection key={title} title={title} items={items} checklistState={checklistState} onCheckboxChange={handleCheckboxChange} />
+                    <ChecklistSection 
+                      key={title} 
+                      title={title} 
+                      items={items} 
+                      checklistState={checklistState} 
+                      onCheckboxChange={handleCheckboxChange} 
+                      remarksState={remarksState}
+                      onRemarkChange={handleRemarkChange}
+                    />
                 ))}
 
                 <div className="space-y-4">
