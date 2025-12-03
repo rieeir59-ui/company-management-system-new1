@@ -24,9 +24,9 @@ type RemarksState = Record<string, string>;
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+        <div className="space-y-4">
             {items.map((item) => (
-                 <div key={item} className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 items-start py-2 border-b">
+                 <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 items-start py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                          <Checkbox
                           id={item.replace(/\s+/g, '-')}
@@ -119,10 +119,10 @@ export default function SiteVisitPage() {
         }
 
         const checklistData = Object.entries(checklistSections).map(([title, items]) => ({
-            title,
+            category: title,
             items: items.map(item => ({
                 item,
-                status: checklistState[item] ? 'Yes' : 'No',
+                checked: checklistState[item] || false,
                 remarks: remarksState[item] || ''
             }))
         }));
@@ -133,7 +133,7 @@ export default function SiteVisitPage() {
             observations,
             issues,
             recommendations,
-            pictureComments: pictures.map(p => ({id: p.id, comment: p.comment}))
+            pictureComments: pictures.map(p => ({ id: p.id, comment: p.comment, fileName: p.file?.name }))
         };
 
         try {
