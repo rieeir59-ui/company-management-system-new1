@@ -255,9 +255,12 @@ function MyProjectsComponent() {
         projectName: `Projects for ${displayUser.name}`,
         data: [{
             category: 'My Projects',
-            schedule,
-            projects: rows,
-            remarks,
+            items: [
+                `Work Schedule Start: ${schedule.start}`,
+                `Work Schedule End: ${schedule.end}`,
+                ...rows.map(r => `Project: ${r.projectName}, Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`)
+            ],
+            remarks: remarks,
         }]
     };
     addRecord(recordToSave as any);
@@ -502,3 +505,5 @@ function EmployeeDashboardPageWrapper() {
 }
 
 export default EmployeeDashboardPageWrapper;
+
+    
