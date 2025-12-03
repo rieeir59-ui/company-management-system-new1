@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -118,22 +119,35 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
     const collectionRef = collection(firestore, 'savedRecords');
     
-    // Ensure all parts of data are stringified if they aren't already
-    const stringifiedData = Array.isArray(recordData.data) ? recordData.data.map(section => {
+    // Helper to deeply stringify any objects within the data arrays
+    const stringifyNestedObjects = (data: any): any => {
+      if (Array.isArray(data)) {
+        return data.map(stringifyNestedObjects);
+      }
+      if (typeof data === 'object' && data !== null) {
+        // If it looks like it's already structured for display (label/value), keep it
+        if ('label' in data && 'value' in data) {
+           return data;
+        }
+        return JSON.stringify(data);
+      }
+      return data;
+    };
+
+    const processedData = Array.isArray(recordData.data) ? recordData.data.map(section => {
         if (typeof section === 'object' && section !== null) {
             return {
                 ...section,
-                items: Array.isArray(section.items) ? section.items.map((item: any) => 
-                    typeof item === 'object' ? JSON.stringify(item) : String(item)
-                ) : String(section.items)
+                items: Array.isArray(section.items) ? section.items.map(stringifyNestedObjects) : section.items,
             };
         }
-        return String(section);
-    }) : String(recordData.data);
+        return section;
+    }) : recordData.data;
+
 
     const dataToSave = {
       ...recordData,
-      data: stringifiedData,
+      data: processedData,
       employeeId: currentUser.record,
       employeeName: currentUser.name,
       createdAt: serverTimestamp(),
@@ -151,6 +165,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
           requestResourceData: dataToSave,
       });
       errorEmitter.emit('permission-error', permissionError);
+      throw serverError; // Re-throw to be caught by the caller
     }
   }, [firestore, currentUser, toast]);
 

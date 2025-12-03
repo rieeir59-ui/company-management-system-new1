@@ -18,7 +18,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { useFirebase } from '@/firebase/provider';
 import { Progress } from '@/components/ui/progress';
 import { useRecords } from '@/context/RecordContext';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 type RemarksState = Record<string, string>;
 
@@ -142,12 +142,10 @@ export default function SiteVisitPage() {
         };
 
         try {
-            // Save text data immediately
             const savedDocRef = await addRecord(dataToSave as any);
             
-            // Now handle file uploads in the background
             pictures.filter(p => p.file).forEach(p => {
-                const upload = p as Required<PictureRow>; // Ensure file is not null
+                const upload = p as Required<PictureRow>;
                 const filePath = `site-visits/${Date.now()}_${upload.file.name}`;
                 const storageRef = ref(storage, filePath);
                 const uploadTask = uploadBytesResumable(storageRef, upload.file);
@@ -165,14 +163,16 @@ export default function SiteVisitPage() {
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                         setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
                         
-                        // Update the existing Firestore document with the new image URL
-                        if (savedDocRef) {
+                        if (savedDocRef && firestore) {
                             const newPictureData = { comment: upload.comment, url: downloadURL };
-                            const docData = (await (await getDoc(savedDocRef)).data())?.data || [];
-                            const pictureSection = docData.find((s:any) => s.category === 'Pictures');
-                            if (pictureSection) {
-                                pictureSection.items.push(newPictureData);
-                                await updateDoc(savedDocRef, { data: docData });
+                            const currentDoc = await getDoc(savedDocRef);
+                            if (currentDoc.exists()) {
+                                const docData = currentDoc.data().data || [];
+                                const pictureSection = docData.find((s:any) => s.category === 'Pictures');
+                                if (pictureSection) {
+                                    pictureSection.items.push(newPictureData);
+                                    await updateDoc(savedDocRef, { data: docData });
+                                }
                             }
                         }
                     }
