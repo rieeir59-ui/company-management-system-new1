@@ -202,8 +202,10 @@ export default function SiteVisitPage() {
                         doc.text('✓', data.cell.x + 3, data.cell.y + 5);
                         doc.setFont('helvetica');
                     }
-                    data.cell.text = ' ' + itemText;
+                    if (!data.cell.styles) data.cell.styles = {};
+                    if (!data.cell.styles.padding) data.cell.styles.padding = {};
                     data.cell.styles.padding.left = 8;
+                    data.cell.text = ' ' + itemText;
                 }
               }
             });
