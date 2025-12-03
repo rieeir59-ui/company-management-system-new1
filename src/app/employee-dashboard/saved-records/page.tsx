@@ -33,7 +33,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { useToast } from '@/hooks/use-toast';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -86,7 +85,7 @@ const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
             yPos = 20;
         }
 
-        if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+        if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
             const tableBody = section.items.map((item: any) => [item.Item, item.Status, item.Remarks]);
             if (tableBody.length > 0) {
                 (doc as any).autoTable({
@@ -356,7 +355,7 @@ function SavedRecordsPageComponent() {
                     </DialogHeader>
                      <div className="max-h-[70vh] overflow-y-auto p-1">
                         {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => {
-                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
                                 return (
                                     <div key={index} className="mb-4">
                                         <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
@@ -387,23 +386,26 @@ function SavedRecordsPageComponent() {
                                     <Table>
                                         <TableBody>
                                             {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
-                                                if (typeof item === 'string') {
-                                                    const parts = item.split(':');
-                                                    const label = parts[0];
-                                                    const value = parts.slice(1).join(':').trim();
-                                                    return (
-                                                        <TableRow key={itemIndex}>
-                                                            <TableCell className="font-medium w-1/3">{label}</TableCell>
-                                                            <TableCell>{value}</TableCell>
-                                                        </TableRow>
-                                                    )
-                                                } else if (typeof item === 'object' && item !== null && (item.label || item.comment)) {
+                                                if (typeof item === 'object' && item !== null && (item.label || item.comment)) {
                                                     return (
                                                         <TableRow key={itemIndex}>
                                                             <TableCell className="font-medium w-1/3">{item.label || item.comment}</TableCell>
-                                                            <TableCell>{item.value || (item.url && <Link href={item.url} target="_blank" className="text-primary hover:underline">View File</Link>)}</TableCell>
+                                                            <TableCell>{item.value || (item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">View File <ExternalLink className="h-3 w-3"/></a>)}</TableCell>
                                                         </TableRow>
                                                     )
+                                                }
+                                                 if (typeof item === 'string') {
+                                                    const parts = item.split(':');
+                                                    const label = parts[0];
+                                                    const value = parts.slice(1).join(':').trim();
+                                                     if (label && value) {
+                                                        return (
+                                                            <TableRow key={itemIndex}>
+                                                                <TableCell className="font-medium w-1/3">{label}</TableCell>
+                                                                <TableCell>{value}</TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    }
                                                 }
                                                 return null;
                                             })}

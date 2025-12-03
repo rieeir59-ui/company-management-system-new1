@@ -350,7 +350,7 @@ function SavedRecordsComponent() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {groupedRecords[selectedCategory].length > 0 ? (
+                                            {groupedRecords[selectedCategory] && groupedRecords[selectedCategory].length > 0 ? (
                                                 groupedRecords[selectedCategory].map(record => {
                                                     const formUrl = getFormUrlFromFileName(record.fileName, 'dashboard');
                                                     return (
@@ -437,7 +437,7 @@ function SavedRecordsComponent() {
                     </DialogHeader>
                     <div className="max-h-[70vh] overflow-y-auto p-1">
                         {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => {
-                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
                                 return (
                                     <div key={index} className="mb-4">
                                         <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>

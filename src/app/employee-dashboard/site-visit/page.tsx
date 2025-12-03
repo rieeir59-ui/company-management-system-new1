@@ -71,7 +71,7 @@ export default function SiteVisitPage() {
 
 
     const [basicInfo, setBasicInfo] = useState({
-        siteName: '', city: '', date: '', visitNumber: '', architectName: ''
+        siteName: '', city: '', date: new Date().toISOString().split('T')[0], visitNumber: '', architectName: ''
     });
 
     const [checklistState, setChecklistState] = useState<Record<string, boolean>>({});
