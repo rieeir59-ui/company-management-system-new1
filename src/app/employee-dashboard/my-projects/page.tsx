@@ -23,6 +23,8 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
 import { differenceInDays, parseISO, isWithinInterval } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -116,6 +118,8 @@ function MyProjectsComponent() {
   const [schedule, setSchedule] = useState({ start: '', end: '' });
   const [remarks, setRemarks] = useState('');
   const [numberOfDays, setNumberOfDays] = useState<number | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<ProjectRow[] | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   useEffect(() => {
     if (schedule.start && schedule.end) {
@@ -244,6 +248,12 @@ function MyProjectsComponent() {
   const removeRow = (id: number) => {
       setRows(rows.filter(row => row.id !== id));
   };
+
+  const openViewDialog = (recordRows: ProjectRow[]) => {
+    setViewingRecord(recordRows);
+    setIsViewDialogOpen(true);
+  };
+
 
   const handleSave = () => {
     if (!displayUser) {
@@ -442,7 +452,7 @@ function MyProjectsComponent() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredRows.map(row => (
-                                        <TableRow key={row.id}>
+                                        <TableRow key={row.id} onClick={() => openViewDialog([row])} className="cursor-pointer">
                                             <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} disabled={!isOwner} /></TableCell>
                                             <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} disabled={!isOwner} /></TableCell>
                                             <TableCell>
@@ -489,6 +499,27 @@ function MyProjectsComponent() {
                     </CardContent>
                 </Card>
             </div>
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Project Details</DialogTitle>
+                    </DialogHeader>
+                    {viewingRecord && (
+                        <Table>
+                            <TableBody>
+                                <TableRow><TableCell className="font-semibold">Project Name</TableCell><TableCell>{viewingRecord[0].projectName}</TableCell></TableRow>
+                                <TableRow><TableCell className="font-semibold">Detail</TableCell><TableCell>{viewingRecord[0].detail}</TableCell></TableRow>
+                                <TableRow><TableCell className="font-semibold">Status</TableCell><TableCell>{viewingRecord[0].status}</TableCell></TableRow>
+                                <TableRow><TableCell className="font-semibold">Start Date</TableCell><TableCell>{viewingRecord[0].startDate}</TableCell></TableRow>
+                                <TableRow><TableCell className="font-semibold">End Date</TableCell><TableCell>{viewingRecord[0].endDate}</TableCell></TableRow>
+                            </TableBody>
+                        </Table>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
     </div>
   );
 }
@@ -505,5 +536,3 @@ function EmployeeDashboardPageWrapper() {
 }
 
 export default EmployeeDashboardPageWrapper;
-
-    
