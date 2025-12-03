@@ -118,7 +118,7 @@ export default function SiteVisitPage() {
             return;
         }
 
-        const dataToSave = {
+         const dataToSave = {
             fileName: 'Site Visit Proforma',
             projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
             employeeId: currentUser.record,
@@ -127,10 +127,10 @@ export default function SiteVisitPage() {
             data: [
                 {
                     category: 'Basic Information',
-                    items: Object.entries(basicInfo).map(([key, value]) => ({
-                      key: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-                      value
-                    })),
+                    items: Object.entries(basicInfo).map(([key, value]) => {
+                        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        return `${formattedKey}: ${value}`;
+                    }),
                 },
                 ...Object.entries(checklistSections).map(([title, items]) => ({
                     category: title,
@@ -140,25 +140,13 @@ export default function SiteVisitPage() {
                         Remarks: remarksState[item] || ''
                     }))
                 })),
-                {
-                    category: 'Observations',
-                    items: [observations],
-                },
-                {
-                    category: 'Issues Identified',
-                    items: [issues],
-                },
-                {
-                    category: 'Actions & Recommendations',
-                    items: [recommendations],
-                },
-                {
+                ...(observations ? [{ category: 'Observations', items: [observations] }] : []),
+                ...(issues ? [{ category: 'Issues Identified', items: [issues] }] : []),
+                ...(recommendations ? [{ category: 'Actions & Recommendations', items: [recommendations] }] : []),
+                ...(pictures.filter(p => p.file).length > 0 ? [{
                     category: 'Pictures',
-                    items: pictures.map(p => ({
-                        Comment: p.comment,
-                        File: p.file?.name || 'No file attached'
-                    }))
-                }
+                    items: pictures.filter(p => p.file).map(p => `Comment: ${p.comment}, File: ${p.file?.name}`)
+                }] : [])
             ]
         };
 
