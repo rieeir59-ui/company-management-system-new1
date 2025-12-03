@@ -70,6 +70,7 @@ export default function SiteVisitPage() {
     const { user: currentUser } = useCurrentUser();
     const storage = firebaseApp ? getStorage(firebaseApp) : null;
 
+
     const [basicInfo, setBasicInfo] = useState({
         siteName: '', city: '', date: '', visitNumber: '', architectName: ''
     });
