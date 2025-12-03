@@ -24,15 +24,6 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
-const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
-  <section className="mb-6">
-    {title && <h2 className="text-lg font-bold text-primary mb-3 pb-1 border-b border-primary section-title">{title}</h2>}
-    <div className="space-y-4">
-      {children}
-    </div>
-  </section>
-);
-
 const SectionTable = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <section className="mb-8">
         <h2 className="text-xl font-bold text-primary mb-3 pb-2 border-b-2 border-primary">{title}</h2>
@@ -104,41 +95,7 @@ export default function ProjectDataPage() {
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
-
-    const [formData, setFormData] = useState({
-        project_name: '', project_address: '', project_owner: '', architect_project_no: '',
-        project_date: '', project_tel: '', business_address: '', home_address: '',
-        business_tel: '', home_tel: '', proposed_improvements: '', building_classification: '',
-        setback_n: '', setback_e: '', setback_s: '', setback_w: '', setback_coverage: '',
-        project_cost: '', project_stories: '', fire_zone: '', agency_approvals: '',
-        site_legal_description: '', deed_vol: '', deed_page: '', deed_at: '', deed_to: '',
-        deed_date: '', restrictions: '', easements: '', liens_leases: '', lot_dimensions: '',
-        lot_facing: '', lot_value: '', adjacent_property_use: '', owner_name_contact: '',
-        rep_name_contact: '', contact_address: '', contact_tel: '', attorney: '',
-        insurance_advisor: '', consultant_on: '', survey_property: '', survey_property_date: '',
-        survey_topo: '', survey_topo_date: '', soils_tests: '', soils_date: '',
-        aerial_photos: '', aerial_date: '', maps_source: '', gas_company: '', gas_rep: '',
-        gas_tel: '', electric_company: '', electric_rep: '', electric_tel: '',
-        tel_company: '', tel_rep: '', tel_tel: '', sewers: '', water: '',
-        loan_amount: '', loan_type: '', loan_rate: '', loan_by: '', loan_rep: '',
-        loan_tel: '', bonds_liens: '', grant_amount: '', grant_limitations: '',
-        grant_from: '', grant_rep: '', grant_tel: '', contract_type: 'single', negotiated: '',
-        bid: '', stipulated_sum: '', cost_plus_fee: '', force_amount: '',
-        equipment_fixed: '', equipment_movable: '', equipment_interiors: '',
-        landscaping: '', sketch_notes: '',
-        survey_conducted_by_name: '',
-        survey_conducted_by_designation: '',
-        survey_conducted_by_contact: '',
-        survey_conducted_by_cell: '',
-        survey_conducted_by_landline: '',
-        survey_conducted_by_email: '',
-        survey_conducted_by_date: ''
-    });
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
+    
     const handleSave = () => {
         toast({
             title: "Record Saved",
@@ -405,11 +362,11 @@ export default function ProjectDataPage() {
     }
     
     return (
-        <div className="space-y-8 project-data-page">
+        <div className="space-y-8">
             <div className='no-print'>
                 <DashboardPageHeader
-                    title="Project Data"
-                    description="A comprehensive data sheet for the project."
+                    title="Site Survey"
+                    description="Conduct and record a detailed site survey."
                     imageUrl={image?.imageUrl || ''}
                     imageHint={image?.imageHint || ''}
                 />
@@ -461,8 +418,8 @@ export default function ProjectDataPage() {
                          <SectionTable title="Area">
                             <FormRow label="Dimension">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input placeholder="Maximum frontage:" id="area_frontage" name="area_frontage" />
-                                <Input placeholder="Maximum Depth:" id="area_depth" name="area_depth" />
+                               <Input placeholder="Maximum frontage:" id="area_frontage" name="area_frontage" />
+                               <Input placeholder="Maximum Depth:" id="area_depth" name="area_depth" />
                                 </div>
                             </FormRow>
                             <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" id="area_total" name="area_total" /></FormRow>
@@ -508,20 +465,20 @@ export default function ProjectDataPage() {
                             <FormRow label="Gas Connection">
                                 <RadioGroup name="gas_connection" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="gas_yes" /><Label htmlFor="gas_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="gas_no" /><Label htmlFor="gas_no">No</Label></div></RadioGroup>
                             </FormRow>
-                            <FormRow label="Connected to Sewerage line">
+                             <FormRow label="Connected to Sewerage line">
                                 <RadioGroup name="sewerage_connection" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="sewer_yes" /><Label htmlFor="sewer_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="sewer_no" /><Label htmlFor="sewer_no">No</Label></div></RadioGroup>
                             </FormRow>
                         </SectionTable>
 
                         <SectionTable title="Building overview">
                             <FormRow label="Independent premises">
-                                <RadioGroup name="independent_premises" className="flex items-center justify-between">
+                                 <RadioGroup name="independent_premises" className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="ind_yes" /><Label htmlFor="ind_yes">Yes</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="ind_no" /><Label htmlFor="ind_no">No. a part of building</Label></div>
                                 </RadioGroup>
                             </FormRow>
                              <FormRow label="Status">
-                                <RadioGroup name="property_status" className="flex flex-wrap gap-4">
+                                 <RadioGroup name="property_status" className="flex flex-wrap gap-4">
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="commercial" id="status_comm" /><Label htmlFor="status_comm">Commercial</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="residential" id="status_res" /><Label htmlFor="status_res">Residential</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="industrial" id="status_ind" /><Label htmlFor="status_ind">Industrial</Label></div>
@@ -529,7 +486,7 @@ export default function ProjectDataPage() {
                                 </RadioGroup>
                             </FormRow>
                              <FormRow label="Type of Premises">
-                                <RadioGroup name="premises_type" className="flex flex-wrap gap-4">
+                                 <RadioGroup name="premises_type" className="flex flex-wrap gap-4">
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="residence" id="prem_res" /><Label htmlFor="prem_res">Residence</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="offices" id="prem_off" /><Label htmlFor="prem_off">Offices</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="godowns" id="prem_god" /><Label htmlFor="prem_god">Godowns</Label></div>
@@ -547,9 +504,120 @@ export default function ProjectDataPage() {
                             </FormRow>
                         </SectionTable>
 
+                         <SectionTable title="Building Details">
+                            <FormRow label="Seepage">
+                                 <RadioGroup name="seepage" className="flex items-center space-x-8">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="seepage_yes" /><Label htmlFor="seepage_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="seepage_no" /><Label htmlFor="seepage_no">No</Label></div>
+                                </RadioGroup>
+                            </FormRow>
+                            <FormRow label="Area of seepage (Walls, slab etc.)"><Input id="seepage_area" name="seepage_area"/></FormRow>
+                            <FormRow label="Cause of Seepage"><Input id="seepage_cause" name="seepage_cause" /></FormRow>
+                            <FormRow label="Property Utilization">
+                                <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" /><Label htmlFor="util_residential">Fully residential</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial"/><Label htmlFor="util_commercial">Fully Commercial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" /><Label htmlFor="util_industrial">Industrial</Label></div>
+                                </div>
+                            </FormRow>
+                             <FormRow label="Condition of roof waterproofing (if applicable)"><Input id="roof_waterproofing" name="roof_waterproofing" /></FormRow>
+                            <FormRow label="Parking available">
+                                 <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center space-x-2"><Checkbox id="parking_yes" name="parking_yes" /><Label htmlFor="parking_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="parking_main_road" name="parking_main_road" /><Label htmlFor="parking_main_road">On Main Road</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="parking_no" name="parking_no" /><Label htmlFor="parking_no">No</Label></div>
+                                </div>
+                            </FormRow>
+                            <FormRow label="Approachable through Road">
+                                 <RadioGroup name="approachable" className="flex items-center space-x-8">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="approachable_yes" /><Label htmlFor="approachable_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="approachable_no" /><Label htmlFor="approachable_no">No</Label></div>
+                                </RadioGroup>
+                            </FormRow>
+                             <FormRow label="Wall masonary material as per region"><Input id="wall_material" name="wall_material" /></FormRow>
+                            <FormRow label="Major retainable building elements">
+                                <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" /><Label htmlFor="retainable_water_tank">Water tank</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" /><Label htmlFor="retainable_subflooring">Subflooring</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" /><Label htmlFor="retainable_staircase">staircase</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_other_check" name="retainable_other_check" /><Label htmlFor="retainable_other_check">Others</Label><Input id="retainable_other_text" name="retainable_other_text" className="h-7" /></div>
+                                </div>
+                            </FormRow>
+                            <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input id="plot_level" name="plot_level" /></FormRow>
+                            <FormRow label="Building Control Violations">
+                                 <div className="flex flex-wrap items-center gap-4">
+                                     <RadioGroup name="violations" className="flex flex-wrap gap-4">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="major" id="violation_major" /><Label htmlFor="violation_major">Major</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="minor" id="violation_minor" /><Label htmlFor="violation_minor">Minor</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="violation_none" /><Label htmlFor="violation_none">No Deviation</Label></div>
+                                    </RadioGroup>
+                                     <div className="flex items-center space-x-2"><Checkbox id="violation_informed" name="violation_informed" /><Label htmlFor="violation_informed">As Informed by Owner Representative</Label></div>
+                                </div>
+                            </FormRow>
+                        </SectionTable>
+
+                        <SectionTable title="Rental Detail">
+                            <FormRow label="Acquisition"><Input id="rental_acquisition" name="rental_acquisition" /></FormRow>
+                            <FormRow label="Expected Rental /month"><Input id="rental_expected_rent" name="rental_expected_rent" /></FormRow>
+                            <FormRow label="Expected Advance (# of months)"><Input id="rental_expected_advance" name="rental_expected_advance"/></FormRow>
+                            <FormRow label="Expected period of lease"><Input id="rental_lease_period" name="rental_lease_period"/></FormRow>
+                            <FormRow label="Annual increase in rental"><Input id="rental_annual_increase" name="rental_annual_increase"/></FormRow>
+                        </SectionTable>
+
+                        <SectionTable title="Survey Conducted By">
+                           <FormRow label="Name"><Input id="survey_conducted_by_name" name="survey_conducted_by_name" /></FormRow>
+                           <FormRow label="Designation"><Input id="survey_conducted_by_designation" name="survey_conducted_by_designation" /></FormRow>
+                           <FormRow label="Contact"><Input id="survey_conducted_by_contact" name="survey_conducted_by_contact" /></FormRow>
+                           <FormRow label="Cell"><Input id="survey_conducted_by_cell" name="survey_conducted_by_cell" /></FormRow>
+                           <FormRow label="Landline"><Input id="survey_conducted_by_landline" name="survey_conducted_by_landline" /></FormRow>
+                           <FormRow label="Email"><Input id="survey_conducted_by_email" name="survey_conducted_by_email" type="email" /></FormRow>
+                           <FormRow label="Date"><Input id="survey_conducted_by_date" name="survey_conducted_by_date" type="date" /></FormRow>
+                        </SectionTable>
+
+                        <section className="mb-8">
+                            <h2 className="text-xl font-bold text-primary mb-3 pb-2 border-b-2 border-primary">Survey Checklist</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4 p-4 border rounded-lg">
+                               <Input id="survey_project" name="survey_project" placeholder="Project" />
+                               <Input id="survey_location" name="survey_location" placeholder="Location" />
+                               <Input id="survey_contract_date" name="survey_contract_date" type="date" placeholder="Contract Date" />
+                               <Input id="survey_project_number" name="survey_project_number" placeholder="Project Number" />
+                               <Input id="survey_start_date" name="survey_start_date" type="date" placeholder="Start Date" />
+                               <Input id="survey_project_incharge" name="survey_project_incharge" placeholder="Project Incharge" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Architectural Drawings</h3>
+                             <Table>
+                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {checklistItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`checklist_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
+                                </TableBody>
+                             </Table>
+                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Structure Drawings</h3>
+                             <Table>
+                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {structureDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`structure_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
+                                </TableBody>
+                             </Table>
+                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Plumbing Drawings</h3>
+                             <Table>
+                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {plumbingDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`plumbing_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
+                                </TableBody>
+                             </Table>
+                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Electrification Drawings</h3>
+                             <Table>
+                                 <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {electrificationDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`electrification_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
+                                </TableBody>
+                             </Table>
+                        </section>
+
                         <div className="flex justify-end gap-4 mt-12">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>
@@ -557,428 +625,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-```
-- src/app/employee-dashboard/substantial-summary/page.tsx:
-```tsx
-
-import DashboardPageHeader from "@/components/dashboard/PageHeader";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-
-export default function Page() {
-  const image = PlaceHolderImages.find(p => p.id === 'substantial-summary');
-
-  return (
-    <div className="space-y-8">
-      <DashboardPageHeader
-        title="Substantial Summary"
-        description="Review substantial project summaries."
-        imageUrl={image?.imageUrl || ''}
-        imageHint={image?.imageHint || ''}
-      />
-    </div>
-  );
-}
-
-```
-- src/app/employee-dashboard/total-project-package/page.tsx:
-```tsx
-
-import DashboardPageHeader from "@/components/dashboard/PageHeader";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-
-export default function Page() {
-  const image = PlaceHolderImages.find(p => p.id === 'total-project-package');
-
-  return (
-    <div className="space-y-8">
-      <DashboardPageHeader
-        title="Total Project Package"
-        description="Manage the total project package."
-        imageUrl={image?.imageUrl || ''}
-        imageHint={image?.imageHint || ''}
-      />
-    </div>
-  );
-}
-
-```
-- src/firebase/index.ts:
-```ts
-'use client';
-
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore'
-import { getStorage, FirebaseStorage } from 'firebase/storage';
-
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase(): { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore; storage: FirebaseStorage; } {
-  if (getApps().length === 0) {
-    const firebaseApp = initializeApp(firebaseConfig);
-    return getSdks(firebaseApp);
-  }
-  return getSdks(getApp());
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
-    storage: getStorage(firebaseApp),
-  };
-}
-
-export * from './provider';
-export * from './client';
-export * from './client-provider';
-export * from './firestore/use-collection';
-export * from './firestore/use-doc';
-export * from './non-blocking-updates';
-export * from './non-blocking-login';
-export * from './errors';
-export * from './error-emitter';
-
-```
-- src/app/layout.tsx:
-```tsx
-'use client'
-import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
-import { UserProvider } from '@/context/UserContext';
-import { EmployeeProvider } from '@/context/EmployeeContext';
-import { FileProvider } from '@/context/FileContext';
-import { RecordProvider } from '@/context/RecordContext';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseClientProvider>
-          <UserProvider>
-            <EmployeeProvider>
-              <FileProvider>
-                <RecordProvider>
-                  {children}
-                </RecordProvider>
-              </FileProvider>
-            </EmployeeProvider>
-          </UserProvider>
-        </FirebaseClientProvider>
-        <Toaster />
-      </body>
-    </html>
-  );
-}
-
-```
-- src/app/page.tsx:
-```tsx
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useCurrentUser } from '@/context/UserContext';
-import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import Header from '@/components/layout/header';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-
-function Hero() {
-  const image = PlaceHolderImages.find(p => p.id === 'hero-architecture');
-  return (
-    <section className="relative h-[60vh] flex items-center justify-center text-white">
-      <Image 
-        src={image?.imageUrl || ''}
-        alt={image?.description || 'Architectural building'}
-        fill
-        className="object-cover"
-        priority
-        data-ai-hint={image?.imageHint}
-      />
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="relative z-10 text-center p-4">
-        <h1 className="text-4xl md:text-6xl font-headline animate-in fade-in-0 slide-in-from-top-10 duration-1000">ISBAH HASSAN & ASSOCIATES</h1>
-        <Button asChild size="lg" className="mt-8 animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-500">
-          <Link href="/login">Start Now</Link>
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-export default function HomePage() {
-  const { user, isUserLoading } = useCurrentUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      if (['ceo', 'admin', 'software-engineer'].includes(user.department)) {
-          router.push('/dashboard');
-      } else {
-          router.push('/employee-dashboard');
-      }
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow">
-        <Hero />
-        {/* Add other sections for the homepage here */}
-      </main>
-    </div>
-  );
-}
-
-```
-- src/app/login/page.tsx:
-```tsx
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useCurrentUser } from '@/context/UserContext';
-import Header from '@/components/layout/header';
-import { employees } from '@/lib/employees';
-import { Loader2 } from 'lucide-react';
-
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const router = useRouter();
-  const { toast } = useToast();
-  const { login, user, isUserLoading } = useCurrentUser();
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      toast({
-        title: 'Already Logged In',
-        description: `Redirecting you to your dashboard, ${user.name}.`,
-      });
-      if (['ceo', 'admin', 'software-engineer'].includes(user.department)) {
-          router.push('/dashboard');
-      } else {
-          router.push('/employee-dashboard');
-      }
-    }
-  }, [user, isUserLoading, router, toast]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const employee = employees.find(emp => emp.email === email && emp.password === password);
-    
-    if (employee) {
-        login({ ...employee, uid: employee.record });
-        toast({
-            title: 'Login Successful',
-            description: `Welcome back, ${employee.name}!`,
-        });
-        if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
-            router.push('/dashboard');
-        } else {
-            router.push('/employee-dashboard');
-        }
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'Invalid email or password.',
-        });
-    }
-  };
-
-  if (isUserLoading || user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <div className="flex-grow flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" type="submit">Login</Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-```
-- src/app/dashboard/layout.tsx:
-```tsx
-'use client';
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import DashboardSidebar from "@/components/dashboard/sidebar";
-import { Header } from "@/components/dashboard/header";
-import { UserProvider } from "@/context/UserContext";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { EmployeeProvider } from "@/context/EmployeeContext";
-import { FileProvider } from "@/context/FileContext";
-import { RecordProvider } from "@/context/RecordContext";
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-      <SidebarProvider>
-        <DashboardSidebar />
-        <SidebarInset>
-          <Header />
-          <div className="p-4 sm:p-6 lg:p-8">
-            {children}
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
-  );
-}
-
-```
-- src/context/UserContext.tsx:
-```tsx
-
-'use client';
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { type Employee, employees } from '@/lib/employees';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
-import { User } from 'firebase/auth';
-
-// Simulate onAuthStateChanged
-const onAuthStateChanged = (auth: any, callback: (user: User | null) => void) => {
-    if (typeof window === 'undefined') {
-        callback(null);
-        return () => {};
-    }
-    const userJson = localStorage.getItem('currentUser');
-    const user = userJson ? JSON.parse(userJson) : null;
-    callback(user);
-    // No actual listener, just a one-time check
-    return () => {};
-};
-
-// Simulate signOut
-const signOut = (auth: any) => {
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('currentUser');
-    }
-    return Promise.resolve();
-}
-
-interface UserContextType {
-  user: (Employee & { uid: string }) | null;
-  isUserLoading: boolean;
-  login: (user: Employee & { uid: string }) => void;
-  logout: () => void;
-}
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<(Employee & { uid: string }) | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
-  const router = useRouter();
-  const { toast } = useToast();
-  
-  // No real auth dependency anymore
-  const auth = {}; // Dummy auth object
-
-  useEffect(() => {
-    const userJson = localStorage.getItem('currentUser');
-    if (userJson) {
-      try {
-        const storedUser = JSON.parse(userJson);
-        setUser(storedUser);
-      } catch (e) {
-        localStorage.removeItem('currentUser');
-      }
-    }
-    setIsUserLoading(false);
-  }, []);
-
-  const login = (loggedInUser: Employee & { uid: string }) => {
-    setUser(loggedInUser);
-    localStorage.setItem('currentUser', JSON.stringify(loggedInUser));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
-    toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-    });
-    router.push('/login');
-  };
-
-  return (
-    <UserContext.Provider value={{ user, isUserLoading, login, logout }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-export const useCurrentUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useCurrentUser must be used within a UserProvider');
-  }
-  return context;
-};
-
-```
