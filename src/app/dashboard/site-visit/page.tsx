@@ -24,11 +24,11 @@ type RemarksState = Record<string, string>;
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
             {items.map((item) => (
-                <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-start">
+                 <div key={item} className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 items-start py-2 border-b">
                     <div className="flex items-center gap-3">
-                        <Checkbox
+                         <Checkbox
                           id={item.replace(/\s+/g, '-')}
                           checked={checklistState[item] || false}
                           onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
@@ -37,7 +37,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                             {item}
                         </Label>
                     </div>
-                    <Textarea
+                     <Textarea
                       placeholder="Remarks..."
                       value={remarksState[item] || ''}
                       onChange={(e) => onRemarkChange(item, e.target.value)}
@@ -187,11 +187,12 @@ export default function SiteVisitPage() {
             doc.text(title, margin, yPos);
             yPos += 8;
 
-            const body = items.map(item => [
-              item, 
-              checklistState[item] ? 'Yes' : 'No',
-              remarksState[item] || ''
-            ]);
+            const body = items.map(item => {
+              const status = checklistState[item] ? 'Yes' : 'No';
+              const remarks = remarksState[item] || '';
+              return [item, status, remarks];
+            });
+
             doc.autoTable({ 
               startY: yPos, 
               head: [['Item', 'Status', 'Remarks']],
@@ -199,9 +200,9 @@ export default function SiteVisitPage() {
               theme: 'grid', 
               headStyles: { fillColor: [240, 240, 240], textColor: 0 },
               columnStyles: { 
-                0: { cellWidth: 80 } ,
+                0: { cellWidth: 80 },
                 1: { cellWidth: 20 },
-                2: { cellWidth: 'auto'}
+                2: { cellWidth: 'auto' }
               },
             });
             yPos = doc.autoTable.previous.finalY + 5;
@@ -286,7 +287,7 @@ export default function SiteVisitPage() {
                         <Input placeholder="Site / Branch Name" name="siteName" value={basicInfo.siteName} onChange={handleBasicInfoChange} />
                         <Input placeholder="City" name="city" value={basicInfo.city} onChange={handleBasicInfoChange} />
                         <Input type="date" name="date" value={basicInfo.date} onChange={handleBasicInfoChange} />
-                        <Input placeholder="Visit Number (e.g., 1, 2, 3)" name="visitNumber" value={basicInfo.visitNumber} onChange={handleBasicInfoChange} />
+                        <Input placeholder="Number of visits (e.g., 1, 2, 3)" name="visitNumber" value={basicInfo.visitNumber} onChange={handleBasicInfoChange} />
                         <Input placeholder="Architect Name" name="architectName" value={basicInfo.architectName} onChange={handleBasicInfoChange} />
                     </div>
                 </div>
@@ -344,4 +345,3 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
-
