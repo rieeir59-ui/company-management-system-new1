@@ -137,7 +137,7 @@ export default function SiteVisitPage() {
                     items: items.map(item => ({
                         Item: item,
                         Status: checklistState[item] ? 'Yes' : 'No',
-                        Remarks: remarksState[item] || ''
+                        Remarks: remarksState[item] || 'N/A'
                     }))
                 })),
                 ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
