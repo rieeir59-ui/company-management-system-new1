@@ -270,9 +270,11 @@ export default function SiteVisitPage() {
                     const itemText = items[data.row.index];
                     const isChecked = checklistState[itemText] || false;
                     doc.setLineWidth(0.2);
-                    if (data.cell.textPos) {
-                      data.cell.textPos.x = data.cell.x + 8;
+                    
+                    if(data.cell && data.cell.textPos) {
+                        data.cell.textPos.x = data.cell.x + 8;
                     }
+
                     doc.rect(data.cell.x + 2, data.cell.y + data.cell.height / 2 - 2, 4, 4);
                     if(isChecked) {
                         doc.setFont('ZapfDingbats');
