@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useFileRecords, type UploadedFile } from '@/context/FileContext';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const categories = [
     { name: "Banks", icon: Landmark },
@@ -159,48 +160,54 @@ export default function FilesRecordPage() {
                     </CardHeader>
                     <CardContent>
                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead className="text-left">
-                                    <tr className="border-b">
-                                        <th className="p-2">File Name</th>
-                                        {selectedCategory === 'Banks' && <th className="p-2">Bank</th>}
-                                        <th className="p-2">Original Name</th>
-                                        <th className="p-2">Size</th>
-                                        <th className="p-2">Uploaded By</th>
-                                        <th className="p-2">Date</th>
-                                        <th className="p-2 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>File Name</TableHead>
+                                        {selectedCategory === 'Banks' && <TableHead>Bank</TableHead>}
+                                        <TableHead>Original Name</TableHead>
+                                        <TableHead>Size</TableHead>
+                                        <TableHead>Uploaded By</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                     {files[selectedCategory].map(file => (
-                                        <tr key={file.id} className="border-b">
-                                            <td className="p-2 font-medium">
-                                                <Link href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
-                                                    {file.customName}
+                                        <TableRow key={file.id}>
+                                            <TableCell className="font-medium">
+                                                <Link href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary flex items-center gap-1">
+                                                    {file.customName} <ExternalLink className="h-3 w-3" />
                                                 </Link>
-                                            </td>
-                                            {selectedCategory === 'Banks' && <td className="p-2">{file.bankName || 'N/A'}</td>}
-                                            <td className="p-2 text-muted-foreground">{file.originalName}</td>
-                                            <td className="p-2">{formatBytes(file.size)}</td>
-                                            <td className="p-2">{file.employeeName}</td>
-                                            <td className="p-2">{file.createdAt.toLocaleDateString()}</td>
-                                            <td className="p-2 flex gap-1 justify-end">
-                                                <Button asChild variant="ghost" size="icon">
-                                                    <a href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" download={file.originalName}>
-                                                        <Download className="h-4 w-4"/>
-                                                    </a>
-                                                </Button>
-                                                {canEditOrDelete(file) && (
-                                                    <>
-                                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(file)}><Edit className="h-4 w-4"/></Button>
-                                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(file)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                                    </>
-                                                )}
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            {selectedCategory === 'Banks' && <TableCell>{file.bankName || 'N/A'}</TableCell>}
+                                            <TableCell className="text-muted-foreground">{file.originalName}</TableCell>
+                                            <TableCell>{formatBytes(file.size)}</TableCell>
+                                            <TableCell>{file.employeeName}</TableCell>
+                                            <TableCell>{file.createdAt.toLocaleDateString()}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex gap-1 justify-end">
+                                                    <Button asChild variant="ghost" size="icon" title="Download">
+                                                        <a href={file.fileUrl || '#'} target="_blank" rel="noopener noreferrer" download={file.originalName}>
+                                                            <Download className="h-4 w-4"/>
+                                                        </a>
+                                                    </Button>
+                                                    {canEditOrDelete(file) && (
+                                                        <>
+                                                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(file)} title="Edit">
+                                                              <Edit className="h-4 w-4"/>
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(file)} title="Delete">
+                                                              <Trash2 className="h-4 w-4 text-destructive"/>
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                 </div>
@@ -216,7 +223,6 @@ export default function FilesRecordPage() {
         </Card>
       )}
       
-      {/* Delete Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -232,7 +238,6 @@ export default function FilesRecordPage() {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Edit Dialog */}
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
             <DialogHeader>
