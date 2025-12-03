@@ -24,7 +24,7 @@ type RemarksState = Record<string, string>;
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-4">
+        <div className="space-y-4">
             {items.map((item) => (
                 <div key={item} className="space-y-2">
                     <div className="flex items-start gap-2">
@@ -34,13 +34,13 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                           onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
                           className="mt-1"
                         />
-                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
+                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal flex-1">
                             {item}
                         </Label>
                     </div>
                     <Input
                       type="text"
-                      placeholder="Remarks"
+                      placeholder="Remarks..."
                       value={remarksState[item] || ''}
                       onChange={(e) => onRemarkChange(item, e.target.value)}
                       className="h-8 text-xs ml-6 w-[calc(100%-1.5rem)]"
@@ -203,14 +203,14 @@ export default function SiteVisitPage() {
                     const itemText = items[data.row.index];
                     const isChecked = checklistState[itemText] || false;
                     doc.setLineWidth(0.2);
-                    // Add space for the checkbox
-                    data.cell.textPos.x += 6;
                     doc.rect(data.cell.x + 2, data.cell.y + data.cell.height / 2 - 2, 4, 4);
                     if(isChecked) {
                         doc.setFont('ZapfDingbats');
                         doc.text('✓', data.cell.x + 3, data.cell.y + data.cell.height / 2 + 1.5);
                         doc.setFont('helvetica');
                     }
+                    // Move the text to the right of the checkbox
+                    data.cell.textPos.x = data.cell.x + 8;
                 }
               }
             });
