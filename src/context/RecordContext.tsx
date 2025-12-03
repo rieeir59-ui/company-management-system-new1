@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -34,10 +33,11 @@ export type SavedRecord = {
 
 type RecordContextType = {
   records: SavedRecord[];
-  addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<void>;
+  addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<any>;
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
+  updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
   isLoading: boolean;
   error: string | null;
 };
@@ -118,16 +118,31 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
     const collectionRef = collection(firestore, 'savedRecords');
     
+    // Ensure all parts of data are stringified if they aren't already
+    const stringifiedData = Array.isArray(recordData.data) ? recordData.data.map(section => {
+        if (typeof section === 'object' && section !== null) {
+            return {
+                ...section,
+                items: Array.isArray(section.items) ? section.items.map((item: any) => 
+                    typeof item === 'object' ? JSON.stringify(item) : String(item)
+                ) : section.items
+            };
+        }
+        return section;
+    }) : recordData.data;
+
     const dataToSave = {
       ...recordData,
+      data: stringifiedData,
       employeeId: currentUser.record,
       employeeName: currentUser.name,
       createdAt: serverTimestamp(),
     };
 
     try {
-      await addDoc(collectionRef, dataToSave);
+      const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
+      return docRef;
     } catch (serverError) {
       console.error(serverError);
       const permissionError = new FirestorePermissionError({
@@ -158,6 +173,21 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       errorEmitter.emit('permission-error', permissionError);
     }
   }, [firestore, toast]);
+  
+  const updateTaskStatus = useCallback(async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
+    if (!firestore) return;
+    const taskRef = doc(firestore, 'tasks', taskId);
+    try {
+      await updateDoc(taskRef, { status: newStatus });
+    } catch (serverError) {
+      const permissionError = new FirestorePermissionError({
+        path: `tasks/${taskId}`,
+        operation: 'update',
+        requestResourceData: { status: newStatus }
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+  }, [firestore]);
 
   const deleteRecord = useCallback(async (id: string) => {
     if (!firestore) {
@@ -183,7 +213,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   }, [records]);
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, isLoading, error }}>
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}>
       {children}
     </RecordContext.Provider>
   );

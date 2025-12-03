@@ -75,8 +75,6 @@ export default function AssignTaskForm() {
         };
 
         const recordToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: "Task Assignment",
             projectName: projectName || `Task: ${taskName}`,
             data: [{
