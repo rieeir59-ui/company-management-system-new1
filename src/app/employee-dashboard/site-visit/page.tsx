@@ -26,15 +26,14 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-                <div key={item} className="space-y-2">
-                    <div className="flex items-start gap-2">
+                 <div key={item} className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-4 gap-y-2 border-b pb-2">
+                    <div className="flex items-center gap-2">
                         <Checkbox
                           id={item.replace(/\s+/g, '-')}
                           checked={checklistState[item] || false}
                           onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
-                          className="mt-1"
                         />
-                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal flex-1">
+                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
                             {item}
                         </Label>
                     </div>
@@ -43,7 +42,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                       placeholder="Remarks..."
                       value={remarksState[item] || ''}
                       onChange={(e) => onRemarkChange(item, e.target.value)}
-                      className="h-8 text-xs ml-6 w-[calc(100%-1.5rem)]"
+                      className="h-8 text-sm"
                     />
                 </div>
             ))}
@@ -186,36 +185,20 @@ export default function SiteVisitPage() {
 
             const body = items.map(item => [
               item, 
+              checklistState[item] ? 'Yes' : 'No',
               remarksState[item] || ' '
             ]);
             doc.autoTable({ 
               startY: yPos, 
-              head: [['Item', 'Remarks']],
+              head: [['Item', 'Status', 'Remarks']],
               body, 
               theme: 'grid', 
               headStyles: { fillColor: [240, 240, 240], textColor: 0 },
               columnStyles: { 
                 0: { cellWidth: 80 } ,
-                1: { cellWidth: 'auto'}
+                1: { cellWidth: 20 },
+                2: { cellWidth: 'auto'}
               },
-              didDrawCell: (data: any) => {
-                if(data.column.index === 0 && data.section === 'body') {
-                    const itemText = items[data.row.index];
-                    const isChecked = checklistState[itemText] || false;
-                    doc.setLineWidth(0.2);
-                    
-                    if(data.cell && data.cell.textPos) {
-                        data.cell.textPos.x = data.cell.x + 8;
-                    }
-
-                    doc.rect(data.cell.x + 2, data.cell.y + data.cell.height / 2 - 2, 4, 4);
-                    if(isChecked) {
-                        doc.setFont('ZapfDingbats');
-                        doc.text('✓', data.cell.x + 3, data.cell.y + data.cell.height / 2 + 1.5);
-                        doc.setFont('helvetica');
-                    }
-                }
-              }
             });
             yPos = doc.autoTable.previous.finalY + 5;
         });
