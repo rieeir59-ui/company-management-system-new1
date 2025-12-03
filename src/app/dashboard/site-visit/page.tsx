@@ -80,6 +80,7 @@ export default function SiteVisitPage() {
 
     const [observations, setObservations] = useState('');
     const [issues, setIssues] = useState('');
+    const [solutions, setSolutions] = useState('');
     const [recommendations, setRecommendations] = useState('');
     const [pictures, setPictures] = useState<PictureRow[]>([{ id: 1, file: null, previewUrl: '', comment: '' }]);
 
@@ -170,6 +171,7 @@ export default function SiteVisitPage() {
                     ...Object.entries(checklistSections).map(([title, items]) => ({ category: title, items: items.map(item => ({ Item: item, Status: checklistState[item] ? 'Yes' : 'No', Remarks: remarksState[item] || 'N/A' }))})),
                     ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
                     ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
+                    ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
                     ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
                     ...(allPicturesFinalState.filter(p => p.downloadURL).length > 0 ? [{ category: 'Pictures', items: allPicturesFinalState.filter(p => p.downloadURL).map(p => ({ comment: p.comment, url: p.downloadURL })) }] : [])
                 ]
@@ -252,14 +254,15 @@ export default function SiteVisitPage() {
 
         addTextAreaSection('8. Observations', observations);
         addTextAreaSection('9. Issues Identified', issues);
-        addTextAreaSection('10. Actions & Recommendations', recommendations);
+        addTextAreaSection('10. Solutions', solutions);
+        addTextAreaSection('11. Actions & Recommendations', recommendations);
         
         if (pictures.some(p => p.file)) {
             doc.addPage();
             yPos = 20;
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text('11. Pictures with Comments', margin, yPos);
+            doc.text('12. Pictures with Comments', margin, yPos);
             yPos += 8;
 
             for (const pic of pictures) {
@@ -336,11 +339,12 @@ export default function SiteVisitPage() {
                 <div className="space-y-4">
                     <div><Label className="font-semibold text-lg">8. Observations</Label><Textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={4} /></div>
                     <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Textarea value={issues} onChange={(e) => setIssues(e.target.value)} rows={4} /></div>
-                    <div><Label className="font-semibold text-lg">10. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
+                    <div><Label className="font-semibold text-lg">10. Solutions</Label><Textarea value={solutions} onChange={(e) => setSolutions(e.target.value)} rows={4} /></div>
+                    <div><Label className="font-semibold text-lg">11. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
                 </div>
 
                 <div>
-                    <h3 className="font-semibold text-lg mb-2">11. Pictures with Comments</h3>
+                    <h3 className="font-semibold text-lg mb-2">12. Pictures with Comments</h3>
                     <div className="space-y-4">
                         {pictures.map((pic, index) => (
                             <div key={pic.id} className="flex flex-col gap-2 p-4 border rounded-lg">
