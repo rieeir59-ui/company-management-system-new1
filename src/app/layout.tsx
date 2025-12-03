@@ -5,7 +5,7 @@ import { UserProvider } from '@/context/UserContext';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { FileProvider } from '@/context/FileContext';
 import { RecordProvider } from '@/context/RecordContext';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export default function RootLayout({
   children,
@@ -21,15 +21,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
-          <EmployeeProvider>
-            <UserProvider>
+          <UserProvider>
+            <EmployeeProvider>
               <FileProvider>
                 <RecordProvider>
                   {children}
                 </RecordProvider>
               </FileProvider>
-            </UserProvider>
-          </EmployeeProvider>
+            </EmployeeProvider>
+          </UserProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
