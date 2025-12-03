@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -36,6 +35,7 @@ import { getIconForFile } from '@/lib/icons';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const timelineFileNames = [
     'Timeline Schedule',
@@ -159,7 +159,7 @@ function SavedRecordsPageComponent() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-
+    
     const searchParams = useSearchParams();
     const filterParam = searchParams.get('filter');
 
@@ -353,67 +353,88 @@ function SavedRecordsPageComponent() {
                         <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
                         <DialogDescription>{viewingRecord?.fileName} - Saved by {viewingRecord?.employeeName} on {viewingRecord && new Date(viewingRecord.createdAt).toLocaleDateString()}</DialogDescription>
                     </DialogHeader>
-                     <div className="max-h-[70vh] overflow-y-auto p-1">
-                        {viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => {
-                             if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
-                                return (
-                                    <div key={index} className="mb-4">
-                                        <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="w-1/2">Item</TableHead>
-                                                    <TableHead className="w-1/4">Status</TableHead>
-                                                    <TableHead className="w-1/4">Remarks</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {section.items.map((item: any, itemIndex: number) => (
-                                                    <TableRow key={itemIndex}>
-                                                        <TableCell>{item.Item}</TableCell>
-                                                        <TableCell>{item.Status}</TableCell>
-                                                        <TableCell>{item.Remarks}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                );
-                            }
-                            return (
-                                <div key={index} className="mb-4">
-                                    <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
-                                    <Table>
-                                        <TableBody>
-                                            {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
-                                                if (typeof item === 'object' && item !== null && (item.label || item.comment)) {
-                                                    return (
-                                                        <TableRow key={itemIndex}>
-                                                            <TableCell className="font-medium w-1/3">{item.label || item.comment}</TableCell>
-                                                            <TableCell>{item.value || (item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">View File <ExternalLink className="h-3 w-3"/></a>)}</TableCell>
-                                                        </TableRow>
-                                                    )
-                                                }
-                                                 if (typeof item === 'string') {
-                                                    const parts = item.split(':');
-                                                    const label = parts[0];
-                                                    const value = parts.slice(1).join(':').trim();
-                                                     if (label && value) {
-                                                        return (
-                                                            <TableRow key={itemIndex}>
-                                                                <TableCell className="font-medium w-1/3">{label}</TableCell>
-                                                                <TableCell>{value}</TableCell>
-                                                            </TableRow>
-                                                        )
-                                                    }
-                                                }
-                                                return null;
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )
-                        })}
+                    <div className="max-h-[70vh] overflow-y-auto p-1">
+                        {viewingRecord?.fileName === 'Project Agreement' ? (
+                            <Accordion type="single" collapsible className="w-full">
+                                {viewingRecord.data.map((section: any, index: number) => (
+                                    <AccordionItem value={`item-${index}`} key={index}>
+                                        <AccordionTrigger>{section.category}</AccordionTrigger>
+                                        <AccordionContent>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                {section.items && Array.isArray(section.items) ? (
+                                                    section.items.map((item: string, itemIndex: number) => (
+                                                        <li key={itemIndex} className="text-sm">{item.includes(':') ? <strong>{item.split(':')[0]}:</strong> : ''} {item.includes(':') ? item.split(':').slice(1).join(':').trim() : item}</li>
+                                                    ))
+                                                ) : (
+                                                    <li className="text-sm">{String(section.items)}</li>
+                                                )}
+                                            </ul>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            viewingRecord?.data && (Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data]).map((section: any, index: number) => {
+                                if (viewingRecord.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items && section.items[0]?.Item) {
+                                  return (
+                                      <div key={index} className="mb-4">
+                                          <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                          <Table>
+                                              <TableHeader>
+                                                  <TableRow>
+                                                      <TableHead className="w-1/2">Item</TableHead>
+                                                      <TableHead className="w-1/4">Status</TableHead>
+                                                      <TableHead className="w-1/4">Remarks</TableHead>
+                                                  </TableRow>
+                                              </TableHeader>
+                                              <TableBody>
+                                                  {section.items.map((item: any, itemIndex: number) => (
+                                                      <TableRow key={itemIndex}>
+                                                          <TableCell>{item.Item}</TableCell>
+                                                          <TableCell>{item.Status}</TableCell>
+                                                          <TableCell>{item.Remarks}</TableCell>
+                                                      </TableRow>
+                                                  ))}
+                                              </TableBody>
+                                          </Table>
+                                      </div>
+                                  );
+                              }
+                              return (
+                                   <div key={index} className="mb-4">
+                                      <h3 className="font-bold text-lg mb-2 bg-muted p-2 rounded-md">{section.category}</h3>
+                                      <Table>
+                                          <TableBody>
+                                              {section.items && Array.isArray(section.items) && section.items.map((item: any, itemIndex: number) => {
+                                                  if (typeof item === 'object' && item !== null && (item.label || item.comment)) {
+                                                      return (
+                                                          <TableRow key={itemIndex}>
+                                                              <TableCell className="font-medium w-1/3">{item.label || item.comment}</TableCell>
+                                                              <TableCell>{item.value || (item.url && <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">View File <ExternalLink className="h-3 w-3"/></a>)}</TableCell>
+                                                          </TableRow>
+                                                      )
+                                                  }
+                                                   if (typeof item === 'string') {
+                                                      const parts = item.split(':');
+                                                      const label = parts[0];
+                                                      const value = parts.slice(1).join(':').trim();
+                                                       if (label && value) {
+                                                          return (
+                                                              <TableRow key={itemIndex}>
+                                                                  <TableCell className="font-medium w-1/3">{label}</TableCell>
+                                                                  <TableCell>{value}</TableCell>
+                                                              </TableRow>
+                                                          )
+                                                      }
+                                                  }
+                                                  return null;
+                                              })}
+                                          </TableBody>
+                                      </Table>
+                                  </div>
+                              )
+                            })
+                        )}
                     </div>
                      <DialogFooter>
                         <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
