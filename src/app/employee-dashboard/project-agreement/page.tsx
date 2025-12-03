@@ -15,6 +15,8 @@ import 'jspdf-autotable';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -112,7 +114,7 @@ export default function ProjectAgreementPage() {
     const handlePaymentScheduleChange = (id: number, field: 'description' | 'percentage', value: string) => {
         setPaymentSchedule(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
     };
-
+    
     const handleTextChange = (section: keyof typeof agreementText, index: number, value: string) => {
         const newText = { ...agreementText };
         if (Array.isArray(newText[section])) {
@@ -145,16 +147,26 @@ export default function ProjectAgreementPage() {
             { category: "Termination", items: agreementText.termination },
             { category: "Compensation", items: agreementText.compensation },
         ];
+        
+        const dataToSave = {
+            employeeId: currentUser.record, 
+            employeeName: currentUser.name, 
+            fileName: 'Project Agreement',
+            projectName: designOf || 'Untitled Project', 
+            data: recordData, 
+            createdAt: serverTimestamp(),
+        };
 
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record, employeeName: currentUser.name, fileName: 'Project Agreement',
-                projectName: designOf || 'Untitled Project', data: recordData, createdAt: serverTimestamp(),
-            });
+            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
             toast({ title: "Record Saved", description: "The project agreement has been successfully saved." });
-        } catch (error) {
-            console.error("Error saving record:", error);
-            toast({ variant: 'destructive', title: "Save Failed", description: "There was an error saving the project agreement." });
+        } catch (serverError) {
+            const permissionError = new FirestorePermissionError({
+                path: `savedRecords`,
+                operation: 'create',
+                requestResourceData: dataToSave,
+            });
+            errorEmitter.emit('permission-error', permissionError);
         }
     }
 
@@ -192,7 +204,8 @@ export default function ProjectAgreementPage() {
             styles: { fontSize: 10, cellPadding: 1 }
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
-        
+
+
         doc.save('Project-Agreement.pdf');
         toast({ title: "Download Started", description: "The project agreement PDF is being generated." });
     }
@@ -254,8 +267,7 @@ export default function ProjectAgreementPage() {
                             </div>
                         </Section>
                         
-                        {/* More editable sections */}
-                         <Section title="Architect's Responsibilities">
+                        <Section title="Architect's Responsibilities">
                             <div className="space-y-2 pl-2">
                                 {agreementText.architectResponsibilities.map((text, index) => (
                                     <Textarea key={index} value={text} onChange={(e) => handleTextChange('architectResponsibilities', index, e.target.value)} rows={3} />
@@ -288,7 +300,7 @@ export default function ProjectAgreementPage() {
 
                         <div className="flex justify-between mt-16">
                             <div><p className="border-b-2 border-foreground w-48 mb-2"></p><p>Architect</p></div>
-                             <div><p className="border-b-2 border-foreground w-48 mb-2"></p><p>Client</p></div>
+                            <div><p className="border-b-2 border-foreground w-48 mb-2"></p><p>Client</p></div>
                         </div>
 
                     </div>
