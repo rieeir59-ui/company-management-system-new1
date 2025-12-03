@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -12,14 +13,12 @@ import { Save, Download, ImagePlus, Trash2, ImageUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { useFirebase } from '@/firebase/provider';
 import { Progress } from '@/components/ui/progress';
+import { useRecords } from '@/context/RecordContext';
 
 type RemarksState = Record<string, string>;
 
@@ -66,9 +65,10 @@ type PictureRow = {
 
 export default function SiteVisitPage() {
     const { toast } = useToast();
-    const { firestore, firebaseApp } = useFirebase();
     const { user: currentUser } = useCurrentUser();
+    const { firebaseApp } = useFirebase();
     const storage = firebaseApp ? getStorage(firebaseApp) : null;
+    const { addRecord } = useRecords();
 
 
     const [basicInfo, setBasicInfo] = useState({
@@ -121,7 +121,7 @@ export default function SiteVisitPage() {
     };
 
     const handleSave = async () => {
-        if (!currentUser || !firestore || !storage) {
+        if (!currentUser || !storage) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
@@ -146,47 +146,40 @@ export default function SiteVisitPage() {
                         },
                         async () => {
                             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: false, downloadURL } : up));
-                            resolve({ ...p, downloadURL });
+                            const updatedPic = { ...p, isUploading: false, downloadURL };
+                            setPictures(prev => prev.map(up => up.id === p.id ? updatedPic : up));
+                            resolve(updatedPic);
                         }
                     );
                 });
             });
 
         try {
-            const uploadedPictures = await Promise.all(pictureUploadPromises);
+            const uploadedPicturesResults = await Promise.all(pictureUploadPromises);
             
-            const allPictures = pictures.map(p => {
-                const uploaded = uploadedPictures.find(up => up.id === p.id);
+            const allPicturesFinalState = pictures.map(p => {
+                const uploaded = uploadedPicturesResults.find(up => up.id === p.id);
                 return uploaded || p;
             });
 
             const dataToSave = {
                 fileName: 'Site Visit Proforma',
                 projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                createdAt: serverTimestamp(),
                 data: [
                     { category: 'Basic Information', items: Object.entries(basicInfo).map(([key, value]) => ({ label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), value: value }))},
                     ...Object.entries(checklistSections).map(([title, items]) => ({ category: title, items: items.map(item => ({ Item: item, Status: checklistState[item] ? 'Yes' : 'No', Remarks: remarksState[item] || 'N/A' }))})),
                     ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
                     ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
                     ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                    ...(allPictures.filter(p => p.downloadURL).length > 0 ? [{ category: 'Pictures', items: allPictures.filter(p => p.downloadURL).map(p => ({ comment: p.comment, url: p.downloadURL })) }] : [])
+                    ...(allPicturesFinalState.filter(p => p.downloadURL).length > 0 ? [{ category: 'Pictures', items: allPicturesFinalState.filter(p => p.downloadURL).map(p => ({ comment: p.comment, url: p.downloadURL })) }] : [])
                 ]
             };
 
-            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
-            toast({ title: 'Record Saved', description: 'The site visit proforma has been saved.' });
+            await addRecord(dataToSave as any);
+
         } catch (error) {
-            console.error(error);
-             const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'create',
-                requestResourceData: { error: 'data too large, check image upload logic' },
-            });
-            errorEmitter.emit('permission-error', permissionError);
+            console.error("An error occurred during save:", error);
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'An error occurred while saving. Please check the console.' });
         }
     };
     

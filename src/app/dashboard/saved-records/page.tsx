@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -356,7 +357,7 @@ function SavedRecordsComponent() {
                                                         <TableRow key={record.id} onClick={(e) => openViewDialog(e, record)} className="cursor-pointer">
                                                             <TableCell>{record.employeeName}</TableCell>
                                                             <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                            <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
                                                             <TableCell className="text-right">
                                                                 <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                                                                     {formUrl && (

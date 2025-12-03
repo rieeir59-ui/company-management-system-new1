@@ -13,6 +13,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { useSearchParams } from 'next/navigation';
 import { useRecords } from '@/context/RecordContext';
 
+
 const checklistData = {
   predesign: {
     title: '1: - Predesign',
@@ -254,12 +255,11 @@ const ChecklistItem = ({ item, checked, onCheckedChange }: { item: string, check
     );
 };
 
-export default function ProjectChecklist() {
+export default function ProjectChecklistComponent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
     const { addRecord, updateRecord, getRecordById } = useRecords();
-
 
     const [checkedItems, setCheckedItems] = useState<ChecklistState>(initializeState());
     const [projectName, setProjectName] = useState('');
@@ -284,7 +284,7 @@ export default function ProjectChecklist() {
 
                 const newCheckedState = initializeState();
                 record.data.forEach((section: any) => {
-                     for (const mainKey in checklistData) {
+                    for (const mainKey in checklistData) {
                         const mainSection = checklistData[mainKey as keyof typeof checklistData];
                         for (const subKey in mainSection.sections) {
                             const subSection = mainSection.sections[subKey as keyof typeof mainSection.sections];

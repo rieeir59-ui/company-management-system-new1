@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -51,6 +52,104 @@ const timelineFileNames = [
     'MCB Timeline',
     'UBL Timeline',
 ];
+
+const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
+    let yPos = 20;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    
+    const headerData = [
+        ['File', record.fileName],
+        ['Saved by', record.employeeName],
+        ['Date', new Date(record.createdAt).toLocaleDateString()],
+    ];
+
+    (doc as any).autoTable({
+        startY: yPos,
+        theme: 'plain',
+        body: headerData,
+        styles: { fontSize: 10 },
+    });
+
+    yPos = (doc as any).autoTable.previous.finalY + 10;
+    
+    const dataArray = Array.isArray(record.data) ? record.data : [record.data];
+
+    dataArray.forEach((section: any) => {
+        if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
+            const tableBody = section.items.map((item: any) => [item.Item, item.Status, item.Remarks]);
+            if (tableBody.length > 0) {
+                (doc as any).autoTable({
+                    head: [[section.category]],
+                    body: [],
+                    startY: yPos,
+                    theme: 'plain',
+                    headStyles: { fontStyle: 'bold', fontSize: 12, textColor: [45, 95, 51] },
+                });
+                yPos = (doc as any).autoTable.previous.finalY + 2;
+
+                (doc as any).autoTable({
+                    head: [['Item', 'Status', 'Remarks']],
+                    body: tableBody,
+                    startY: yPos,
+                    theme: 'grid',
+                    headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
+                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+                });
+                yPos = (doc as any).autoTable.previous.finalY + 10;
+            }
+            return;
+        }
+
+
+        const body: (string | number)[][] = [];
+
+        if (section.items && Array.isArray(section.items)) {
+            section.items.forEach((item: any) => {
+                 let label: string;
+                 let value: string;
+                if(typeof item === 'object' && item !== null && (item.label || item.comment)) {
+                   label = item.label || item.comment;
+                   value = item.value || (item.url ? 'See Link' : '');
+                   body.push([label, value]);
+                } else if (typeof item === 'string') {
+                     const parts = item.split(':');
+                     if (parts.length > 1) {
+                        body.push([parts[0], parts.slice(1).join(':').trim()]);
+                    }
+                }
+            });
+        }
+        
+        if (body.length > 0) {
+            (doc as any).autoTable({
+                head: [[section.category || 'Details']],
+                body: body,
+                startY: yPos,
+                theme: 'grid',
+                headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
+                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
+    });
+}
+
+const handleDownload = (record: SavedRecord) => {
+    const doc = new jsPDF() as any;
+    generateDefaultPdf(doc, record);
+    doc.output('dataurlnewwindow');
+};
 
 function SavedRecordsPageComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
@@ -117,101 +216,6 @@ function SavedRecordsPageComponent() {
         setIsViewDialogOpen(true);
     };
     
-    const handleDownload = (record: SavedRecord) => {
-        const doc = new jsPDF() as any;
-        generateDefaultPdf(doc, record);
-        doc.output('dataurlnewwindow');
-    };
-
-    const generateDefaultPdf = (doc: jsPDF, record: SavedRecord) => {
-        let yPos = 20;
-
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(record.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 10;
-        
-        doc.setFontSize(10);
-        
-        const headerData = [
-            ['File', record.fileName],
-            ['Saved by', record.employeeName],
-            ['Date', new Date(record.createdAt).toLocaleDateString()],
-        ];
-
-        (doc as any).autoTable({
-            startY: yPos,
-            theme: 'plain',
-            body: headerData,
-            styles: { fontSize: 10 },
-        });
-
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-        
-        const dataArray = Array.isArray(record.data) ? record.data : [record.data];
-
-        dataArray.forEach((section: any) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            
-            if (record.fileName === 'Site Visit Proforma' && section.category !== 'Basic Information' && section.category !== 'Pictures' && section.items[0]?.Item) {
-                const tableBody = section.items.map((item: any) => [item.Item, item.Status, item.Remarks]);
-                if (tableBody.length > 0) {
-                    (doc as any).autoTable({
-                        head: [[section.category]],
-                        body: [],
-                        startY: yPos,
-                        theme: 'plain',
-                        headStyles: { fontStyle: 'bold', fontSize: 12, textColor: [45, 95, 51] },
-                    });
-                    yPos = (doc as any).autoTable.previous.finalY + 2;
-
-                    (doc as any).autoTable({
-                        head: [['Item', 'Status', 'Remarks']],
-                        body: tableBody,
-                        startY: yPos,
-                        theme: 'grid',
-                        headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
-                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
-                    });
-                    yPos = (doc as any).autoTable.previous.finalY + 10;
-                }
-                return;
-            }
-
-
-            const body: (string | number)[][] = [];
-
-            if (section.items && Array.isArray(section.items)) {
-                section.items.forEach((item: any) => {
-                     let label: string;
-                     let value: string;
-                    if(typeof item === 'object' && item !== null && (item.label || item.comment)) {
-                       label = item.label || item.comment;
-                       value = item.value || (item.url ? 'See Link' : '');
-                       body.push([label, value]);
-                    } else if (typeof item === 'string') {
-                         const parts = item.split(':');
-                         if (parts.length > 1) {
-                            body.push([parts[0], parts.slice(1).join(':').trim()]);
-                        }
-                    }
-                });
-            }
-            
-            if (body.length > 0) {
-                (doc as any).autoTable({
-                    head: [[section.category || 'Details']],
-                    body: body,
-                    startY: yPos,
-                    theme: 'grid',
-                    headStyles: { fontStyle: 'bold', fillColor: [45, 95, 51], textColor: 255 },
-                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' }
-                });
-                yPos = (doc as any).autoTable.previous.finalY + 10;
-            }
-        });
-    }
-
     if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-64">
