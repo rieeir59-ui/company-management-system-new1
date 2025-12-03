@@ -6,7 +6,7 @@ import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink } from "lucide-react";
+import { Download, Loader2, Edit, Trash2, ArrowLeft, ExternalLink, Search } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +36,7 @@ import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
 
 const timelineFileNames = [
     'Timeline Schedule',
@@ -154,11 +155,13 @@ function SavedRecordsPageComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'saved-records');
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { records: allRecords, isLoading, error, deleteRecord } = useRecords();
+    
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     
     const searchParams = useSearchParams();
     const filterParam = searchParams.get('filter');
@@ -215,6 +218,21 @@ function SavedRecordsPageComponent() {
         setIsViewDialogOpen(true);
     };
     
+    const filteredCategories = useMemo(() => {
+        if (!searchQuery) return Object.entries(groupedRecords).filter(([_, records]) => records.length > 0);
+        return Object.entries(groupedRecords).filter(([fileName, records]) => 
+            records.length > 0 && fileName.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [groupedRecords, searchQuery]);
+
+    const filteredRecords = useMemo(() => {
+        if (!selectedCategory || !groupedRecords[selectedCategory]) return [];
+        if (!searchQuery) return groupedRecords[selectedCategory];
+        return groupedRecords[selectedCategory].filter(record => 
+            record.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [selectedCategory, groupedRecords, searchQuery]);
+
     if (isLoading || isUserLoading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -244,13 +262,24 @@ function SavedRecordsPageComponent() {
                 {!isLoading && !error && selectedCategory ? (
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center gap-4">
-                                <Button variant="outline" size="icon" onClick={() => setSelectedCategory(null)}>
-                                    <ArrowLeft className="h-4 w-4" />
-                                </Button>
-                                <div>
-                                    <CardTitle>{selectedCategory}</CardTitle>
-                                    <CardDescription>Your saved "{selectedCategory}" records.</CardDescription>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                    <Button variant="outline" size="icon" onClick={() => {setSelectedCategory(null); setSearchQuery('');}}>
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div>
+                                        <CardTitle>{selectedCategory}</CardTitle>
+                                        <CardDescription>Your saved "{selectedCategory}" records.</CardDescription>
+                                    </div>
+                                </div>
+                                <div className="relative w-full max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        placeholder={`Search in ${selectedCategory}...`}
+                                        className="pl-8"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
                                 </div>
                             </div>
                         </CardHeader>
@@ -265,8 +294,8 @@ function SavedRecordsPageComponent() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {groupedRecords[selectedCategory] && groupedRecords[selectedCategory].length > 0 ? (
-                                            groupedRecords[selectedCategory].map(record => {
+                                        {filteredRecords.length > 0 ? (
+                                            filteredRecords.map(record => {
                                                 const formUrl = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
                                                 return (
                                                     <TableRow key={record.id} onClick={(e) => openViewDialog(e, record)} className="cursor-pointer">
@@ -302,28 +331,44 @@ function SavedRecordsPageComponent() {
                         </CardContent>
                     </Card>
                 ) : (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {Object.entries(groupedRecords).map(([fileName, fileRecords]) => {
-                           if(fileRecords.length === 0) return null;
-                           const Icon = getIconForFile(fileName);
-                           return (
-                            <Card 
-                                key={fileName} 
-                                className="flex flex-col justify-between cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
-                                onClick={() => setSelectedCategory(fileName)}
-                            >
-                                <CardHeader className="flex-row items-start gap-4 space-y-0 pb-2">
-                                   <div className="bg-primary/10 p-3 rounded-full">
-                                        <Icon className="h-6 w-6 text-primary" />
-                                   </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <CardTitle className="text-lg font-semibold">{fileName}</CardTitle>
-                                    <p className="text-sm text-muted-foreground">{fileRecords.length} record(s)</p>
-                                </CardContent>
+                     <div className='space-y-4'>
+                        <div className="relative w-full max-w-lg mx-auto">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search record categories..."
+                                className="pl-10 text-base"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {filteredCategories.map(([fileName, fileRecords]) => {
+                               const Icon = getIconForFile(fileName);
+                               return (
+                                <Card 
+                                    key={fileName} 
+                                    className="flex flex-col justify-between cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all"
+                                    onClick={() => {setSelectedCategory(fileName); setSearchQuery('')}}
+                                >
+                                    <CardHeader className="flex-row items-start gap-4 space-y-0 pb-2">
+                                       <div className="bg-primary/10 p-3 rounded-full">
+                                            <Icon className="h-6 w-6 text-primary" />
+                                       </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CardTitle className="text-lg font-semibold">{fileName}</CardTitle>
+                                        <p className="text-sm text-muted-foreground">{fileRecords.length} record(s)</p>
+                                    </CardContent>
+                                </Card>
+                               )
+                            })}
+                        </div>
+                        {filteredCategories.length === 0 && (
+                            <Card className="text-center py-12">
+                                <CardHeader><CardTitle>No Categories Found</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Your search for "{searchQuery}" did not match any record categories.</p></CardContent>
                             </Card>
-                           )
-                        })}
+                        )}
                     </div>
                 )}
                  {myRecords.length === 0 && !isLoading && !error && !selectedCategory && (
