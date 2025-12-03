@@ -12,11 +12,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -95,8 +91,7 @@ const initialPaymentSchedule = [
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
@@ -130,45 +125,25 @@ export default function ProjectAgreementPage() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save a record.' });
-            return;
-        }
-
-        const recordData = [
-            { category: "Agreement Details", items: [`Made as of the day: ${day}`, `Between the Owner: ${owner}`, `For the Design of: ${designOf}`, `Address: ${address}`] },
-            { category: "Cost Breakdown", items: [`Covered Area of Project: ${coveredArea}`, `Consultancy Charges: ${consultancyCharges}`, `Sales Tax @ 16%: ${salesTax}`, `Withholding Tax @ 10%: ${withholdingTax}`, `Final Consultancy Charges: ${finalCharges}`] },
-            { category: "Payment Schedule", items: paymentSchedule.map(p => `${p.description}: ${p.percentage}`) },
-            { category: "Top Supervision", items: agreementText.topSupervision },
-            { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
-            { category: "Notes", items: agreementText.notes },
-            { category: "Extra Services Note", items: [agreementText.extraServicesNote] },
-            { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities },
-            { category: "Not Responsible For", items: agreementText.notResponsible },
-            { category: "Termination", items: agreementText.termination },
-            { category: "Compensation", items: agreementText.compensation },
-        ];
-        
-        const dataToSave = {
-            employeeId: currentUser.record, 
-            employeeName: currentUser.name, 
+        const recordData = {
             fileName: 'Project Agreement',
-            projectName: designOf || 'Untitled Project', 
-            data: recordData, 
-            createdAt: serverTimestamp(),
+            projectName: designOf || 'Untitled Project Agreement',
+            data: [
+                { category: "Agreement Details", items: [`Made as of the day: ${day}`, `Between the Owner: ${owner}`, `For the Design of: ${designOf}`, `Address: ${address}`] },
+                { category: "Cost Breakdown", items: [`Covered Area of Project: ${coveredArea}`, `Consultancy Charges: ${consultancyCharges}`, `Sales Tax @ 16%: ${salesTax}`, `Withholding Tax @ 10%: ${withholdingTax}`, `Final Consultancy Charges: ${finalCharges}`] },
+                { category: "Payment Schedule", items: paymentSchedule.map(p => `${p.description}: ${p.percentage}`) },
+                { category: "Top Supervision", items: agreementText.topSupervision },
+                { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
+                { category: "Notes", items: agreementText.notes },
+                { category: "Extra Services Note", items: [agreementText.extraServicesNote] },
+                { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities },
+                { category: "Not Responsible For", items: agreementText.notResponsible },
+                { category: "Termination", items: agreementText.termination },
+                { category: "Compensation", items: agreementText.compensation },
+            ]
         };
-
-        try {
-            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
-            toast({ title: "Record Saved", description: "The project agreement has been successfully saved." });
-        } catch (serverError) {
-             const permissionError = new FirestorePermissionError({
-                path: `savedRecords`,
-                operation: 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
+        
+        await addRecord(recordData);
     }
 
     const handleDownloadPdf = () => {
@@ -246,6 +221,7 @@ export default function ProjectAgreementPage() {
         addText('Architect', false, 0, 10, 15);
         addText('____________________', false, 0, 10, 2);
         addText('Client', false, 0, 10, 5);
+
 
         doc.save('Project-Agreement.pdf');
         toast({ title: "Download Started", description: "The project agreement PDF is being generated." });
