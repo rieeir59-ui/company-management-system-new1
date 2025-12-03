@@ -125,11 +125,11 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
                 ...section,
                 items: Array.isArray(section.items) ? section.items.map((item: any) => 
                     typeof item === 'object' ? JSON.stringify(item) : String(item)
-                ) : section.items
+                ) : String(section.items)
             };
         }
-        return section;
-    }) : recordData.data;
+        return String(section);
+    }) : String(recordData.data);
 
     const dataToSave = {
       ...recordData,

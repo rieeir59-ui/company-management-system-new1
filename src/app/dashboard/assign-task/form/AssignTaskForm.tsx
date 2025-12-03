@@ -94,7 +94,7 @@ export default function AssignTaskForm() {
         addDoc(collection(firestore, 'tasks'), dataToSave)
             .then(() => {
                  // Also save to general records
-                addRecord(recordToSave);
+                addRecord(recordToSave as any);
 
                 toast({ title: 'Task Assigned', description: `Task "${taskName}" has been assigned and recorded.` });
                 setIsSaveOpen(false);
