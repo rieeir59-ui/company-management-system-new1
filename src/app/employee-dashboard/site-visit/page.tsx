@@ -23,26 +23,26 @@ type RemarksState = Record<string, string>;
 
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
-        <h3 className="font-semibold text-lg mb-2">{title}</h3>
+        <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-                 <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-center">
-                    <div className="flex items-center gap-2">
+                 <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-start">
+                    <div className="flex items-center gap-3">
                         <Checkbox
                           id={item.replace(/\s+/g, '-')}
                           checked={checklistState[item] || false}
                           onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
                         />
-                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
+                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal leading-tight">
                             {item}
                         </Label>
                     </div>
-                    <Input
-                      type="text"
+                    <Textarea
                       placeholder="Remarks..."
                       value={remarksState[item] || ''}
                       onChange={(e) => onRemarkChange(item, e.target.value)}
-                      className="h-8 text-sm"
+                      className="h-10 text-sm"
+                      rows={1}
                     />
                 </div>
             ))}
@@ -132,7 +132,7 @@ export default function SiteVisitPage() {
             observations,
             issues,
             recommendations,
-            // Pictures are not saved in Firestore, only for PDF generation
+            pictureComments: pictures.map(p => ({id: p.id, comment: p.comment}))
         };
 
         try {
@@ -141,7 +141,7 @@ export default function SiteVisitPage() {
                 employeeName: currentUser.name,
                 fileName: 'Site Visit Proforma',
                 projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-                data: dataToSave, // Store the structured object
+                data: dataToSave,
                 createdAt: serverTimestamp(),
             });
             toast({ title: 'Record Saved', description: 'The site visit proforma has been saved.' });
