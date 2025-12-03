@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -21,6 +22,7 @@ import 'jspdf-autotable';
 import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
 import { differenceInDays, parseISO, isWithinInterval } from 'date-fns';
+import { useRecords } from '@/context/RecordContext';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -68,7 +70,7 @@ type ProjectRow = {
 
 type ProjectStatus = 'completed' | 'in-progress' | 'not-started';
 
-const StatusIcon = ({ status }: { status: Project['status'] }) => {
+const StatusIcon = ({ status }: { status: Project['status'] | ProjectStatus }) => {
     switch (status) {
         case 'completed':
             return <CheckCircle2 className="h-5 w-5 text-green-500" />;
@@ -99,6 +101,7 @@ function MyProjectsComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore } = useFirebase();
+  const { addRecord } = useRecords();
 
   const employeeId = searchParams.get('employeeId');
   const displayUser = useMemo(() => {
@@ -243,35 +246,21 @@ function MyProjectsComponent() {
   };
 
   const handleSave = () => {
-      if (!firestore || !currentUser || !displayUser) {
-          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-          return;
-      }
-
-      const dataToSave = {
-          employeeId: displayUser.record,
-          employeeName: displayUser.name,
-          fileName: "My Projects",
-          projectName: `Projects for ${displayUser.name}`,
-          data: [{
-              category: 'My Projects',
-              schedule,
-              projects: rows,
-              remarks,
-          }],
-          createdAt: serverTimestamp(),
-      };
-
-      addDoc(collection(firestore, 'savedRecords'), dataToSave)
-          .then(() => toast({ title: 'Record Saved', description: "Your project records have been saved." }))
-          .catch(serverError => {
-              const permissionError = new FirestorePermissionError({
-                  path: `savedRecords`,
-                  operation: 'create',
-                  requestResourceData: dataToSave,
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
+    if (!displayUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'User not found.' });
+        return;
+    }
+    const recordToSave = {
+        fileName: "My Projects",
+        projectName: `Projects for ${displayUser.name}`,
+        data: [{
+            category: 'My Projects',
+            schedule,
+            projects: rows,
+            remarks,
+        }]
+    };
+    addRecord(recordToSave as any);
   };
 
   const handleDownload = () => {
@@ -501,15 +490,15 @@ function MyProjectsComponent() {
   );
 }
 
-export default function EmployeeDashboardPageWrapper() {
+function EmployeeDashboardPageWrapper() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-4">Loading Page...</span>
       </div>}>
-      <EmployeeDashboardComponent />
+      <MyProjectsComponent />
     </Suspense>
   )
 }
 
-    
+export default EmployeeDashboardPageWrapper;
