@@ -26,7 +26,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-                 <div key={item} className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-x-4 gap-y-2 border-b pb-2">
+                 <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 border-b pb-2 items-center">
                     <div className="flex items-center gap-2">
                         <Checkbox
                           id={item.replace(/\s+/g, '-')}
@@ -117,19 +117,22 @@ export default function SiteVisitPage() {
             return;
         }
 
-        const checkedItems = Object.entries(checklistState).filter(([, checked]) => checked).map(([item]) => item);
-        const remarkItems = Object.entries(remarksState).filter(([, remark]) => remark).map(([item, remark]) => `${item}: ${remark}`);
+        const checklistData = Object.entries(checklistSections).map(([title, items]) => ({
+            title,
+            items: items.map(item => ({
+                item,
+                status: checklistState[item] ? 'Yes' : 'No',
+                remarks: remarksState[item] || ''
+            }))
+        }));
 
         const dataToSave = {
-            category: 'Site Visit Proforma',
-            items: [
-                JSON.stringify({type: 'basicInfo', data: basicInfo}),
-                JSON.stringify({type: 'checklist', data: checkedItems}),
-                JSON.stringify({type: 'remarks', data: remarkItems }),
-                JSON.stringify({type: 'observations', data: observations}),
-                JSON.stringify({type: 'issues', data: issues}),
-                JSON.stringify({type: 'recommendations', data: recommendations}),
-            ],
+            basicInfo,
+            checklist: checklistData,
+            observations,
+            issues,
+            recommendations,
+            // Pictures are not saved in Firestore, only for PDF generation
         };
 
         try {
@@ -138,7 +141,7 @@ export default function SiteVisitPage() {
                 employeeName: currentUser.name,
                 fileName: 'Site Visit Proforma',
                 projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-                data: [dataToSave],
+                data: dataToSave, // Store the structured object
                 createdAt: serverTimestamp(),
             });
             toast({ title: 'Record Saved', description: 'The site visit proforma has been saved.' });
@@ -186,7 +189,7 @@ export default function SiteVisitPage() {
             const body = items.map(item => [
               item, 
               checklistState[item] ? 'Yes' : 'No',
-              remarksState[item] || ' '
+              remarksState[item] || ''
             ]);
             doc.autoTable({ 
               startY: yPos, 
