@@ -24,27 +24,27 @@ type RemarksState = Record<string, string>;
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
         <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-4">
             {items.map((item) => (
-                <div key={item} className="flex items-start gap-2">
-                    <Checkbox
-                      id={item.replace(/\s+/g, '-')}
-                      checked={checklistState[item] || false}
-                      onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
-                      className="mt-1"
-                    />
-                    <div className="grid gap-1.5 leading-none flex-1">
-                      <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
-                          {item}
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Remarks"
-                        value={remarksState[item] || ''}
-                        onChange={(e) => onRemarkChange(item, e.target.value)}
-                        className="h-7 text-xs"
-                      />
+                <div key={item} className="space-y-2">
+                    <div className="flex items-start gap-2">
+                        <Checkbox
+                          id={item.replace(/\s+/g, '-')}
+                          checked={checklistState[item] || false}
+                          onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
+                          className="mt-1"
+                        />
+                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
+                            {item}
+                        </Label>
                     </div>
+                    <Input
+                      type="text"
+                      placeholder="Remarks"
+                      value={remarksState[item] || ''}
+                      onChange={(e) => onRemarkChange(item, e.target.value)}
+                      className="h-8 text-xs ml-6 w-[calc(100%-1.5rem)]"
+                    />
                 </div>
             ))}
         </div>
@@ -203,19 +203,18 @@ export default function SiteVisitPage() {
                     const itemText = items[data.row.index];
                     const isChecked = checklistState[itemText] || false;
                     doc.setLineWidth(0.2);
-                    doc.rect(data.cell.x + 2, data.cell.y + 2, 4, 4);
-                    if(isChecked) {
-                        doc.setFont('ZapfDingbats');
-                        doc.text('✓', data.cell.x + 3, data.cell.y + 5);
-                        doc.setFont('helvetica');
-                    }
-                    if (!data.cell.styles) {
-                        data.cell.styles = {};
-                    }
+                    // Add space for the checkbox
                     if (!data.cell.styles.padding) {
                         data.cell.styles.padding = {};
                     }
                     data.cell.styles.padding.left = 8;
+                    data.cell.textPos.x += 6;
+                    doc.rect(data.cell.x + 2, data.cell.y + data.cell.height / 2 - 2, 4, 4);
+                    if(isChecked) {
+                        doc.setFont('ZapfDingbats');
+                        doc.text('✓', data.cell.x + 3, data.cell.y + data.cell.height / 2 + 1.5);
+                        doc.setFont('helvetica');
+                    }
                 }
               }
             });
@@ -319,9 +318,9 @@ export default function SiteVisitPage() {
                 ))}
 
                 <div className="space-y-4">
-                    <div><Label className="font-semibold text-lg">8. Observations</Label><Input value={observations} onChange={(e) => setObservations(e.target.value)} /></div>
-                    <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Input value={issues} onChange={(e) => setIssues(e.target.value)} /></div>
-                    <div><Label className="font-semibold text-lg">10. Actions & Recommendations</Label><Input value={recommendations} onChange={(e) => setRecommendations(e.target.value)} /></div>
+                    <div><Label className="font-semibold text-lg">8. Observations</Label><Textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={4} /></div>
+                    <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Textarea value={issues} onChange={(e) => setIssues(e.target.value)} rows={4} /></div>
+                    <div><Label className="font-semibold text-lg">10. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
                 </div>
 
                 <div>
