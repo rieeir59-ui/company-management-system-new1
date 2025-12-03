@@ -140,9 +140,9 @@ export default function SiteVisitPage() {
                         Remarks: remarksState[item] || ''
                     }))
                 })),
-                ...(observations ? [{ category: 'Observations', items: [observations] }] : []),
-                ...(issues ? [{ category: 'Issues Identified', items: [issues] }] : []),
-                ...(recommendations ? [{ category: 'Actions & Recommendations', items: [recommendations] }] : []),
+                ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
+                ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
+                ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
                 ...(pictures.filter(p => p.file).length > 0 ? [{
                     category: 'Pictures',
                     items: pictures.filter(p => p.file).map(p => ({ comment: p.comment, fileName: p.file?.name }))
