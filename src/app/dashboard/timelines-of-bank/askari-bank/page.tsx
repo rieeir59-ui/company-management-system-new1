@@ -10,6 +10,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface ProjectRow {
   id: number;
@@ -63,6 +64,7 @@ const initialStatusRows: StatusRow[] = [
 
 export default function AskariBankTimelinePage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
@@ -92,8 +94,15 @@ export default function AskariBankTimelinePage() {
     };
     
     const handleSave = () => {
-        console.log({ projectRows, statusRows, remarks, remarksDate });
-        toast({ title: 'Saved', description: 'Askari Bank timeline data has been saved.' });
+        addRecord({
+            fileName: 'Askari Bank Timeline',
+            projectName: 'Askari Bank Projects',
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        });
     };
 
     const handleDownload = () => {
@@ -254,3 +263,4 @@ export default function AskariBankTimelinePage() {
         </Card>
     );
 }
+
