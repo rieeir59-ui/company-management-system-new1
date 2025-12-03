@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, FileText, PlusCircle, Trash2 } from 'lucide-react';
+import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -79,12 +79,23 @@ const initialAgreementText = {
     ],
 };
 
+const initialPaymentSchedule = [
+    { id: 1, description: 'On mobilization (advance payment)', percentage: '20 %' },
+    { id: 2, description: "On approval of schematic designs & 3D's", percentage: '15%' },
+    { id: 3, description: 'On completion of submission drawings', percentage: '15%' },
+    { id: 4, description: 'On start of construction drawings', percentage: '15%' },
+    { id: 5, description: 'On completion of construction drawings', percentage: '10%' },
+    { id: 6, description: 'On completion of interior drawings', percentage: '10%' },
+    { id: 7, description: 'On preparation of detailed BOQ', percentage: '10%' },
+];
+
+
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
-
+    
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
     const [designOf, setDesignOf] = useState('');
@@ -96,7 +107,12 @@ export default function ProjectAgreementPage() {
     const [finalCharges, setFinalCharges] = useState('');
 
     const [agreementText, setAgreementText] = useState(initialAgreementText);
-    
+    const [paymentSchedule, setPaymentSchedule] = useState(initialPaymentSchedule);
+
+    const handlePaymentScheduleChange = (id: number, field: 'description' | 'percentage', value: string) => {
+        setPaymentSchedule(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    };
+
     const handleTextChange = (section: keyof typeof agreementText, index: number, value: string) => {
         const newText = { ...agreementText };
         if (Array.isArray(newText[section])) {
@@ -113,17 +129,14 @@ export default function ProjectAgreementPage() {
 
     const handleSave = async () => {
         if (!firestore || !currentUser) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'You must be logged in to save a record.',
-            });
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save a record.' });
             return;
         }
 
         const recordData = [
             { category: "Agreement Details", items: [`Made as of the day: ${day}`, `Between the Owner: ${owner}`, `For the Design of: ${designOf}`, `Address: ${address}`] },
             { category: "Cost Breakdown", items: [`Covered Area of Project: ${coveredArea}`, `Consultancy Charges: ${consultancyCharges}`, `Sales Tax @ 16%: ${salesTax}`, `Withholding Tax @ 10%: ${withholdingTax}`, `Final Consultancy Charges: ${finalCharges}`] },
+            { category: "Payment Schedule", items: paymentSchedule.map(p => `${p.description}: ${p.percentage}`) },
             { category: "Top Supervision", items: agreementText.topSupervision },
             { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
             { category: "Notes", items: agreementText.notes },
@@ -157,7 +170,7 @@ export default function ProjectAgreementPage() {
             doc.text(splitText, 14 + indent, yPos);
             yPos += (splitText.length * 4) + spaceAfter;
         };
-        
+
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
         addText(`Made as of the day ${day || '________________'}`);
         addText(`Between the Owner: ${owner || '________________'}`);
@@ -170,8 +183,16 @@ export default function ProjectAgreementPage() {
         });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
-        // ... (rest of the PDF generation logic using the state values)
-
+        addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
+        const paymentBody = paymentSchedule.map(item => [item.description, item.percentage]);
+        doc.autoTable({
+            startY: yPos,
+            body: paymentBody,
+            theme: 'plain',
+            styles: { fontSize: 10, cellPadding: 1 }
+        });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
         doc.save('Project-Agreement.pdf');
         toast({ title: "Download Started", description: "The project agreement PDF is being generated." });
     }
@@ -180,7 +201,7 @@ export default function ProjectAgreementPage() {
         <div className="space-y-8">
             <DashboardPageHeader title="Project Agreement" description="Manage project agreements." imageUrl={image?.imageUrl || ''} imageHint={image?.imageHint || ''} />
             <Card>
-                 <CardHeader><CardTitle className="text-center font-headline text-3xl text-primary">COMMERCIAL AGREEMENT</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-center font-headline text-3xl text-primary">COMMERCIAL AGREEMENT</CardTitle></CardHeader>
                 <CardContent className="p-6 md:p-8">
                     <div id="agreement-content">
                         <Section>
@@ -192,24 +213,23 @@ export default function ProjectAgreementPage() {
                         </Section>
 
                         <Section title="Cost Breakdown">
-                             <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                                 <p>Covered Area of Project:</p> <Input value={coveredArea} onChange={e => setCoveredArea(e.target.value)} />
                                 <p>Consultancy Charges @ Rs ___/Sft:</p> <Input value={consultancyCharges} onChange={e => setConsultancyCharges(e.target.value)} />
                                 <p>Sales Tax @ 16%:</p> <Input value={salesTax} onChange={e => setSalesTax(e.target.value)} />
                                 <p>Withholding Tax @ 10%:</p> <Input value={withholdingTax} onChange={e => setWithholdingTax(e.target.value)} />
                                 <p className="font-bold">Final Consultancy Charges:</p> <Input className="font-bold" value={finalCharges} onChange={e => setFinalCharges(e.target.value)} />
-                             </div>
+                            </div>
                         </Section>
 
                         <Section title="PAYMENT SCHEDULE:">
-                             <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                                <div>On mobilization (advance payment)</div><div>20 %</div>
-                                <div>On approval of schematic designs & 3D’s</div><div>15%</div>
-                                <div>On completion of submission drawings</div><div>15%</div>
-                                <div>On start of construction drawings</div><div>15%</div>
-                                <div>On completion of construction drawings</div><div>10%</div>
-                                <div>On completion of interior drawings</div><div>10%</div>
-                                <div>On preparation of detailed BOQ</div><div>10%</div>
+                             <div className="space-y-2">
+                                {paymentSchedule.map(item => (
+                                    <div key={item.id} className="grid grid-cols-2 gap-x-8 gap-y-2 items-center">
+                                        <Input value={item.description} onChange={e => handlePaymentScheduleChange(item.id, 'description', e.target.value)} />
+                                        <Input value={item.percentage} onChange={e => handlePaymentScheduleChange(item.id, 'percentage', e.target.value)} className="w-24" />
+                                    </div>
+                                ))}
                             </div>
                         </Section>
 
@@ -265,7 +285,6 @@ export default function ProjectAgreementPage() {
                                 ))}
                             </div>
                         </Section>
-
 
                         <div className="flex justify-between mt-16">
                             <div><p className="border-b-2 border-foreground w-48 mb-2"></p><p>Architect</p></div>
