@@ -127,7 +127,10 @@ export default function SiteVisitPage() {
             data: [
                 {
                     category: 'Basic Information',
-                    items: Object.entries(basicInfo).map(([key, value]) => `${key}: ${value}`)
+                    items: Object.entries(basicInfo).map(([key, value]) => ({ 
+                        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), 
+                        value: value 
+                    }))
                 },
                 ...Object.entries(checklistSections).map(([title, items]) => ({
                     category: title,
@@ -142,7 +145,7 @@ export default function SiteVisitPage() {
                 ...(recommendations ? [{ category: 'Actions & Recommendations', items: [recommendations] }] : []),
                 ...(pictures.filter(p => p.file).length > 0 ? [{
                     category: 'Pictures',
-                    items: pictures.filter(p => p.file).map(p => `Comment: ${p.comment}, File: ${p.file?.name}`)
+                    items: pictures.filter(p => p.file).map(p => ({ comment: p.comment, fileName: p.file?.name }))
                 }] : [])
             ]
         };
