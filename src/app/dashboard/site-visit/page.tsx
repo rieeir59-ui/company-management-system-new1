@@ -18,6 +18,8 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { Progress } from '@/components/ui/progress';
 
 type RemarksState = Record<string, string>;
 
@@ -55,13 +57,19 @@ type PictureRow = {
   id: number; 
   file: File | null;
   previewUrl: string; 
-  comment: string; 
+  comment: string;
+  isUploading?: boolean;
+  progress?: number;
+  downloadURL?: string;
+  error?: string;
 };
 
 export default function SiteVisitPage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
+    const { firestore, firebaseApp } = useFirebase();
     const { user: currentUser } = useCurrentUser();
+    const storage = firebaseApp ? getStorage(firebaseApp) : null;
+
 
     const [basicInfo, setBasicInfo] = useState({
         siteName: '', city: '', date: '', visitNumber: '', architectName: ''
@@ -113,52 +121,70 @@ export default function SiteVisitPage() {
     };
 
     const handleSave = async () => {
-        if (!currentUser || !firestore) {
+        if (!currentUser || !firestore || !storage) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
 
-        const dataToSave = {
-            fileName: 'Site Visit Proforma',
-            projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
-            createdAt: serverTimestamp(),
-            data: [
-                {
-                    category: 'Basic Information',
-                    items: Object.entries(basicInfo).map(([key, value]) => ({ 
-                        label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), 
-                        value: value 
-                    }))
-                },
-                ...Object.entries(checklistSections).map(([title, items]) => ({
-                    category: title,
-                    items: items.map(item => ({
-                        Item: item,
-                        Status: checklistState[item] ? 'Yes' : 'No',
-                        Remarks: remarksState[item] || 'N/A'
-                    }))
-                })),
-                ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
-                ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
-                ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                ...(pictures.filter(p => p.file).length > 0 ? [{
-                    category: 'Pictures',
-                    items: pictures.filter(p => p.file).map(p => ({ comment: p.comment, fileName: p.file?.name }))
-                }] : [])
-            ]
-        };
+        const pictureUploadPromises = pictures
+            .filter(p => p.file && !p.downloadURL)
+            .map(p => {
+                return new Promise<PictureRow>((resolve, reject) => {
+                    const filePath = `site-visits/${Date.now()}_${p.file!.name}`;
+                    const storageRef = ref(storage, filePath);
+                    const uploadTask = uploadBytesResumable(storageRef, p.file!);
+
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: true, progress } : up));
+                        },
+                        (error) => {
+                            console.error("Upload failed:", error);
+                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+                            reject(error);
+                        },
+                        async () => {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            setPictures(prev => prev.map(up => up.id === p.id ? { ...up, isUploading: false, downloadURL } : up));
+                            resolve({ ...p, downloadURL });
+                        }
+                    );
+                });
+            });
 
         try {
+            const uploadedPictures = await Promise.all(pictureUploadPromises);
+            
+            const allPictures = pictures.map(p => {
+                const uploaded = uploadedPictures.find(up => up.id === p.id);
+                return uploaded || p;
+            });
+
+            const dataToSave = {
+                fileName: 'Site Visit Proforma',
+                projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
+                employeeId: currentUser.record,
+                employeeName: currentUser.name,
+                createdAt: serverTimestamp(),
+                data: [
+                    { category: 'Basic Information', items: Object.entries(basicInfo).map(([key, value]) => ({ label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), value: value }))},
+                    ...Object.entries(checklistSections).map(([title, items]) => ({ category: title, items: items.map(item => ({ Item: item, Status: checklistState[item] ? 'Yes' : 'No', Remarks: remarksState[item] || 'N/A' }))})),
+                    ...(observations ? [{ category: 'Observations', items: [{ label: 'Details', value: observations }] }] : []),
+                    ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
+                    ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
+                    ...(allPictures.filter(p => p.downloadURL).length > 0 ? [{ category: 'Pictures', items: allPictures.filter(p => p.downloadURL).map(p => ({ comment: p.comment, url: p.downloadURL })) }] : [])
+                ]
+            };
+
             await addDoc(collection(firestore, 'savedRecords'), dataToSave);
             toast({ title: 'Record Saved', description: 'The site visit proforma has been saved.' });
         } catch (error) {
             console.error(error);
-            const permissionError = new FirestorePermissionError({
+             const permissionError = new FirestorePermissionError({
                 path: 'savedRecords',
                 operation: 'create',
-                requestResourceData: dataToSave
+                requestResourceData: { error: 'data too large, check image upload logic' },
             });
             errorEmitter.emit('permission-error', permissionError);
         }
@@ -337,6 +363,8 @@ export default function SiteVisitPage() {
                                     )}
                                     <Input id={`pic-upload-${pic.id}`} type="file" accept="image/jpeg, image/png" className="hidden" onChange={e => handlePictureFileChange(pic.id, e)} />
                                 </Label>
+                                {pic.isUploading && <Progress value={pic.progress} />}
+                                {pic.error && <p className="text-destructive text-sm">{pic.error}</p>}
                                 <div className="flex items-center gap-2">
                                     <Textarea placeholder="Comment" value={pic.comment} onChange={e => handlePictureCommentChange(pic.id, e.target.value)} rows={1}/>
                                     <Button variant="destructive" size="icon" onClick={() => removePictureRow(pic.id)}><Trash2 className="h-4 w-4" /></Button>
