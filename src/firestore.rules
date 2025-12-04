@@ -11,21 +11,23 @@ service cloud.firestore {
     // USERS COLLECTION
     // A user can only read or write to their own document.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // SAVED RECORDS
-    // Any authenticated user can read/list all records.
-    // Any authenticated user can create their own record.
-    // Only the owner of the record or an admin can update or delete it.
+    // Admins can see all records. Non-admins can only see their own.
     match /savedRecords/{docId} {
-      allow list, read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
-      allow update, delete: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
+      allow read, update, delete: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
+      allow create: if request.auth != null;
+    }
+    match /savedRecords {
+        allow list: if request.auth != null && isAdmin();
     }
 
+
     // UPLOADED FILES
-    // Admins can read/list all file records.
+    // Any authenticated user can read/list all file records.
     // Any authenticated user can create their own file record.
     // Only the owner of the record or an admin can update or delete it.
     match /uploadedFiles/{fileId} {
