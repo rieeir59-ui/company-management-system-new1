@@ -75,32 +75,29 @@ export const EmployeeProvider = ({ children }: { children: ReactNode }) => {
         return acc;
     }, {} as Record<string, Employee[]>);
 
-    // This logic was originally in the employees.ts file.
-    // It's better to have it here to react to state changes.
-    if (grouped.admin) {
-        const rabiya = employees.find(e => e.record === 'EMP-004');
-        const imran = employees.find(e => e.record === 'EMP-005');
-        if (rabiya && !grouped.admin.find(e => e.record === 'EMP-004')) grouped.admin.push(rabiya);
-        if (imran && !grouped.admin.find(e => e.record === 'EMP-005')) grouped.admin.push(imran);
-    }
     return grouped;
-
   }, [employees]);
 
+  const value = useMemo(() => ({
+    employees,
+    addEmployee,
+    updateEmployee,
+    deleteEmployee,
+    employeesByDepartment
+  }), [employees, employeesByDepartment]);
 
-  // To prevent hydration errors, we can return the initial state on the server
-  // and until the client is initialized.
-  if (!isInitialized && typeof window !== 'undefined') {
-      return (
-          <EmployeeContext.Provider value={{ employees: initialEmployees, addEmployee, updateEmployee, deleteEmployee, employeesByDepartment }}>
+
+  // To prevent hydration errors, render nothing on the server if not initialized.
+  if (!isInitialized) {
+    return (
+        <EmployeeContext.Provider value={{ employees: initialEmployees, addEmployee, updateEmployee, deleteEmployee, employeesByDepartment: {} }}>
             {children}
-          </EmployeeContext.Provider>
-      );
+        </EmployeeContext.Provider>
+    );
   }
 
-
   return (
-    <EmployeeContext.Provider value={{ employees, addEmployee, updateEmployee, deleteEmployee, employeesByDepartment }}>
+    <EmployeeContext.Provider value={value}>
       {children}
     </EmployeeContext.Provider>
   );
@@ -113,3 +110,4 @@ export const useEmployees = () => {
   }
   return context;
 };
+
