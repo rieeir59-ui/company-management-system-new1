@@ -55,13 +55,12 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isUserLoading || !firestore) {
+    if (isUserLoading) {
       setIsLoading(true);
       return;
     }
     
-    // No user, no data.
-    if (!currentUser) {
+    if (!currentUser || !firestore) {
         setFileRecords([]);
         setIsLoading(false);
         return;

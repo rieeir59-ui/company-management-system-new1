@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -140,7 +139,7 @@ export default function AssignTaskPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     useEffect(() => {
-        if (isUserLoading || !firestore || !currentUser) return;
+        if (isUserLoading || !currentUser || !firestore) return;
 
         const q = query(collection(firestore, 'tasks'));
         const unsubscribe = onSnapshot(q, (snapshot) => {

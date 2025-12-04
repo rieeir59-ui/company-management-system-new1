@@ -54,28 +54,24 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { user: currentUser, isUserLoading } = useCurrentUser();
 
   useEffect(() => {
-    if (isUserLoading || !firestore) {
+    if (isUserLoading) {
       setIsLoading(true);
       return;
     }
 
-    if (!currentUser) {
+    if (!currentUser || !firestore) {
         setIsLoading(false);
         setRecords([]);
         return;
     }
-
-    setIsLoading(true);
     
     let q;
     const recordsCollection = collection(firestore, "savedRecords");
     const isAdmin = ['ceo', 'admin', 'software-engineer'].includes(currentUser.department);
 
     if (isAdmin) {
-      // Admins can see all records
       q = query(recordsCollection, orderBy("createdAt", "desc"));
     } else {
-      // Non-admins see only their own records
       q = query(recordsCollection, where("employeeId", "==", currentUser.record), orderBy("createdAt", "desc"));
     }
 
