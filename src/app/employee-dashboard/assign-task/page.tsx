@@ -60,8 +60,8 @@ function EmployeeCard({ employee }: { employee: Employee }) {
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
-        // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
-        if (isUserLoading || !firestore || !currentUser) return;
+        // Crucial Guard: Do not proceed if auth is loading, user/firestore is not available, or employee.uid is missing.
+        if (isUserLoading || !firestore || !currentUser || !employee.uid) return;
 
         const tasksCollection = collection(firestore, 'tasks');
         const q = query(tasksCollection, where('assignedTo', '==', employee.uid));
