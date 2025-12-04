@@ -11,10 +11,10 @@ export type Employee = {
 
 export const employees: Employee[] = [
   { name: 'Isbah Hassan', contact: '0300-8448333', email: 'isbah.hassan@ri-hub.com', record: 'EMP-001', avatarId: 'avatar-1', department: 'ceo', password: 'password' },
-  { name: 'Sobia', contact: '0308-4448470', email: 'sobia@ri-hub.com', record: 'EMP-002', avatarId: 'avatar-3', department: 'hr', password: 'password' },
+  { name: 'Sobia', contact: '0308-4448470', email: 'sobia@ri-hub.com', record: 'EMP-002', avatarId: 'avatar-3', department: 'admin', password: 'password' },
   { name: 'Fiza', contact: '0306-5081954', email: 'fiza@ri-hub.com', record: 'EMP-003', avatarId: 'avatar-1', department: 'hr', password: 'password' },
-  { name: 'Rabiya Eman', contact: '0302-2774442', email: 'rabiya.eman@ri-hub.com', record: 'EMP-004', avatarId: 'avatar-1', department: 'software-engineer', password: 'password' },
-  { name: 'Imran Abbas', contact: '0325-5382699', email: 'imran.abbas@ri-hub.com', record: 'EMP-005', avatarId: 'avatar-2', department: 'software-engineer', password: 'password' },
+  { name: 'Rabiya Eman', contact: '0302-2774442', email: 'rabiya.eman@ri-hub.com', record: 'EMP-004', avatarId: 'avatar-1', department: 'admin', password: 'password' },
+  { name: 'Imran Abbas', contact: '0325-5382699', email: 'imran.abbas@ri-hub.com', record: 'EMP-005', avatarId: 'avatar-2', department: 'admin', password: 'password' },
   { name: 'Waqas Rasool', contact: '0321-5564674', email: 'waqas.rasool@ri-hub.com', record: 'EMP-006', avatarId: 'avatar-2', department: 'finance', password: 'password' },
   { name: 'Mujahid', contact: '0300-4741406', email: 'mujahid@ri-hub.com', record: 'EMP-007', avatarId: 'avatar-2', department: 'draftman', password: 'password' },
   { name: 'Jabbar', contact: '0333-4624328', email: 'jabbar@ri-hub.com', record: 'EMP-008', avatarId: 'avatar-2', department: 'draftman', password: 'password' },
