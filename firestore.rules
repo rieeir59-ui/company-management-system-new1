@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -7,9 +8,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Accessing custom claims requires `request.auth.token`.
-      // The user document is fetched to check the department role.
-      // This assumes you have a /users/{uid} document with a 'department' field.
+      // It's better to use custom claims for roles, but for this app, 
+      // we'll check a 'department' field in the user's profile document.
+      // This requires an extra read but is a common pattern without claims.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.department in ['ceo', 'admin', 'software-engineer'];
     }
 
