@@ -128,7 +128,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   // Update record
   const updateRecord = useCallback(
     async (id: string, updatedData: Partial<SavedRecord>) => {
-      if (!firestore) return;
+      if (!firestore || !currentUser) return;
+      
+      const recordToUpdate = records.find(r => r.id === id);
+      if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
+          return;
+      }
+
       try {
         await updateDoc(doc(firestore, 'savedRecords', id), updatedData);
         toast({ title: 'Record Updated', description: 'Record successfully updated.' });
@@ -137,13 +144,20 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'update', requestResourceData: updatedData }));
       }
     },
-    [firestore, toast]
+    [firestore, toast, currentUser, isAdmin, records]
   );
 
   // Delete record
   const deleteRecord = useCallback(
     async (id: string) => {
-      if (!firestore) return;
+      if (!firestore || !currentUser) return;
+      
+      const recordToDelete = records.find(r => r.id === id);
+      if (recordToDelete && !isAdmin && recordToDelete.employeeId !== currentUser.uid) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this record.' });
+          return;
+      }
+
       try {
         await deleteDoc(doc(firestore, 'savedRecords', id));
         toast({ title: 'Record Deleted', description: 'Record has been removed.' });
@@ -152,7 +166,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'delete' }));
       }
     },
-    [firestore, toast]
+    [firestore, toast, currentUser, isAdmin, records]
   );
 
   // Update task status (admin or assigned employee)
