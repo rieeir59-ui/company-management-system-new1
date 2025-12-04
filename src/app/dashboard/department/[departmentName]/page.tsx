@@ -44,7 +44,7 @@ export default function DepartmentPage() {
   const handleEmployeeSelect = (employee: Employee) => {
     // We navigate to the employee dashboard, but pass the employeeId as a query param
     // instead of changing the globally logged-in user.
-    router.push(`/employee-dashboard?employeeId=${employee.uid}`);
+    router.push(`/employee-dashboard?employeeId=${employee.record}`);
   };
   
   return (
