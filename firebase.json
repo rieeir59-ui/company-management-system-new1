@@ -1,13 +1,15 @@
 {
   "hosting": {
-    "source": ".",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
-        "source": "**",
-        "apphosting": {
-          "backendId": "studi",
-          "region": "us-central1"
-        }
+        "source": "/(.*)",
+        "destination": "/index.html"
       }
     ]
   }

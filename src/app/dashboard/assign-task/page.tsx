@@ -59,6 +59,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
+        // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
         if (isUserLoading || !firestore || !currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
@@ -139,6 +140,7 @@ export default function AssignTaskPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     useEffect(() => {
+        // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
         if (isUserLoading || !currentUser || !firestore) return;
 
         const q = query(collection(firestore, 'tasks'));

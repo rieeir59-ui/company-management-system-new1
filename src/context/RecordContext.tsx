@@ -54,16 +54,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { user: currentUser, isUserLoading } = useCurrentUser();
 
   useEffect(() => {
-    if (isUserLoading) {
-      setIsLoading(true);
+    // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
+    if (isUserLoading || !currentUser || !firestore) {
+      setIsLoading(false); 
+      setRecords([]); // Clear records if user is not authenticated
       return;
     }
-
-    if (!currentUser || !firestore) {
-        setIsLoading(false);
-        setRecords([]);
-        return;
-    }
+    
+    setIsLoading(true);
     
     let q;
     const recordsCollection = collection(firestore, "savedRecords");

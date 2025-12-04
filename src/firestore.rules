@@ -1,52 +1,8 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isAdmin() {
-      // department is a custom claim set on the user's token.
-      return request.auth != null && request.auth.token.department in ['admin', 'software-engineer', 'ceo'];
-    }
-
-    // USERS COLLECTION
-    // A user can only read or write to their own document.
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // SAVED RECORDS
-    // Admins have full access. Non-admins can create and only read/update/delete their own.
-    match /savedRecords/{docId} {
-      allow read, update, delete: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
-      allow create: if request.auth != null;
-    }
-    match /savedRecords {
-        // Admins can list all records. Regular users cannot (for performance/security).
-        allow list: if request.auth != null && isAdmin();
-    }
-
-
-    // UPLOADED FILES
-    // Any authenticated user can read/list all file records.
-    // Any authenticated user can create their own file record.
-    // Only the owner of the record or an admin can update or delete it.
-    match /uploadedFiles/{fileId} {
-      allow list, read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.token.record;
-      allow update, delete: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
-    }
-
-    // TASKS
-    // Any authenticated user can list and read all tasks.
-    // Any authenticated user can create a task.
-    // Only the assigned user, the assigner, or an admin can update or delete a task.
-    match /tasks/{taskId} {
-      allow list, read, create: if request.auth != null;
-      allow update, delete: if request.auth != null && 
-                            (resource.data.assignedTo == request.auth.token.record || 
-                             resource.data.assignedById == request.auth.token.record || 
-                             isAdmin());
+    match /{document=**} {
+      allow read, list, create, update, delete: if request.auth != null;
     }
   }
 }

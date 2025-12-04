@@ -55,16 +55,14 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isUserLoading) {
-      setIsLoading(true);
+    // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
+    if (isUserLoading || !currentUser || !firestore) {
+      setIsLoading(false); // Set loading to false if we can't fetch.
+      setFileRecords([]); // Clear any previous records.
       return;
     }
-    
-    if (!currentUser || !firestore) {
-        setFileRecords([]);
-        setIsLoading(false);
-        return;
-    }
+
+    setIsLoading(true);
 
     const q = query(collection(firestore, "uploadedFiles"), orderBy("createdAt", "desc"));
 

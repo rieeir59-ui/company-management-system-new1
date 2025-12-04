@@ -25,15 +25,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { auth } = useFirebase();
 
   useEffect(() => {
-    let isMounted = true;
     if (!auth) {
-        if (isMounted) setIsUserLoading(false);
+        setIsUserLoading(false);
         return;
     }
     
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
-      if (!isMounted) return;
-
       if (firebaseUser) {
         const employeeDetails = employees.find(emp => emp.email === firebaseUser.email);
         if (employeeDetails) {
@@ -47,10 +44,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setIsUserLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [auth]);
 
   const login = (loggedInUser: Employee & { uid: string }) => {
