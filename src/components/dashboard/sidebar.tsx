@@ -12,7 +12,15 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubTrigger,
 } from '@/components/ui/sidebar';
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from '@/components/ui/collapsible';
 import {
   LayoutDashboard,
   Users,
@@ -26,6 +34,9 @@ import {
   ClipboardCheck,
   Calendar,
   Search as SearchIcon,
+  Landmark,
+  Building2,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -42,12 +53,24 @@ const menuItems = [
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
-    { href: '/dashboard/files-record', label: 'Files Record', icon: Database },
-    { href: '/dashboard/data-entry', label: 'Data Entry', icon: FileUp, roles: ['admin'] },
-    { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database, roles: ['admin', 'software-engineer', 'ceo'] },
+    { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin'] },
-  ];
+];
+
+const bankTimelineItems = [
+    { href: '/dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
+    { href: '/dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
+    { href: '/dashboard/timelines-of-bank/askari-bank', label: 'Askari Bank', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/bank-alfalah', label: 'Bank Alfalah', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/bank-al-habib', label: 'Bank Al Habib', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/cbd', label: 'CBD', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/dib', label: 'DIB', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/fbl', label: 'FBL', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/hbl', label: 'HBL', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/mcb', label: 'MCB', icon: Landmark },
+    { href: '/dashboard/timelines-of-bank/ubl', label: 'UBL', icon: Landmark },
+];
   
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -59,7 +82,7 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
   const pathname = usePathname();
   return (
     <SidebarMenu>
@@ -77,6 +100,33 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: type
           </Link>
         </SidebarMenuItem>
       ))}
+      <Collapsible asChild>
+        <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                className="group-data-[collapsible=icon]:justify-center"
+                tooltip="Timelines of Bank"
+                >
+                <Landmark className="size-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent asChild>
+            <SidebarMenuSub>
+                {bankTimelineItems.map((item) => (
+                    <SidebarMenuSubItem key={item.href}>
+                    <Link href={item.href} passHref>
+                        <SidebarMenuSubButton isActive={pathname === item.href}>
+                        <item.icon className="size-4 mr-2" />
+                        {item.label}
+                        </SidebarMenuSubButton>
+                    </Link>
+                    </SidebarMenuSubItem>
+                ))}
+            </SidebarMenuSub>
+            </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
     </SidebarMenu>
   );
 });
@@ -137,7 +187,7 @@ export default function DashboardSidebar() {
             />
           </div>
           <SidebarSeparator />
-          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} />
+          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} bankTimelineItems={bankTimelineItems} />
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />
