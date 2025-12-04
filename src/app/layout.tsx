@@ -5,7 +5,7 @@ import { UserProvider } from '@/context/UserContext';
 import { EmployeeProvider } from '@/context/EmployeeContext';
 import { FileProvider } from '@/context/FileContext';
 import { RecordProvider } from '@/context/RecordContext';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseProvider } from '@/firebase/provider';
 
 export default function RootLayout({
   children,
@@ -20,7 +20,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseClientProvider>
+        <FirebaseProvider>
           <UserProvider>
             <EmployeeProvider>
               <FileProvider>
@@ -30,7 +30,7 @@ export default function RootLayout({
               </FileProvider>
             </EmployeeProvider>
           </UserProvider>
-        </FirebaseClientProvider>
+        </FirebaseProvider>
         <Toaster />
       </body>
     </html>
