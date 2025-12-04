@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -60,7 +59,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
-        if (isUserLoading || !firestore || !currentUser) return;
+        if (isUserLoading || !firestore || !currentUser || !employee.uid) return;
 
         const tasksCollection = collection(firestore, 'tasks');
         const q = query(tasksCollection, where('assignedTo', '==', employee.uid));
@@ -211,7 +210,7 @@ export default function AssignTaskPage() {
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                           {deptEmployees.map(emp => <EmployeeCard key={emp.uid} employee={emp} />)}
+                           {deptEmployees.map((emp, index) => <EmployeeCard key={emp.uid ?? `emp-${index}`} employee={emp} />)}
                         </div>
                     </div>
                 )
@@ -228,7 +227,7 @@ export default function AssignTaskPage() {
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Assigned Date</TableHead>
-                                <TableHead>Due Date</TableHead>
+                                <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
                                 {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>

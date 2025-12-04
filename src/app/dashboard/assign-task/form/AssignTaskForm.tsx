@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -147,7 +146,7 @@ export default function AssignTaskForm() {
                 ['Task Name', taskName],
                 ['Task Description', taskDescription],
                 ['Assigned To', assignedEmployee?.name || assignedTo],
-                ['Due Date', dueDate],
+                ['Start Date', dueDate],
                 ['End Date', endDate],
                 ['Assigned By', currentUser?.name || 'N/A'],
             ],
@@ -201,7 +200,7 @@ export default function AssignTaskForm() {
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="dueDate">Due Date</Label>
+                        <Label htmlFor="dueDate">Start Date</Label>
                         <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                     </div>
                      <div className="space-y-2">

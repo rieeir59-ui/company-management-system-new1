@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { useCurrentUser } from '@/context/UserContext';
@@ -12,7 +11,7 @@ import { useFirebase } from '@/firebase/provider';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Trash2 } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +20,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useEmployees } from '@/context/EmployeeContext';
 import { differenceInDays, parseISO } from 'date-fns';
+import { useRecords } from '@/context/RecordContext';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 const departments: Record<string, string> = {
@@ -60,7 +61,7 @@ type ProjectRow = {
 
 type ProjectStatus = 'completed' | 'in-progress' | 'not-started';
 
-const StatusIcon = ({ status }: { status: Project['status'] }) => {
+const StatusIcon = ({ status }: { status: Project['status'] | ProjectStatus }) => {
     switch (status) {
         case 'completed':
             return <CheckCircle2 className="h-5 w-5 text-green-500" />;
@@ -91,13 +92,14 @@ function EmployeeDashboardComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore } = useFirebase();
+  const { addRecord } = useRecords();
 
   const employeeId = searchParams.get('employeeId');
   const displayUser = useMemo(() => {
     return employeeId ? employees.find(e => e.record === employeeId) : currentUser;
   }, [employeeId, employees, currentUser]);
     
-  const isOwner = useMemo(() => currentUser && displayUser && currentUser.record === displayUser.record, [currentUser, displayUser]);
+  const isOwner = useMemo(() => currentUser && displayUser && currentUser.uid === displayUser.uid, [currentUser, displayUser]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
@@ -105,6 +107,8 @@ function EmployeeDashboardComponent() {
   const [schedule, setSchedule] = useState({ start: '', end: '' });
   const [remarks, setRemarks] = useState('');
   const [numberOfDays, setNumberOfDays] = useState<number | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<ProjectRow | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   useEffect(() => {
     if (schedule.start && schedule.end) {
@@ -146,7 +150,7 @@ function EmployeeDashboardComponent() {
     }, [filteredRows]);
     
   useEffect(() => {
-    if (!firestore || !displayUser?.record) {
+    if (!firestore || !displayUser?.uid) {
         setIsLoadingTasks(false);
         return;
     }
@@ -155,7 +159,7 @@ function EmployeeDashboardComponent() {
     const tasksCollection = collection(firestore, 'tasks');
     const q = query(
         tasksCollection, 
-        where('assignedTo', '==', displayUser.record)
+        where('assignedTo', '==', displayUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -234,36 +238,32 @@ function EmployeeDashboardComponent() {
       setRows(rows.filter(row => row.id !== id));
   };
 
+  const openViewDialog = (record: ProjectRow) => {
+    setViewingRecord(record);
+    setIsViewDialogOpen(true);
+  };
+
+
   const handleSave = () => {
-      if (!firestore || !currentUser || !displayUser) {
-          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-          return;
-      }
-
-      const dataToSave = {
-          employeeId: displayUser.record,
-          employeeName: displayUser.name,
-          fileName: "My Projects",
-          projectName: `Projects for ${displayUser.name}`,
-          data: [{
-              category: 'My Projects',
-              schedule,
-              projects: rows,
-              remarks,
-          }],
-          createdAt: serverTimestamp(),
-      };
-
-      addDoc(collection(firestore, 'savedRecords'), dataToSave)
-          .then(() => toast({ title: 'Record Saved', description: "Your project records have been saved." }))
-          .catch(serverError => {
-              const permissionError = new FirestorePermissionError({
-                  path: `savedRecords`,
-                  operation: 'create',
-                  requestResourceData: dataToSave,
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
+    if (!displayUser) {
+        toast({ variant: 'destructive', title: 'Error', description: 'User not found.' });
+        return;
+    }
+    const recordToSave = {
+        fileName: "My Projects",
+        projectName: `Projects for ${displayUser.name}`,
+        data: [{
+            category: 'My Projects',
+            items: [
+                { label: 'Work Schedule Start', value: schedule.start },
+                { label: 'Work Schedule End', value: schedule.end },
+                ...rows.map(r => ({ label: `Project: ${r.projectName}`, value: `Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`}))
+            ],
+            schedule: schedule, // Save schedule object for easier parsing later
+            remarks: remarks,
+        }]
+    };
+    addRecord(recordToSave as any);
   };
 
   const handleDownload = () => {
@@ -351,7 +351,7 @@ function EmployeeDashboardComponent() {
                                 <TableHead>Project</TableHead>
                                 <TableHead>Task</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead>Due Date</TableHead>
+                                <TableHead>Start Date</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
@@ -437,7 +437,7 @@ function EmployeeDashboardComponent() {
                                         <TableHead>Status</TableHead>
                                         <TableHead>Start Date</TableHead>
                                         <TableHead>End Date</TableHead>
-                                        {isOwner && <TableHead>Action</TableHead>}
+                                        <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -462,7 +462,10 @@ function EmployeeDashboardComponent() {
                                             </TableCell>
                                             <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!isOwner} /></TableCell>
                                             <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!isOwner} /></TableCell>
-                                             {isOwner && <TableCell><Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>}
+                                             <TableCell>
+                                                <Button variant="ghost" size="icon" onClick={() => openViewDialog(row)}><Eye className="h-4 w-4" /></Button>
+                                                {isOwner && <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                             </TableCell>
                                         </TableRow>
                                     ))}
                                      {filteredRows.length === 0 && (
@@ -489,6 +492,27 @@ function EmployeeDashboardComponent() {
                     </CardContent>
                 </Card>
             </div>
+             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
+                        <DialogDescription>
+                             <span className="flex items-center gap-2">
+                                <StatusIcon status={viewingRecord?.status || 'not-started'} />
+                                {viewingRecord?.status}
+                             </span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        <p><span className="font-semibold">Detail:</span> {viewingRecord?.detail}</p>
+                        <p><span className="font-semibold">Start Date:</span> {viewingRecord?.startDate}</p>
+                        <p><span className="font-semibold">End Date:</span> {viewingRecord?.endDate}</p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
     </div>
   );
 }
