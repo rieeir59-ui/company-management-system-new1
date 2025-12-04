@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -119,7 +120,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     try {
       const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
-      // The onSnapshot listener will automatically update the state, no need to manually add.
       return docRef;
     } catch (serverError) {
       console.error(serverError);
