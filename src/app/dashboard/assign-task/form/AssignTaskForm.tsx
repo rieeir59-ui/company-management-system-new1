@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Download } from 'lucide-react';
+import { Save, Download, Check, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
@@ -27,9 +26,12 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import type jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
+import { cn } from '@/lib/utils';
 
 
 export default function AssignTaskForm() {
@@ -49,6 +51,7 @@ export default function AssignTaskForm() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [projectName, setProjectName] = useState('');
+    const [comboboxOpen, setComboboxOpen] = useState(false);
 
     useEffect(() => {
         if (employeeId) {
@@ -192,18 +195,49 @@ export default function AssignTaskForm() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="assignedTo">Assign To</Label>
-                        <Select value={assignedTo} onValueChange={setAssignedTo}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an employee" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {employees.map((employee, index) => (
-                                    <SelectItem key={employee.uid ?? `emp-${index}`} value={employee.uid}>
-                                        {employee.name} ({employee.department})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={comboboxOpen}
+                                className="w-full justify-between"
+                                >
+                                {assignedTo
+                                    ? employees.find((employee) => employee.uid === assignedTo)?.name
+                                    : "Select an employee"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Search employee..." />
+                                    <CommandList>
+                                        <CommandEmpty>No employee found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {employees.map((employee) => (
+                                                <CommandItem
+                                                key={employee.uid}
+                                                value={employee.name}
+                                                onSelect={() => {
+                                                    setAssignedTo(employee.uid);
+                                                    setComboboxOpen(false);
+                                                }}
+                                                >
+                                                <Check
+                                                    className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    assignedTo === employee.uid ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                {employee.name} ({employee.department})
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="startDate">Start Date</Label>
@@ -239,5 +273,3 @@ export default function AssignTaskForm() {
         </Card>
     );
 }
-
-    
