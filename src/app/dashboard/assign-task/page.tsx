@@ -60,8 +60,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
-        if (isUserLoading || !firestore) return;
-        if (!currentUser) return;
+        if (isUserLoading || !firestore || !currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
         const q = query(tasksCollection, where('assignedTo', '==', employee.record));
