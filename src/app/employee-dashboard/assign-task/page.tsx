@@ -213,7 +213,12 @@ export default function AssignTaskPage() {
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                           {deptEmployees.map(emp => <EmployeeCard key={emp.uid} employee={emp} />)}
+                           {(deptEmployees ?? []).map((emp, index) => (
+                                <EmployeeCard 
+                                    key={emp.uid || emp.record || `emp-${index}`}
+                                    employee={emp} 
+                                />
+                            ))}
                         </div>
                     </div>
                 )
@@ -278,3 +283,4 @@ export default function AssignTaskPage() {
     
 
     
+
