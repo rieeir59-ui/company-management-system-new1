@@ -53,9 +53,12 @@ function AssignTaskForm() {
 
     useEffect(() => {
         if (employeeId) {
-            setAssignedTo(employeeId);
+            const employee = employees.find(e => e.record === employeeId);
+            if (employee) {
+                setAssignedTo(employee.uid);
+            }
         }
-    }, [employeeId]);
+    }, [employeeId, employees]);
 
     const handleSave = () => {
         if (!firestore || !currentUser) {
@@ -71,7 +74,7 @@ function AssignTaskForm() {
         const dataToSave = {
             taskName,
             taskDescription,
-            assignedTo, // This will be the employee's UID
+            assignedTo,
             dueDate: startDate,
             endDate,
             projectName,
@@ -267,3 +270,5 @@ export default function AssignTaskFormPage() {
     </div>
   );
 }
+
+    

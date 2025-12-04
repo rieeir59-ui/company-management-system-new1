@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -96,7 +97,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
 
     return (
         <div className="flex flex-col">
-            <Link href={`/employee-dashboard/assign-task/form?employeeId=${employee.uid}`} className="flex-grow">
+            <Link href={`/employee-dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardContent className="p-4">
                         <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
@@ -278,6 +279,8 @@ export default function AssignTaskPage() {
         </div>
     );
 }
+
+    
 
     
 

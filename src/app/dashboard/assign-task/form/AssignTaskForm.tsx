@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,7 +46,7 @@ export default function AssignTaskForm() {
     const [taskName, setTaskName] = useState('');
     const [taskDescription, setTaskDescription] = useState('');
     const [assignedTo, setAssignedTo] = useState('');
-    const [dueDate, setDueDate] = useState('');
+    const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [projectName, setProjectName] = useState('');
 
@@ -64,11 +65,16 @@ export default function AssignTaskForm() {
             return;
         }
 
+        if (!assignedTo) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please select an employee to assign the task to.' });
+            return;
+        }
+
         const dataToSave = {
             taskName,
             taskDescription,
             assignedTo,
-            dueDate,
+            dueDate: startDate,
             endDate,
             projectName,
             assignedBy: currentUser.name,
@@ -105,7 +111,7 @@ export default function AssignTaskForm() {
                 setTaskName('');
                 setTaskDescription('');
                 setAssignedTo(employeeId || '');
-                setDueDate('');
+                setStartDate('');
                 setEndDate('');
                 setProjectName('');
             })
@@ -146,7 +152,7 @@ export default function AssignTaskForm() {
                 ['Task Name', taskName],
                 ['Task Description', taskDescription],
                 ['Assigned To', assignedEmployee?.name || assignedTo],
-                ['Start Date', dueDate],
+                ['Start Date', startDate],
                 ['End Date', endDate],
                 ['Assigned By', currentUser?.name || 'N/A'],
             ],
@@ -191,8 +197,8 @@ export default function AssignTaskForm() {
                                 <SelectValue placeholder="Select an employee" />
                             </SelectTrigger>
                             <SelectContent>
-                                {employees.map(employee => (
-                                    <SelectItem key={employee.uid} value={employee.uid}>
+                                {employees.map((employee, index) => (
+                                    <SelectItem key={employee.uid ?? `emp-${index}`} value={employee.uid}>
                                         {employee.name} ({employee.department})
                                     </SelectItem>
                                 ))}
@@ -200,8 +206,8 @@ export default function AssignTaskForm() {
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="dueDate">Start Date</Label>
-                        <Input id="dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="endDate">End Date</Label>
@@ -233,3 +239,5 @@ export default function AssignTaskForm() {
         </Card>
     );
 }
+
+    

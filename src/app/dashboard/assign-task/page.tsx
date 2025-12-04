@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -95,7 +96,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
 
     return (
          <div className="flex flex-col">
-            <Link href={`/dashboard/assign-task/form?employeeId=${employee.uid}`} className="flex-grow">
+            <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-2 border-primary/80">
                     <CardContent className="p-4">
                         <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
@@ -199,12 +200,12 @@ export default function AssignTaskPage() {
                 imageUrl={image?.imageUrl || ''}
                 imageHint={image?.imageHint || ''}
             />
-            {departments.map(dept => {
+            {departments.map((dept, deptIndex) => {
                 const deptEmployees = employeesByDepartment[dept.slug] || [];
                 if(deptEmployees.length === 0) return null;
                 
                 return (
-                    <div key={dept.slug}>
+                    <div key={dept.slug || `dept-${deptIndex}`}>
                         <div className="flex items-center gap-2 mb-4">
                             <Users className="h-6 w-6 text-primary" />
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
@@ -272,5 +273,7 @@ export default function AssignTaskPage() {
     );
 }
 
+
+    
 
     
