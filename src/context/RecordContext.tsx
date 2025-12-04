@@ -70,7 +70,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     if (isAdmin) {
       q = query(recordsCollection, orderBy("createdAt", "desc"));
     } else {
-      q = query(recordsCollection, where("employeeId", "==", currentUser.record), orderBy("createdAt", "desc"));
+      q = query(recordsCollection, where("employeeId", "==", currentUser.uid), orderBy("createdAt", "desc"));
     }
 
     const firestoreUnsubscribe = onSnapshot(q, 
@@ -111,7 +111,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     
     const dataToSave = {
       ...recordData,
-      employeeId: currentUser.record,
+      employeeId: currentUser.uid,
       employeeName: currentUser.name,
       createdAt: serverTimestamp(),
     };
@@ -119,13 +119,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     try {
       const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
-      // Manually add to state to trigger immediate UI update, converting server timestamp to Date
-      setRecords(prev => [{ ...recordData, ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()));
+      // The onSnapshot listener will automatically update the state, no need to manually add.
       return docRef;
     } catch (serverError) {
       console.error(serverError);
       const permissionError = new FirestorePermissionError({
-          path: `savedRecords`,
+          path: 'savedRecords',
           operation: 'create',
           requestResourceData: dataToSave,
       });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -56,10 +55,12 @@ interface Task {
 
 function EmployeeCard({ employee }: { employee: Employee }) {
     const { firestore } = useFirebase();
+    const { user: currentUser, isUserLoading } = useCurrentUser();
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
-        if (!firestore) return;
+        // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
+        if (isUserLoading || !firestore || !currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
         const q = query(tasksCollection, where('assignedTo', '==', employee.record));
@@ -85,7 +86,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
         });
 
         return () => unsubscribe();
-    }, [firestore, employee.record]);
+    }, [firestore, employee.record, currentUser, isUserLoading]);
 
     return (
         <div className="flex flex-col">
@@ -125,7 +126,7 @@ export default function AssignTaskPage() {
     const { employees, employeesByDepartment } = useEmployees();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
 
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -133,16 +134,22 @@ export default function AssignTaskPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
     useEffect(() => {
-        if (!firestore || !currentUser) return;
+        if (isUserLoading || !firestore || !currentUser) return;
 
         const q = query(collection(firestore, 'tasks'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
             setTasks(fetchedTasks);
+        }, (err) => {
+            const permissionError = new FirestorePermissionError({
+                path: `tasks`,
+                operation: 'list'
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
 
         return () => unsubscribe();
-    }, [firestore, currentUser]);
+    }, [firestore, currentUser, isUserLoading]);
 
     const getEmployeeName = (recordId: string) => {
         const employee = employees.find(e => e.record === recordId);
@@ -254,4 +261,3 @@ export default function AssignTaskPage() {
         </>
     );
 }
-

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -70,7 +69,7 @@ export default function AssignTaskForm() {
             endDate,
             projectName,
             assignedBy: currentUser.name,
-            assignedById: currentUser.record,
+            assignedById: currentUser.uid,
             createdAt: serverTimestamp(),
             status: 'not-started',
         };

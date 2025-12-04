@@ -99,7 +99,7 @@ function MyProjectsComponent() {
     return employeeId ? employees.find(e => e.record === employeeId) : currentUser;
   }, [employeeId, employees, currentUser]);
     
-  const isOwner = useMemo(() => currentUser && displayUser && currentUser.record === displayUser.record, [currentUser, displayUser]);
+  const isOwner = useMemo(() => currentUser && displayUser && currentUser.uid === displayUser.record, [currentUser, displayUser]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
@@ -437,7 +437,7 @@ function MyProjectsComponent() {
                                         <TableHead>Status</TableHead>
                                         <TableHead>Start Date</TableHead>
                                         <TableHead>End Date</TableHead>
-                                        {isOwner && <TableHead>Action</TableHead>}
+                                        <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -462,7 +462,10 @@ function MyProjectsComponent() {
                                             </TableCell>
                                             <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!isOwner} /></TableCell>
                                             <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!isOwner} /></TableCell>
-                                             {isOwner && <TableCell><Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>}
+                                             <TableCell>
+                                                <Button variant="ghost" size="icon" onClick={() => openViewDialog(row)}><Eye className="h-4 w-4" /></Button>
+                                                {isOwner && <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                             </TableCell>
                                         </TableRow>
                                     ))}
                                      {filteredRows.length === 0 && (
@@ -489,6 +492,27 @@ function MyProjectsComponent() {
                     </CardContent>
                 </Card>
             </div>
+             <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{viewingRecord?.projectName}</DialogTitle>
+                        <DialogDescription>
+                             <span className="flex items-center gap-2">
+                                <StatusIcon status={viewingRecord?.status || 'not-started'} />
+                                {viewingRecord?.status}
+                             </span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        <p><span className="font-semibold">Detail:</span> {viewingRecord?.detail}</p>
+                        <p><span className="font-semibold">Start Date:</span> {viewingRecord?.startDate}</p>
+                        <p><span className="font-semibold">End Date:</span> {viewingRecord?.endDate}</p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
     </div>
   );
 }
@@ -499,7 +523,7 @@ export default function EmployeeDashboardPageWrapper() {
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-4">Loading Page...</span>
       </div>}>
-      <MyProjectsComponent />
+      <EmployeeDashboardComponent />
     </Suspense>
   )
 }

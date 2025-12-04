@@ -119,7 +119,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     const dataToSave = {
                         ...record,
                         fileUrl: downloadURL,
-                        employeeId: currentUser.record,
+                        employeeId: currentUser.uid,
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };
