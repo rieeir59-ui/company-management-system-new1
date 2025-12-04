@@ -65,11 +65,11 @@ export default function DepartmentPage() {
       </div>
 
       <div className="grid gap-6">
-        {departmentEmployees.map((employee) => {
+        {(departmentEmployees ?? []).map((employee, index) => {
           const initials = getInitials(employee.name);
           return (
               <Card 
-                key={employee.uid}
+                key={employee.uid ?? `dept-emp-${index}`}
                 onClick={() => handleEmployeeSelect(employee)}
                 className="overflow-hidden shadow-lg transition-transform hover:scale-[1.02] border-primary/50 relative cursor-pointer"
               >
