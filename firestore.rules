@@ -28,7 +28,7 @@ service cloud.firestore {
     // TASKS collection
     match /tasks/{taskId} {
       allow read: if isLoggedIn();
-      allow create: if isAdmin();
+      allow create: if isLoggedIn();
       allow update: if isAdmin() || resource.data.assignedTo == request.auth.uid;
       allow delete: if isAdmin();
     }
