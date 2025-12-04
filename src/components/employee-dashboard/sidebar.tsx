@@ -183,7 +183,6 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                  <SidebarMenuButton
-                    aria-controls={bankTimelineId}
                     className="group-data-[collapsible=icon]:justify-center"
                     tooltip="Timelines of Bank"
                   >
@@ -211,7 +210,6 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                  <SidebarMenuButton
-                    aria-controls={savedRecordsId}
                     className="group-data-[collapsible=icon]:justify-center"
                     tooltip="Saved Records"
                   >
