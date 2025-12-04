@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import Header from '@/components/layout/header';
 import { employees } from '@/lib/employees';
+import { useFirebase } from '@/firebase/provider';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,28 +20,42 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useCurrentUser();
+  const { auth } = useFirebase();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Auth service not available' });
+        return;
+    }
 
-    const employee = employees.find(emp => emp.email === email && emp.password === password);
-    
-    if (employee) {
-        login({ ...employee, uid: employee.record });
-        toast({
-            title: 'Login Successful',
-            description: `Welcome back, ${employee.name}!`,
-        });
-        if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
-            router.push('/dashboard');
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        const employee = employees.find(emp => emp.email.toLowerCase() === user.email?.toLowerCase());
+
+        if (employee) {
+            login({ ...employee, uid: user.uid });
+            toast({
+                title: 'Login Successful',
+                description: `Welcome back, ${employee.name}!`,
+            });
+            if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
+                router.push('/dashboard');
+            } else {
+                router.push('/employee-dashboard');
+            }
         } else {
-            router.push('/employee-dashboard');
+            // This case should ideally not happen if auth is synced with your employee list
+            await auth.signOut();
+            toast({ variant: 'destructive', title: 'Login Failed', description: 'Employee details not found.' });
         }
-    } else {
+    } catch (error: any) {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: 'Invalid email or password.',
+            description: error.message || 'Invalid email or password.',
         });
     }
   };

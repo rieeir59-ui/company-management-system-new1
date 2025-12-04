@@ -52,9 +52,12 @@ export default function AssignTaskForm() {
 
     useEffect(() => {
         if (employeeId) {
-            setAssignedTo(employeeId);
+            const employee = employees.find(e => e.record === employeeId);
+            if (employee) {
+                setAssignedTo(employee.uid);
+            }
         }
-    }, [employeeId]);
+    }, [employeeId, employees]);
 
     const handleSave = () => {
         if (!firestore || !currentUser) {

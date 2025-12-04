@@ -63,7 +63,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
         if (isUserLoading || !firestore || !currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
-        const q = query(tasksCollection, where('assignedTo', '==', employee.record));
+        const q = query(tasksCollection, where('assignedTo', '==', employee.uid));
 
         const firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
             let total = 0;
@@ -92,7 +92,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
         });
 
         return () => firestoreUnsubscribe();
-    }, [firestore, employee.record, currentUser, isUserLoading]);
+    }, [firestore, employee.uid, currentUser, isUserLoading]);
 
     return (
          <div className="flex flex-col">
