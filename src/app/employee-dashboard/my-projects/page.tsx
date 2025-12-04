@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -10,18 +9,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2 } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot, doc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useEmployees } from '@/context/EmployeeContext';
-import { type Employee } from '@/lib/employees';
-import { differenceInDays, parseISO, isWithinInterval } from 'date-fns';
+import { differenceInDays, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -40,15 +38,6 @@ const departments: Record<string, string> = {
 
 function formatDepartmentName(slug: string) {
     return departments[slug] || slug;
-}
-
-const getInitials = (name: string) => {
-    if (!name) return '';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1 && nameParts[nameParts.length - 1]) {
-        return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
-    }
-    return name[0] ? name[0].toUpperCase() : '';
 }
 
 interface Project {
@@ -118,7 +107,7 @@ function MyProjectsComponent() {
   const [schedule, setSchedule] = useState({ start: '', end: '' });
   const [remarks, setRemarks] = useState('');
   const [numberOfDays, setNumberOfDays] = useState<number | null>(null);
-  const [viewingRecord, setViewingRecord] = useState<ProjectRow[] | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<ProjectRow | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -249,8 +238,8 @@ function MyProjectsComponent() {
       setRows(rows.filter(row => row.id !== id));
   };
 
-  const openViewDialog = (recordRows: ProjectRow[]) => {
-    setViewingRecord(recordRows);
+  const openViewDialog = (record: ProjectRow) => {
+    setViewingRecord(record);
     setIsViewDialogOpen(true);
   };
 
@@ -270,6 +259,7 @@ function MyProjectsComponent() {
                 { label: 'Work Schedule End', value: schedule.end },
                 ...rows.map(r => ({ label: `Project: ${r.projectName}`, value: `Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`}))
             ],
+            schedule: schedule, // Save schedule object for easier parsing later
             remarks: remarks,
         }]
     };
@@ -452,7 +442,7 @@ function MyProjectsComponent() {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredRows.map(row => (
-                                        <TableRow key={row.id} onClick={() => openViewDialog([row])} className="cursor-pointer">
+                                        <TableRow key={row.id}>
                                             <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} disabled={!isOwner} /></TableCell>
                                             <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} disabled={!isOwner} /></TableCell>
                                             <TableCell>
@@ -499,32 +489,11 @@ function MyProjectsComponent() {
                     </CardContent>
                 </Card>
             </div>
-            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Project Details</DialogTitle>
-                    </DialogHeader>
-                    {viewingRecord && (
-                        <Table>
-                            <TableBody>
-                                <TableRow><TableCell className="font-semibold">Project Name</TableCell><TableCell>{viewingRecord[0].projectName}</TableCell></TableRow>
-                                <TableRow><TableCell className="font-semibold">Detail</TableCell><TableCell>{viewingRecord[0].detail}</TableCell></TableRow>
-                                <TableRow><TableCell className="font-semibold">Status</TableCell><TableCell>{viewingRecord[0].status}</TableCell></TableRow>
-                                <TableRow><TableCell className="font-semibold">Start Date</TableCell><TableCell>{viewingRecord[0].startDate}</TableCell></TableRow>
-                                <TableRow><TableCell className="font-semibold">End Date</TableCell><TableCell>{viewingRecord[0].endDate}</TableCell></TableRow>
-                            </TableBody>
-                        </Table>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
     </div>
   );
 }
 
-function EmployeeDashboardPageWrapper() {
+export default function EmployeeDashboardPageWrapper() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -534,5 +503,3 @@ function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-export default EmployeeDashboardPageWrapper;

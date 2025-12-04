@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, Clock, Archive } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,7 @@ import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 
 const bankTimelineCategories = [
     "Commercial Timeline", "Residential Timeline", "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline"
@@ -39,11 +40,6 @@ const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank
 
 const bankNameToCategory = (bankName: string) => {
     return `${bankName} Timeline`;
-}
-
-const bankTimelineProjects = (records: SavedRecord[], bankName: string) => {
-    const categoryName = bankNameToCategory(bankName);
-    return records.filter(r => r.fileName === categoryName);
 }
 
 const generateDefaultPdf = (record: SavedRecord) => {
@@ -95,7 +91,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
 
                 if (body.length > 0) {
                     const head = body[0].length === 3 ? [['Item', 'Status', 'Remarks']] : [['Field', 'Value']];
-                    doc.autoTable({
+                    (doc as any).autoTable({
                         startY: yPos,
                         head: head,
                         body: body,
@@ -114,7 +110,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
             yPos += 8;
             
             if (section.category === 'Projects' && Array.isArray(section.items)) {
-                doc.autoTable({
+                (doc as any).autoTable({
                     startY: yPos,
                     head: [Object.keys(section.items[0] || {})],
                     body: section.items.map(item => Object.values(item)),
@@ -131,7 +127,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     else if (item.label) text = `${item.label}: ${item.value}`;
                     else if (item.title) text = `${item.title}: ${item.status}`;
                     doc.text(text, 18, yPos, { maxWidth: pageWidth - 36 });
-                    yPos += (doc.getTextDimensions(text, { maxWidth: pageWidth - 36 }).h) + 5;
+                    yPos += (doc as any).getTextDimensions(text, { maxWidth: pageWidth - 36 }).h + 5;
                 });
             }
         });
@@ -152,7 +148,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     const parts = item.split(':');
                     return [parts[0], parts.slice(1).join(':').trim()];
                 });
-                doc.autoTable({
+                (doc as any).autoTable({
                     startY: yPos,
                     head: [['Field', 'Value']],
                     body: body,
@@ -193,11 +189,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     }, [records, employeeOnly, currentUser]);
 
     const categories = useMemo(() => {
-        const cats = ['All Saved Records'];
-        if (userRecords.some(r => bankTimelineCategories.includes(r.fileName))) {
+        const cats: string[] = ['All Saved Records'];
+        const uniqueFileNames = [...new Set(userRecords.map(r => r.fileName))];
+        
+        if (uniqueFileNames.some(name => bankTimelineCategories.includes(name))) {
             cats.push('Bank Timelines');
         }
-        const otherCats = [...new Set(userRecords.map(r => r.fileName))].filter(name => !bankTimelineCategories.includes(name));
+
+        const otherCats = uniqueFileNames.filter(name => !bankTimelineCategories.includes(name));
         return [...cats, ...otherCats];
     }, [userRecords]);
 
@@ -217,18 +216,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             }
         }
 
-        if (!searchQuery && activeCategory === 'All Saved Records') return recordsToFilter;
-        if (!searchQuery && activeCategory !== 'All Saved Records') return recordsToFilter;
-
-        if (activeCategory === 'All Saved Records' || activeCategory === 'Bank Timelines') {
-             return recordsToFilter.filter(record =>
-                record.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                record.fileName.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+        if (!searchQuery) return recordsToFilter;
 
         return recordsToFilter.filter(record =>
-            record.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+            record.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            record.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
     }, [userRecords, activeCategory, searchQuery]);
@@ -273,12 +265,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (!viewingRecord) return null;
     
         if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
-             const scheduleData = viewingRecord.data[0];
+            const scheduleData = viewingRecord.data[0];
             const projects = scheduleData.items.filter((item: any) => item.label.startsWith('Project:'));
             return (
                 <Table>
                     <TableBody>
-                        <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.items.find((i:any) => i.label === 'Work Schedule Start')?.value || 'N/A'} to {scheduleData.items.find((i:any) => i.label === 'Work Schedule End')?.value || 'N/A'}</TableCell></TableRow>
+                        <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}</TableCell></TableRow>
                         <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks || 'N/A'}</TableCell></TableRow>
                         <TableRow><TableCell className="font-semibold" colSpan={2}>Projects</TableCell></TableRow>
                         {projects.map((p: any, i:number) => {
@@ -293,7 +285,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 </Table>
             );
         }
-
+    
         if (bankTimelineCategories.includes(viewingRecord.fileName)) {
             const projects = viewingRecord.data?.find(d => d.category === 'Projects')?.items || [];
             const statuses = viewingRecord.data?.find(d => d.category === 'Overall Status')?.items || [];
@@ -336,7 +328,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             </TableRow>
                             {Array.isArray(section.items) ? section.items.map((item: any, i: number) => (
                                 <TableRow key={`${index}-${i}`}>
-                                    <TableCell className="font-medium pl-8">{item.label || `Item ${i+1}`}</TableCell>
+                                    <TableCell className="font-medium pl-8">{item.label || item.field || `Item ${i+1}`}</TableCell>
                                     <TableCell>{item.value}</TableCell>
                                 </TableRow>
                             )) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
@@ -425,20 +417,20 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     <TableRow>
                       <TableHead>File Name</TableHead>
                       <TableHead>Project Name</TableHead>
-                      <TableHead>Created By</TableHead>
+                      {!employeeOnly && <TableHead>Created By</TableHead>}
                       <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRecords.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center h-24">No records found.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={employeeOnly ? 4 : 5} className="text-center h-24">No records found.</TableCell></TableRow>
                     ) : (
                       filteredRecords.map(record => (
                         <TableRow key={record.id}>
                           <TableCell className="font-medium flex items-center gap-2">{getIconForFile(record.fileName)({className: 'h-4 w-4'})} {record.fileName}</TableCell>
                           <TableCell>{record.projectName}</TableCell>
-                          <TableCell>{record.employeeName}</TableCell>
+                          {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                           <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                           <TableCell className="text-right">
                               <div className="flex gap-1 justify-end">
