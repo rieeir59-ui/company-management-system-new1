@@ -55,7 +55,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
+  const isAdmin = currentUser?.department && ['admin', 'ceo', 'software-engineer'].includes(currentUser.department);
 
   // Fetch records
   useEffect(() => {
@@ -66,6 +66,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoading(true);
+
     const recordsCollection = collection(firestore, 'savedRecords');
     const q = isAdmin
       ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
@@ -97,7 +98,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading, isAdmin]);
 
-  // CRUD methods (add/update/delete)
+  // Add new record
   const addRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
       if (!firestore || !currentUser) {

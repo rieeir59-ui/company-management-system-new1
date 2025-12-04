@@ -63,7 +63,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
         if (isUserLoading || !firestore || !currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
-        const q = query(tasksCollection, where('assignedTo', '==', employee.record));
+        const q = query(tasksCollection, where('assignedTo', '==', employee.uid));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let total = 0;
@@ -83,14 +83,20 @@ function EmployeeCard({ employee }: { employee: Employee }) {
                 }
             });
             setTaskStats({ total, overdue, inProgress, completed });
+        }, (err) => {
+             const permissionError = new FirestorePermissionError({
+                path: `tasks`,
+                operation: 'list'
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
 
         return () => unsubscribe();
-    }, [firestore, employee.record, currentUser, isUserLoading]);
+    }, [firestore, employee.uid, currentUser, isUserLoading]);
 
     return (
         <div className="flex flex-col">
-            <Link href={`/employee-dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
+            <Link href={`/employee-dashboard/assign-task/form?employeeId=${employee.uid}`} className="flex-grow">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardContent className="p-4">
                         <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
@@ -201,7 +207,7 @@ export default function AssignTaskPage() {
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                           {deptEmployees.map(emp => <EmployeeCard key={emp.record} employee={emp} />)}
+                           {deptEmployees.map(emp => <EmployeeCard key={emp.uid} employee={emp} />)}
                         </div>
                     </div>
                 )
