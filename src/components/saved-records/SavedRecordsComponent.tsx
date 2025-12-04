@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -46,6 +47,10 @@ const managementCategories = [
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
     "My Projects", "Task Assignment", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
 ];
+
+const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
+
+const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const generateDefaultPdf = (record: SavedRecord) => {
     const doc = new jsPDF();
@@ -149,13 +154,26 @@ const generateDefaultPdf = (record: SavedRecord) => {
             yPos += 8;
             
             if (Array.isArray(section.items)) {
-                const body = section.items.map((item: string) => {
-                    const parts = item.split(':');
-                    return [parts[0], parts.slice(1).join(':').trim()];
+                const body = section.items.map((item: any) => {
+                    if(typeof item === 'string') {
+                        const parts = item.split(':');
+                        return [parts[0], parts.slice(1).join(':').trim()];
+                    }
+                    if(item.label) {
+                        return [item.label, item.value];
+                    }
+                    if(item.Item){
+                         return [item.Item, item.Status, item.Remarks];
+                    }
+                    try {
+                        const parsed = JSON.parse(item);
+                        return Object.values(parsed);
+                    } catch {
+                        return [item];
+                    }
                 });
-                (doc as any).autoTable({
+                 (doc as any).autoTable({
                     startY: yPos,
-                    head: [['Field', 'Value']],
                     body: body,
                     theme: 'grid',
                 });
@@ -175,9 +193,9 @@ const generateDefaultPdf = (record: SavedRecord) => {
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
-const SectionCard = ({ title, icon: Icon, onClick }: { title: string, icon: React.ElementType, onClick: () => void }) => (
+const SectionCard = ({ title, icon: Icon, onClick, className }: { title: string, icon: React.ElementType, onClick: () => void, className?: string }) => (
     <Card
-        className="p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all"
+        className={cn("p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all", className)}
         onClick={onClick}
     >
         <Icon className="w-12 h-12 text-primary" />
@@ -222,6 +240,25 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         );
 
     }, [userRecords, activeCategory, searchQuery]);
+    
+    const bankProjects = useMemo(() => {
+        return initialBanks.map(bank => {
+            const categoryName = bankNameToCategory(bank);
+            return {
+                name: bank,
+                records: filteredRecords.filter(r => r.fileName === categoryName)
+            };
+        });
+    }, [filteredRecords]);
+
+
+    const managementProjects = useMemo(() => {
+        return managementCategories.map(category => ({
+            name: category,
+            records: filteredRecords.filter(r => r.fileName === category)
+        }));
+    }, [filteredRecords]);
+
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -254,7 +291,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
         if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
             const scheduleData = viewingRecord.data[0];
-            const projects = scheduleData.items.filter((item: any) => item.label.startsWith('Project:'));
+            const projects = scheduleData.items?.filter((item: any) => item.label.startsWith('Project:')) || [];
             return (
                 <Table>
                     <TableBody>
@@ -314,12 +351,39 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             <TableRow className="bg-muted">
                                 <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
                             </TableRow>
-                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => (
-                                <TableRow key={`${index}-${i}`}>
-                                    <TableCell className="font-medium pl-8">{item.label || item.field || `Item ${i+1}`}</TableCell>
-                                    <TableCell>{item.value}</TableCell>
-                                </TableRow>
-                            )) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
+                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
+                                let label = item.label || item.field || `Item ${i + 1}`;
+                                let value = item.value;
+                                
+                                if (typeof item === 'string') {
+                                     const parts = item.split(':');
+                                     label = parts[0];
+                                     value = parts.slice(1).join(':').trim();
+                                } else if (item.Item) {
+                                     return (
+                                        <TableRow key={`${index}-${i}`}>
+                                            <TableCell className="font-medium pl-8">{item.Item}</TableCell>
+                                            <TableCell>{item.Status}</TableCell>
+                                            <TableCell>{item.Remarks}</TableCell>
+                                        </TableRow>
+                                     )
+                                } else {
+                                     try {
+                                        const parsed = JSON.parse(item);
+                                        label = 'JSON Data';
+                                        value = JSON.stringify(parsed, null, 2);
+                                     } catch (e) {
+                                         // not a json string
+                                     }
+                                }
+
+                                return (
+                                    <TableRow key={`${index}-${i}`}>
+                                        <TableCell className="font-medium pl-8">{label}</TableCell>
+                                        <TableCell><pre className="whitespace-pre-wrap">{value}</pre></TableCell>
+                                    </TableRow>
+                                )
+                            }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
                         </React.Fragment>
                     ))}
                 </TableBody>
@@ -338,21 +402,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         </CardHeader>
         <CardContent>
             {activeCategory === null ? (
-                <>
-                    <div className="relative mb-4">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search all records..."
-                            className="pl-8"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-4">
-                        <SectionCard title="Bank Records" icon={Landmark} onClick={() => setActiveCategory('Banks')} />
-                        <SectionCard title="Management Records" icon={Building2} onClick={() => setActiveCategory('Management Records')} />
-                    </div>
-                </>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <SectionCard title="Bank Timelines" icon={Landmark} onClick={() => setActiveCategory('Banks')} />
+                    <SectionCard title="Management Records" icon={Building2} onClick={() => setActiveCategory('Management Records')} />
+                </div>
             ) : (
                 <div>
                     <Button onClick={() => setActiveCategory(null)} variant="outline" className="mb-4">
@@ -372,47 +425,50 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     ) : error ? (
                       <div className="text-destructive text-center">{error}</div>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>File Name</TableHead>
-                            <TableHead>Project Name</TableHead>
-                            {!employeeOnly && <TableHead>Created By</TableHead>}
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRecords.length === 0 ? (
-                            <TableRow><TableCell colSpan={employeeOnly ? 4 : 5} className="text-center h-24">No records found.</TableCell></TableRow>
-                          ) : (
-                            filteredRecords.map(record => {
-                              const Icon = getIconForCategory(record.fileName);
-                              return (
-                              <TableRow key={record.id}>
-                                <TableCell className="font-medium flex items-center gap-2">
-                                  <Icon className='h-4 w-4' />
-                                  {record.fileName}
-                                </TableCell>
-                                <TableCell>{record.projectName}</TableCell>
-                                {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex gap-1 justify-end">
-                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
-                                        {canEditOrDelete(record) && (
-                                          <>
-                                              <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
-                                              <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                          </>
-                                        )}
-                                    </div>
-                                </TableCell>
-                              </TableRow>
-                            )})
-                          )}
-                        </TableBody>
-                      </Table>
+                      <div className="space-y-6">
+                        {(activeCategory === 'Banks' ? bankProjects : managementProjects)
+                            .filter(group => group.records.length > 0)
+                            .map(group => (
+                            <Card key={group.name}>
+                                <CardHeader><CardTitle>{group.name}</CardTitle></CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Project Name</TableHead>
+                                            {!employeeOnly && <TableHead>Created By</TableHead>}
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {group.records.map(record => {
+                                                const Icon = getIconForCategory(record.fileName);
+                                                return (
+                                                    <TableRow key={record.id}>
+                                                        <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                        {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                                        <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex gap-1 justify-end">
+                                                                <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
+                                                                {canEditOrDelete(record) && (
+                                                                    <>
+                                                                        <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
+                                                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        ))}
+                      </div>
                     )}
                 </div>
             )}
