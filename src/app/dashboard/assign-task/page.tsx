@@ -56,10 +56,12 @@ interface Task {
 
 function EmployeeCard({ employee }: { employee: Employee }) {
     const { firestore } = useFirebase();
+    const { user: currentUser, isUserLoading } = useCurrentUser();
     const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
 
     useEffect(() => {
-        if (!firestore) return;
+        if (isUserLoading || !firestore) return;
+        if (!currentUser) return;
 
         const tasksCollection = collection(firestore, 'tasks');
         const q = query(tasksCollection, where('assignedTo', '==', employee.record));
@@ -91,7 +93,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
         });
 
         return () => firestoreUnsubscribe();
-    }, [firestore, employee.record]);
+    }, [firestore, employee.record, currentUser, isUserLoading]);
 
     return (
          <div className="flex flex-col">
@@ -131,7 +133,7 @@ export default function AssignTaskPage() {
     const { employees, employeesByDepartment } = useEmployees();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
 
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -139,7 +141,7 @@ export default function AssignTaskPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     useEffect(() => {
-        if (!firestore || !currentUser) return;
+        if (isUserLoading || !firestore || !currentUser) return;
 
         const q = query(collection(firestore, 'tasks'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -154,7 +156,7 @@ export default function AssignTaskPage() {
         });
 
         return () => unsubscribe();
-    }, [firestore, currentUser]);
+    }, [firestore, currentUser, isUserLoading]);
 
     const getEmployeeName = (recordId: string) => {
         const employee = employees.find(e => e.record === recordId);

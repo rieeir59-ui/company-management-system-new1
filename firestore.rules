@@ -16,11 +16,10 @@ service cloud.firestore {
     }
 
     // SAVED RECORDS
-    // Admins have full access. Non-admins can create and only read their own.
+    // Admins have full access. Non-admins can create and only read/update/delete their own.
     match /savedRecords/{docId} {
-      allow read: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
+      allow read, update, delete: if request.auth != null && (resource.data.employeeId == request.auth.token.record || isAdmin());
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && isAdmin();
     }
     match /savedRecords {
         allow list: if request.auth != null && isAdmin();
