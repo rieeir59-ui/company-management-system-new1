@@ -1,42 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper: Check if user is logged in
-    function isLoggedIn() {
-      return request.auth != null;
-    }
-
-    // Helper: Check if user is admin
-    function isAdmin() {
-      return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','ceo','software-engineer'];
-    }
-
-    // USERS collection
-    match /users/{uid} {
-      allow read: if isLoggedIn();
-      allow write: if isLoggedIn() && request.auth.uid == uid;
-    }
-
-    // SAVED RECORDS collection
-    match /savedRecords/{recordId} {
-      allow read: if isLoggedIn(); // All logged-in users can read
-      allow create: if isLoggedIn(); // Any logged-in user can create
-      allow update, delete: if isAdmin() || resource.data.employeeId == request.auth.uid; // Only owner or admin
-    }
-
-    // TASKS collection
-    match /tasks/{taskId} {
-      allow read: if isLoggedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || resource.data.assignedTo == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-
-    // UPLOADED FILES collection
-    match /uploadedFiles/{fileId} {
-      allow read: if isLoggedIn();
-      allow write: if isLoggedIn();
+    // Allow any logged-in user to read/write all collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
