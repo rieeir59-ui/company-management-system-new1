@@ -78,6 +78,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
             createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
         } as UploadedFile));
         setFileRecords(files);
+        setError(null);
         setIsLoading(false);
       },
       (err: FirestoreError) => {
