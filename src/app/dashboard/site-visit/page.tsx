@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -201,13 +202,15 @@ export default function SiteVisitPage() {
         doc.autoTable({
             startY: yPos,
             theme: 'plain',
+            styles: { fontSize: 10 },
             body: [
-              ['Site Name', basicInfo.siteName],
-              ['City', basicInfo.city],
-              ['Date', basicInfo.date],
-              ['Number of visits', basicInfo.visitNumber],
-              ['Architect Name', basicInfo.architectName],
+              ['Site Name:', basicInfo.siteName],
+              ['City:', basicInfo.city],
+              ['Date:', basicInfo.date],
+              ['Number of visits:', basicInfo.visitNumber],
+              ['Architect Name:', basicInfo.architectName],
             ],
+            columnStyles: { 0: { fontStyle: 'bold' } }
         });
         yPos = doc.autoTable.previous.finalY + 10;
         
@@ -220,7 +223,7 @@ export default function SiteVisitPage() {
 
             const body = items.map(item => {
               const status = checklistState[item] ? 'Yes' : 'No';
-              const remarks = remarksState[item] || '';
+              const remarks = remarksState[item] || 'N/A';
               return [item, status, remarks];
             });
 
@@ -230,6 +233,7 @@ export default function SiteVisitPage() {
               body, 
               theme: 'grid', 
               headStyles: { fillColor: [240, 240, 240], textColor: 0 },
+              styles: { cellPadding: 2, fontSize: 9 },
               columnStyles: { 
                 0: { cellWidth: 80 },
                 1: { cellWidth: 20 },
@@ -248,8 +252,9 @@ export default function SiteVisitPage() {
             yPos += 8;
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(doc.splitTextToSize(content, pageWidth - margin * 2), margin, yPos);
-            yPos += doc.splitTextToSize(content, pageWidth - margin * 2).length * 5 + 10;
+            const splitContent = doc.splitTextToSize(content, pageWidth - margin * 2);
+            doc.text(splitContent, margin, yPos);
+            yPos += splitContent.length * 5 + 10;
         };
 
         addTextAreaSection('8. Observations', observations);
@@ -380,3 +385,5 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
+
+    
