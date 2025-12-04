@@ -77,7 +77,7 @@ export default function AssignTaskForm() {
             taskName,
             taskDescription,
             assignedTo,
-            dueDate: startDate,
+            startDate,
             endDate,
             projectName,
             assignedBy: currentUser.name,

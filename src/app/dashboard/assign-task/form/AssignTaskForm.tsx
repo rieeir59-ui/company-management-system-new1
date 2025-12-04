@@ -77,7 +77,7 @@ export default function AssignTaskForm() {
             taskName,
             taskDescription,
             assignedTo,
-            dueDate: startDate,
+            startDate,
             endDate,
             projectName,
             assignedBy: currentUser.name,
@@ -215,9 +215,9 @@ export default function AssignTaskForm() {
                                     <CommandList>
                                         <CommandEmpty>No employee found.</CommandEmpty>
                                         <CommandGroup>
-                                            {employees.map((employee) => (
+                                            {employees.map((employee, index) => (
                                                 <CommandItem
-                                                key={employee.uid}
+                                                key={employee.uid || `emp-${index}`}
                                                 value={employee.name}
                                                 onSelect={() => {
                                                     setAssignedTo(employee.uid);
