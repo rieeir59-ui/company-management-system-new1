@@ -24,23 +24,28 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { getIconForFile } from '@/lib/icons';
+import { getIconForCategory } from '@/lib/icons';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 const bankTimelineCategories = [
-    "Commercial Timeline", "Residential Timeline", "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline"
+    "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline"
 ];
 
-const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
-
-const bankNameToCategory = (bankName: string) => {
-    return `${bankName} Timeline`;
-}
+const managementCategories = [
+    "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
+    "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
+    "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
+    "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
+    "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
+    "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
+    "My Projects", "Task Assignment", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
+];
 
 const generateDefaultPdf = (record: SavedRecord) => {
     const doc = new jsPDF();
@@ -170,12 +175,22 @@ const generateDefaultPdf = (record: SavedRecord) => {
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
+const SectionCard = ({ title, icon: Icon, onClick }: { title: string, icon: React.ElementType, onClick: () => void }) => (
+    <Card
+        className="p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all"
+        onClick={onClick}
+    >
+        <Icon className="w-12 h-12 text-primary" />
+        <p className="font-semibold text-lg text-center">{title}</p>
+    </Card>
+);
+
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord } = useRecords();
     const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState<string | null>('All Saved Records');
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
@@ -188,31 +203,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return records;
     }, [records, employeeOnly, currentUser]);
 
-    const categories = useMemo(() => {
-        const cats: string[] = ['All Saved Records'];
-        const uniqueFileNames = [...new Set(userRecords.map(r => r.fileName))];
-        
-        if (uniqueFileNames.some(name => bankTimelineCategories.includes(name))) {
-            cats.push('Bank Timelines');
-        }
-
-        const otherCats = uniqueFileNames.filter(name => !bankTimelineCategories.includes(name));
-        return [...cats, ...otherCats];
-    }, [userRecords]);
-
-    const filteredCategories = useMemo(() => {
-        if (!searchQuery) return categories;
-        return categories.filter(cat => cat.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [categories, searchQuery]);
-
     const filteredRecords = useMemo(() => {
         let recordsToFilter = userRecords;
 
-        if (activeCategory && activeCategory !== 'All Saved Records') {
-            if (activeCategory === 'Bank Timelines') {
+        if (activeCategory) {
+            if (activeCategory === 'Banks') {
                 recordsToFilter = recordsToFilter.filter(r => bankTimelineCategories.includes(r.fileName));
-            } else {
-                recordsToFilter = recordsToFilter.filter(r => r.fileName === activeCategory);
+            } else if (activeCategory === 'Management Records') {
+                 recordsToFilter = recordsToFilter.filter(r => managementCategories.includes(r.fileName));
             }
         }
 
@@ -251,16 +249,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.record === record.employeeId;
     };
     
-    const bankProjects = useMemo(() => {
-        return initialBanks.map(bank => {
-            const categoryName = bankNameToCategory(bank);
-            return {
-                name: bank,
-                records: userRecords.filter(r => r.fileName === categoryName)
-            };
-        }).filter(b => b.records.length > 0);
-    }, [userRecords]);
-
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
     
@@ -349,115 +337,85 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="md:col-span-1">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search records..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <nav className="mt-4 space-y-1">
-                {filteredCategories.map(category => {
-                  const Icon = category === 'Bank Timelines' ? Landmark : getIconForFile(category);
-                  return (
-                  <Button
-                    key={category}
-                    variant={activeCategory === category ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => setActiveCategory(category)}
-                  >
-                    <Icon className="mr-2 h-4 w-4" />
-                    {category}
-                  </Button>
-                )})}
-              </nav>
-            </div>
-            <div className="md:col-span-3">
-              {isLoading ? (
-                <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-              ) : error ? (
-                <div className="text-destructive text-center">{error}</div>
-              ) : activeCategory === 'Bank Timelines' ? (
-                <div className="space-y-4">
-                  {bankProjects.map(bank => (
-                    <Card key={bank.name}>
-                        <CardHeader><CardTitle>{bank.name}</CardTitle></CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Created</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {bank.records.map(record => (
-                                        <TableRow key={record.id}>
-                                            <TableCell className="font-medium">{record.projectName}</TableCell>
-                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                            <TableCell className="text-right">
-                                              <div className="flex gap-1 justify-end">
-                                                  <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
-                                                  {canEditOrDelete(record) && (
-                                                      <>
-                                                          <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
-                                                          <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                      </>
-                                                  )}
-                                              </div>
-                                          </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>File Name</TableHead>
-                      <TableHead>Project Name</TableHead>
-                      {!employeeOnly && <TableHead>Created By</TableHead>}
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRecords.length === 0 ? (
-                      <TableRow><TableCell colSpan={employeeOnly ? 4 : 5} className="text-center h-24">No records found.</TableCell></TableRow>
+            {activeCategory === null ? (
+                <>
+                    <div className="relative mb-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search all records..."
+                            className="pl-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-4">
+                        <SectionCard title="Bank Records" icon={Landmark} onClick={() => setActiveCategory('Banks')} />
+                        <SectionCard title="Management Records" icon={Building2} onClick={() => setActiveCategory('Management Records')} />
+                    </div>
+                </>
+            ) : (
+                <div>
+                    <Button onClick={() => setActiveCategory(null)} variant="outline" className="mb-4">
+                        Back to Categories
+                    </Button>
+                    <div className="relative mb-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder={`Search in ${activeCategory}...`}
+                            className="pl-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    {isLoading ? (
+                      <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : error ? (
+                      <div className="text-destructive text-center">{error}</div>
                     ) : (
-                      filteredRecords.map(record => {
-                        const Icon = getIconForFile(record.fileName);
-                        return (
-                        <TableRow key={record.id}>
-                          <TableCell className="font-medium flex items-center gap-2">
-                            <Icon className='h-4 w-4' />
-                            {record.fileName}
-                          </TableCell>
-                          <TableCell>{record.projectName}</TableCell>
-                          {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                          <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">
-                              <div className="flex gap-1 justify-end">
-                                  <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
-                                  {canEditOrDelete(record) && (
-                                    <>
-                                        <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
-                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                    </>
-                                  )}
-                              </div>
-                          </TableCell>
-                        </TableRow>
-                      )})
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>File Name</TableHead>
+                            <TableHead>Project Name</TableHead>
+                            {!employeeOnly && <TableHead>Created By</TableHead>}
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRecords.length === 0 ? (
+                            <TableRow><TableCell colSpan={employeeOnly ? 4 : 5} className="text-center h-24">No records found.</TableCell></TableRow>
+                          ) : (
+                            filteredRecords.map(record => {
+                              const Icon = getIconForCategory(record.fileName);
+                              return (
+                              <TableRow key={record.id}>
+                                <TableCell className="font-medium flex items-center gap-2">
+                                  <Icon className='h-4 w-4' />
+                                  {record.fileName}
+                                </TableCell>
+                                <TableCell>{record.projectName}</TableCell>
+                                {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex gap-1 justify-end">
+                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
+                                        {canEditOrDelete(record) && (
+                                          <>
+                                              <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
+                                              <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                          </>
+                                        )}
+                                    </div>
+                                </TableCell>
+                              </TableRow>
+                            )})
+                          )}
+                        </TableBody>
+                      </Table>
                     )}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
-          </div>
+                </div>
+            )}
         </CardContent>
       </Card>
       

@@ -53,14 +53,11 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Instruction Sheet": FileUp,
     "List of Contractors": Building,
     "List of Sub-Consultants": BookUser,
-    "List of Approved Vendors": UserCheck,
-    "My Projects": Briefcase,
     "Preliminary Project Budget": Scroll,
     "Project Agreement": FileSignature,
     "Project Application Summary": CheckSquare,
     "Project Checklist": ListChecks,
     "Project Data": Database,
-    "Project Information": Folder,
     "Proposal Request": Briefcase,
     "Rate Analysis": BarChart2,
     "Shop Drawing and Sample Record": FileIcon,
@@ -76,13 +73,26 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "HBL Timeline": Landmark,
     "MCB Timeline": Landmark,
     "UBL Timeline": Landmark,
+    "My Projects": Briefcase,
     "Task Assignment": ClipboardCheck,
     "Site Visit Proforma": Eye,
     "Site Survey Report": FileSearch,
     "Uploaded File": FileUp,
-    "All Saved Records": Archive,
 };
 
 export const getIconForFile = (fileName: string): LucideIcon => {
     return fileNameToIconMap[fileName] || FileText;
 };
+
+
+export const categoryToIconMap: Record<string, LucideIcon> = {
+    "Banks": Landmark,
+    "Management Records": Building2,
+    ...fileNameToIconMap, // Keep individual file icons as well
+};
+
+
+export const getIconForCategory = (categoryName: string): LucideIcon => {
+    return categoryToIconMap[categoryName] || Folder;
+};
+
