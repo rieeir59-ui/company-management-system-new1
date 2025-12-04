@@ -67,21 +67,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     
-    const isAdmin = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
+    // Now all authenticated users can see all records.
     const recordsCollection = collection(firestore, "savedRecords");
-    
-    let q;
-    if (isAdmin) {
-      // Admin fetches all records
-      q = query(recordsCollection, orderBy("createdAt", "desc"));
-    } else {
-      // Non-admin fetches only their own records
-      q = query(
-        recordsCollection, 
-        where('employeeId', '==', currentUser.record),
-        orderBy("createdAt", "desc")
-      );
-    }
+    const q = query(recordsCollection, orderBy("createdAt", "desc"));
 
     const firestoreUnsubscribe = onSnapshot(q, 
         (snapshot) => {
@@ -130,7 +118,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       const docRef = await addDoc(collectionRef, dataToSave);
       toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
       // Manually add to state to trigger immediate UI update, converting server timestamp to Date
-      setRecords(prev => [{ ...recordData, ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev]);
+      setRecords(prev => [{ ...recordData, ...dataToSave, id: docRef.id, createdAt: new Date() }, ...prev].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()));
       return docRef;
     } catch (serverError) {
       console.error(serverError);
