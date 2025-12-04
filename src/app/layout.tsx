@@ -23,11 +23,11 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <UserProvider>
             <EmployeeProvider>
-              <RecordProvider>
-                <FileProvider>
-                    {children}
-                </FileProvider>
-              </RecordProvider>
+              <FileProvider>
+                <RecordProvider>
+                  {children}
+                </RecordProvider>
+              </FileProvider>
             </EmployeeProvider>
           </UserProvider>
         </FirebaseClientProvider>

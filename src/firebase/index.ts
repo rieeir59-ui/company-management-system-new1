@@ -1,11 +1,16 @@
-import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore'
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { firebaseConfig } from '@/firebase/config';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase(): { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore; storage: FirebaseStorage; } {
+  if (typeof window === 'undefined') {
+    // This is a safeguard for server-side execution, though client-provider should prevent this.
+    // @ts-ignore
+    return {}; 
+  }
   if (getApps().length === 0) {
     const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
