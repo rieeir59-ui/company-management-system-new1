@@ -361,17 +361,19 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 />
               </div>
               <nav className="mt-4 space-y-1">
-                {filteredCategories.map(category => (
+                {filteredCategories.map(category => {
+                  const Icon = category === 'Bank Timelines' ? Landmark : getIconForFile(category);
+                  return (
                   <Button
                     key={category}
                     variant={activeCategory === category ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
                     onClick={() => setActiveCategory(category)}
                   >
-                    {category === 'Bank Timelines' ? <Landmark className="mr-2 h-4 w-4" /> : getIconForFile(category)({className: 'mr-2 h-4 w-4'})}
+                    <Icon className="mr-2 h-4 w-4" />
                     {category}
                   </Button>
-                ))}
+                )})}
               </nav>
             </div>
             <div className="md:col-span-3">
@@ -426,9 +428,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     {filteredRecords.length === 0 ? (
                       <TableRow><TableCell colSpan={employeeOnly ? 4 : 5} className="text-center h-24">No records found.</TableCell></TableRow>
                     ) : (
-                      filteredRecords.map(record => (
+                      filteredRecords.map(record => {
+                        const Icon = getIconForFile(record.fileName);
+                        return (
                         <TableRow key={record.id}>
-                          <TableCell className="font-medium flex items-center gap-2">{getIconForFile(record.fileName)({className: 'h-4 w-4'})} {record.fileName}</TableCell>
+                          <TableCell className="font-medium flex items-center gap-2">
+                            <Icon className='h-4 w-4' />
+                            {record.fileName}
+                          </TableCell>
                           <TableCell>{record.projectName}</TableCell>
                           {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                           <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
@@ -444,7 +451,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                               </div>
                           </TableCell>
                         </TableRow>
-                      ))
+                      )})
                     )}
                   </TableBody>
                 </Table>
