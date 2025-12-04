@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import {
@@ -13,24 +12,24 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  type Timestamp,
-  FirestoreError,
   orderBy,
   where,
-  type DocumentReference
+  type DocumentReference,
+  type Timestamp,
+  type FirestoreError
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 
 export type SavedRecord = {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    fileName: string;
-    projectName: string;
-    createdAt: Date; // Keep as Date object for easier use
-    data: any; // Can be more specific if needed
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  fileName: string;
+  projectName: string;
+  createdAt: Date;
+  data: any;
 };
 
 type RecordContextType = {
@@ -47,152 +46,136 @@ type RecordContextType = {
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
 
 export const RecordProvider = ({ children }: { children: ReactNode }) => {
+  const { firestore } = useFirebase();
+  const { user: currentUser, isUserLoading } = useCurrentUser();
+  const { toast } = useToast();
+
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user: currentUser, isUserLoading } = useCurrentUser();
 
+  // Utility to check if current user is admin
+  const isAdmin = currentUser?.department && ['admin', 'ceo', 'software-engineer'].includes(currentUser.department);
+
+  // Fetch records in real-time
   useEffect(() => {
-    // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
     if (isUserLoading || !currentUser || !firestore) {
-      setIsLoading(false); 
-      setRecords([]); // Clear records if user is not authenticated
+      setRecords([]);
+      setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
-    
-    let q;
-    const recordsCollection = collection(firestore, "savedRecords");
-    const isAdmin = ['ceo', 'admin', 'software-engineer'].includes(currentUser.department);
 
-    if (isAdmin) {
-      q = query(recordsCollection, orderBy("createdAt", "desc"));
-    } else {
-      q = query(recordsCollection, where("employeeId", "==", currentUser.uid), orderBy("createdAt", "desc"));
-    }
+    const recordsCollection = collection(firestore, 'savedRecords');
+    const q = isAdmin
+      ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
+      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
 
-    const firestoreUnsubscribe = onSnapshot(q, 
-        (snapshot) => {
-            const fetchedRecords = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
-                } as SavedRecord;
-            });
-            setRecords(fetchedRecords);
-            setError(null);
-            setIsLoading(false);
-        },
-        (err: FirestoreError) => {
-            console.error("Error fetching records:", err);
-            setError("Failed to fetch records. You may not have permission.");
-            const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            setIsLoading(false);
-        }
+    const unsubscribe = onSnapshot(
+      q,
+      snapshot => {
+        const fetched = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
+          } as SavedRecord;
+        });
+        setRecords(fetched);
+        setError(null);
+        setIsLoading(false);
+      },
+      (err: FirestoreError) => {
+        console.error('Error fetching records:', err);
+        setError('Failed to fetch records. You may not have permission.');
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'list' }));
+        setIsLoading(false);
+      }
     );
-    return () => firestoreUnsubscribe();
 
-  }, [firestore, currentUser, isUserLoading]);
+    return () => unsubscribe();
+  }, [firestore, currentUser, isUserLoading, isAdmin]);
 
-  const addRecord = useCallback(async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
-    if (!firestore || !currentUser) {
+  // Add new record
+  const addRecord = useCallback(
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
+      if (!firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
         return;
-    }
-    const collectionRef = collection(firestore, 'savedRecords');
-    
-    const dataToSave = {
-      ...recordData,
-      employeeId: currentUser.uid,
-      employeeName: currentUser.name,
-      createdAt: serverTimestamp(),
-    };
+      }
 
-    try {
-      const docRef = await addDoc(collectionRef, dataToSave);
-      toast({ title: "Record Saved", description: `"${recordData.projectName}" has been saved.` });
-      return docRef;
-    } catch (serverError) {
-      console.error(serverError);
-      const permissionError = new FirestorePermissionError({
-          path: 'savedRecords',
-          operation: 'create',
-          requestResourceData: dataToSave,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      throw serverError; // Re-throw to be caught by the caller
-    }
-  }, [firestore, currentUser, toast]);
+      const dataToSave = {
+        ...recordData,
+        employeeId: currentUser.uid,
+        employeeName: currentUser.name,
+        createdAt: serverTimestamp(),
+      };
 
-  const updateRecord = useCallback(async (id: string, updatedData: Partial<SavedRecord>) => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Database not available.' });
-        return;
-    }
-    const docRef = doc(firestore, 'savedRecords', id);
-    try {
-      await updateDoc(docRef, updatedData);
-      toast({ title: "Record Updated", description: "The record has been successfully updated." });
-    } catch (serverError) {
-      console.error(serverError);
-      const permissionError = new FirestorePermissionError({
-          path: `savedRecords/${id}`,
-          operation: 'update',
-          requestResourceData: updatedData,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    }
-  }, [firestore, toast]);
-  
-  const updateTaskStatus = useCallback(async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
-    if (!firestore) return;
-    const taskRef = doc(firestore, 'tasks', taskId);
-    try {
-      await updateDoc(taskRef, { status: newStatus });
-    } catch (serverError) {
-      const permissionError = new FirestorePermissionError({
-        path: `tasks/${taskId}`,
-        operation: 'update',
-        requestResourceData: { status: newStatus }
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    }
-  }, [firestore]);
-
-  const deleteRecord = useCallback(async (id: string) => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Database not available.' });
-        return;
-    }
-    const docRef = doc(firestore, 'savedRecords', id);
-    try {
-        await deleteDoc(docRef);
-        toast({ title: "Record Deleted", description: "The record has been removed." });
-    } catch (serverError) {
-        console.error(serverError);
-        const permissionError = new FirestorePermissionError({
-            path: `savedRecords/${id}`,
-            operation: 'delete',
-        });
+      try {
+        const docRef = await addDoc(collection(firestore, 'savedRecords'), dataToSave);
+        toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
+        return docRef;
+      } catch (err) {
+        console.error(err);
+        const permissionError = new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave });
         errorEmitter.emit('permission-error', permissionError);
-    }
-  }, [firestore, toast]);
-  
-  const getRecordById = useCallback((id: string) => {
-    return records.find(rec => rec.id === id);
-  }, [records]);
+        throw err;
+      }
+    },
+    [firestore, currentUser, toast]
+  );
+
+  // Update record
+  const updateRecord = useCallback(
+    async (id: string, updatedData: Partial<SavedRecord>) => {
+      if (!firestore) return;
+      try {
+        await updateDoc(doc(firestore, 'savedRecords', id), updatedData);
+        toast({ title: 'Record Updated', description: 'Record successfully updated.' });
+      } catch (err) {
+        console.error(err);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'update', requestResourceData: updatedData }));
+      }
+    },
+    [firestore, toast]
+  );
+
+  // Delete record
+  const deleteRecord = useCallback(
+    async (id: string) => {
+      if (!firestore) return;
+      try {
+        await deleteDoc(doc(firestore, 'savedRecords', id));
+        toast({ title: 'Record Deleted', description: 'Record has been removed.' });
+      } catch (err) {
+        console.error(err);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'delete' }));
+      }
+    },
+    [firestore, toast]
+  );
+
+  // Update task status
+  const updateTaskStatus = useCallback(
+    async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
+      if (!firestore) return;
+      try {
+        await updateDoc(doc(firestore, 'tasks', taskId), { status: newStatus });
+      } catch (err) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
+      }
+    },
+    [firestore]
+  );
+
+  const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}>
+    <RecordContext.Provider
+      value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}
+    >
       {children}
     </RecordContext.Provider>
   );
@@ -200,8 +183,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
 export const useRecords = () => {
   const context = useContext(RecordContext);
-  if (context === undefined) {
-    throw new Error('useRecords must be used within a RecordProvider');
-  }
+  if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
