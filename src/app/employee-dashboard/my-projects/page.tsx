@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -99,7 +100,7 @@ function MyProjectsComponent() {
     return employeeId ? employees.find(e => e.record === employeeId) : currentUser;
   }, [employeeId, employees, currentUser]);
     
-  const isOwner = useMemo(() => currentUser && displayUser && currentUser.uid === displayUser.record, [currentUser, displayUser]);
+  const isOwner = useMemo(() => currentUser && displayUser && currentUser.uid === displayUser.uid, [currentUser, displayUser]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
@@ -150,7 +151,7 @@ function MyProjectsComponent() {
     }, [filteredRows]);
     
   useEffect(() => {
-    if (!firestore || !displayUser?.record) {
+    if (!firestore || !displayUser?.uid) {
         setIsLoadingTasks(false);
         return;
     }
@@ -159,7 +160,7 @@ function MyProjectsComponent() {
     const tasksCollection = collection(firestore, 'tasks');
     const q = query(
         tasksCollection, 
-        where('assignedTo', '==', displayUser.record)
+        where('assignedTo', '==', displayUser.uid)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {

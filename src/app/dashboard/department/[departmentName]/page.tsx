@@ -44,7 +44,7 @@ export default function DepartmentPage() {
   const handleEmployeeSelect = (employee: Employee) => {
     // We navigate to the employee dashboard, but pass the employeeId as a query param
     // instead of changing the globally logged-in user.
-    router.push(`/employee-dashboard?employeeId=${employee.record}`);
+    router.push(`/employee-dashboard?employeeId=${employee.uid}`);
   };
   
   return (
@@ -69,7 +69,7 @@ export default function DepartmentPage() {
           const initials = getInitials(employee.name);
           return (
               <Card 
-                key={employee.record}
+                key={employee.uid}
                 onClick={() => handleEmployeeSelect(employee)}
                 className="overflow-hidden shadow-lg transition-transform hover:scale-[1.02] border-primary/50 relative cursor-pointer"
               >
@@ -107,4 +107,3 @@ export default function DepartmentPage() {
     </div>
   );
 }
-

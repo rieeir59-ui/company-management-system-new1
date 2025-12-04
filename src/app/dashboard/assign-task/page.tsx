@@ -96,7 +96,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
 
     return (
          <div className="flex flex-col">
-            <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
+            <Link href={`/dashboard/assign-task/form?employeeId=${employee.uid}`} className="flex-grow">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-2 border-primary/80">
                     <CardContent className="p-4">
                         <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
@@ -121,7 +121,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
                     </CardContent>
                 </Card>
             </Link>
-             <Link href={`/employee-dashboard?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
+             <Link href={`/employee-dashboard?employeeId=${employee.uid}`} className="mt-2 text-center text-sm text-primary hover:underline">
                 View Dashboard
             </Link>
         </div>
@@ -157,9 +157,9 @@ export default function AssignTaskPage() {
         return () => unsubscribe();
     }, [firestore, currentUser, isUserLoading]);
 
-    const getEmployeeName = (recordId: string) => {
-        const employee = employees.find(e => e.record === recordId);
-        return employee?.name || recordId;
+    const getEmployeeName = (employeeId: string) => {
+        const employee = employees.find(e => e.uid === employeeId);
+        return employee?.name || employeeId;
     };
     
     const openDeleteDialog = (task: Task) => {
@@ -207,7 +207,7 @@ export default function AssignTaskPage() {
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                           {deptEmployees.map(emp => <EmployeeCard key={emp.record} employee={emp} />)}
+                           {deptEmployees.map(emp => <EmployeeCard key={emp.uid} employee={emp} />)}
                         </div>
                     </div>
                 )
