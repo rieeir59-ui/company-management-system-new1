@@ -55,9 +55,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = currentUser?.department && ['admin', 'ceo', 'software-engineer'].includes(currentUser.department);
+  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
-  // Fetch records
   useEffect(() => {
     if (isUserLoading || !currentUser || !firestore) {
       setRecords([]);
@@ -69,8 +68,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
     const recordsCollection = collection(firestore, 'savedRecords');
     const q = isAdmin
-      ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
-      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
+      ? query(recordsCollection, orderBy('createdAt', 'desc'))
+      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(
       q,
@@ -98,7 +97,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading, isAdmin]);
 
-  // Add new record
   const addRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
       if (!firestore || !currentUser) {
@@ -127,7 +125,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, currentUser, toast]
   );
 
-  // Update record
   const updateRecord = useCallback(
     async (id: string, updatedData: Partial<SavedRecord>) => {
       if (!firestore) return;
@@ -142,7 +139,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast]
   );
 
-  // Delete record
   const deleteRecord = useCallback(
     async (id: string) => {
       if (!firestore) return;
@@ -156,12 +152,11 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     },
     [firestore, toast]
   );
-
-  // Update task status
+  
   const updateTaskStatus = useCallback(
     async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
       if (!firestore || !currentUser) return;
-
+  
       const taskRef = doc(firestore, 'tasks', taskId);
       try {
         const taskSnap = await getDoc(taskRef);

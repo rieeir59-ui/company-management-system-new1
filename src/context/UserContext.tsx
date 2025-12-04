@@ -33,7 +33,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (employeeDetails) {
           setUser({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
         } else {
-          // Fallback for users not in the local list, maybe created directly in Firebase Auth
           const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
           if (userDoc.exists()) {
              const userData = userDoc.data();

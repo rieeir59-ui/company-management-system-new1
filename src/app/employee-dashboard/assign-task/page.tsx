@@ -134,6 +134,7 @@ export default function AssignTaskPage() {
     const { firestore } = useFirebase();
     const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
+    const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -169,6 +170,11 @@ export default function AssignTaskPage() {
 
     const confirmDelete = () => {
         if (!taskToDelete || !firestore) return;
+
+        if (!isAdmin) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
+            return;
+        }
 
         deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
             .then(() => {
@@ -226,7 +232,7 @@ export default function AssignTaskPage() {
                                 <TableHead>Assigned Date</TableHead>
                                 <TableHead>Due Date</TableHead>
                                 <TableHead>End Date</TableHead>
-                                <TableHead>Action</TableHead>
+                                {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -238,11 +244,13 @@ export default function AssignTaskPage() {
                                     <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
                                     <TableCell>{task.dueDate || 'N/A'}</TableCell>
                                     <TableCell>{task.endDate || 'N/A'}</TableCell>
+                                    {isAdmin && (
                                     <TableCell>
                                         <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>
