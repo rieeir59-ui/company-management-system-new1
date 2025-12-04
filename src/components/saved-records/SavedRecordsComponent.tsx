@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -30,11 +30,12 @@ import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { allFileNames } from '@/lib/utils';
 
 const bankTimelineCategories = [
     "Commercial Timeline", "Residential Timeline", "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline"
 ];
+
+const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const bankNameToCategory = (bankName: string) => {
     return `${bankName} Timeline`;
