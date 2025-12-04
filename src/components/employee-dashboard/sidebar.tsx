@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useId } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -159,6 +160,9 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
   const pathname = usePathname();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 
+  const bankTimelineId = useId();
+  const savedRecordsId = useId();
+
   return (
     <SidebarMenu>
       {menuItems.map((item) => (
@@ -179,6 +183,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                  <SidebarMenuButton
+                    aria-controls={bankTimelineId}
                     className="group-data-[collapsible=icon]:justify-center"
                     tooltip="Timelines of Bank"
                   >
@@ -186,7 +191,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
                     <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent asChild>
+              <CollapsibleContent id={bankTimelineId} asChild>
                 <SidebarMenuSub>
                   {bankTimelineItems.map((item) => (
                      <SidebarMenuSubItem key={item.href}>
@@ -206,6 +211,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                  <SidebarMenuButton
+                    aria-controls={savedRecordsId}
                     className="group-data-[collapsible=icon]:justify-center"
                     tooltip="Saved Records"
                   >
@@ -213,7 +219,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems, savedRecordsIt
                     <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent asChild>
+              <CollapsibleContent id={savedRecordsId} asChild>
                 <SidebarMenuSub>
                   {savedRecordsItems.map((item) => (
                      <SidebarMenuSubItem key={item.href}>
