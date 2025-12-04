@@ -54,12 +54,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { user: currentUser, isUserLoading } = useCurrentUser();
 
   useEffect(() => {
-    if (isUserLoading) {
+    if (isUserLoading || !firestore) {
       setIsLoading(true);
       return;
     }
 
-    if (!firestore || !currentUser) {
+    if (!currentUser) {
         setIsLoading(false);
         setRecords([]);
         return;
@@ -67,9 +67,17 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     
-    // Now all authenticated users can see all records.
+    let q;
     const recordsCollection = collection(firestore, "savedRecords");
-    const q = query(recordsCollection, orderBy("createdAt", "desc"));
+    const isAdmin = ['ceo', 'admin', 'software-engineer'].includes(currentUser.department);
+
+    if (isAdmin) {
+      // Admins can see all records
+      q = query(recordsCollection, orderBy("createdAt", "desc"));
+    } else {
+      // Non-admins see only their own records
+      q = query(recordsCollection, where("employeeId", "==", currentUser.record), orderBy("createdAt", "desc"));
+    }
 
     const firestoreUnsubscribe = onSnapshot(q, 
         (snapshot) => {
