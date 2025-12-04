@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -54,6 +53,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const { firestore, firebaseApp } = useFirebase();
   const { user: currentUser, isUserLoading } = useCurrentUser();
   const { toast } = useToast();
+  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
   useEffect(() => {
     // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
@@ -143,7 +143,15 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
 
   const updateFileRecord = useCallback(async (id: string, updatedData: Partial<UploadedFile>) => {
-     if (!firestore) return;
+     if (!firestore || !currentUser) return;
+
+     const recordToUpdate = fileRecords.find(f => f.id === id);
+     if (!recordToUpdate) return;
+     if (!isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
+         toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this file record.' });
+         return;
+     }
+
      const docRef = doc(firestore, 'uploadedFiles', id);
      try {
          await updateDoc(docRef, updatedData);
@@ -156,13 +164,18 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         });
         errorEmitter.emit('permission-error', permissionError);
      }
-  }, [firestore]);
+  }, [firestore, currentUser, isAdmin, fileRecords, toast]);
 
   const deleteFileRecord = useCallback(async (id: string) => {
-    if (!firestore || !firebaseApp) return;
+    if (!firestore || !firebaseApp || !currentUser) return;
     
     const docToDelete = fileRecords.find(f => f.id === id);
     if (!docToDelete) return;
+
+    if (!isAdmin && docToDelete.employeeId !== currentUser.uid) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this file record.' });
+        return;
+    }
 
     // Delete from Storage first
     if (docToDelete.fileUrl && docToDelete.fileUrl.startsWith('https://firebasestorage.googleapis.com')) {
@@ -174,7 +187,6 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
              if (storageError.code !== 'storage/object-not-found') {
                 console.error("Error deleting file from Storage:", storageError);
                 toast({ variant: 'destructive', title: 'Storage Error', description: 'Could not delete the file from storage.' });
-                // We might still want to proceed to delete the Firestore record
              }
         }
     }
@@ -191,7 +203,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         });
         errorEmitter.emit('permission-error', permissionError);
     }
-  }, [firestore, firebaseApp, fileRecords, toast]);
+  }, [firestore, firebaseApp, fileRecords, currentUser, isAdmin, toast]);
 
 
   return (

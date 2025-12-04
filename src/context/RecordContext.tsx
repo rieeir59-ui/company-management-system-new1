@@ -57,6 +57,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
+  // Fetch records
   useEffect(() => {
     if (isUserLoading || !currentUser || !firestore) {
       setRecords([]);
@@ -65,11 +66,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoading(true);
-
     const recordsCollection = collection(firestore, 'savedRecords');
     const q = isAdmin
-      ? query(recordsCollection, orderBy('createdAt', 'desc'))
-      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+      ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
+      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
 
     const unsubscribe = onSnapshot(
       q,
@@ -97,6 +97,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading, isAdmin]);
 
+  // Add new record
   const addRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
       if (!firestore || !currentUser) {
@@ -117,14 +118,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return docRef;
       } catch (err) {
         console.error(err);
-        const permissionError = new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave });
-        errorEmitter.emit('permission-error', permissionError);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
         throw err;
       }
     },
     [firestore, currentUser, toast]
   );
 
+  // Update record
   const updateRecord = useCallback(
     async (id: string, updatedData: Partial<SavedRecord>) => {
       if (!firestore) return;
@@ -139,6 +140,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast]
   );
 
+  // Delete record
   const deleteRecord = useCallback(
     async (id: string) => {
       if (!firestore) return;
@@ -152,11 +154,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     },
     [firestore, toast]
   );
-  
+
+  // Update task status (admin or assigned employee)
   const updateTaskStatus = useCallback(
     async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
       if (!firestore || !currentUser) return;
-  
+
       const taskRef = doc(firestore, 'tasks', taskId);
       try {
         const taskSnap = await getDoc(taskRef);
@@ -179,9 +182,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
 
   return (
-    <RecordContext.Provider
-      value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}
-    >
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}>
       {children}
     </RecordContext.Provider>
   );

@@ -121,7 +121,7 @@ function EmployeeCard({ employee }: { employee: Employee }) {
                     </CardContent>
                 </Card>
             </Link>
-             <Link href={`/employee-dashboard?employeeId=${employee.uid}`} className="mt-2 text-center text-sm text-primary hover:underline">
+             <Link href={`/employee-dashboard?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
                 View Dashboard
             </Link>
         </div>
