@@ -14,7 +14,7 @@ import {
   SidebarSeparator,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubTrigger,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   Collapsible,
