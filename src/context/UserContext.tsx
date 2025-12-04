@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 interface UserContextType {
-  user: (Employee & { uid: string }) | null;
+  user: (Employee & { uid: string; role: string; }) | null;
   isUserLoading: boolean;
   login: (user: Employee & { uid: string }) => void;
   logout: () => void;
@@ -18,25 +19,37 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<(Employee & { uid: string }) | null>(null);
+  const [user, setUser] = useState<UserContextType['user']>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
 
   useEffect(() => {
-    if (!auth) {
-        setIsUserLoading(false);
-        return;
-    }
-    
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (firebaseUser) {
-        const employeeDetails = employees.find(emp => emp.email === firebaseUser.email);
+        const employeeDetails = employees.find(emp => emp.email.toLowerCase() === firebaseUser.email?.toLowerCase());
+        
         if (employeeDetails) {
-          setUser({ ...employeeDetails, uid: firebaseUser.uid });
+          setUser({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
         } else {
-          setUser(null);
+          // Fallback for users not in the local list, maybe created directly in Firebase Auth
+          const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
+          if (userDoc.exists()) {
+             const userData = userDoc.data();
+             setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                name: userData.name || '',
+                role: userData.role || 'employee',
+                department: userData.department || 'employee',
+                contact: userData.contact || '',
+                record: userData.record || '',
+                avatarId: userData.avatarId || '',
+             });
+          } else {
+             setUser(null);
+          }
         }
       } else {
         setUser(null);
@@ -45,10 +58,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, firestore]);
 
   const login = (loggedInUser: Employee & { uid: string }) => {
-    setUser(loggedInUser);
+    setUser({ ...loggedInUser, role: loggedInUser.department });
   };
 
   const logout = () => {

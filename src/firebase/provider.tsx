@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useMemo } from 'react';
-import { initializeApp, type FirebaseApp } from 'firebase/app';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth } from 'firebase/auth';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
@@ -11,6 +12,7 @@ type FirebaseContextType = {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
+  storage: FirebaseStorage;
   areServicesAvailable: boolean;
 };
 
@@ -18,17 +20,21 @@ const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const services = useMemo(() => {
-    const app = initializeApp(firebaseConfig);
-    const firestore = getFirestore(app);
-    const auth = getAuth(app);
-    return { app, firestore, auth };
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    return { 
+        firebaseApp: app, 
+        firestore: getFirestore(app), 
+        auth: getAuth(app), 
+        storage: getStorage(app), 
+        areServicesAvailable: true 
+    };
   }, []);
 
   return (
     <FirebaseContext.Provider
-      value={{ firebaseApp: services.app, firestore: services.firestore, auth: services.auth, areServicesAvailable: true }}
+      value={services}
     >
-      <FirebaseErrorListener />
+      {services.areServicesAvailable && <FirebaseErrorListener />}
       {children}
     </FirebaseContext.Provider>
   );

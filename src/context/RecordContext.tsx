@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   orderBy,
   where,
+  getDoc,
   type DocumentReference,
   type Timestamp,
   type FirestoreError
@@ -54,10 +55,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Utility to check if current user is admin
-  const isAdmin = currentUser?.department && ['admin', 'ceo', 'software-engineer'].includes(currentUser.department);
+  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
-  // Fetch records in real-time
+  // Fetch records
   useEffect(() => {
     if (isUserLoading || !currentUser || !firestore) {
       setRecords([]);
@@ -66,7 +66,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setIsLoading(true);
-
     const recordsCollection = collection(firestore, 'savedRecords');
     const q = isAdmin
       ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
@@ -98,7 +97,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading, isAdmin]);
 
-  // Add new record
+  // CRUD methods (add/update/delete)
   const addRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
       if (!firestore || !currentUser) {
@@ -160,14 +159,25 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   // Update task status
   const updateTaskStatus = useCallback(
     async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
-      if (!firestore) return;
+      if (!firestore || !currentUser) return;
+
+      const taskRef = doc(firestore, 'tasks', taskId);
       try {
-        await updateDoc(doc(firestore, 'tasks', taskId), { status: newStatus });
+        const taskSnap = await getDoc(taskRef);
+        if (!taskSnap.exists()) return;
+        const taskData = taskSnap.data() as { assignedTo: string };
+        if (!(isAdmin || taskData.assignedTo === currentUser.uid)) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
+          return;
+        }
+        await updateDoc(taskRef, { status: newStatus });
+        toast({ title: 'Task Updated', description: `Task status changed to "${newStatus}".` });
       } catch (err) {
+        console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
       }
     },
-    [firestore]
+    [firestore, currentUser, isAdmin, toast]
   );
 
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
