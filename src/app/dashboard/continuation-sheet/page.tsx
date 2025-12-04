@@ -123,7 +123,7 @@ export default function ContinuationSheetPage() {
     const handleDownloadPdf = () => {
         const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 15;
 
         doc.setFontSize(14);

@@ -175,6 +175,8 @@ export default function ProjectAgreementPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 20;
 
         const addText = (text: string, isBold = false, indent = 0, size = 10, spaceAfter = 7) => {
@@ -249,6 +251,13 @@ export default function ProjectAgreementPage() {
         addText('Architect', false, 0, 10, 15);
         addText('____________________', false, 0, 10, 2);
         addText('Client', false, 0, 10, 5);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
 
         doc.save('Project-Agreement.pdf');

@@ -180,6 +180,8 @@ export default function Page() {
 
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     let yPos = 20;
 
     doc.setFontSize(14);
@@ -224,6 +226,13 @@ export default function Page() {
     yPos = (doc as any).autoTable.previous.finalY + 10;
     doc.setFont('helvetica', 'bold');
     doc.text(`TOTAL AMOUNT RS: ${totalAmount.toFixed(2)}`, 14, yPos);
+
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+    }
 
     doc.save('bill-of-quantity.pdf');
     toast({ title: 'Download Started', description: 'Your PDF is being generated.' });

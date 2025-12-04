@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,6 @@ import 'jspdf-autotable';
 import { useCurrentUser } from '@/context/UserContext';
 import { useSearchParams } from 'next/navigation';
 import { useRecords } from '@/context/RecordContext';
-
 
 const checklistData = {
   predesign: {
@@ -374,7 +374,7 @@ export default function ProjectChecklistComponent() {
         const doc = new jsPDF() as jsPDFWithAutoTable;
         const selectedData = getSelectedItems();
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     
         if (selectedData.length === 0) {
             toast({

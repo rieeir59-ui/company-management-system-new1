@@ -18,6 +18,7 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
+
 const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
   <section className="mb-6">
     {title && <h2 className="text-lg font-bold text-primary mb-3 pb-1 border-b border-primary section-title">{title}</h2>}
@@ -79,6 +80,8 @@ export default function ProjectDataPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 15;
         const margin = 14;
         const col1X = margin;
@@ -204,6 +207,13 @@ export default function ProjectDataPage() {
         ]);
         
         addSection('Sketch of Property', [['Notations:', formData.sketch_notes]]);
+        
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
         
         doc.save('project_data.pdf');
         toast({

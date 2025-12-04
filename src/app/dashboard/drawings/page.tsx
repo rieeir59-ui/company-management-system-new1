@@ -316,6 +316,8 @@ export default function DrawingsPage() {
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 20;
 
         doc.setFontSize(14);
@@ -342,7 +344,7 @@ export default function DrawingsPage() {
 
         const form = document.getElementById('drawings-form') as HTMLFormElement;
 
-        const addTable = (title, items, idPrefix) => {
+        const addTable = (title:string, items: { no: number, title: string, id: string }[], idPrefix:string) => {
             if (yPos > 250) { doc.addPage(); yPos = 20; }
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
@@ -352,9 +354,9 @@ export default function DrawingsPage() {
             const body = items.map(item => [
                 item.no,
                 item.title,
-                form.elements[`${idPrefix}_${item.id}_start`]?.value || '',
-                form.elements[`${idPrefix}_${item.id}_complete`]?.value || '',
-                form.elements[`${idPrefix}_${item.id}_remarks`]?.value || ''
+                (form.elements.namedItem(`${idPrefix}_${item.id}_start`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${idPrefix}_${item.id}_complete`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${idPrefix}_${item.id}_remarks`) as HTMLInputElement)?.value || ''
             ]);
 
             doc.autoTable({
@@ -394,9 +396,9 @@ export default function DrawingsPage() {
             const body = groupedSampleList[groupTitle].map(item => [
                 item.no,
                 item.desc,
-                form.elements[`${item.no}_start`]?.value || '',
-                form.elements[`${item.no}_end`]?.value || '',
-                form.elements[`${item.no}_remarks`]?.value || '',
+                (form.elements.namedItem(`${item.no}_start`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${item.no}_end`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${item.no}_remarks`) as HTMLInputElement)?.value || '',
             ]);
 
              doc.autoTable({
@@ -408,6 +410,14 @@ export default function DrawingsPage() {
             });
             yPos = doc.autoTable.previous.finalY + 10;
         }
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
+
 
         doc.save('drawings-list.pdf');
         toast({ title: 'Download Started', description: 'Your drawings list PDF is being generated.' });
