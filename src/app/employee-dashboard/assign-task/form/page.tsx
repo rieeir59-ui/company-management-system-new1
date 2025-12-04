@@ -65,7 +65,7 @@ function AssignTaskForm() {
         const dataToSave = {
             taskName,
             taskDescription,
-            assignedTo,
+            assignedTo, // This will be the employee's UID
             dueDate,
             endDate,
             projectName,
@@ -83,7 +83,7 @@ function AssignTaskForm() {
                 items: Object.entries(dataToSave).map(([key, value]) => {
                     if (key === 'createdAt') return `${key}: ${new Date().toISOString()}`;
                      if (key === 'assignedTo') {
-                         const assignedEmployee = employees.find(e => e.record === value);
+                         const assignedEmployee = employees.find(e => e.uid === value);
                          return `${key}: ${assignedEmployee?.name || value}`;
                     }
                     return `${key}: ${value}`;
@@ -130,7 +130,7 @@ function AssignTaskForm() {
         yPos += 15;
         
         doc.setFontSize(10);
-        const assignedEmployee = employees.find(e => e.record === assignedTo);
+        const assignedEmployee = employees.find(e => e.uid === assignedTo);
 
         doc.autoTable({
             startY: yPos,
@@ -187,7 +187,7 @@ function AssignTaskForm() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {employees.map(employee => (
-                                        <SelectItem key={employee.record} value={employee.record}>
+                                        <SelectItem key={employee.uid} value={employee.uid}>
                                             {employee.name} ({employee.department})
                                         </SelectItem>
                                     ))}

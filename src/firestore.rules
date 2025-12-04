@@ -1,8 +1,46 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, list, create, update, delete: if request.auth != null;
+
+    // Helper: Check if user is logged in
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Check if user is admin
+    function isAdmin() {
+      return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','ceo','software-engineer'];
+    }
+
+    // USERS collection
+    match /users/{uid} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn() && request.auth.uid == uid;
+    }
+
+    // SAVED RECORDS collection
+    match /savedRecords/{recordId} {
+      allow read: if isLoggedIn(); // All logged-in users can read
+      allow create: if isLoggedIn(); // All logged-in users can create
+      allow update, delete: if isAdmin() || resource.data.employeeId == request.auth.uid; // Only owner or admin
+    }
+
+    // TASKS collection
+    match /tasks/{taskId} {
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow read: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
+      // Only admins can create new tasks.
+      allow create: if isLoggedIn();
+      // An admin can update any task. An employee can only update the status of their own assigned task.
+      allow update: if isAdmin() || (isLoggedIn() && request.resource.data.assignedTo == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      // Only admins can delete tasks.
+      allow delete: if isAdmin();
+    }
+
+    // UPLOADED FILES collection
+    match /uploadedFiles/{fileId} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn();
     }
   }
 }

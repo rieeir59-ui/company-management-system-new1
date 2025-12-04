@@ -158,9 +158,9 @@ export default function AssignTaskPage() {
         return () => unsubscribe();
     }, [firestore, currentUser, isUserLoading]);
 
-    const getEmployeeName = (recordId: string) => {
-        const employee = employees.find(e => e.record === recordId);
-        return employee?.name || recordId;
+    const getEmployeeName = (employeeId: string) => {
+        const employee = employees.find(e => e.uid === employeeId);
+        return employee?.name || employeeId;
     };
 
     const openDeleteDialog = (task: Task) => {
@@ -201,12 +201,12 @@ export default function AssignTaskPage() {
                 imageUrl={image?.imageUrl || ''}
                 imageHint={image?.imageHint || ''}
             />
-            {departments.map(dept => {
+            {departments.map((dept, deptIndex) => {
                 const deptEmployees = employeesByDepartment[dept.slug] || [];
                 if(deptEmployees.length === 0) return null;
                 
                 return (
-                    <div key={dept.slug}>
+                    <div key={dept.slug || `dept-${deptIndex}`}>
                         <div className="flex items-center gap-2 mb-4">
                             <Users className="h-6 w-6 text-primary" />
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
@@ -214,7 +214,7 @@ export default function AssignTaskPage() {
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                            {(deptEmployees ?? []).map((emp, index) => (
                                 <EmployeeCard 
-                                    key={emp.uid || emp.record || `emp-${index}`}
+                                    key={emp.uid || `emp-${index}`}
                                     employee={emp} 
                                 />
                             ))}
