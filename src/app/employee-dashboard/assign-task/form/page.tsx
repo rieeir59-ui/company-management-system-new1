@@ -63,6 +63,11 @@ function AssignTaskForm() {
             return;
         }
 
+        if (!assignedTo) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please select an employee to assign the task to.' });
+            return;
+        }
+
         const dataToSave = {
             taskName,
             taskDescription,
