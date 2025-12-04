@@ -14,7 +14,7 @@ import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Lo
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc, type Timestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import jsPDF from 'jspdf';
@@ -322,18 +322,6 @@ function MyProjectsComponent() {
 
   return (
     <div className="space-y-8">
-      <Card className="bg-card/90 border-primary/30 shadow-lg">
-        <CardHeader className="text-center">
-            <>
-              <CardTitle className="text-4xl font-headline text-primary font-bold">{displayUser.name}</CardTitle>
-              <CardDescription className="text-xl text-primary/90 font-semibold pt-1">Welcome to {formatDepartmentName(displayUser.department)} Panel</CardDescription>
-            </>
-        </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-muted-foreground">Use the sidebar to navigate to different sections of the dashboard.</p>
-        </CardContent>
-      </Card>
-        
         <Card>
             <CardHeader>
                 <CardTitle>{isOwner ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
@@ -352,7 +340,7 @@ function MyProjectsComponent() {
                                 <TableHead>Project</TableHead>
                                 <TableHead>Task</TableHead>
                                 <TableHead>Description</TableHead>
-                                <TableHead>Due Date</TableHead>
+                                <TableHead>Start Date</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
@@ -518,13 +506,13 @@ function MyProjectsComponent() {
   );
 }
 
-export default function EmployeeDashboardPageWrapper() {
+export default function EmployeeProjectsPageWrapper() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-4">Loading Page...</span>
       </div>}>
-      <EmployeeDashboardComponent />
+      <MyProjectsComponent />
     </Suspense>
   )
 }
