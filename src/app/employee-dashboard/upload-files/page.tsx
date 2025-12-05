@@ -36,7 +36,7 @@ const categories = [
 const initialBanks = ["MCB", "DIB", "FAYSAL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const UploadForm = ({ category }: { category: string }) => {
-    const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: '' }]);
+    const [uploads, setUploads] = useState<FileUpload[]>([{ id: 1, file: null, customName: '', bankName: ''}]);
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
     const { addFileRecord } = useFileRecords();
@@ -75,7 +75,7 @@ const UploadForm = ({ category }: { category: string }) => {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a bank name for the Banks category.' });
             return;
         }
-
+        
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
 
         const recordData = {
@@ -86,12 +86,12 @@ const UploadForm = ({ category }: { category: string }) => {
             fileType: upload.file.type,
             size: upload.file.size,
         };
-
+        
         try {
             await addFileRecord(recordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
-
+            
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
             toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
 
@@ -102,7 +102,7 @@ const UploadForm = ({ category }: { category: string }) => {
                 });
             }, 2000);
         } catch (error) {
-            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
         }
     };
 
@@ -117,7 +117,7 @@ const UploadForm = ({ category }: { category: string }) => {
                     {category === 'Banks' && (
                         <div className="space-y-2">
                             <Label htmlFor={`bank-${upload.id}`}>Bank Name</Label>
-                            <CreatableSelect
+                             <CreatableSelect
                                 options={banks}
                                 value={upload.bankName}
                                 onChange={(value) => handleFieldChange(upload.id, 'bankName', value)}
@@ -134,7 +134,7 @@ const UploadForm = ({ category }: { category: string }) => {
 
                     <div className="space-y-2">
                         <Label htmlFor={`file-${upload.id}`}>Select File</Label>
-                        <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} />
+                        <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
                     </div>
                     
                     <div className="lg:col-span-3">

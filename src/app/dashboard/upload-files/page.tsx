@@ -134,7 +134,7 @@ const UploadForm = ({ category }: { category: string }) => {
 
                     <div className="space-y-2">
                         <Label htmlFor={`file-${upload.id}`}>Select File</Label>
-                        <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} />
+                        <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
                     </div>
                     
                     <div className="lg:col-span-3">
