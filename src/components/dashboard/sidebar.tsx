@@ -55,6 +55,7 @@ import { Input } from '@/components/ui/input';
 
 const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
     { href: '/dashboard/employee', label: 'Employees', icon: Users },
     { href: '/dashboard/team', label: 'Our Team', icon: User },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
@@ -101,15 +102,6 @@ const getInitials = (name: string) => {
 const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRecordsItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems, savedRecordsItems: typeof savedRecordsItems }) => {
   const pathname = usePathname();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const [bankTimelineId, setBankTimelineId] = useState('');
-  const [savedRecordsId, setSavedRecordsId] = useState('');
-  const baseId = useId();
-  
-    useEffect(() => {
-    // Generate IDs on the client side to prevent hydration mismatch
-    setBankTimelineId(`${baseId}-bank-timeline`);
-    setSavedRecordsId(`${baseId}-saved-records`);
-  }, [baseId]);
 
   return (
     <SidebarMenu>
@@ -128,59 +120,59 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRe
         </SidebarMenuItem>
       ))}
       <Collapsible asChild>
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                 <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Saved Records"
-                  >
-                    <Database className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-                  </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent asChild>
-                <SidebarMenuSub>
-                  {savedRecordsItems.map((item) => (
-                     <SidebarMenuSubItem key={item.href}>
-                      <Link href={item.href} passHref>
-                         <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && searchParams.get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter')}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                         </SidebarMenuSubButton>
-                      </Link>
-                     </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-        </Collapsible>
-        <Collapsible asChild>
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                 <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Timelines of Bank"
-                  >
-                    <Landmark className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                  </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent asChild>
-                <SidebarMenuSub>
-                  {bankTimelineItems.map((item) => (
-                     <SidebarMenuSubItem key={item.href}>
-                      <Link href={item.href} passHref>
-                         <SidebarMenuSubButton isActive={pathname === item.href}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                         </SidebarMenuSubButton>
-                      </Link>
-                     </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-        </Collapsible>
+        <SidebarMenuItem>
+          <CollapsibleTrigger asChild>
+             <SidebarMenuButton
+                className="group-data-[collapsible=icon]:justify-center"
+                tooltip="Saved Records"
+              >
+                <Database className="size-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
+              </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent asChild>
+            <SidebarMenuSub>
+              {savedRecordsItems.map((item) => (
+                 <SidebarMenuSubItem key={item.href}>
+                  <Link href={item.href} passHref>
+                     <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && searchParams.get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter')}>
+                        <item.icon className="size-4 mr-2" />
+                        {item.label}
+                     </SidebarMenuSubButton>
+                  </Link>
+                 </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+      <Collapsible asChild>
+        <SidebarMenuItem>
+          <CollapsibleTrigger asChild>
+             <SidebarMenuButton
+                className="group-data-[collapsible=icon]:justify-center"
+                tooltip="Timelines of Bank"
+              >
+                <Landmark className="size-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+              </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent asChild>
+            <SidebarMenuSub>
+              {bankTimelineItems.map((item) => (
+                 <SidebarMenuSubItem key={item.href}>
+                  <Link href={item.href} passHref>
+                     <SidebarMenuSubButton isActive={pathname === item.href}>
+                        <item.icon className="size-4 mr-2" />
+                        {item.label}
+                     </SidebarMenuSubButton>
+                  </Link>
+                 </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
     </SidebarMenu>
   );
 });
