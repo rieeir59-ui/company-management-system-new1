@@ -5,8 +5,6 @@ import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from './UserContext';
 import {
   collection,
-  query,
-  onSnapshot,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -14,7 +12,9 @@ import {
   serverTimestamp,
   type Timestamp,
   FirestoreError,
-  orderBy
+  query,
+  orderBy,
+  onSnapshot
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -119,7 +119,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     const dataToSave = {
                         ...record,
                         fileUrl: downloadURL,
-                        employeeId: currentUser.record, 
+                        employeeId: currentUser.uid, 
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };

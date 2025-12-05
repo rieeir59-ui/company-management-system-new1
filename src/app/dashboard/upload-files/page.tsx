@@ -72,6 +72,7 @@ const UploadForm = ({ category }: { category: string }) => {
             // Remove the completed upload row immediately.
             setUploads(prev => {
                 const remaining = prev.filter(up => up.id !== upload.id);
+                // If this was the last row, add a new empty one, otherwise just show the remaining rows.
                 return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
             });
         } catch (error) {
