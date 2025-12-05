@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useId } from 'react';
+import React, { memo, useState, useId, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -145,7 +145,13 @@ const getInitials = (name: string) => {
 const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems }: { menuItems: any[], savedRecordsItems: any[] }) => {
   const pathname = usePathname();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const savedRecordsId = useId();
+  const generatedId = useId();
+  const [savedRecordsId, setSavedRecordsId] = useState('');
+
+  useEffect(() => {
+    setSavedRecordsId(generatedId);
+  }, [generatedId]);
+
 
   return (
     <SidebarMenu>

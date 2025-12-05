@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useId } from 'react';
+import React, { memo, useState, useId, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -86,7 +86,14 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
   const pathname = usePathname();
-  const bankTimelineId = useId();
+  const generatedId = useId();
+  const [bankTimelineId, setBankTimelineId] = useState('');
+
+  useEffect(() => {
+    setBankTimelineId(generatedId);
+  }, [generatedId]);
+
+
   return (
     <SidebarMenu>
       {visibleMenuItems.map((item) => (
