@@ -156,13 +156,11 @@ export default function Page() {
         }],
     };
 
-    addRecord(dataToSave as any)
-        .then(() => {
-            setIsSaveOpen(false);
-        })
-        .catch(() => {
-            // Error is handled by the context
-        });
+    addRecord(dataToSave as any).then(() => {
+        setIsSaveOpen(false);
+    }).catch(() => {
+        // Error is handled by the context
+    });
   };
 
   const handleDownloadPdf = () => {
