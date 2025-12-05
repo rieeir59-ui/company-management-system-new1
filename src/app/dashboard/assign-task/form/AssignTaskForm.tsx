@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -94,12 +95,12 @@ export default function AssignTaskForm() {
             data: [{
                 category: 'Task Assignment',
                 items: Object.entries(dataToSave).map(([key, value]) => {
-                    if (key === 'createdAt') return `${key}: ${new Date().toISOString()}`;
+                    if (key === 'createdAt') return { label: key, value: new Date().toISOString() };
                     if (key === 'assignedTo') {
                          const assignedEmployee = employees.find(e => e.uid === value);
-                         return `${key}: ${assignedEmployee?.name || value}`;
+                         return { label: key, value: assignedEmployee?.name || value };
                     }
-                    return `${key}: ${value}`;
+                    return { label: key, value };
                 })
             }],
         };

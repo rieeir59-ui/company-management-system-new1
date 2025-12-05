@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -78,7 +79,7 @@ import { Input } from '@/components/ui/input';
 
 const menuItems = [
     { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/employee-dashboard/assign-task', label: 'Assign Task', icon: ClipboardCheck },
+    { href: '/employee-dashboard/my-projects', label: 'My Projects', icon: Briefcase },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
@@ -118,7 +119,6 @@ const menuItems = [
     { href: '/employee-dashboard/construction-change-director', label: 'Construction Change Director', icon: Users },
     { href: '/employee-dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
-    { href: '/employee-dashboard/files-record', label: 'My Files Record', icon: FileText },
     { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
 ];
 
@@ -137,13 +137,12 @@ const bankTimelineItems = [
 ];
 
 const savedRecordsItems = [
-    { href: '/employee-dashboard/saved-records', label: 'All Saved Records', icon: Archive },
+    { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Archive },
     { href: '/employee-dashboard/saved-records?filter=My+Projects', label: 'My Projects', icon: Briefcase },
     { href: '/employee-dashboard/saved-records?filter=Task+Assignment', label: 'Task Reports', icon: ClipboardCheck },
     { href: '/employee-dashboard/saved-records?filter=Site+Visit+Proforma', label: 'Site Visit Reports', icon: Eye },
     { href: '/employee-dashboard/saved-records?filter=Site+Survey+Report', label: 'Site Survey Reports', icon: FileSearch },
     { href: '/employee-dashboard/saved-records?filter=Project+Checklist', label: 'Project Checklists', icon: ListChecks },
-    { href: '/employee-dashboard/saved-records?filter=Bank+Timelines', label: 'Bank Timelines', icon: Landmark },
 ];
 
 const getInitials = (name: string) => {
