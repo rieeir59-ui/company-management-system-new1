@@ -13,7 +13,7 @@ import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -52,47 +52,31 @@ interface Task {
   createdAt: Timestamp;
   dueDate?: string;
   endDate?: string;
+  status: 'completed' | 'in-progress' | 'not-started';
 }
 
-function EmployeeCard({ employee }: { employee: Employee }) {
-    const { firestore } = useFirebase();
-    const { user: currentUser, isUserLoading } = useCurrentUser();
-    const [taskStats, setTaskStats] = useState({ total: 0, overdue: 0, inProgress: 0, completed: 0 });
+function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }) {
+    const taskStats = useMemo(() => {
+        let total = 0;
+        let overdue = 0;
+        let inProgress = 0;
+        let completed = 0;
 
-    useEffect(() => {
-        if (isUserLoading || !firestore || !currentUser || !employee.uid) return;
-
-        const tasksCollection = collection(firestore, 'tasks');
-        const q = query(tasksCollection, where('assignedTo', '==', employee.uid));
-
-        const firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
-            let total = 0;
-            let overdue = 0;
-            let inProgress = 0;
-            let completed = 0;
-            
-            snapshot.forEach(doc => {
-                const task = doc.data();
-                total++;
-                if (task.status === 'completed') {
-                    completed++;
-                } else if (task.status === 'in-progress') {
-                    inProgress++;
-                } else if (task.dueDate && new Date(task.dueDate) < new Date()) {
-                    overdue++;
-                }
-            });
-            setTaskStats({ total, overdue, inProgress, completed });
-        }, (err) => {
-             const permissionError = new FirestorePermissionError({
-                path: `tasks`,
-                operation: 'list'
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        tasks.forEach(task => {
+            total++;
+            if (task.status === 'completed') {
+                completed++;
+            } else if (task.status === 'in-progress') {
+                inProgress++;
+            }
+            if (task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed') {
+                overdue++;
+            }
         });
 
-        return () => firestoreUnsubscribe();
-    }, [firestore, employee.uid, currentUser, isUserLoading]);
+        return { total, overdue, inProgress, completed };
+    }, [tasks]);
+
 
     return (
          <div className="flex flex-col">
@@ -139,6 +123,17 @@ export default function AssignTaskPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    const tasksByEmployee = useMemo(() => {
+        return tasks.reduce((acc, task) => {
+            const { assignedTo } = task;
+            if (!acc[assignedTo]) {
+                acc[assignedTo] = [];
+            }
+            acc[assignedTo].push(task);
+            return acc;
+        }, {} as Record<string, Task[]>);
+    }, [tasks]);
 
     useEffect(() => {
         if (isUserLoading || !currentUser || !firestore) return;
@@ -211,7 +206,7 @@ export default function AssignTaskPage() {
                             <h2 className="text-2xl font-headline font-bold text-primary">{dept.name}</h2>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                           {deptEmployees.map((emp, index) => <EmployeeCard key={emp.uid ?? `emp-${index}`} employee={emp} />)}
+                           {deptEmployees.map((emp, index) => <EmployeeCard key={emp.uid ?? `emp-${index}`} employee={emp} tasks={tasksByEmployee[emp.uid] || []} />)}
                         </div>
                     </div>
                 )
