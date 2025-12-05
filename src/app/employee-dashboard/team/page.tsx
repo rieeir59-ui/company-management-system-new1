@@ -48,10 +48,9 @@ const DepartmentSection = ({ title, icon, children }: { title: string; icon: Rea
     );
 }
 
-
 export default function TeamPage() {
     const { employeesByDepartment } = useCurrentUser();
-
+    
     const ceo = employeesByDepartment['ceo']?.[0];
     const admin = employeesByDepartment['admin'] || [];
     const hr = employeesByDepartment['hr'] || [];
@@ -81,7 +80,7 @@ export default function TeamPage() {
                     <h2 className="text-3xl font-headline font-bold text-primary">Chief Executive Officer</h2>
                  </div>
                  <div className="flex justify-center">
-                     <div className="w-64"><TeamMemberCard name={ceo.name} role="CEO" /></div>
+                    <div className="w-64"><TeamMemberCard name={ceo.name} role="CEO" /></div>
                  </div>
             </div>
         )}
@@ -89,7 +88,7 @@ export default function TeamPage() {
         <div className="border-t border-dashed border-primary/50 my-8"></div>
 
         <div className="space-y-10">
-            <DepartmentSection title="Admin" icon={<Users className="w-5 h-5" />}>
+             <DepartmentSection title="Admin" icon={<Users className="w-5 h-5" />}>
                 {admin.map(e => <TeamMemberCard key={e.record} name={e.name} role="Admin" />)}
             </DepartmentSection>
 

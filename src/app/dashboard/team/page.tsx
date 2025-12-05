@@ -1,8 +1,7 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEmployees } from '@/context/EmployeeContext';
+import { useCurrentUser } from '@/context/UserContext';
 import { Users, User, Crown } from 'lucide-react';
 import React from 'react';
 
@@ -50,7 +49,7 @@ const DepartmentSection = ({ title, icon, children }: { title: string; icon: Rea
 
 
 export default function TeamPage() {
-    const { employeesByDepartment } = useEmployees();
+    const { employeesByDepartment } = useCurrentUser();
 
     const ceo = employeesByDepartment['ceo']?.[0];
     const admin = employeesByDepartment['admin'] || [];
