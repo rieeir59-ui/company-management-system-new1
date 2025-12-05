@@ -61,7 +61,7 @@ const menuItems = [
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
-    { href: '/dashboard/settings', label: 'Settings', roles: ['software-engineer', 'admin'] },
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin'] },
 ];
 
