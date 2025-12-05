@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,15 +11,17 @@ import { useCurrentUser } from '@/context/UserContext';
 import Header from '@/components/layout/header';
 import { employees } from '@/lib/employees';
 import { useFirebase } from '@/firebase/provider';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { login } = useCurrentUser();
+  const { login, user: currentUser } = useCurrentUser();
   const { auth } = useFirebase();
+  const isDeveloper = currentUser?.department === 'software-engineer';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,20 +34,23 @@ export default function LoginPage() {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+        // After successful Firebase Auth, find the employee in the local list
         const employee = employees.find(emp => emp.email.toLowerCase() === user.email?.toLowerCase());
 
         if (employee) {
-            login({ ...employee, uid: user.uid });
+            login({ ...employee, uid: user.uid }); // Pass the actual Firebase UID
             toast({
                 title: 'Login Successful',
                 description: `Welcome back, ${employee.name}!`,
             });
+            // Redirect based on department
             if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
                 router.push('/dashboard');
             } else {
                 router.push('/employee-dashboard');
             }
         } else {
+            // This case should ideally not happen if all employees are in Firebase Auth
             await auth.signOut();
             toast({ variant: 'destructive', title: 'Login Failed', description: 'Employee details not found in the local employee list.' });
         }
@@ -74,6 +78,43 @@ export default function LoginPage() {
     }
   };
 
+  const handleSignUpAll = async () => {
+    if (!auth) {
+      toast({ variant: 'destructive', title: 'Auth service not available' });
+      return;
+    }
+    setIsSigningUp(true);
+    toast({ title: 'Registration Started', description: 'Registering all employees in Firebase Auth...' });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const emp of employees) {
+      if (!emp.email || !emp.password) {
+        failCount++;
+        continue;
+      }
+      try {
+        await createUserWithEmailAndPassword(auth, emp.email, emp.password);
+        successCount++;
+      } catch (error: any) {
+        if (error.code !== 'auth/email-already-in-use') {
+            failCount++;
+            console.error(`Failed to create user ${emp.email}:`, error);
+        } else {
+            // If user already exists, we count it as a success for this operation's purpose.
+            successCount++;
+        }
+      }
+    }
+    
+    setIsSigningUp(false);
+    toast({
+      title: 'Registration Complete',
+      description: `${successCount} employees registered/verified. ${failCount} failed.`,
+    });
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -94,8 +135,13 @@ export default function LoginPage() {
                 <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-4">
               <Button className="w-full" type="submit">Login</Button>
+               {isDeveloper && (
+                 <Button className="w-full" variant="secondary" type="button" onClick={handleSignUpAll} disabled={isSigningUp}>
+                    {isSigningUp ? 'Registering...' : 'Sign Up All Employees'}
+                </Button>
+               )}
             </CardFooter>
           </form>
         </Card>
