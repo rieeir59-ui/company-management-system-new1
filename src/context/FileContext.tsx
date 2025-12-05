@@ -56,10 +56,9 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
   useEffect(() => {
-    // Crucial Guard: Do not proceed if auth is loading or user/firestore is not available.
     if (isUserLoading || !currentUser || !firestore) {
-      setIsLoading(false); // Set loading to false if we can't fetch.
-      setFileRecords([]); // Clear any previous records.
+      setIsLoading(false);
+      setFileRecords([]);
       return;
     }
 
@@ -96,7 +95,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName' | 'fileUrl'>, file: File, onProgress: (progress: number) => void): Promise<string | undefined> => {
     if (!firestore || !currentUser || !firebaseApp) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to upload files.' });
-        return;
+        throw new Error('User or Firebase services not available');
     }
     const storage = getStorage(firebaseApp);
     const filePath = `${record.category}/${Date.now()}_${file.name}`;
@@ -120,7 +119,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     const dataToSave = {
                         ...record,
                         fileUrl: downloadURL,
-                        employeeId: currentUser.uid,
+                        employeeId: currentUser.uid, // Use UID for consistency with security rules
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };

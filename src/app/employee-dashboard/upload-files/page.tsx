@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { FileUp, PlusCircle, Trash2, Building, Home, Hotel, Landmark } from "lucide-react";
-import { useCurrentUser } from "@/context/UserContext";
 import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
