@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -215,9 +214,9 @@ export default function AssignTaskForm() {
                                             {employees.map((employee, index) => (
                                                 <CommandItem
                                                 key={employee.uid || `emp-${index}`}
-                                                value={employee.name}
-                                                onSelect={() => {
-                                                    setAssignedTo(employee.uid);
+                                                value={employee.uid}
+                                                onSelect={(currentValue) => {
+                                                    setAssignedTo(currentValue === assignedTo ? '' : currentValue);
                                                     setComboboxOpen(false);
                                                 }}
                                                 >
