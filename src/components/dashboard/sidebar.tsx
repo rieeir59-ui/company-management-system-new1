@@ -80,15 +80,6 @@ const bankTimelineItems = [
     { href: '/dashboard/timelines-of-bank/ubl', label: 'UBL', icon: Landmark },
 ];
 
-const savedRecordsItems = [
-    { href: '/dashboard/saved-records', label: 'All Saved Records', icon: Archive },
-    { href: '/dashboard/saved-records?filter=Assigned Tasks', label: 'Assigned Tasks', icon: ClipboardCheck },
-    { href: '/dashboard/saved-records?filter=Site Visit Proforma', label: 'Site Visit Reports', icon: Eye },
-    { href: '/dashboard/saved-records?filter=Site Survey Report', label: 'Site Survey Reports', icon: FileSearch },
-    { href: '/dashboard/saved-records?filter=Project Checklist', label: 'Project Checklists', icon: ListChecks },
-    { href: '/dashboard/saved-records?filter=Banks', label: 'Bank Timelines', icon: Landmark },
-];
-  
 const getInitials = (name: string) => {
     if (!name) return '';
     const nameParts = name.split(' ');
@@ -99,9 +90,8 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRecordsItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems, savedRecordsItems: typeof savedRecordsItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
   const pathname = usePathname();
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 
   return (
     <SidebarMenu>
@@ -119,33 +109,18 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRe
           </Link>
         </SidebarMenuItem>
       ))}
-      <Collapsible asChild>
-        <SidebarMenuItem>
-          <CollapsibleTrigger asChild>
-             <SidebarMenuButton
-                className="group-data-[collapsible=icon]:justify-center"
+      <SidebarMenuItem>
+        <Link href="/dashboard/saved-records" passHref>
+            <SidebarMenuButton
+                isActive={pathname === '/dashboard/saved-records'}
+                className={cn(pathname === '/dashboard/saved-records' && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
                 tooltip="Saved Records"
-              >
+            >
                 <Database className="size-5" />
                 <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-              </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent asChild>
-            <SidebarMenuSub>
-              {savedRecordsItems.map((item) => (
-                 <SidebarMenuSubItem key={item.href}>
-                  <Link href={item.href} passHref>
-                     <SidebarMenuSubButton isActive={pathname === item.href.split('?')[0] && searchParams.get('filter') === new URLSearchParams(item.href.split('?')[1]).get('filter')}>
-                        <item.icon className="size-4 mr-2" />
-                        {item.label}
-                     </SidebarMenuSubButton>
-                  </Link>
-                 </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        </SidebarMenuItem>
-      </Collapsible>
+            </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
       <Collapsible asChild>
         <SidebarMenuItem>
           <CollapsibleTrigger asChild>
@@ -233,7 +208,7 @@ export default function DashboardSidebar() {
             />
           </div>
           <SidebarSeparator />
-          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} bankTimelineItems={bankTimelineItems} savedRecordsItems={savedRecordsItems} />
+          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} bankTimelineItems={bankTimelineItems} />
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />
