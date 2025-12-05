@@ -84,17 +84,10 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
   const baseId = useId();
-  const [bankTimelineId, setBankTimelineId] = useState('');
-
-  useEffect(() => {
-    // Generate IDs on the client side to prevent hydration mismatch
-    setBankTimelineId(`${baseId}-bank-timeline`);
-  }, [baseId]);
-
-
+  
   return (
     <SidebarMenu>
       {visibleMenuItems.map((item) => (
@@ -111,33 +104,6 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { vis
           </Link>
         </SidebarMenuItem>
       ))}
-      <Collapsible asChild>
-        <SidebarMenuItem>
-            <CollapsibleTrigger asChild>
-                <SidebarMenuButton
-                className="group-data-[collapsible=icon]:justify-center"
-                tooltip="Timelines of Bank"
-                >
-                <Landmark className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                </SidebarMenuButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent id={bankTimelineId} asChild>
-            <SidebarMenuSub>
-                {bankTimelineItems.map((item) => (
-                    <SidebarMenuSubItem key={item.href}>
-                    <Link href={item.href} passHref>
-                        <SidebarMenuSubButton isActive={pathname === item.href}>
-                        <item.icon className="size-4 mr-2" />
-                        {item.label}
-                        </SidebarMenuSubButton>
-                    </Link>
-                    </SidebarMenuSubItem>
-                ))}
-            </SidebarMenuSub>
-            </CollapsibleContent>
-        </SidebarMenuItem>
-      </Collapsible>
     </SidebarMenu>
   );
 });
@@ -198,7 +164,7 @@ export default function DashboardSidebar() {
             />
           </div>
           <SidebarSeparator />
-          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} bankTimelineItems={bankTimelineItems} />
+          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} />
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />

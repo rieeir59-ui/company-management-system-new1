@@ -122,6 +122,20 @@ const menuItems = [
     { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
 ];
 
+const bankTimelineItems = [
+    { href: '/employee-dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
+    { href: '/employee-dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
+    { href: '/employee-dashboard/timelines-of-bank/askari-bank', label: 'Askari Bank', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/bank-alfalah', label: 'Bank Alfalah', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/bank-al-habib', label: 'Bank Al Habib', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/cbd', label: 'CBD', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/dib', label: 'DIB', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/fbl', label: 'FBL', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/hbl', label: 'HBL', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/mcb', label: 'MCB', icon: Landmark },
+    { href: '/employee-dashboard/timelines-of-bank/ubl', label: 'UBL', icon: Landmark },
+];
+
 const savedRecordsItems = [
     { href: '/employee-dashboard/saved-records', label: 'All Saved Records', icon: Archive },
     { href: '/employee-dashboard/saved-records?filter=My+Projects', label: 'My Projects', icon: Briefcase },
@@ -142,15 +156,17 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems }: { menuItems: any[], savedRecordsItems: any[] }) => {
+const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems, bankTimelineItems }: { menuItems: any[], savedRecordsItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const baseId = useId();
   const [savedRecordsId, setSavedRecordsId] = useState('');
+  const [bankTimelineId, setBankTimelineId] = useState('');
 
   useEffect(() => {
     // Generate IDs on the client side to prevent hydration mismatch
     setSavedRecordsId(`${baseId}-saved-records`);
+    setBankTimelineId(`${baseId}-bank-timeline`);
   }, [baseId]);
 
 
@@ -196,6 +212,33 @@ const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems }: { menuItems:
                 </SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>
+        </Collapsible>
+        <Collapsible asChild>
+          <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                  className="group-data-[collapsible=icon]:justify-center"
+                  tooltip="Timelines of Bank"
+                  >
+                  <Landmark className="size-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                  </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent id={bankTimelineId} asChild>
+              <SidebarMenuSub>
+                  {bankTimelineItems.map((item) => (
+                      <SidebarMenuSubItem key={item.href}>
+                      <Link href={item.href} passHref>
+                          <SidebarMenuSubButton isActive={pathname === item.href}>
+                          <item.icon className="size-4 mr-2" />
+                          {item.label}
+                          </SidebarMenuSubButton>
+                      </Link>
+                      </SidebarMenuSubItem>
+                  ))}
+              </SidebarMenuSub>
+              </CollapsibleContent>
+          </SidebarMenuItem>
         </Collapsible>
     </SidebarMenu>
   );
@@ -255,6 +298,7 @@ export default function EmployeeDashboardSidebar() {
           <MemoizedSidebarMenu 
             menuItems={filteredMenuItems} 
             savedRecordsItems={savedRecordsItems}
+            bankTimelineItems={bankTimelineItems}
           />
         </SidebarContent>
         <SidebarFooter className="p-2">
