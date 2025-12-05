@@ -80,6 +80,10 @@ const fileNameToUrlMap: Record<string, string> = {
   "MCB Timeline": "timelines-of-bank/mcb",
   "UBL Timeline": "timelines-of-bank/ubl",
   "My Projects": "my-projects",
+  "Task Assignment": "assign-task/form",
+  "Site Visit Proforma": "site-visit",
+  "Site Survey Report": "site-survey-report",
+  "Uploaded File": "files-record",
 };
 
 export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashboard' | 'employee-dashboard'): string | null {
