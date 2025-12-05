@@ -89,11 +89,6 @@ const UploadForm = ({ category }: { category: string }) => {
                 customName: uploads.find(u => u.id === id)?.customName || file.name 
             };
             setUploads(prev => prev.map(up => up.id === id ? updatedUpload : up));
-            
-            // Auto-trigger upload if all required fields are present
-            if (updatedUpload.customName && (category !== 'Banks' || updatedUpload.bankName)) {
-                handleUpload(updatedUpload);
-            }
         }
     };
 
@@ -118,43 +113,54 @@ const UploadForm = ({ category }: { category: string }) => {
     return (
         <div className="space-y-4 mt-4">
             {uploads.map((upload) => (
-                <div key={upload.id} className="grid grid-cols-1 md:grid-cols-2 items-end gap-4 p-4 border rounded-lg relative bg-muted/50">
+                <div key={upload.id} className="p-4 border rounded-lg relative bg-muted/50">
                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeFileUpload(upload.id)} disabled={upload.isUploading}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                     
-                    <div className="md:col-span-2">
-                        <Label htmlFor={`file-${upload.id}`} className={cn("flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted", { 'opacity-50 cursor-not-allowed': upload.isUploading })}>
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <UploadCloud className="w-8 h-8 mb-2 text-gray-500" />
-                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                {upload.file && <p className="text-xs text-gray-600 font-medium">{upload.file.name}</p>}
-                                {upload.isUploading && <Progress value={upload.progress} className="w-full h-2 mt-2" />}
-                                {upload.isUploaded && <p className="text-green-600 font-semibold mt-2">Uploaded!</p>}
-                                {upload.error && <p className="text-destructive text-sm mt-2">{upload.error}</p>}
-                            </div>
-                             <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
-                        </Label>
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-end gap-4">
+                        <div className="md:col-span-2 lg:col-span-4">
+                            <Label htmlFor={`file-${upload.id}`} className={cn("flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted", { 'opacity-50 cursor-not-allowed': upload.isUploading })}>
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <UploadCloud className="w-8 h-8 mb-2 text-gray-500" />
+                                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                    {upload.file && <p className="text-xs text-gray-600 font-medium">{upload.file.name}</p>}
+                                </div>
+                                <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
+                            </Label>
+                        </div>
 
-                    {category === 'Banks' && (
+                        {category === 'Banks' && (
+                            <div className="space-y-2">
+                                <Label htmlFor={`bank-${upload.id}`}>Bank Name</Label>
+                                <CreatableSelect
+                                    options={banks}
+                                    value={upload.bankName}
+                                    onChange={(value) => handleFieldChange(upload.id, 'bankName', value)}
+                                    onCreate={handleCreateBank}
+                                    placeholder="Select or create a bank"
+                                />
+                            </div>
+                        )}
+
                         <div className="space-y-2">
-                            <Label htmlFor={`bank-${upload.id}`}>Bank Name</Label>
-                             <CreatableSelect
-                                options={banks}
-                                value={upload.bankName}
-                                onChange={(value) => handleFieldChange(upload.id, 'bankName', value)}
-                                onCreate={handleCreateBank}
-                                placeholder="Select or create a bank"
-                            />
+                            <Label htmlFor={`name-${upload.id}`}>File Name</Label>
+                            <Input id={`name-${upload.id}`} placeholder="Enter a custom name" value={upload.customName} onChange={e => handleFieldChange(upload.id, 'customName', e.target.value)} disabled={upload.isUploading} />
+                        </div>
+
+                         <div className="space-y-2">
+                            <Button onClick={() => handleUpload(upload)} disabled={!upload.file || !upload.customName || upload.isUploading || upload.isUploaded} className="w-full">
+                                <FileUp className="mr-2 h-4 w-4" />
+                                {upload.isUploading ? `Uploading...` : (upload.isUploaded ? 'Uploaded' : 'Upload')}
+                            </Button>
+                        </div>
+                    </div>
+                     {(upload.isUploading || upload.isUploaded) && (
+                        <div className="mt-2">
+                            <Progress value={upload.progress} className="w-full h-2" />
+                            {upload.error && <p className="text-destructive text-sm mt-1">{upload.error}</p>}
                         </div>
                     )}
-
-                    <div className="space-y-2">
-                        <Label htmlFor={`name-${upload.id}`}>File Name</Label>
-                        <Input id={`name-${upload.id}`} placeholder="Enter a custom name" value={upload.customName} onChange={e => handleFieldChange(upload.id, 'customName', e.target.value)} disabled={upload.isUploading} />
-                    </div>
-
                 </div>
             ))}
             <Button variant="outline" onClick={addFileUpload}>
