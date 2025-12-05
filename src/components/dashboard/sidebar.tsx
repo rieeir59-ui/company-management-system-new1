@@ -62,7 +62,7 @@ const menuItems = [
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
-    { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin'] },
+    { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
 
 const bankTimelineItems = [
@@ -81,12 +81,11 @@ const bankTimelineItems = [
 
 const savedRecordsItems = [
     { href: '/dashboard/saved-records', label: 'All Saved Records', icon: Archive },
-    { href: '/dashboard/saved-records?filter=My+Projects', label: 'My Projects', icon: Briefcase },
-    { href: '/dashboard/saved-records?filter=Task+Assignment', label: 'Task Reports', icon: ClipboardCheck },
-    { href: '/dashboard/saved-records?filter=Site+Visit+Proforma', label: 'Site Visit Reports', icon: Eye },
-    { href: '/dashboard/saved-records?filter=Site+Survey+Report', label: 'Site Survey Reports', icon: FileSearch },
-    { href: '/dashboard/saved-records?filter=Project+Checklist', label: 'Project Checklists', icon: ListChecks },
-    { href: '/dashboard/saved-records?filter=Bank+Timelines', label: 'Bank Timelines', icon: Landmark },
+    { href: '/dashboard/saved-records?filter=Assigned Tasks', label: 'Assigned Tasks', icon: ClipboardCheck },
+    { href: '/dashboard/saved-records?filter=Site Visit Proforma', label: 'Site Visit Reports', icon: Eye },
+    { href: '/dashboard/saved-records?filter=Site Survey Report', label: 'Site Survey Reports', icon: FileSearch },
+    { href: '/dashboard/saved-records?filter=Project Checklist', label: 'Project Checklists', icon: ListChecks },
+    { href: '/dashboard/saved-records?filter=Banks', label: 'Bank Timelines', icon: Landmark },
 ];
   
 const getInitials = (name: string) => {
@@ -139,7 +138,7 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRe
                     <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent id={savedRecordsId} asChild>
+              <CollapsibleContent asChild>
                 <SidebarMenuSub>
                   {savedRecordsItems.map((item) => (
                      <SidebarMenuSubItem key={item.href}>
@@ -166,7 +165,7 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems, savedRe
                     <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent id={bankTimelineId} asChild>
+              <CollapsibleContent asChild>
                 <SidebarMenuSub>
                   {bankTimelineItems.map((item) => (
                      <SidebarMenuSubItem key={item.href}>

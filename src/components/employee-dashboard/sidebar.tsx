@@ -138,11 +138,10 @@ const bankTimelineItems = [
 
 const savedRecordsItems = [
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Archive },
-    { href: '/employee-dashboard/saved-records?filter=My+Projects', label: 'My Projects', icon: Briefcase },
-    { href: '/employee-dashboard/saved-records?filter=Task+Assignment', label: 'Task Reports', icon: ClipboardCheck },
-    { href: '/employee-dashboard/saved-records?filter=Site+Visit+Proforma', label: 'Site Visit Reports', icon: Eye },
-    { href: '/employee-dashboard/saved-records?filter=Site+Survey+Report', label: 'Site Survey Reports', icon: FileSearch },
-    { href: '/employee-dashboard/saved-records?filter=Project+Checklist', label: 'Project Checklists', icon: ListChecks },
+    { href: '/employee-dashboard/saved-records?filter=Assigned Tasks', label: 'Assigned Tasks', icon: ClipboardCheck },
+    { href: '/employee-dashboard/saved-records?filter=Site Visit Proforma', label: 'Site Visit Reports', icon: Eye },
+    { href: '/employee-dashboard/saved-records?filter=Site Survey Report', label: 'Site Survey Reports', icon: FileSearch },
+    { href: '/employee-dashboard/saved-records?filter=Project Checklist', label: 'Project Checklists', icon: ListChecks },
 ];
 
 const getInitials = (name: string) => {
@@ -196,7 +195,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems, bankTimelineIt
                     <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent id={savedRecordsId} asChild>
+              <CollapsibleContent asChild>
                 <SidebarMenuSub>
                   {savedRecordsItems.map((item) => (
                      <SidebarMenuSubItem key={item.href}>
@@ -223,7 +222,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems, bankTimelineIt
                   <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
                   </SidebarMenuButton>
               </CollapsibleTrigger>
-              <CollapsibleContent id={bankTimelineId} asChild>
+              <CollapsibleContent asChild>
               <SidebarMenuSub>
                   {bankTimelineItems.map((item) => (
                       <SidebarMenuSubItem key={item.href}>
