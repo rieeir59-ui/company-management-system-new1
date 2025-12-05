@@ -145,12 +145,13 @@ const getInitials = (name: string) => {
 const MemoizedSidebarMenu = memo(({ menuItems, savedRecordsItems }: { menuItems: any[], savedRecordsItems: any[] }) => {
   const pathname = usePathname();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const generatedId = useId();
+  const baseId = useId();
   const [savedRecordsId, setSavedRecordsId] = useState('');
 
   useEffect(() => {
-    setSavedRecordsId(generatedId);
-  }, [generatedId]);
+    // Generate IDs on the client side to prevent hydration mismatch
+    setSavedRecordsId(`${baseId}-saved-records`);
+  }, [baseId]);
 
 
   return (

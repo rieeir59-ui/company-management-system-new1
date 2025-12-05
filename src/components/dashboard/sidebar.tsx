@@ -86,12 +86,13 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
   const pathname = usePathname();
-  const generatedId = useId();
+  const baseId = useId();
   const [bankTimelineId, setBankTimelineId] = useState('');
 
   useEffect(() => {
-    setBankTimelineId(generatedId);
-  }, [generatedId]);
+    // Generate IDs on the client side to prevent hydration mismatch
+    setBankTimelineId(`${baseId}-bank-timeline`);
+  }, [baseId]);
 
 
   return (
