@@ -47,15 +47,29 @@ export default function LoginPage() {
                 router.push('/employee-dashboard');
             }
         } else {
-            // This case should ideally not happen if auth is synced with your employee list
             await auth.signOut();
-            toast({ variant: 'destructive', title: 'Login Failed', description: 'Employee details not found.' });
+            toast({ variant: 'destructive', title: 'Login Failed', description: 'Employee details not found in the local employee list.' });
         }
     } catch (error: any) {
+        let errorMessage = 'An unknown error occurred.';
+        if (error.code) {
+            switch (error.code) {
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    errorMessage = 'Invalid email or password.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'The email address is not valid.';
+                    break;
+                default:
+                    errorMessage = 'Login failed. Please try again.';
+            }
+        }
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: error.message || 'Invalid email or password.',
+            description: errorMessage,
         });
     }
   };
