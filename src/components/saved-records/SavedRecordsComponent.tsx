@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +44,7 @@ const managementCategories = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Task Assignment", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
 ];
 
 const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
@@ -179,6 +179,31 @@ const generateDefaultPdf = (record: SavedRecord) => {
         });
     }
 
+    if (typeof record.data === 'object' && record.data !== null && !Array.isArray(record.data)) {
+         const header = record.data.header || {};
+         const items = record.data.items || [];
+         const category = record.data.category || 'Details';
+         doc.setFontSize(12);
+         doc.setFont('helvetica', 'bold');
+         doc.text(category, 14, yPos);
+         yPos += 10;
+         doc.setFontSize(10);
+         doc.setFont('helvetica', 'normal');
+         (doc as any).autoTable({
+            startY: yPos,
+            body: Object.entries(header),
+            theme: 'plain'
+         });
+         yPos = (doc as any).autoTable.previous.finalY + 10;
+         (doc as any).autoTable({
+            startY: yPos,
+            head: [Object.keys(items[0] || {})],
+            body: items.map((item: any) => Object.values(item)),
+            theme: 'grid'
+         });
+         yPos = (doc as any).autoTable.previous.finalY + 10;
+    }
+
     // Footer
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -231,6 +256,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 }
             } else if (activeCategory === 'Management Records') {
                  recordsToFilter = recordsToFilter.filter(r => managementCategories.includes(r.fileName));
+            } else if (activeCategory === 'Assigned Tasks') {
+                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
             }
         }
     
@@ -417,9 +444,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         </CardHeader>
         <CardContent>
             {!activeCategory ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <SectionCard title="Bank Timelines" icon={Landmark} onClick={() => handleCategorySelect('Banks')} />
                     <SectionCard title="Management Records" icon={Building2} onClick={() => handleCategorySelect('Management Records')} />
+                    <SectionCard title="Assigned Tasks" icon={ClipboardCheck} onClick={() => handleCategorySelect('Assigned Tasks')} />
                 </div>
             ) : (
                 <div>
