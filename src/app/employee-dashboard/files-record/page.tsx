@@ -49,7 +49,7 @@ export default function FilesRecordPage() {
   const fileRecords = useMemo(() => {
     if (!currentUser) return [];
     // In employee dashboard, show only their own files
-    return allFileRecords.filter(file => file.employeeId === currentUser.record);
+    return allFileRecords.filter(file => file.employeeId === currentUser.uid);
   }, [allFileRecords, currentUser]);
 
   const [files, setFiles] = useState<Record<string, UploadedFile[]>>({});

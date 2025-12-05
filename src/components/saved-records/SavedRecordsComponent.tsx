@@ -155,8 +155,13 @@ const generateDefaultPdf = (record: SavedRecord) => {
             if (Array.isArray(section.items)) {
                 const body = section.items.map((item: any) => {
                     if(typeof item === 'string') {
-                        const parts = item.split(':');
-                        return [parts[0], parts.slice(1).join(':').trim()];
+                        try {
+                            const parsed = JSON.parse(item);
+                            return Object.values(parsed);
+                        } catch(e) {
+                             const parts = item.split(':');
+                             return [parts[0], parts.slice(1).join(':').trim()];
+                        }
                     }
                     if(item.label) {
                         return [item.label, item.value];
@@ -164,12 +169,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     if(item.Item){
                          return [item.Item, item.Status, item.Remarks];
                     }
-                    try {
-                        const parsed = JSON.parse(item);
-                        return Object.values(parsed);
-                    } catch {
-                        return [item];
-                    }
+                    return [item];
                 });
                  (doc as any).autoTable({
                     startY: yPos,
@@ -351,8 +351,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                             const parsed = JSON.parse(item);
                                             return <TableRow key={`${index}-${i}`}>{Object.entries(parsed).map(([key, val]) => <TableCell key={key}>{String(val)}</TableCell>)}</TableRow>
                                         } catch (e) {
-                                            const parts = item.split(':');
-                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell colSpan={2}>{parts.slice(1).join(':').trim()}</TableCell></TableRow>;
+                                             const parts = item.split(':');
+                                             return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell colSpan={2}>{parts.slice(1).join(':').trim()}</TableCell></TableRow>;
                                         }
                                     } else if (item.Item) {
                                          return (
@@ -374,8 +374,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             );
         }
 
-        // Fallback for non-array, non-special-cased data
-        if (typeof viewingRecord.data === 'object' && viewingRecord.data !== null) {
+        if (typeof viewingRecord.data === 'object' && viewingRecord.data !== null && !Array.isArray(viewingRecord.data)) {
              const header = viewingRecord.data.header || {};
              const items = viewingRecord.data.items || [];
              const category = viewingRecord.data.category || 'Details';
