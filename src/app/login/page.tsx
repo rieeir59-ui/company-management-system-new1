@@ -16,103 +16,82 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'fire
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { login, user: currentUser } = useCurrentUser();
+  const { login } = useCurrentUser();
   const { auth } = useFirebase();
-  const isDeveloper = currentUser?.department === 'software-engineer';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     if (!auth) {
-        toast({ variant: 'destructive', title: 'Auth service not available' });
+      toast({ variant: 'destructive', title: 'Auth service not available' });
+      setIsLoading(false);
+      return;
+    }
+
+    const employeeDetails = employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
+
+    if (!employeeDetails || employeeDetails.password !== password) {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'Invalid email or password provided.',
+        });
+        setIsLoading(false);
         return;
     }
 
     try {
+        // First, try to sign in
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        
+        login({ ...employeeDetails, uid: user.uid });
+        toast({ title: 'Login Successful', description: `Welcome back, ${employeeDetails.name}!` });
 
-        // After successful Firebase Auth, find the employee in the local list
-        const employee = employees.find(emp => emp.email.toLowerCase() === user.email?.toLowerCase());
-
-        if (employee) {
-            login({ ...employee, uid: user.uid }); // Pass the actual Firebase UID
-            toast({
-                title: 'Login Successful',
-                description: `Welcome back, ${employee.name}!`,
-            });
-            // Redirect based on department
-            if (['ceo', 'admin', 'software-engineer'].includes(employee.department)) {
-                router.push('/dashboard');
-            } else {
-                router.push('/employee-dashboard');
-            }
+        if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
+            router.push('/dashboard');
         } else {
-            // This case should ideally not happen if all employees are in Firebase Auth
-            await auth.signOut();
-            toast({ variant: 'destructive', title: 'Login Failed', description: 'Employee details not found in the local employee list.' });
+            router.push('/employee-dashboard');
         }
+
     } catch (error: any) {
-        let errorMessage = 'An unknown error occurred.';
-        if (error.code) {
-            switch (error.code) {
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential':
-                    errorMessage = 'Invalid email or password.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'The email address is not valid.';
-                    break;
-                default:
-                    errorMessage = 'Login failed. Please try again.';
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+            // If user not found, try to create an account for them
+            try {
+                const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const newUser = newUserCredential.user;
+
+                login({ ...employeeDetails, uid: newUser.uid });
+                toast({ title: 'Account Created & Logged In', description: `Welcome, ${employeeDetails.name}!` });
+
+                 if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
+                    router.push('/dashboard');
+                } else {
+                    router.push('/employee-dashboard');
+                }
+
+            } catch (signUpError: any) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Registration Failed',
+                    description: 'Could not create a new account. Please contact support.',
+                });
             }
-        }
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: errorMessage,
-        });
-    }
-  };
-
-  const handleSignUpAll = async () => {
-    if (!auth) {
-      toast({ variant: 'destructive', title: 'Auth service not available' });
-      return;
-    }
-    setIsSigningUp(true);
-    toast({ title: 'Registration Started', description: 'Registering all employees in Firebase Auth...' });
-
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const emp of employees) {
-      if (!emp.email || !emp.password) {
-        failCount++;
-        continue;
-      }
-      try {
-        await createUserWithEmailAndPassword(auth, emp.email, emp.password);
-        successCount++;
-      } catch (error: any) {
-        if (error.code !== 'auth/email-already-in-use') {
-            failCount++;
-            console.error(`Failed to create user ${emp.email}:`, error);
         } else {
-            // If user already exists, we count it as a success for this operation's purpose.
-            successCount++;
+            // Handle other sign-in errors
+            toast({
+                variant: 'destructive',
+                title: 'Login Failed',
+                description: 'An unexpected error occurred. Please try again.',
+            });
         }
-      }
+    } finally {
+        setIsLoading(false);
     }
-    
-    setIsSigningUp(false);
-    toast({
-      title: 'Registration Complete',
-      description: `${successCount} employees registered/verified. ${failCount} failed.`,
-    });
   };
 
   return (
@@ -136,12 +115,9 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full" type="submit">Login</Button>
-               {isDeveloper && (
-                 <Button className="w-full" variant="secondary" type="button" onClick={handleSignUpAll} disabled={isSigningUp}>
-                    {isSigningUp ? 'Registering...' : 'Sign Up All Employees'}
-                </Button>
-               )}
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Login'}
+              </Button>
             </CardFooter>
           </form>
         </Card>
