@@ -9,12 +9,18 @@ service cloud.firestore {
 
     // Helper: Check if user is admin
     function isAdmin() {
-      return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','ceo','software-engineer'];
+      // Use `exists` for performance and safety over `get`.
+      // `get` can incur a read operation cost even if the document doesn't exist.
+      // `exists` is more efficient for simply checking presence.
+      return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','ceo','software-engineer'];
     }
 
     // USERS collection
     match /users/{uid} {
       allow read: if isLoggedIn();
+      // Allow creation/update only by the user themselves.
+      // This is crucial for when the login page creates the user document.
       allow write: if isLoggedIn() && request.auth.uid == uid;
     }
 
@@ -27,8 +33,8 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Any logged-in user can read any task.
-      allow read: if isLoggedIn();
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow read: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
       // Only admins can create new tasks.
       allow create: if isAdmin();
       // An admin can update any task. An employee can only update the status of their own assigned task.

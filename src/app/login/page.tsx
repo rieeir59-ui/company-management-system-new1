@@ -12,6 +12,7 @@ import Header from '@/components/layout/header';
 import { employees } from '@/lib/employees';
 import { useFirebase } from '@/firebase/provider';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,13 +21,36 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useCurrentUser();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
+
+  const handleSuccessfulLogin = async (firebaseUser: any, employeeDetails: any) => {
+    // Save/update user data in Firestore 'users' collection
+    const userRef = doc(firestore, "users", firebaseUser.uid);
+    await setDoc(userRef, {
+        uid: firebaseUser.uid,
+        name: employeeDetails.name,
+        email: employeeDetails.email,
+        role: employeeDetails.department, // Security rules use 'role'
+        department: employeeDetails.department,
+        contact: employeeDetails.contact,
+        record: employeeDetails.record,
+    }, { merge: true });
+
+    login({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
+    toast({ title: 'Login Successful', description: `Welcome back, ${employeeDetails.name}!` });
+
+    if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
+        router.push('/dashboard');
+    } else {
+        router.push('/employee-dashboard');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!auth) {
+    if (!auth || !firestore) {
       toast({ variant: 'destructive', title: 'Auth service not available' });
       setIsLoading(false);
       return;
@@ -38,51 +62,28 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: 'Invalid email or password provided.',
+            description: 'Invalid email or password.',
         });
         setIsLoading(false);
         return;
     }
 
     try {
-        // First, try to sign in
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        login({ ...employeeDetails, uid: user.uid });
-        toast({ title: 'Login Successful', description: `Welcome back, ${employeeDetails.name}!` });
-
-        if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
-            router.push('/dashboard');
-        } else {
-            router.push('/employee-dashboard');
-        }
-
+        await handleSuccessfulLogin(userCredential.user, employeeDetails);
     } catch (error: any) {
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-            // If user not found, try to create an account for them
             try {
                 const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const newUser = newUserCredential.user;
-
-                login({ ...employeeDetails, uid: newUser.uid });
-                toast({ title: 'Account Created & Logged In', description: `Welcome, ${employeeDetails.name}!` });
-
-                 if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
-                    router.push('/dashboard');
-                } else {
-                    router.push('/employee-dashboard');
-                }
-
+                await handleSuccessfulLogin(newUserCredential.user, employeeDetails);
             } catch (signUpError: any) {
-                toast({
+                 toast({
                     variant: 'destructive',
                     title: 'Registration Failed',
                     description: 'Could not create a new account. Please contact support.',
                 });
             }
         } else {
-            // Handle other sign-in errors
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
