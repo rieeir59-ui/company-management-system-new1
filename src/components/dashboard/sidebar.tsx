@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useId, useEffect } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -82,7 +81,6 @@ const bankTimelineItems = [
 
 const savedRecordsItems = [
     { href: '/dashboard/saved-records', label: 'All Saved Records', icon: Archive },
-    { href: '/dashboard/saved-records?filter=Assigned Tasks', label: 'Assigned Tasks', icon: ClipboardCheck },
     { href: '/dashboard/saved-records?filter=Site Visit Proforma', label: 'Site Visit Reports', icon: Eye },
     { href: '/dashboard/saved-records?filter=Site Survey Report', label: 'Site Survey Reports', icon: FileSearch },
     { href: '/dashboard/saved-records?filter=Project Checklist', label: 'Project Checklists', icon: ListChecks },
