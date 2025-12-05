@@ -27,10 +27,10 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks assigned to them.
-      allow read: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
+      // Any logged-in user can read any task.
+      allow read: if isLoggedIn();
       // Only admins can create new tasks.
-      allow create: if isLoggedIn();
+      allow create: if isAdmin();
       // An admin can update any task. An employee can only update the status of their own assigned task.
       allow update: if isAdmin() || (isLoggedIn() && request.resource.data.assignedTo == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
       // Only admins can delete tasks.
