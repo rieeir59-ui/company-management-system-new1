@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,7 +14,6 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCurrentUser } from '@/context/UserContext';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,6 @@ interface jsPDFWithAutoTable extends jsPDF {
 export default function Page() {
     const image = PlaceHolderImages.find(p => p.id === 'architects-instructions');
     const { toast } = useToast();
-    const { user: currentUser } = useCurrentUser();
     const { addRecord } = useRecords();
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [projectName, setProjectName] = useState('');
@@ -60,7 +59,7 @@ export default function Page() {
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormState(prev => ({ ...prev, [e.target.name]: value }));
+        setFormState(prev => ({ ...prev, [name]: value }));
         if (name === 'projectName') {
             setProjectName(value);
         }
@@ -77,11 +76,6 @@ export default function Page() {
     };
 
     const handleSave = () => {
-         if (!currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
             fileName: "Architect's Supplemental Instructions",
             projectName: projectName || 'Untitled Instruction',

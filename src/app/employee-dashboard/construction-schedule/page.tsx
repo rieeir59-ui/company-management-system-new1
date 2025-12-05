@@ -14,11 +14,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 interface TaskRow {
   id: number;
@@ -52,8 +48,7 @@ const initialRow: Omit<TaskRow, 'id'> = {
 export default function Page() {
   const image = PlaceHolderImages.find(p => p.id === 'construction-schedule');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user: currentUser } = useCurrentUser();
+  const { addRecord } = useRecords();
   
   const [headerState, setHeaderState] = useState({
     client: '',
@@ -85,11 +80,6 @@ export default function Page() {
   };
 
   const handleSave = async () => {
-    if (!firestore || !currentUser) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-      return;
-    }
-    
     const dataToSave = {
       category: 'Construction Activity Schedule',
       items: [
@@ -98,27 +88,15 @@ export default function Page() {
       ]
     };
 
-    const recordToSave = {
-        employeeId: currentUser.record,
-        employeeName: currentUser.name,
+    try {
+      await addRecord({
         fileName: 'Construction Activity Schedule',
         projectName: headerState.title || 'Untitled Schedule',
         data: [dataToSave],
-        createdAt: serverTimestamp(),
-    };
-
-    addDoc(collection(firestore, 'savedRecords'), recordToSave)
-        .then(() => {
-            toast({ title: 'Record Saved', description: 'The construction schedule has been saved.' });
-        })
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'create',
-                requestResourceData: recordToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+      } as any);
+    } catch (error) {
+        // error is handled by context
+    }
   };
 
   const handleDownloadPdf = () => {

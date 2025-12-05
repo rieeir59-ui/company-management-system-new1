@@ -14,11 +14,6 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +24,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -37,8 +33,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 export default function Page() {
     const image = PlaceHolderImages.find(p => p.id === 'change-order');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [recordName, setRecordName] = useState('');
 
@@ -98,39 +93,25 @@ export default function Page() {
 
 
     const handleSave = () => {
-         if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-        
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Change Order',
             projectName: recordName || 'Untitled Change Order',
-            data: {
+            data: [{
                 category: 'Change Order',
                 items: [
                     ...Object.entries(formState).map(([key, value]) => `${key}: ${value}`),
                     `priorSum: ${calculatedSums.priorSum}`,
                     `newSum: ${calculatedSums.newSum}`,
                 ],
-            },
-            createdAt: serverTimestamp(),
+            }],
         };
 
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
+        addRecord(dataToSave as any)
             .then(() => {
-                toast({ title: 'Record Saved', description: 'The change order has been saved.' });
                 setIsSaveOpen(false);
             })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
+            .catch(() => {
+                // error is handled by the context
             });
     };
     

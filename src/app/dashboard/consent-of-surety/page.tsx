@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,11 +13,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -43,20 +40,12 @@ const FormCard = ({ title, children }: { title: string, children: React.ReactNod
 
 const RetainageForm = () => {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const handleSave = () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
 
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Consent of Surety (Retainage)',
             projectName: getVal('retain_project_name') || 'Untitled Retainage Consent',
             data: [{
@@ -75,21 +64,9 @@ const RetainageForm = () => {
                     `Witness Year: ${getVal('retain_year')}`,
                 ],
             }],
-            createdAt: serverTimestamp(),
         };
 
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({ title: 'Record Saved', description: 'The retainage consent has been saved.' });
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+        addRecord(dataToSave as any);
     };
     const handleDownload = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
@@ -210,20 +187,12 @@ const RetainageForm = () => {
 
 const FinalPaymentForm = () => {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const handleSave = () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
 
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Consent of Surety (Final Payment)',
             projectName: getVal('final_project_name') || 'Untitled Final Payment Consent',
             data: [{
@@ -241,21 +210,9 @@ const FinalPaymentForm = () => {
                     `Witness Year: ${getVal('final_year')}`,
                 ],
             }],
-            createdAt: serverTimestamp(),
         };
 
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({ title: 'Record Saved', description: 'The final payment consent has been saved.' });
-            })
-            .catch(serverError => {
-                 const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+        addRecord(dataToSave as any);
     };
 
     const handleDownload = () => {

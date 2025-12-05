@@ -13,15 +13,12 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 export default function ProposalRequestPage() {
     const image = PlaceHolderImages.find(p => p.id === 'proposal-request');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [formState, setFormState] = useState({
         projectName: '',
@@ -44,40 +41,16 @@ export default function ProposalRequestPage() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'You must be logged in to save a record.',
-            });
-            return;
-        }
-
-        const recordData = Object.entries(formState).map(([key, value]) => ({
-            field: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-            value: value || 'N/A'
-        }));
+        const recordData = {
+            fileName: 'Proposal Request',
+            projectName: formState.projectName || `Proposal #${formState.proposalNo}`,
+            data: [{ category: "Proposal Request Details", items: Object.entries(formState).map(([key, value]) => `${key}: ${value || 'N/A'}`) }],
+        };
 
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Proposal Request',
-                projectName: formState.projectName || `Proposal #${formState.proposalNo}`,
-                data: [{ category: "Proposal Request Details", items: recordData.map(d => `${d.field}: ${d.value}`) }],
-                createdAt: serverTimestamp(),
-            });
-            toast({
-                title: "Record Saved",
-                description: "The proposal request has been saved.",
-            });
+            await addRecord(recordData as any);
         } catch (error) {
-            console.error("Error saving record:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Save Failed',
-                description: 'Could not save the proposal request.',
-            });
+            // Error is handled by the context
         }
     };
 

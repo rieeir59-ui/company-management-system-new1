@@ -11,6 +11,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="mb-6">
@@ -23,9 +24,43 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 export default function ArchitectsFieldReportPage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
 
-    const handleSave = () => {
-        toast({ title: 'Record Saved', description: 'The field report has been saved.' });
+    const handleSave = async () => {
+        const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
+
+        const recordData = {
+            fileName: "Architect's Field Report",
+            projectName: getVal('project') || `Field Report ${getVal('report_no')}`,
+            data: [{
+                category: "Report Details",
+                items: [
+                    `Project: ${getVal('project')}`,
+                    `Contract: ${getVal('contract')}`,
+                    `Date: ${getVal('date')}`,
+                    `Weather: ${getVal('weather')}`,
+                    `Est. % of Completion: ${getVal('completion_pct')}`,
+                    `Report No.: ${getVal('report_no')}`,
+                    `Architects Project No: ${getVal('architect_project_no')}`,
+                    `Time: ${getVal('time')}`,
+                    `Temp. Range: ${getVal('temp_range')}`,
+                    `Conformance with Schedule: ${getVal('conformance')}`,
+                    `Work in Progress: ${getVal('work_in_progress')}`,
+                    `Present at Site: ${getVal('present_at_site')}`,
+                    `Observations: ${getVal('observations')}`,
+                    `Items to Verify: ${getVal('items_to_verify')}`,
+                    `Information or Action Required: ${getVal('action_required')}`,
+                    `Attachments: ${getVal('attachments')}`,
+                    `Report By: ${getVal('report_by')}`,
+                ]
+            }],
+        };
+
+        try {
+            await addRecord(recordData as any);
+        } catch (error) {
+            // error is handled by the context
+        }
     };
 
     const handleDownloadPdf = () => {

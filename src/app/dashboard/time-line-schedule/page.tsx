@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,13 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Save, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
 import { addDays, subDays, differenceInDays, format, parseISO } from 'date-fns';
-
+import { useRecords } from '@/context/RecordContext';
 
 interface Task {
   id: number;
@@ -90,8 +88,7 @@ const initialTasks: Task[] = [
 
 export default function TimelinePage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [project, setProject] = useState('');
@@ -141,32 +138,18 @@ export default function TimelinePage() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            category: 'Timeline Schedule',
-            items: tasks.map(task =>
-                `ID: ${task.taskId}, Task: ${task.taskName}, Duration: ${task.duration}, Start: ${task.start}, Finish: ${task.finish}, Predecessor: ${task.predecessor}`
-            ),
+            fileName: 'Timeline Schedule',
+            projectName: project || 'Untitled Timeline',
+            data: [{
+                category: 'Timeline Schedule',
+                items: tasks.map(task =>
+                    `ID: ${task.taskId}, Task: ${task.taskName}, Duration: ${task.duration}, Start: ${task.start}, Finish: ${task.finish}, Predecessor: ${task.predecessor}`
+                ),
+            }],
         };
         
-        try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Timeline Schedule',
-                projectName: project || 'Untitled Timeline',
-                data: [dataToSave],
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The timeline schedule has been saved.' });
-        } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
-        }
+        await addRecord(dataToSave as any);
     };
     
     const handleDownloadPdf = () => {
