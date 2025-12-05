@@ -42,6 +42,7 @@ export default function AssignTaskForm() {
     const { user: currentUser } = useCurrentUser();
     const { employees } = useEmployees();
     const { addRecord } = useRecords();
+    const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -58,8 +59,11 @@ export default function AssignTaskForm() {
             if (employee) {
                 setAssignedTo(employee.uid);
             }
+        } else if (isAdmin && currentUser) {
+            // If no employee is specified in URL and user is admin, default to self
+            setAssignedTo(currentUser.uid);
         }
-    }, [employeeId, employees]);
+    }, [employeeId, employees, isAdmin, currentUser]);
 
     const handleSave = () => {
         if (!firestore || !currentUser) {
