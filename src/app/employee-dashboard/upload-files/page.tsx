@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FileUp, PlusCircle, Trash2, Building, Home, Hotel, Landmark } from "lucide-react";
+import { FileUp, PlusCircle, Trash2, Building, Home, Hotel, Landmark, UploadCloud } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
@@ -39,32 +39,7 @@ const UploadForm = ({ category }: { category: string }) => {
     const { toast } = useToast();
     const { addFileRecord } = useFileRecords();
 
-    const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            const file = event.target.files[0];
-            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name } : up));
-        }
-    };
-
-    const handleFieldChange = (id: number, field: keyof FileUpload, value: string) => {
-        setUploads(prev => prev.map(up => (up.id === id ? { ...up, [field]: value } : up)));
-    };
-
-    const addFileUpload = () => {
-        setUploads(prev => [...prev, { id: Date.now(), file: null, customName: '', bankName: '' }]);
-    };
-
-    const removeFileUpload = (id: number) => {
-        setUploads(prev => prev.filter(up => up.id !== id));
-    };
-
-    const handleCreateBank = (newBank: string) => {
-        if (!banks.find(b => b.toLowerCase() === newBank.toLowerCase())) {
-            setBanks(prev => [...prev, newBank]);
-        }
-    };
-
-    const handleUpload = async (upload: FileUpload) => {
+    const handleUpload = useCallback(async (upload: FileUpload) => {
         if (!upload.file || !upload.customName) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a custom name and choose a file.' });
             return;
@@ -102,15 +77,65 @@ const UploadForm = ({ category }: { category: string }) => {
         } catch (error) {
              setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
         }
+    }, [category, addFileRecord, toast]);
+
+
+    const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) {
+            const file = event.target.files[0];
+            const updatedUpload = { 
+                ...uploads.find(u => u.id === id)!, 
+                file, 
+                customName: uploads.find(u => u.id === id)?.customName || file.name 
+            };
+            setUploads(prev => prev.map(up => up.id === id ? updatedUpload : up));
+            
+            // Auto-trigger upload if all required fields are present
+            if (updatedUpload.customName && (category !== 'Banks' || updatedUpload.bankName)) {
+                handleUpload(updatedUpload);
+            }
+        }
     };
 
+    const handleFieldChange = (id: number, field: keyof FileUpload, value: string) => {
+        setUploads(prev => prev.map(up => (up.id === id ? { ...up, [field]: value } : up)));
+    };
+
+    const addFileUpload = () => {
+        setUploads(prev => [...prev, { id: Date.now(), file: null, customName: '', bankName: '' }]);
+    };
+
+    const removeFileUpload = (id: number) => {
+        setUploads(prev => prev.filter(up => up.id !== id));
+    };
+
+    const handleCreateBank = (newBank: string) => {
+        if (!banks.find(b => b.toLowerCase() === newBank.toLowerCase())) {
+            setBanks(prev => [...prev, newBank]);
+        }
+    };
+    
     return (
         <div className="space-y-4 mt-4">
             {uploads.map((upload) => (
-                <div key={upload.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-end gap-4 p-4 border rounded-lg relative bg-muted/50">
+                <div key={upload.id} className="grid grid-cols-1 md:grid-cols-2 items-end gap-4 p-4 border rounded-lg relative bg-muted/50">
                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => removeFileUpload(upload.id)} disabled={upload.isUploading}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
+                    
+                    <div className="md:col-span-2">
+                        <Label htmlFor={`file-${upload.id}`} className={cn("flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted", { 'opacity-50 cursor-not-allowed': upload.isUploading })}>
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <UploadCloud className="w-8 h-8 mb-2 text-gray-500" />
+                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                {upload.file && <p className="text-xs text-gray-600 font-medium">{upload.file.name}</p>}
+                                {upload.isUploading && <Progress value={upload.progress} className="w-full h-2 mt-2" />}
+                                {upload.isUploaded && <p className="text-green-600 font-semibold mt-2">Uploaded!</p>}
+                                {upload.error && <p className="text-destructive text-sm mt-2">{upload.error}</p>}
+                            </div>
+                             <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
+                        </Label>
+                    </div>
 
                     {category === 'Banks' && (
                         <div className="space-y-2">
@@ -128,20 +153,6 @@ const UploadForm = ({ category }: { category: string }) => {
                     <div className="space-y-2">
                         <Label htmlFor={`name-${upload.id}`}>File Name</Label>
                         <Input id={`name-${upload.id}`} placeholder="Enter a custom name" value={upload.customName} onChange={e => handleFieldChange(upload.id, 'customName', e.target.value)} disabled={upload.isUploading} />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor={`file-${upload.id}`}>Select File</Label>
-                        <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
-                    </div>
-                    
-                    <div className="lg:col-span-3">
-                        {(upload.isUploading || upload.isUploaded) && <Progress value={upload.progress} className="w-full h-2 mb-2" />}
-                        {upload.error && <p className="text-destructive text-sm text-center mb-2">{upload.error}</p>}
-                        <Button onClick={() => handleUpload(upload)} className="w-full" disabled={!upload.file || upload.isUploading || upload.isUploaded}>
-                            <FileUp className="mr-2 h-4 w-4" />
-                            {upload.isUploading ? `Uploading... ${upload.progress?.toFixed(0)}%` : (upload.isUploaded ? 'Uploaded!' : 'Upload')}
-                        </Button>
                     </div>
 
                 </div>
