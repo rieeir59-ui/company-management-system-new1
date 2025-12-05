@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback } from "react";
@@ -68,12 +69,11 @@ const UploadForm = ({ category }: { category: string }) => {
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
             toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
 
-            setTimeout(() => {
-                setUploads(prev => {
-                    const remaining = prev.filter(up => up.id !== upload.id);
-                    return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
-                });
-            }, 2000);
+            // Remove the completed upload row immediately.
+            setUploads(prev => {
+                const remaining = prev.filter(up => up.id !== upload.id);
+                return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
+            });
         } catch (error) {
              setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
         }
