@@ -164,7 +164,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
           </Link>
         </SidebarMenuItem>
       ))}
-      <SidebarMenuItem>
+       <SidebarMenuItem>
         <Link href="/employee-dashboard/saved-records" passHref>
             <SidebarMenuButton
                 isActive={pathname === '/employee-dashboard/saved-records'}

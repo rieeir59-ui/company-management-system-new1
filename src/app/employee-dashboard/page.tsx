@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2, Eye } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2, Eye, Upload, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
 import { collection, onSnapshot, query, where, doc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import jsPDF from 'jspdf';
@@ -22,7 +23,7 @@ import 'jspdf-autotable';
 import { differenceInDays, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
+import { Progress } from '@/components/ui/progress';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -48,6 +49,8 @@ interface Project {
   status: 'completed' | 'in-progress' | 'not-started';
   dueDate: string;
   assignedBy: string;
+  submissionUrl?: string;
+  submissionFileName?: string;
 }
 
 type ProjectRow = {
@@ -90,8 +93,9 @@ function MyProjectsComponent() {
   const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, firebaseApp } = useFirebase();
   const { addRecord } = useRecords();
+  const storage = getStorage(firebaseApp);
 
   const employeeId = searchParams.get('employeeId');
   const displayUser = useMemo(() => {
@@ -108,6 +112,11 @@ function MyProjectsComponent() {
   const [numberOfDays, setNumberOfDays] = useState<number | null>(null);
   const [viewingRecord, setViewingRecord] = useState<ProjectRow | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [submittingTask, setSubmittingTask] = useState<Project | null>(null);
+  const [submissionFile, setSubmissionFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (schedule.start && schedule.end) {
@@ -165,17 +174,17 @@ function MyProjectsComponent() {
         const fetchedTasks: Project[] = [];
         querySnapshot.forEach(doc => {
             const data = doc.data();
-            if (data.status !== 'completed') {
-                fetchedTasks.push({
-                    id: doc.id,
-                    projectName: data.projectName || '',
-                    taskName: data.taskName || '',
-                    taskDescription: data.taskDescription || '',
-                    status: data.status || 'not-started',
-                    dueDate: data.dueDate || '',
-                    assignedBy: data.assignedBy || 'N/A'
-                });
-            }
+            fetchedTasks.push({
+                id: doc.id,
+                projectName: data.projectName || '',
+                taskName: data.taskName || '',
+                taskDescription: data.taskDescription || '',
+                status: data.status || 'not-started',
+                dueDate: data.dueDate || '',
+                assignedBy: data.assignedBy || 'N/A',
+                submissionUrl: data.submissionUrl,
+                submissionFileName: data.submissionFileName,
+            });
         });
         setProjects(fetchedTasks);
         setIsLoadingTasks(false);
@@ -196,6 +205,57 @@ function MyProjectsComponent() {
 
     return () => unsubscribe();
   }, [firestore, displayUser, toast]);
+
+    const openSubmitDialog = (task: Project) => {
+        if (!isOwner) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only submit work for your own tasks.' });
+            return;
+        }
+        setSubmittingTask(task);
+        setIsSubmitDialogOpen(true);
+    };
+
+    const handleFileSubmit = async () => {
+        if (!firestore || !submittingTask || !submissionFile) return;
+    
+        setIsUploading(true);
+        setUploadProgress(0);
+        
+        const filePath = `submissions/${submittingTask.id}/${submissionFile.name}`;
+        const storageRef = ref(storage, filePath);
+        const uploadTask = uploadBytesResumable(storageRef, submissionFile);
+    
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload your file. Please try again.' });
+                setIsUploading(false);
+            },
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                const taskRef = doc(firestore, 'tasks', submittingTask.id);
+                try {
+                    await updateDoc(taskRef, { 
+                        status: 'completed',
+                        submissionUrl: downloadURL,
+                        submissionFileName: submissionFile.name,
+                    });
+                    toast({ title: 'Submission Successful', description: 'Your work has been submitted and the task is marked as complete.' });
+                    setIsUploading(false);
+                    setIsSubmitDialogOpen(false);
+                    setSubmittingTask(null);
+                    setSubmissionFile(null);
+                } catch (error) {
+                    toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update task status.' });
+                    setIsUploading(false);
+                }
+            }
+        );
+    };
 
   const handleStatusChange = async (taskId: string, newStatus: Project['status']) => {
     if (!firestore) return;
@@ -329,7 +389,7 @@ function MyProjectsComponent() {
         <Card>
             <CardHeader>
                 <CardTitle>{isOwner ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
-                <CardDescription>A list of tasks assigned to this employee that are not yet completed.</CardDescription>
+                <CardDescription>A list of tasks assigned to this employee.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoadingTasks ? (
@@ -347,12 +407,13 @@ function MyProjectsComponent() {
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {projects.length === 0 ? (
                             <TableRow>
-                                    <TableCell colSpan={6} className="text-center h-24">No pending tasks assigned.</TableCell>
+                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned.</TableCell>
                             </TableRow>
                             ) : projects.map((project) => (
                                 <TableRow key={project.id}>
@@ -385,6 +446,15 @@ function MyProjectsComponent() {
                                             </SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                        {project.status !== 'completed' && isOwner ? (
+                                            <Button onClick={() => openSubmitDialog(project)}>Submit Work</Button>
+                                        ) : project.submissionUrl ? (
+                                            <Button variant="link" asChild>
+                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer">View Submission</a>
+                                            </Button>
+                                        ) : null}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -503,6 +573,27 @@ function MyProjectsComponent() {
                     </div>
                     <DialogFooter>
                         <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Submit Work for "{submittingTask?.taskName}"</DialogTitle>
+                        <DialogDescription>
+                            Upload your completed work file. This will mark the task as complete.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="submission-file">File</Label>
+                        <Input id="submission-file" type="file" onChange={(e) => setSubmissionFile(e.target.files ? e.target.files[0] : null)} />
+                        {isUploading && <Progress value={uploadProgress} className="w-full mt-2" />}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)} disabled={isUploading}>Cancel</Button>
+                        <Button onClick={handleFileSubmit} disabled={!submissionFile || isUploading}>
+                            {isUploading ? 'Uploading...' : 'Submit'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

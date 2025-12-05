@@ -51,7 +51,7 @@ function EmployeeDashboardComponent() {
             </>
         </CardHeader>
         <CardContent className="text-center">
-           <p className="text-muted-foreground">Use the sidebar to navigate to different sections of the dashboard. You can view your assigned tasks and manage your projects from the <Link href="/employee-dashboard/my-projects" className="text-primary hover:underline">My Projects</Link> page.</p>
+           <p className="text-muted-foreground">Use the sidebar to navigate to different sections of the dashboard. You can view your assigned tasks and manage your projects from the <Link href="/employee-dashboard" className="text-primary hover:underline">main dashboard</Link> page.</p>
         </CardContent>
       </Card>
     </div>
