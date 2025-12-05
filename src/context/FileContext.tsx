@@ -119,7 +119,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     const dataToSave = {
                         ...record,
                         fileUrl: downloadURL,
-                        employeeId: currentUser.uid, // Use UID for consistency
+                        employeeId: currentUser.record, 
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };
@@ -146,7 +146,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
      const recordToUpdate = fileRecords.find(f => f.id === id);
      if (!recordToUpdate) return;
-     if (!isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
+     if (!isAdmin && recordToUpdate.employeeId !== currentUser.record) {
          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this file record.' });
          return;
      }
@@ -171,7 +171,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     const docToDelete = fileRecords.find(f => f.id === id);
     if (!docToDelete) return;
 
-    if (!isAdmin && docToDelete.employeeId !== currentUser.uid) {
+    if (!isAdmin && docToDelete.employeeId !== currentUser.record) {
         toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this file record.' });
         return;
     }

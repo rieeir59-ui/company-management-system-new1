@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,14 +81,8 @@ const UploadForm = ({ category }: { category: string }) => {
 
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
+        if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
-            handleUpload({
-                id,
-                file,
-                customName: uploads.find(u => u.id === id)?.customName || file.name,
-                bankName: uploads.find(u => u.id === id)?.bankName
-            });
             setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name } : up));
         }
     };
@@ -119,7 +113,7 @@ const UploadForm = ({ category }: { category: string }) => {
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-end gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-end gap-4">
                         <div className="md:col-span-2 lg:col-span-4">
                             <Label htmlFor={`file-${upload.id}`} className={cn("flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted", { 'opacity-50 cursor-not-allowed': upload.isUploading })}>
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
