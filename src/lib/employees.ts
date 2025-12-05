@@ -37,11 +37,3 @@ export const employeesByDepartment = employees.reduce((acc, employee) => {
   acc[department].push(employee);
   return acc;
 }, {} as Record<string, Employee[]>);
-
-// Add admin employees
-if (employeesByDepartment.admin) {
-    const rabiya = employees.find(e => e.record === 'EMP-004');
-    const imran = employees.find(e => e.record === 'EMP-005');
-    if (rabiya) employeesByDepartment.admin.push(rabiya);
-    if (imran) employeesByDepartment.admin.push(imran);
-}
