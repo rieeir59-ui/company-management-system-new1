@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -216,7 +215,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const userRecords = useMemo(() => {
         if (employeeOnly && currentUser) {
-            return records.filter(r => r.employeeId === currentUser.record);
+            return records.filter(r => r.employeeId === currentUser.uid);
         }
         return records;
     }, [records, employeeOnly, currentUser]);
@@ -283,7 +282,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const canEditOrDelete = (record: SavedRecord) => {
         if (!currentUser) return false;
         const isAdmin = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
-        return isAdmin || currentUser.record === record.employeeId;
+        return isAdmin || currentUser.uid === record.employeeId;
     };
     
     const renderRecordContent = () => {
@@ -311,84 +310,96 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             );
         }
     
-        if (bankTimelineCategories.includes(viewingRecord.fileName)) {
-            const projects = viewingRecord.data?.find(d => d.category === 'Projects')?.items || [];
-            const statuses = viewingRecord.data?.find(d => d.category === 'Overall Status')?.items || [];
-            const remarks = viewingRecord.data?.find(d => d.category === 'Remarks')?.items || [];
-            
+        if (bankTimelineCategories.includes(viewingRecord.fileName) && viewingRecord.data) {
             return (
                 <div className="space-y-4">
-                    <h4 className="font-bold">Projects</h4>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>{Object.keys(projects[0] || {}).map(key => <TableHead key={key}>{key}</TableHead>)}</TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {projects.map((p: any, i: number) => <TableRow key={i}>{Object.values(p).map((val: any, j: number) => <TableCell key={j}>{val}</TableCell>)}</TableRow>)}
-                        </TableBody>
-                    </Table>
-                     <h4 className="font-bold mt-4">Overall Status</h4>
-                    <Table>
-                        <TableBody>
-                            {statuses.map((s: any, i: number) => <TableRow key={i}><TableCell>{s.title}</TableCell><TableCell>{s.status}</TableCell></TableRow>)}
-                        </TableBody>
-                    </Table>
-                     <h4 className="font-bold mt-4">Remarks</h4>
-                    <Table>
-                        <TableBody>
-                            {remarks.map((r: any, i: number) => <TableRow key={i}><TableCell>{r.label}</TableCell><TableCell>{r.value}</TableCell></TableRow>)}
-                        </TableBody>
-                    </Table>
+                  {viewingRecord.data.map((section: any, index: number) => (
+                    <div key={index}>
+                      <h4 className="font-bold">{section.category}</h4>
+                      {Array.isArray(section.items) ? (
+                        <Table>
+                            {section.category === 'Projects' && (
+                                <TableHeader>
+                                <TableRow>{Object.keys(section.items[0] || {}).map(key => <TableHead key={key}>{key}</TableHead>)}</TableRow>
+                                </TableHeader>
+                            )}
+                          <TableBody>
+                            {section.items.map((item: any, i: number) => (
+                              <TableRow key={i}>{Object.values(item).map((val: any, j: number) => <TableCell key={j}>{val}</TableCell>)}</TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : <p>No items in this section.</p>}
+                    </div>
+                  ))}
                 </div>
             )
         }
 
-        return (
-            <Table>
-                <TableBody>
-                    {viewingRecord.data.map((section: any, index: number) => (
-                        <React.Fragment key={index}>
-                            <TableRow className="bg-muted">
-                                <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
-                            </TableRow>
-                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
-                                let label = item.label || item.field || `Item ${i + 1}`;
-                                let value = item.value;
-                                
-                                if (typeof item === 'string') {
-                                     const parts = item.split(':');
-                                     label = parts[0];
-                                     value = parts.slice(1).join(':').trim();
-                                } else if (item.Item) {
-                                     return (
-                                        <TableRow key={`${index}-${i}`}>
-                                            <TableCell className="font-medium pl-8">{item.Item}</TableCell>
-                                            <TableCell>{item.Status}</TableCell>
-                                            <TableCell>{item.Remarks}</TableCell>
-                                        </TableRow>
-                                     )
-                                } else {
-                                     try {
-                                        const parsed = JSON.parse(item);
-                                        label = 'JSON Data';
-                                        value = JSON.stringify(parsed, null, 2);
-                                     } catch (e) {
-                                         // not a json string
-                                     }
-                                }
+        if (Array.isArray(viewingRecord.data)) {
+            return (
+                <Table>
+                    <TableBody>
+                        {viewingRecord.data.map((section: any, index: number) => (
+                            <React.Fragment key={index}>
+                                <TableRow className="bg-muted">
+                                    <TableCell colSpan={3} className="font-bold text-primary">{section.category}</TableCell>
+                                </TableRow>
+                                {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
+                                    if(typeof item === 'string') {
+                                        try {
+                                            const parsed = JSON.parse(item);
+                                            return <TableRow key={`${index}-${i}`}>{Object.entries(parsed).map(([key, val]) => <TableCell key={key}>{String(val)}</TableCell>)}</TableRow>
+                                        } catch (e) {
+                                            const parts = item.split(':');
+                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell colSpan={2}>{parts.slice(1).join(':').trim()}</TableCell></TableRow>;
+                                        }
+                                    } else if (item.Item) {
+                                         return (
+                                            <TableRow key={`${index}-${i}`}>
+                                                <TableCell className="font-medium pl-8">{item.Item}</TableCell>
+                                                <TableCell>{item.Status}</TableCell>
+                                                <TableCell>{item.Remarks}</TableCell>
+                                            </TableRow>
+                                         )
+                                    } else if (item.label) {
+                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell colSpan={2}>{item.value}</TableCell></TableRow>;
+                                    }
+                                    return null;
+                                }) : <TableRow><TableCell colSpan={3}>{String(section.items)}</TableCell></TableRow>}
+                            </React.Fragment>
+                        ))}
+                    </TableBody>
+                </Table>
+            );
+        }
 
-                                return (
-                                    <TableRow key={`${index}-${i}`}>
-                                        <TableCell className="font-medium pl-8">{label}</TableCell>
-                                        <TableCell><pre className="whitespace-pre-wrap">{value}</pre></TableCell>
-                                    </TableRow>
-                                )
-                            }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
-                        </React.Fragment>
-                    ))}
-                </TableBody>
-            </Table>
-        );
+        // Fallback for non-array, non-special-cased data
+        if (typeof viewingRecord.data === 'object' && viewingRecord.data !== null) {
+             const header = viewingRecord.data.header || {};
+             const items = viewingRecord.data.items || [];
+             const category = viewingRecord.data.category || 'Details';
+             return (
+                <div>
+                    <h3 className="font-bold text-lg mb-2">{category}</h3>
+                    <div className="space-y-1 mb-4 p-2 border rounded">
+                        {Object.entries(header).map(([key, value]) => (
+                            <p key={key}><span className="font-semibold">{key}:</span> {String(value)}</p>
+                        ))}
+                    </div>
+                     <Table>
+                        <TableHeader>
+                            <TableRow>{Object.keys(items[0] || {}).map(key => <TableHead key={key}>{key}</TableHead>)}</TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {items.map((item: any, i: number) => <TableRow key={i}>{Object.values(item).map((val: any, j: number) => <TableCell key={j}>{String(val)}</TableCell>)}</TableRow>)}
+                        </TableBody>
+                     </Table>
+                </div>
+             )
+        }
+
+        return <p>Could not render record data.</p>;
     };
 
   return (
