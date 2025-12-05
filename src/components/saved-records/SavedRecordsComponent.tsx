@@ -232,6 +232,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [selectedBank, setSelectedBank] = useState<string | null>(null);
+    const [selectedMgmtRecordType, setSelectedMgmtRecordType] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
@@ -256,6 +257,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 }
             } else if (activeCategory === 'Management Records') {
                  recordsToFilter = recordsToFilter.filter(r => managementCategories.includes(r.fileName));
+                 if (selectedMgmtRecordType) {
+                    recordsToFilter = recordsToFilter.filter(r => r.fileName === selectedMgmtRecordType);
+                 }
             } else if (activeCategory === 'Assigned Tasks') {
                 recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
             }
@@ -268,7 +272,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             record.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
     
-    }, [userRecords, activeCategory, selectedBank, searchQuery]);
+    }, [userRecords, activeCategory, selectedBank, selectedMgmtRecordType, searchQuery]);
     
 
     const openDeleteDialog = (record: SavedRecord) => {
@@ -299,21 +303,32 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
     const handleCategorySelect = (category: string) => {
         setActiveCategory(category);
-        setSelectedBank(null); // Reset bank selection when changing category
+        setSelectedBank(null);
+        setSelectedMgmtRecordType(null);
     };
     
     const handleBankSelect = (bank: string) => {
         setSelectedBank(bank);
     };
+
+    const handleMgmtRecordTypeSelect = (recordType: string) => {
+        setSelectedMgmtRecordType(recordType);
+    };
     
     const handleBackToCategories = () => {
         setActiveCategory(null);
         setSelectedBank(null);
+        setSelectedMgmtRecordType(null);
         setSearchQuery('');
     };
-
+    
     const handleBackToBanks = () => {
         setSelectedBank(null);
+        setSearchQuery('');
+    }
+    
+    const handleBackToMgmtCategories = () => {
+        setSelectedMgmtRecordType(null);
         setSearchQuery('');
     }
 
@@ -432,6 +447,111 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
         return <p>Could not render record data.</p>;
     };
+    
+    const renderContent = () => {
+        if (!activeCategory) {
+             return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <SectionCard title="Banks" icon={Landmark} onClick={() => handleCategorySelect('Banks')} />
+                    <SectionCard title="Management Records" icon={Building2} onClick={() => handleCategorySelect('Management Records')} />
+                    <SectionCard title="Assigned Tasks" icon={ClipboardCheck} onClick={() => handleCategorySelect('Assigned Tasks')} />
+                </div>
+            );
+        }
+        
+        if (activeCategory === 'Banks' && !selectedBank) {
+            return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {initialBanks.map(bank => (
+                        <SectionCard 
+                            key={bank} 
+                            title={bank} 
+                            icon={Landmark}
+                            onClick={() => handleBankSelect(bank)}
+                        />
+                    ))}
+                </div>
+            );
+        }
+
+        if (activeCategory === 'Management Records' && !selectedMgmtRecordType) {
+            return (
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {managementCategories.map(cat => {
+                        const Icon = getIconForCategory(cat);
+                        return (
+                             <SectionCard 
+                                key={cat} 
+                                title={cat} 
+                                icon={Icon}
+                                onClick={() => handleMgmtRecordTypeSelect(cat)}
+                            />
+                        )
+                    })}
+                </div>
+            );
+        }
+        
+        return (
+             <Card>
+                 <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <CardTitle>{selectedBank || selectedMgmtRecordType || activeCategory}</CardTitle>
+                         {selectedBank && <Button onClick={handleBackToBanks} variant="outline">Back to Banks</Button>}
+                         {selectedMgmtRecordType && <Button onClick={handleBackToMgmtCategories} variant="outline">Back to Management Categories</Button>}
+                    </div>
+                 </CardHeader>
+                 <CardContent>
+                    {filteredRecords.length > 0 ? (
+                         <Table>
+                             <TableHeader>
+                             <TableRow>
+                                 <TableHead>Project Name</TableHead>
+                                 <TableHead>File Name</TableHead>
+                                 {!employeeOnly && <TableHead>Created By</TableHead>}
+                                 <TableHead>Date</TableHead>
+                                 <TableHead className="text-right">Actions</TableHead>
+                             </TableRow>
+                             </TableHeader>
+                             <TableBody>
+                                 {filteredRecords.map(record => {
+                                     const Icon = getIconForCategory(record.fileName);
+                                     return (
+                                         <TableRow key={record.id}>
+                                             <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
+                                             <TableCell>{record.fileName}</TableCell>
+                                             {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                             <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                             <TableCell className="text-right">
+                                                 <div className="flex gap-1 justify-end">
+                                                     <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
+                                                     {canEditOrDelete(record) && (
+                                                         <>
+                                                             <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
+                                                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                         </>
+                                                     )}
+                                                 </div>
+                                             </TableCell>
+                                         </TableRow>
+                                     )
+                                 })}
+                             </TableBody>
+                         </Table>
+                    ) : (
+                         <div className="text-center py-10">
+                            <p className="text-muted-foreground">
+                                {searchQuery 
+                                    ? `No records found for "${searchQuery}".`
+                                    : `No records found for ${selectedBank || selectedMgmtRecordType || activeCategory}.`
+                                }
+                            </p>
+                        </div>
+                    )}
+                 </CardContent>
+               </Card>
+        );
+    }
 
   return (
     <div className="space-y-6">
@@ -443,105 +563,29 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {!activeCategory ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <SectionCard title="Bank Timelines" icon={Landmark} onClick={() => handleCategorySelect('Banks')} />
-                    <SectionCard title="Management Records" icon={Building2} onClick={() => handleCategorySelect('Management Records')} />
-                    <SectionCard title="Assigned Tasks" icon={ClipboardCheck} onClick={() => handleCategorySelect('Assigned Tasks')} />
-                </div>
-            ) : (
-                <div>
+            {activeCategory && (
+                 <div>
                     <Button onClick={handleBackToCategories} variant="outline" className="mb-4">
                         Back to Categories
                     </Button>
                     <div className="relative mb-4">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder={`Search in ${selectedBank || activeCategory}...`}
+                            placeholder={`Search in ${activeCategory}...`}
                             className="pl-8"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    {isLoading ? (
-                      <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : error ? (
-                      <div className="text-destructive text-center">{error}</div>
-                    ) : (
-                        <div>
-                        {activeCategory === 'Banks' && !selectedBank ? (
-                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {initialBanks.map(bank => (
-                                    <SectionCard 
-                                        key={bank} 
-                                        title={bank} 
-                                        icon={Landmark}
-                                        onClick={() => handleBankSelect(bank)}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            filteredRecords.length > 0 ? (
-                               <Card>
-                                 <CardHeader>
-                                    <div className="flex justify-between items-center">
-                                        <CardTitle>{selectedBank ? `${selectedBank} Records` : activeCategory}</CardTitle>
-                                        {selectedBank && <Button onClick={handleBackToBanks} variant="outline">Back to Banks</Button>}
-                                    </div>
-                                 </CardHeader>
-                                 <CardContent>
-                                         <Table>
-                                             <TableHeader>
-                                             <TableRow>
-                                                 <TableHead>Project Name</TableHead>
-                                                 <TableHead>File Name</TableHead>
-                                                 {!employeeOnly && <TableHead>Created By</TableHead>}
-                                                 <TableHead>Date</TableHead>
-                                                 <TableHead className="text-right">Actions</TableHead>
-                                             </TableRow>
-                                             </TableHeader>
-                                             <TableBody>
-                                                 {filteredRecords.map(record => {
-                                                     const Icon = getIconForCategory(record.fileName);
-                                                     return (
-                                                         <TableRow key={record.id}>
-                                                             <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
-                                                             <TableCell>{record.fileName}</TableCell>
-                                                             {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                                             <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                             <TableCell className="text-right">
-                                                                 <div className="flex gap-1 justify-end">
-                                                                     <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
-                                                                     {canEditOrDelete(record) && (
-                                                                         <>
-                                                                             <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
-                                                                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                         </>
-                                                                     )}
-                                                                 </div>
-                                                             </TableCell>
-                                                         </TableRow>
-                                                     )
-                                                 })}
-                                             </TableBody>
-                                         </Table>
-                                 </CardContent>
-                               </Card>
-                            ) : (
-                                <div className="text-center py-10">
-                                    <p className="text-muted-foreground">
-                                        {searchQuery 
-                                            ? `No records found for "${searchQuery}".`
-                                            : `No records found for ${selectedBank || activeCategory}.`
-                                        }
-                                    </p>
-                                     {selectedBank && <Button onClick={handleBackToBanks} variant="link" className="mt-4">Back to Banks</Button>}
-                                </div>
-                            )
-                        )}
-                        </div>
-                    )}
                 </div>
+            )}
+            
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : error ? (
+                <div className="text-destructive text-center">{error}</div>
+            ) : (
+                renderContent()
             )}
         </CardContent>
       </Card>
