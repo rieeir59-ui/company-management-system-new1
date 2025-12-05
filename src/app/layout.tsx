@@ -2,7 +2,6 @@
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/context/UserContext';
-import { EmployeeProvider } from '@/context/EmployeeContext';
 import { FileProvider } from '@/context/FileContext';
 import { RecordProvider } from '@/context/RecordContext';
 import { FirebaseProvider } from '@/firebase/provider';
@@ -22,13 +21,11 @@ export default function RootLayout({
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseProvider>
           <UserProvider>
-            <EmployeeProvider>
               <FileProvider>
                 <RecordProvider>
                   {children}
                 </RecordProvider>
               </FileProvider>
-            </EmployeeProvider>
           </UserProvider>
         </FirebaseProvider>
         <Toaster />

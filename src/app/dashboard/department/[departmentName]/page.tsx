@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
-import { useEmployees } from '@/context/EmployeeContext';
 import { useParams, useRouter } from 'next/navigation';
 import { useCurrentUser } from '@/context/UserContext';
 import { type Employee } from '@/lib/employees';
@@ -36,7 +35,7 @@ function getInitials(name: string) {
 export default function DepartmentPage() {
   const params = useParams();
   const router = useRouter();
-  const { employeesByDepartment } = useEmployees();
+  const { employeesByDepartment } = useCurrentUser();
   const departmentName = Array.isArray(params.departmentName) ? params.departmentName[0] : params.departmentName;
   const departmentEmployees = employeesByDepartment[departmentName as keyof typeof employeesByDepartment] || [];
   const formattedDeptName = formatDepartmentName(departmentName);

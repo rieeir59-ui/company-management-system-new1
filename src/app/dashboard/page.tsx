@@ -9,7 +9,7 @@ import {
 import { Users, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useEmployees } from '@/context/EmployeeContext';
+import { useCurrentUser } from '@/context/UserContext';
 
 
 const departments = [
@@ -24,7 +24,7 @@ const departments = [
 ];
 
 export default function DashboardPage() {
-    const { employeesByDepartment } = useEmployees();
+    const { employeesByDepartment } = useCurrentUser();
     const [departmentCounts, setDepartmentCounts] = useState<Record<string, number>>({});
 
     useEffect(() => {

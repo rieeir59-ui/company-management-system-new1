@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/card';
 import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEmployees } from '@/context/EmployeeContext';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -113,10 +112,9 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
 }
 
 export default function AssignTaskPage() {
-    const { employees, employeesByDepartment } = useEmployees();
+    const { user: currentUser, employees, employeesByDepartment, isUserLoading } = useCurrentUser();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
-    const { user: currentUser, isUserLoading } = useCurrentUser();
     const { toast } = useToast();
     const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 

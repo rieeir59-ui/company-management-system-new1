@@ -11,7 +11,6 @@ import { Save, Download, Check, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { useEmployees } from '@/context/EmployeeContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -39,8 +38,7 @@ export default function AssignTaskForm() {
 
     const { toast } = useToast();
     const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
-    const { employees } = useEmployees();
+    const { user: currentUser, employees } = useCurrentUser();
     const { addRecord } = useRecords();
     const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
@@ -223,7 +221,7 @@ export default function AssignTaskForm() {
                                                 key={employee.uid || `emp-${index}`}
                                                 value={employee.uid}
                                                 onSelect={(currentValue) => {
-                                                    setAssignedTo(currentValue);
+                                                    setAssignedTo(currentValue === assignedTo ? "" : currentValue);
                                                     setComboboxOpen(false);
                                                 }}
                                                 >

@@ -58,7 +58,6 @@ import {
 import { type Employee } from '@/lib/employees';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useEmployees } from '@/context/EmployeeContext';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -88,8 +87,8 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 
 export default function EmployeePage() {
-  const { employees, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, employees } = useCurrentUser();
+  // const { employees, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -104,73 +103,31 @@ export default function EmployeePage() {
     event.preventDefault();
     if (!canManageEmployees) return;
     
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const contact = formData.get('contact') as string;
-    const department = formData.get('department') as string;
-    const password = formData.get('password') as string;
-
-    if (!name || !email || !department || !password) {
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please fill out all required fields.",
-      });
-      return;
-    }
-
-    const newEmployee: Employee = {
-      name,
-      email,
-      contact,
-      department,
-      password,
-      record: `EMP-${String(Date.now()).slice(-4)}`,
-      avatarId: 'avatar-3',
-    };
-
-    addEmployee(newEmployee);
+    // addEmployee logic needs to be adapted as it was removed.
+    // This is now a display-only component based on the simplified context.
+    // The logic to actually add/edit/delete users would need to go back into the context
+    // and potentially interact with Firebase Auth. For now, we just show a toast.
+    toast({ title: "Action Not Implemented", description: "Adding employees is currently disabled."})
     setIsAddDialogOpen(false);
-    toast({
-      title: "Employee Added",
-      description: `${name} has been added to the employee list.`,
-    });
   };
 
   const handleEditEmployee = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedEmployee || !canManageEmployees) return;
 
-    const formData = new FormData(event.currentTarget);
-    const updatedData: Partial<Employee> = {
-      name: formData.get('name') as string,
-      email: formData.get('email') as string,
-      contact: formData.get('contact') as string,
-      department: formData.get('department') as string,
-      password: formData.get('password') as string,
-    };
-
-    updateEmployee(selectedEmployee.record, updatedData);
+    // updateEmployee logic needs to be adapted.
+    toast({ title: "Action Not Implemented", description: "Editing employees is currently disabled."})
     setIsEditDialogOpen(false);
     setSelectedEmployee(null);
-    toast({
-      title: "Employee Updated",
-      description: `${updatedData.name} has been updated.`,
-    });
   };
 
   const handleDeleteEmployee = () => {
     if (!selectedEmployee || !canManageEmployees) return;
 
-    deleteEmployee(selectedEmployee.record);
+    // deleteEmployee logic needs to be adapted.
+    toast({ title: "Action Not Implemented", description: "Deleting employees is currently disabled."})
     setIsDeleteDialogOpen(false);
     setSelectedEmployee(null);
-    toast({
-      variant: 'destructive',
-      title: "Employee Deleted",
-      description: `${selectedEmployee.name} has been removed.`,
-    });
   };
 
   const openEditDialog = (employee: Employee) => {

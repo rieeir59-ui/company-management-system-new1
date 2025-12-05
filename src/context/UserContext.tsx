@@ -1,19 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { type Employee, employees } from '@/lib/employees';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { type Employee, employees as initialEmployees } from '@/lib/employees';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-
 interface UserContextType {
   user: (Employee & { uid: string; role: string; }) | null;
   isUserLoading: boolean;
   login: (user: Employee & { uid: string }) => void;
   logout: () => void;
+  employees: Employee[];
+  employeesByDepartment: Record<string, Employee[]>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserContextType['user']>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const router = useRouter();
   const { toast } = useToast();
   const { auth, firestore } = useFirebase();
@@ -28,27 +30,24 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
       if (firebaseUser) {
-        const employeeDetails = employees.find(emp => emp.email.toLowerCase() === firebaseUser.email?.toLowerCase());
-        
-        if (employeeDetails) {
-          setUser({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
+        const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const employeeDetails = employees.find(emp => emp.uid === firebaseUser.uid) || {
+             uid: firebaseUser.uid,
+             email: firebaseUser.email || '',
+             name: userData.name || '',
+             role: userData.role || 'employee',
+             department: userData.department || 'employee',
+             contact: userData.contact || '',
+             record: userData.record || '',
+             avatarId: userData.avatarId || '',
+             password: ''
+          };
+           setUser({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
         } else {
-          const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
-          if (userDoc.exists()) {
-             const userData = userDoc.data();
-             setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email || '',
-                name: userData.name || '',
-                role: userData.role || 'employee',
-                department: userData.department || 'employee',
-                contact: userData.contact || '',
-                record: userData.record || '',
-                avatarId: userData.avatarId || '',
-             });
-          } else {
-             setUser(null);
-          }
+          // This case might happen if a user is in auth but not in DB
+           setUser(null);
         }
       } else {
         setUser(null);
@@ -57,7 +56,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, firestore]);
+  }, [auth, firestore, employees]);
+
+  const employeesByDepartment = useMemo(() => {
+    return employees.reduce((acc, employee) => {
+        const { department } = employee;
+        if (!acc[department]) {
+        acc[department] = [];
+        }
+        acc[department].push(employee);
+        return acc;
+    }, {} as Record<string, Employee[]>);
+  }, [employees]);
+
 
   const login = (loggedInUser: Employee & { uid: string }) => {
     setUser({ ...loggedInUser, role: loggedInUser.department });
@@ -75,8 +86,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   };
 
+  const value = useMemo(() => ({
+    user,
+    isUserLoading,
+    login,
+    logout,
+    employees,
+    employeesByDepartment
+  }), [user, isUserLoading, employees, employeesByDepartment]);
+
+
   return (
-    <UserContext.Provider value={{ user, isUserLoading, login, logout }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );
