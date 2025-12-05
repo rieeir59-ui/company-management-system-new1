@@ -19,7 +19,6 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useEmployees } from '@/context/EmployeeContext';
 import { differenceInDays, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -88,8 +87,7 @@ const StatCard = ({ title, value, icon }: { title: string, value: number, icon: 
 );
 
 function MyProjectsComponent() {
-  const { user: currentUser, isUserLoading } = useCurrentUser();
-  const { employees } = useEmployees();
+  const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore } = useFirebase();

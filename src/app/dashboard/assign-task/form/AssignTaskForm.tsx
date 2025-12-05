@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -114,7 +115,7 @@ export default function AssignTaskForm() {
                 // Reset form
                 setTaskName('');
                 setTaskDescription('');
-                setAssignedTo(employeeId || (isAdmin && currentUser ? currentUser.uid : ''));
+                setAssignedTo(employeeId ? (employees.find(e => e.record === employeeId)?.uid || '') : (isAdmin && currentUser ? currentUser.uid : ''));
                 setStartDate('');
                 setEndDate('');
                 setProjectName('');
@@ -219,9 +220,10 @@ export default function AssignTaskForm() {
                                             {employees.map((employee, index) => (
                                                 <CommandItem
                                                 key={employee.uid || `emp-${index}`}
-                                                value={employee.uid}
+                                                value={employee.name}
                                                 onSelect={(currentValue) => {
-                                                    setAssignedTo(currentValue === assignedTo ? "" : currentValue);
+                                                    const selectedEmployee = employees.find(e => e.name.toLowerCase() === currentValue.toLowerCase());
+                                                    setAssignedTo(selectedEmployee ? selectedEmployee.uid : "");
                                                     setComboboxOpen(false);
                                                 }}
                                                 >
