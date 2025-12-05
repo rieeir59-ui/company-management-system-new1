@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -123,8 +124,8 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };
-                    await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
-                    resolve(downloadURL);
+                    const docRef = await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
+                    resolve(docRef.id);
                 } catch (serverError) {
                     console.error("Error adding file record:", serverError);
                     const permissionError = new FirestorePermissionError({
