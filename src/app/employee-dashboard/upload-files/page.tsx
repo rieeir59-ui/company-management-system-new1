@@ -83,12 +83,13 @@ const UploadForm = ({ category }: { category: string }) => {
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             const file = event.target.files[0];
-            const updatedUpload = { 
-                ...uploads.find(u => u.id === id)!, 
-                file, 
-                customName: uploads.find(u => u.id === id)?.customName || file.name 
-            };
-            setUploads(prev => prev.map(up => up.id === id ? updatedUpload : up));
+            handleUpload({
+                id,
+                file,
+                customName: uploads.find(u => u.id === id)?.customName || file.name,
+                bankName: uploads.find(u => u.id === id)?.bankName
+            });
+            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name } : up));
         }
     };
 
