@@ -1,15 +1,9 @@
 'use client';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { useCurrentUser } from '@/context/UserContext';
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { useEmployees } from '@/context/EmployeeContext';
 import Link from 'next/link';
 
 const departments: Record<string, string> = {
@@ -28,19 +22,8 @@ function formatDepartmentName(slug: string) {
     return departments[slug] || slug;
 }
 
-interface Project {
-  id: string;
-  projectName: string;
-  taskName: string;
-  taskDescription: string;
-  status: 'completed' | 'in-progress' | 'not-started';
-  dueDate: string;
-  assignedBy: string;
-}
-
 function EmployeeDashboardComponent() {
-  const { user: currentUser, isUserLoading } = useCurrentUser();
-  const { employees } = useEmployees();
+  const { user: currentUser, isUserLoading, employees } = useCurrentUser();
   const searchParams = useSearchParams();
   
   const employeeId = searchParams.get('employeeId');
