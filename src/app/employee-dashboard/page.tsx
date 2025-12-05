@@ -47,7 +47,8 @@ interface Project {
   taskName: string;
   taskDescription: string;
   status: 'completed' | 'in-progress' | 'not-started';
-  dueDate: string;
+  startDate: string;
+  endDate: string;
   assignedBy: string;
   submissionUrl?: string;
   submissionFileName?: string;
@@ -180,7 +181,8 @@ function MyProjectsComponent() {
                 taskName: data.taskName || '',
                 taskDescription: data.taskDescription || '',
                 status: data.status || 'not-started',
-                dueDate: data.dueDate || '',
+                startDate: data.startDate || '',
+                endDate: data.endDate || '',
                 assignedBy: data.assignedBy || 'N/A',
                 submissionUrl: data.submissionUrl,
                 submissionFileName: data.submissionFileName,
@@ -325,48 +327,44 @@ function MyProjectsComponent() {
     addRecord(recordToSave as any);
   };
 
-  const handleDownload = () => {
+  const handleDownloadTaskPdf = (task: Project) => {
       const doc = new jsPDF();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-      const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+      const footerText = "M/S Isbah Hassan & Associates";
       let yPos = 20;
 
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Project Overview for ${displayUser?.name || 'Employee'}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+      doc.text(`Task Details: ${task.taskName}`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
       yPos += 15;
 
       doc.setFontSize(10);
       (doc as any).autoTable({
-          startY: yPos, theme: 'plain', body: [
-              [`Work Schedule Start: ${schedule.start || 'N/A'}`, `Work Schedule End: ${schedule.end || 'N/A'}`]
-          ]
+          startY: yPos,
+          theme: 'grid',
+          head: [['Field', 'Details']],
+          body: [
+              ['Project Name', task.projectName],
+              ['Task Name', task.taskName],
+              ['Description', task.taskDescription],
+              ['Assigned By', task.assignedBy],
+              ['Start Date', task.startDate],
+              ['End Date', task.endDate],
+              ['Status', task.status],
+          ],
+          headStyles: { fillColor: [45, 95, 51] }
       });
       yPos = (doc as any).autoTable.previous.finalY + 10;
-      
-      (doc as any).autoTable({
-          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
-          body: filteredRows.map(row => [row.projectName, row.detail, row.status, row.startDate, row.endDate]),
-          startY: yPos, theme: 'grid'
-      });
-      yPos = (doc as any).autoTable.previous.finalY + 10;
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('Remarks:', 14, yPos);
-      yPos += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.text(doc.splitTextToSize(remarks, doc.internal.pageSize.width - 28), 14, yPos);
       
       const pageCount = (doc as any).internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
-      }
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
-
-      doc.save(`${displayUser?.name}_projects.pdf`);
-      toast({ title: 'Download Started', description: 'Your project PDF is being generated.' });
+      doc.save(`Task_${task.taskName.replace(/\s+/g, '_')}.pdf`);
+      toast({ title: 'Download Started', description: 'Your task PDF is being generated.' });
   };
   
   if (isUserLoading || !displayUser) {
@@ -382,8 +380,10 @@ function MyProjectsComponent() {
     <div className="space-y-8">
         <Card className="bg-card/90 border-primary/30 shadow-lg">
             <CardHeader className="text-center">
-                <CardTitle className="text-4xl font-headline text-primary font-bold">{displayUser.name}</CardTitle>
-                <CardDescription className="text-xl text-primary/90 font-semibold pt-1">Welcome to {formatDepartmentName(displayUser.department)} Panel</CardDescription>
+                <>
+                  <CardTitle className="text-4xl font-headline text-primary font-bold">{displayUser.name}</CardTitle>
+                  <CardDescription className="text-xl text-primary/90 font-semibold pt-1">Welcome to {formatDepartmentName(displayUser.department)} Panel</CardDescription>
+                </>
             </CardHeader>
         </Card>
         <Card>
@@ -405,6 +405,7 @@ function MyProjectsComponent() {
                                 <TableHead>Task</TableHead>
                                 <TableHead>Description</TableHead>
                                 <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Action</TableHead>
@@ -413,14 +414,15 @@ function MyProjectsComponent() {
                         <TableBody>
                             {projects.length === 0 ? (
                             <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned.</TableCell>
+                                    <TableCell colSpan={8} className="text-center h-24">No tasks assigned.</TableCell>
                             </TableRow>
                             ) : projects.map((project) => (
                                 <TableRow key={project.id}>
                                     <TableCell>{project.projectName}</TableCell>
                                     <TableCell>{project.taskName}</TableCell>
                                     <TableCell className="max-w-[200px] truncate">{project.taskDescription}</TableCell>
-                                    <TableCell>{project.dueDate}</TableCell>
+                                    <TableCell>{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell>{project.endDate || 'N/A'}</TableCell>
                                     <TableCell>{project.assignedBy}</TableCell>
                                     <TableCell>
                                         <Select
@@ -447,12 +449,17 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDownloadTaskPdf(project)} title="Download Task Details">
+                                            <Download className="h-4 w-4" />
+                                        </Button>
                                         {project.status !== 'completed' && isOwner ? (
-                                            <Button onClick={() => openSubmitDialog(project)}>Submit Work</Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} title="Submit Work">
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
                                         ) : project.submissionUrl ? (
-                                            <Button variant="link" asChild>
-                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer">View Submission</a>
+                                            <Button variant="link" asChild className="p-0 h-auto">
+                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer">View</a>
                                             </Button>
                                         ) : null}
                                     </TableCell>
@@ -550,7 +557,6 @@ function MyProjectsComponent() {
                         
                         <div className="flex justify-end gap-4 mt-8">
                             {isOwner && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
-                            <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4"/>Download PDF</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -611,3 +617,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
