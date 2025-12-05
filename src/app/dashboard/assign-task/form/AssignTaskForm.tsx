@@ -116,7 +116,7 @@ export default function AssignTaskForm() {
                 // Reset form
                 setTaskName('');
                 setTaskDescription('');
-                setAssignedTo(employeeId || '');
+                setAssignedTo(employeeId || (isAdmin && currentUser ? currentUser.uid : ''));
                 setStartDate('');
                 setEndDate('');
                 setProjectName('');
@@ -223,7 +223,7 @@ export default function AssignTaskForm() {
                                                 key={employee.uid || `emp-${index}`}
                                                 value={employee.uid}
                                                 onSelect={(currentValue) => {
-                                                    setAssignedTo(currentValue === assignedTo ? '' : currentValue);
+                                                    setAssignedTo(currentValue);
                                                     setComboboxOpen(false);
                                                 }}
                                                 >

@@ -216,7 +216,7 @@ export default function AssignTaskForm() {
                                                 key={employee.uid || `emp-${index}`}
                                                 value={employee.uid}
                                                 onSelect={(currentValue) => {
-                                                    setAssignedTo(currentValue === assignedTo ? '' : currentValue);
+                                                    setAssignedTo(currentValue);
                                                     setComboboxOpen(false);
                                                 }}
                                                 >
