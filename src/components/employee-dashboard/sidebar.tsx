@@ -79,7 +79,6 @@ import { Input } from '@/components/ui/input';
 
 const menuItems = [
     { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/employee-dashboard/my-projects', label: 'My Projects', icon: Briefcase },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
