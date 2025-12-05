@@ -95,9 +95,11 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
 
   const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName' | 'fileUrl'>, file: File, onProgress: (progress: number) => void): Promise<string | undefined> => {
     if (!firestore || !currentUser || !firebaseApp) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to upload files.' });
-        throw new Error('User or Firebase services not available');
+        const errMessage = 'You must be logged in to upload files.';
+        toast({ variant: 'destructive', title: 'Error', description: errMessage });
+        throw new Error(errMessage);
     }
+
     const storage = getStorage(firebaseApp);
     const filePath = `${record.category}/${Date.now()}_${file.name}`;
     const storageRef = ref(storage, filePath);
@@ -111,7 +113,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
             },
             (error) => {
                 console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload file to storage. Check storage rules.' });
                 reject(error);
             },
             async () => {
@@ -127,7 +129,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     const docRef = await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
                     resolve(docRef.id);
                 } catch (serverError) {
-                    console.error("Error adding file record:", serverError);
+                    console.error("Error adding file record to Firestore:", serverError);
                     const permissionError = new FirestorePermissionError({
                         path: `uploadedFiles`,
                         operation: 'create',

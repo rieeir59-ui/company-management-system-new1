@@ -122,7 +122,7 @@ const UploadForm = ({ category }: { category: string }) => {
                                     <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                                     {upload.file && <p className="text-xs text-gray-600 font-medium">{upload.file.name}</p>}
                                 </div>
-                                <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.bak,.skp,.zip,.dwg,.dxf,.rvt" />
+                                <Input id={`file-${upload.id}`} type="file" onChange={(e) => handleFileChange(upload.id, e)} disabled={upload.isUploading} className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.dwg,.dxf,.skp,.bak" />
                             </Label>
                         </div>
 
