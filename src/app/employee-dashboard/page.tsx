@@ -24,6 +24,7 @@ import { differenceInDays, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import Link from 'next/link';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -327,6 +328,59 @@ function MyProjectsComponent() {
     addRecord(recordToSave as any);
   };
 
+  const handleDownloadPdf = () => {
+    if (!displayUser) return;
+    const doc = new jsPDF();
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const footerText = "M/S Isbah Hassan & Associates";
+    let yPos = 20;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${displayUser.name}'s Project Schedule`, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += 15;
+
+    doc.setFontSize(10);
+    (doc as any).autoTable({
+        startY: yPos,
+        theme: 'plain',
+        body: [
+            ['Schedule Period:', `${schedule.start || 'N/A'} to ${schedule.end || 'N/A'}`],
+            ['Total Days:', numberOfDays !== null ? `${numberOfDays} days` : 'N/A'],
+        ],
+    });
+    yPos = (doc as any).autoTable.previous.finalY + 10;
+    
+    (doc as any).autoTable({
+        startY: yPos,
+        head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+        body: filteredRows.map(row => [row.projectName, row.detail, row.status, row.startDate, row.endDate]),
+        theme: 'grid',
+        headStyles: { fillColor: [45, 95, 51] },
+    });
+    yPos = (doc as any).autoTable.previous.finalY + 10;
+
+    if (remarks) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Remarks:', 14, yPos);
+        yPos += 7;
+        doc.setFont('helvetica', 'normal');
+        const splitRemarks = doc.splitTextToSize(remarks, doc.internal.pageSize.getWidth() - 28);
+        doc.text(splitRemarks, 14, yPos);
+    }
+    
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+    }
+
+    doc.save(`${displayUser.name}_Project_Schedule.pdf`);
+    toast({ title: 'Download Started', description: 'Your project schedule PDF is being generated.' });
+  };
+
+
   const handleDownloadTaskPdf = (task: Project) => {
       const doc = new jsPDF();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
@@ -557,6 +611,7 @@ function MyProjectsComponent() {
                         
                         <div className="flex justify-end gap-4 mt-8">
                             {isOwner && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
+                            <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </CardContent>
                 </Card>
