@@ -69,14 +69,15 @@ const UploadForm = ({ category }: { category: string }) => {
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
             toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
 
-            // Remove the completed upload row immediately.
-            setUploads(prev => {
-                const remaining = prev.filter(up => up.id !== upload.id);
-                // If this was the last row, add a new empty one, otherwise just show the remaining rows.
-                return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
-            });
+            // Automatically remove the completed upload row after a short delay
+            setTimeout(() => {
+                setUploads(prev => {
+                    const remaining = prev.filter(up => up.id !== upload.id);
+                    return remaining.length > 0 ? remaining : [{ id: Date.now(), file: null, customName: '', bankName: '' }];
+                });
+            }, 2000);
         } catch (error) {
-             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed. Check console & permissions.' } : up));
         }
     }, [category, addFileRecord, toast]);
 
@@ -84,7 +85,7 @@ const UploadForm = ({ category }: { category: string }) => {
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
-            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name } : up));
+            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name, error: undefined } : up));
         }
     };
 
