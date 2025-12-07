@@ -98,13 +98,18 @@ function MyProjectsComponent() {
   const { firestore, firebaseApp } = useFirebase();
   const { addRecord } = useRecords();
   const storage = firebaseApp ? getStorage(firebaseApp) : null;
+  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
   const employeeId = searchParams.get('employeeId');
   const displayUser = useMemo(() => {
     return employeeId ? employees.find(e => e.record === employeeId) : currentUser;
   }, [employeeId, employees, currentUser]);
     
-  const isOwner = useMemo(() => currentUser && displayUser && currentUser.uid === displayUser.uid, [currentUser, displayUser]);
+  const canEdit = useMemo(() => {
+    if (!currentUser || !displayUser) return false;
+    // An admin can edit, or a user can edit their own dashboard.
+    return isAdmin || currentUser.uid === displayUser.uid;
+  }, [currentUser, displayUser, isAdmin]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
@@ -210,8 +215,8 @@ function MyProjectsComponent() {
   }, [firestore, displayUser, toast]);
 
     const openSubmitDialog = (task: Project) => {
-        if (!isOwner) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only submit work for your own tasks.' });
+        if (!canEdit) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot submit work for this task.' });
             return;
         }
         setSubmittingTask(task);
@@ -262,11 +267,11 @@ function MyProjectsComponent() {
 
   const handleStatusChange = async (taskId: string, newStatus: Project['status']) => {
     if (!firestore) return;
-    if (!isOwner) {
+    if (!canEdit) {
         toast({
             variant: "destructive",
             title: "Permission Denied",
-            description: "You can only change the status of your own tasks.",
+            description: "You do not have permission to change the status of this task.",
         });
         return;
     }
@@ -442,7 +447,7 @@ function MyProjectsComponent() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle>{isOwner ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
+                <CardTitle>{canEdit ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
                 <CardDescription>A list of tasks assigned to this employee.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -481,7 +486,7 @@ function MyProjectsComponent() {
                                         <Select
                                             value={project.status}
                                             onValueChange={(newStatus: Project['status']) => handleStatusChange(project.id, newStatus)}
-                                            disabled={!isOwner}
+                                            disabled={!canEdit}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                             <div className="flex items-center gap-2">
@@ -509,9 +514,9 @@ function MyProjectsComponent() {
                                                     <File className="h-4 w-4" /> View Submission
                                                 </a>
                                             </Button>
-                                        ) : isOwner ? (
+                                        ) : canEdit ? (
                                              <Button variant="outline" size="sm" onClick={() => openSubmitDialog(project)}>
-                                                <Upload className="h-4 w-4 mr-2" /> Submit Task
+                                                <Upload className="h-4 w-4 mr-2" /> Submit Work
                                             </Button>
                                         ) : (
                                             <span className="text-muted-foreground">Not Submitted</span>
@@ -540,15 +545,15 @@ function MyProjectsComponent() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{isOwner ? "My" : `${displayUser.name}'s`} Project Schedule</CardTitle>
+                        <CardTitle>{canEdit ? "My" : `${displayUser.name}'s`} Project Schedule</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                             <Label className="font-semibold">Work Schedule</Label>
                             <div className="flex flex-wrap items-center gap-4">
-                                <Input type="date" value={schedule.start} onChange={e => setSchedule({ ...schedule, start: e.target.value })} disabled={!isOwner} className="w-auto"/>
+                                <Input type="date" value={schedule.start} onChange={e => setSchedule({ ...schedule, start: e.target.value })} disabled={!canEdit} className="w-auto"/>
                                 <span>to</span>
-                                <Input type="date" value={schedule.end} onChange={e => setSchedule({ ...schedule, end: e.target.value })} disabled={!isOwner} className="w-auto"/>
+                                <Input type="date" value={schedule.end} onChange={e => setSchedule({ ...schedule, end: e.target.value })} disabled={!canEdit} className="w-auto"/>
                                 {numberOfDays !== null && (
                                     <div className="font-medium text-primary rounded-md px-3 py-2 bg-primary/10">
                                         {numberOfDays} days
@@ -572,10 +577,10 @@ function MyProjectsComponent() {
                                 <TableBody>
                                     {filteredRows.map(row => (
                                         <TableRow key={row.id}>
-                                            <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} disabled={!isOwner} /></TableCell>
-                                            <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} disabled={!isOwner} /></TableCell>
+                                            <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} disabled={!canEdit} /></TableCell>
+                                            <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} disabled={!canEdit} /></TableCell>
                                             <TableCell>
-                                                <Select value={row.status} onValueChange={(val: ProjectStatus) => handleRowChange(row.id, 'status', val)} disabled={!isOwner}>
+                                                <Select value={row.status} onValueChange={(val: ProjectStatus) => handleRowChange(row.id, 'status', val)} disabled={!canEdit}>
                                                     <SelectTrigger className="w-[180px]">
                                                     <div className="flex items-center gap-2">
                                                         <StatusIcon status={row.status} />
@@ -589,11 +594,11 @@ function MyProjectsComponent() {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!isOwner} /></TableCell>
-                                            <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!isOwner} /></TableCell>
+                                            <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!canEdit} /></TableCell>
+                                            <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!canEdit} /></TableCell>
                                              <TableCell>
                                                 <Button variant="ghost" size="icon" onClick={() => openViewDialog(row)}><Eye className="h-4 w-4" /></Button>
-                                                {isOwner && <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>}
+                                                {canEdit && <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>}
                                              </TableCell>
                                         </TableRow>
                                     ))}
@@ -607,15 +612,15 @@ function MyProjectsComponent() {
                                 </TableBody>
                             </Table>
                         </div>
-                        {isOwner && <Button onClick={addRow} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>}
+                        {canEdit && <Button onClick={addRow} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>}
 
                         <div className="space-y-2 pt-4">
                             <Label htmlFor="remarks" className="font-semibold">Remarks</Label>
-                            <Textarea id="remarks" value={remarks} onChange={e => setRemarks(e.target.value)} disabled={!isOwner} />
+                            <Textarea id="remarks" value={remarks} onChange={e => setRemarks(e.target.value)} disabled={!canEdit} />
                         </div>
                         
                         <div className="flex justify-end gap-4 mt-8">
-                            {isOwner && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
+                            {canEdit && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
                             <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </CardContent>
