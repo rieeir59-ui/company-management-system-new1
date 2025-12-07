@@ -147,6 +147,7 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
+  const bankTimelineId = useId();
 
   return (
     <SidebarMenu>
@@ -176,7 +177,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-      <Collapsible asChild>
+      <Collapsible asChild id={bankTimelineId}>
         <SidebarMenuItem>
             <CollapsibleTrigger asChild>
                 <SidebarMenuButton

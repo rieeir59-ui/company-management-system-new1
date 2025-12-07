@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useId } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -92,6 +91,7 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
   const pathname = usePathname();
+  const bankTimelineId = useId();
 
   return (
     <SidebarMenu>
@@ -121,7 +121,7 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { vis
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-      <Collapsible asChild>
+      <Collapsible asChild id={bankTimelineId}>
         <SidebarMenuItem>
           <CollapsibleTrigger asChild>
              <SidebarMenuButton
