@@ -177,32 +177,30 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
         </Link>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <Collapsible asChild>
-          <>
-            <CollapsibleTrigger asChild>
-                <SidebarMenuButton
-                className="group-data-[collapsible=icon]:justify-center"
-                tooltip="Timelines of Bank"
-                >
-                <Landmark className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                </SidebarMenuButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent asChild>
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className="group-data-[collapsible=icon]:justify-center"
+              tooltip="Timelines of Bank"
+            >
+              <Landmark className="size-5" />
+              <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent asChild>
             <SidebarMenuSub>
-                {bankTimelineItems.map((item) => (
-                    <SidebarMenuSubItem key={item.href}>
-                    <Link href={item.href} passHref>
-                        <SidebarMenuSubButton isActive={pathname === item.href}>
-                        <item.icon className="size-4 mr-2" />
-                        {item.label}
-                        </SidebarMenuSubButton>
-                    </Link>
-                    </SidebarMenuSubItem>
-                ))}
+              {bankTimelineItems.map((item) => (
+                <SidebarMenuSubItem key={item.href}>
+                  <Link href={item.href} passHref>
+                    <SidebarMenuSubButton isActive={pathname === item.href}>
+                      <item.icon className="size-4 mr-2" />
+                      {item.label}
+                    </SidebarMenuSubButton>
+                  </Link>
+                </SidebarMenuSubItem>
+              ))}
             </SidebarMenuSub>
-            </CollapsibleContent>
-          </>
+          </CollapsibleContent>
         </Collapsible>
       </SidebarMenuItem>
     </SidebarMenu>
