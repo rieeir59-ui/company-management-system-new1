@@ -121,7 +121,7 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { vis
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-      <SidebarMenuItem id={bankTimelineId}>
+      <SidebarMenuItem>
         <Collapsible asChild>
           <>
             <CollapsibleTrigger asChild>
