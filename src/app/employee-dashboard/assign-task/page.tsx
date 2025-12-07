@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2 } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
@@ -52,6 +52,8 @@ interface Task {
   dueDate?: string;
   endDate?: string;
   status: 'completed' | 'in-progress' | 'not-started';
+  submissionUrl?: string;
+  submissionFileName?: string;
 }
 
 function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }) {
@@ -227,8 +229,8 @@ export default function AssignTaskPage() {
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Assigned Date</TableHead>
-                                <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
+                                <TableHead>Submission</TableHead>
                                 {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>
                         </TableHeader>
@@ -239,8 +241,18 @@ export default function AssignTaskPage() {
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
                                     <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
-                                    <TableCell>{task.dueDate || 'N/A'}</TableCell>
                                     <TableCell>{task.endDate || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        {task.submissionUrl ? (
+                                            <Button variant="link" asChild>
+                                                <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                                    <FileText className="h-4 w-4" /> View File
+                                                </a>
+                                            </Button>
+                                        ) : (
+                                            <span className="text-muted-foreground">N/A</span>
+                                        )}
+                                    </TableCell>
                                     {isAdmin && (
                                     <TableCell>
                                         <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
@@ -277,4 +289,5 @@ export default function AssignTaskPage() {
     
 
     
+
 
