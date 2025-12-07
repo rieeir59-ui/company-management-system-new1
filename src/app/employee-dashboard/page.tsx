@@ -107,7 +107,6 @@ function MyProjectsComponent() {
     
   const canEdit = useMemo(() => {
     if (!currentUser || !displayUser) return false;
-    // An admin can edit, or a user can edit their own dashboard.
     return isAdmin || currentUser.uid === displayUser.uid;
   }, [currentUser, displayUser, isAdmin]);
 
@@ -149,20 +148,19 @@ function MyProjectsComponent() {
         const projectStart = parseISO(row.startDate);
         const projectEnd = parseISO(row.endDate);
         
-        // Check for overlap
         return projectStart <= scheduleEnd && projectEnd >= scheduleStart;
     });
 }, [rows, schedule.start, schedule.end]);
 
 
     const projectStats = useMemo(() => {
-        const source = filteredRows;
+        const source = filteredRows.length > 0 ? filteredRows : rows;
         const total = source.length;
         const completed = source.filter(p => p.status === 'completed').length;
         const inProgress = source.filter(p => p.status === 'in-progress').length;
         const notStarted = source.filter(p => p.status === 'not-started').length;
         return { total, completed, inProgress, notStarted };
-    }, [filteredRows]);
+    }, [filteredRows, rows]);
     
   useEffect(() => {
     if (!firestore || !displayUser?.uid) {
@@ -326,7 +324,7 @@ function MyProjectsComponent() {
                 { label: 'Work Schedule End', value: schedule.end },
                 ...rows.map(r => ({ label: `Project: ${r.projectName}`, value: `Detail: ${r.detail}, Status: ${r.status}, Start: ${r.startDate}, End: ${r.endDate}`}))
             ],
-            schedule: schedule, // Save schedule object for easier parsing later
+            schedule: schedule,
             remarks: remarks,
         }]
     };
@@ -682,3 +680,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
