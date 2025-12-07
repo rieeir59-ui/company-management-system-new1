@@ -176,8 +176,8 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-      <Collapsible asChild id={bankTimelineId}>
-        <SidebarMenuItem>
+      <Collapsible asChild>
+        <SidebarMenuItem id={bankTimelineId}>
             <CollapsibleTrigger asChild>
                 <SidebarMenuButton
                 className="group-data-[collapsible=icon]:justify-center"
