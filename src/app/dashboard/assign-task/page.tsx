@@ -223,8 +223,8 @@ export default function AssignTaskPage() {
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Assigned Date</TableHead>
-                                <TableHead>Due Date</TableHead>
                                 <TableHead>Submission</TableHead>
+                                <TableHead>Due Date</TableHead>
                                 {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>
                         </TableHeader>
@@ -235,7 +235,6 @@ export default function AssignTaskPage() {
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
                                     <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
-                                    <TableCell>{task.endDate || 'N/A'}</TableCell>
                                     <TableCell>
                                         {task.submissionUrl ? (
                                             <Button variant="link" asChild>
@@ -247,6 +246,7 @@ export default function AssignTaskPage() {
                                             <span className="text-muted-foreground">N/A</span>
                                         )}
                                     </TableCell>
+                                    <TableCell>{task.endDate || 'N/A'}</TableCell>
                                     {isAdmin && (
                                     <TableCell>
                                         <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
@@ -282,5 +282,6 @@ export default function AssignTaskPage() {
     
 
     
+
 
 
