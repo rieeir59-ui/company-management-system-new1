@@ -96,7 +96,7 @@ function MyProjectsComponent() {
   const { toast } = useToast();
   const { firestore, firebaseApp } = useFirebase();
   const { addRecord } = useRecords();
-  const storage = getStorage(firebaseApp);
+  const storage = firebaseApp ? getStorage(firebaseApp) : null;
 
   const employeeId = searchParams.get('employeeId');
   const displayUser = useMemo(() => {
@@ -218,7 +218,7 @@ function MyProjectsComponent() {
     };
 
     const handleFileSubmit = async () => {
-        if (!firestore || !submittingTask || !submissionFile) return;
+        if (!firestore || !submittingTask || !submissionFile || !storage) return;
     
         setIsUploading(true);
         setUploadProgress(0);
@@ -540,7 +540,7 @@ function MyProjectsComponent() {
                                     ))}
                                      {filteredRows.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={isOwner ? 6 : 5} className="text-center h-24">
+                                            <TableCell colSpan={6} className="text-center h-24">
                                                 No projects match the current date range.
                                             </TableCell>
                                         </TableRow>
@@ -617,5 +617,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
