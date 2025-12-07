@@ -457,11 +457,11 @@ function MyProjectsComponent() {
                             <TableRow>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Task</TableHead>
-                                <TableHead>Description</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Submission</TableHead>
                                 <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -474,7 +474,6 @@ function MyProjectsComponent() {
                                 <TableRow key={project.id}>
                                     <TableCell>{project.projectName}</TableCell>
                                     <TableCell>{project.taskName}</TableCell>
-                                    <TableCell className="max-w-[200px] truncate">{project.taskDescription}</TableCell>
                                     <TableCell>{project.startDate || 'N/A'}</TableCell>
                                     <TableCell>{project.endDate || 'N/A'}</TableCell>
                                     <TableCell>{project.assignedBy}</TableCell>
@@ -503,19 +502,25 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell className="flex items-center gap-1">
+                                    <TableCell>
+                                        {project.submissionUrl ? (
+                                            <Button variant="link" asChild>
+                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                                    <File className="h-4 w-4" /> View Submission
+                                                </a>
+                                            </Button>
+                                        ) : isOwner ? (
+                                             <Button variant="outline" size="sm" onClick={() => openSubmitDialog(project)}>
+                                                <Upload className="h-4 w-4 mr-2" /> Submit Task
+                                            </Button>
+                                        ) : (
+                                            <span className="text-muted-foreground">Not Submitted</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
                                         <Button variant="ghost" size="icon" onClick={() => handleDownloadTaskPdf(project)} title="Download Task Details">
                                             <Download className="h-4 w-4" />
                                         </Button>
-                                        {project.status !== 'completed' && isOwner ? (
-                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} title="Submit Work">
-                                                <Upload className="h-4 w-4" />
-                                            </Button>
-                                        ) : project.submissionUrl ? (
-                                            <Button variant="link" asChild className="p-0 h-auto">
-                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer">View</a>
-                                            </Button>
-                                        ) : null}
                                     </TableCell>
                                 </TableRow>
                             ))}
