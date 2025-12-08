@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -44,7 +45,7 @@ const managementCategories = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment", "Task Submission"
+    "My Projects", "Task Assignment", "Task Submission", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
 ];
 
 const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
@@ -153,18 +154,39 @@ const generateDefaultPdf = (record: SavedRecord) => {
                 doc.text(section.category, 14, yPos);
                 yPos += 8;
 
-                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id');
-                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key]));
+                 const head1 = [
+                    { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
+                    { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
+                    { content: 'Site Survey', colSpan: 2 }, { content: 'Contact', colSpan: 2 }, { content: 'Head Count / Requirment', colSpan: 2 },
+                    { content: 'Proposal / Design Development', colSpan: 2 }, { content: '3D\'s', colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 },
+                    { content: 'Tender Package MEP', colSpan: 2 }, { content: 'BOQ', colSpan: 2 },
+                    { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 }, { content: 'Working Drawings', rowSpan: 2 },
+                    { content: 'Site Visit', rowSpan: 2 }, { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+                ];
+
+                const head2 = Array(8).fill(0).flatMap(() => ['Start Date', 'End Date']);
+                const finalHead = [head1, head2];
+
+                const body = section.items.map((item: any) => [
+                    item.srNo, item.projectName, item.area, item.projectHolder, item.allocationDate,
+                    item.siteSurveyStart, item.siteSurveyEnd, item.contactStart, item.contactEnd,
+                    item.headCountStart, item.headCountEnd, item.proposalStart, item.proposalEnd,
+                    item.threedStart, item.threedEnd, item.tenderArchStart, item.tenderArchEnd,
+                    item.tenderMepStart, item.tenderMepEnd, item.boqStart, item.boqEnd,
+                    item.tenderStatus, item.comparative, item.workingDrawings,
+                    item.siteVisit, item.finalBill, item.projectClosure
+                ]);
                 
                 (doc as any).autoTable({
                     startY: yPos,
-                    head: [head],
+                    head: finalHead,
                     body: body,
                     theme: 'grid',
                     styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
-                    headStyles: { fontStyle: 'bold', fillColor: primaryColor, textColor: [255,255,255] },
+                    headStyles: { fontStyle: 'bold', fillColor: primaryColor, textColor: [255,255,255], halign: 'center' },
                 });
                 yPos = (doc as any).autoTable.previous.finalY + 10;
+
              } else if (section.category === 'Overall Status' && Array.isArray(section.items)) {
                 addSection(section.category, section.items.map((item:any) => ({label: item.title, value: item.status})));
              } else {
@@ -319,22 +341,76 @@ const renderRecordContent = () => {
         const remarksSection = viewingRecord.data.find(s => s.category === 'Remarks');
         const queriesSection = viewingRecord.data.find(s => s.category === 'Queries');
         
+        const headers = [
+            { key: 'srNo', label: 'Sr.No', rowSpan: 2 },
+            { key: 'projectName', label: 'Project Name', rowSpan: 2 },
+            { key: 'area', label: 'Area in Sft', rowSpan: 2 },
+            { key: 'projectHolder', label: 'Project Holder', rowSpan: 2 },
+            { key: 'allocationDate', label: 'Allocation Date / RFP', rowSpan: 2 },
+            { key: 'siteSurvey', label: 'Site Survey', colSpan: 2 },
+            { key: 'contact', label: 'Contact', colSpan: 2 },
+            { key: 'headCount', label: 'Head Count / Requirment', colSpan: 2 },
+            { key: 'proposal', label: 'Proposal / Design Development', colSpan: 2 },
+            { key: 'threed', label: "3D's", colSpan: 2 },
+            { key: 'tenderArch', label: 'Tender Package Architectural', colSpan: 2 },
+            { key: 'tenderMep', label: 'Tender Package MEP', colSpan: 2 },
+            { key: 'boq', label: 'BOQ', colSpan: 2 },
+            { key: 'tenderStatus', label: 'Tender Status', rowSpan: 2 },
+            { key: 'comparative', label: 'Comparative', rowSpan: 2 },
+            { key: 'workingDrawings', label: 'Working Drawings', rowSpan: 2 },
+            { key: 'siteVisit', label: 'Site Visit', rowSpan: 2 },
+            { key: 'finalBill', label: 'Final Bill', rowSpan: 2 },
+            { key: 'projectClosure', label: 'Project Closure', rowSpan: 2 },
+        ];
+        const subHeaders = [
+            'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
+        ];
+        
         return (
             <div className="space-y-4">
                 {projectSection && Array.isArray(projectSection.items) && projectSection.items.length > 0 && (
                     <div>
                         <h3 className="font-bold text-lg text-primary mb-2">Projects</h3>
                         <div className="overflow-x-auto">
-                            <Table>
+                            <Table className="text-xs">
                                 <TableHeader>
                                     <TableRow>
-                                        {Object.keys(projectSection.items[0] || {}).filter(key => key !== 'id').map(key => <TableHead key={key} className="whitespace-nowrap">{key}</TableHead>)}
+                                        {headers.map(h => <TableHead key={h.key} colSpan={h.colSpan} rowSpan={h.rowSpan} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{h.label}</TableHead>)}
+                                    </TableRow>
+                                    <TableRow>
+                                        {subHeaders.map((sh, i) => <TableHead key={i} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{sh}</TableHead>)}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {projectSection.items.map((item: any, index: number) => (
                                         <TableRow key={index}>
-                                            {Object.keys(item).filter(key => key !== 'id').map(key => <TableCell key={key}>{item[key]}</TableCell>)}
+                                            <TableCell className="border p-1">{item.srNo}</TableCell>
+                                            <TableCell className="border p-1">{item.projectName}</TableCell>
+                                            <TableCell className="border p-1">{item.area}</TableCell>
+                                            <TableCell className="border p-1">{item.projectHolder}</TableCell>
+                                            <TableCell className="border p-1">{item.allocationDate}</TableCell>
+                                            <TableCell className="border p-1">{item.siteSurveyStart}</TableCell>
+                                            <TableCell className="border p-1">{item.siteSurveyEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.contactStart}</TableCell>
+                                            <TableCell className="border p-1">{item.contactEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.headCountStart}</TableCell>
+                                            <TableCell className="border p-1">{item.headCountEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.proposalStart}</TableCell>
+                                            <TableCell className="border p-1">{item.proposalEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.threedStart}</TableCell>
+                                            <TableCell className="border p-1">{item.threedEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderArchStart}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderArchEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderMepStart}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderMepEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.boqStart}</TableCell>
+                                            <TableCell className="border p-1">{item.boqEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderStatus}</TableCell>
+                                            <TableCell className="border p-1">{item.comparative}</TableCell>
+                                            <TableCell className="border p-1">{item.workingDrawings}</TableCell>
+                                            <TableCell className="border p-1">{item.siteVisit}</TableCell>
+                                            <TableCell className="border p-1">{item.finalBill}</TableCell>
+                                            <TableCell className="border p-1">{item.projectClosure}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -382,6 +458,7 @@ const renderRecordContent = () => {
         );
     }
     
+
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
         const projects = scheduleData.items?.filter((item: any) => item.label && item.label.startsWith('Project:')) || [];
@@ -389,11 +466,11 @@ const renderRecordContent = () => {
             <Table>
                 <TableBody>
                     {scheduleData.schedule && <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}</TableCell></TableRow>}
-                    {scheduleData.remarks && <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks}</TableCell></TableRow>}
+                    {scheduleData.remarks && <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks || 'N/A'}</TableCell></TableRow>}
                     {projects.length > 0 && (
                         <TableRow><TableCell className="font-bold text-primary bg-muted" colSpan={2}>Projects</TableCell></TableRow>
                     )}
-                    {projects.map((p: any, i: number) => {
+                    {projects.map((p: any, i:number) => {
                         const details = p.value.split(', ').reduce((acc: any, part: string) => {
                             const [key, ...val] = part.split(': ');
                             acc[key.trim()] = val.join(': ');
@@ -618,11 +695,11 @@ const renderRecordContent = () => {
       </AlertDialog>
       
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-7xl">
                 <DialogHeader>
                     <DialogTitle>{viewingRecord?.fileName}: {viewingRecord?.projectName}</DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto p-4">
+                <div className="max-h-[70vh] overflow-y-auto p-1">
                     {renderRecordContent()}
                 </div>
                 <DialogFooter>
