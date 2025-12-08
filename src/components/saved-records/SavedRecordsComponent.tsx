@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -115,13 +116,12 @@ const generateDefaultPdf = (record: SavedRecord) => {
                         }
                     }
                 } else if (item && typeof item === 'object') {
-                    if (item.label && item.value) { // For {label, value} objects
+                    if (item.label && item.value !== undefined) { // For {label, value} objects
                         body.push([item.label, item.value]);
-                    } else { // For other objects, iterate keys
-                        Object.entries(item).forEach(([key, val]) => {
-                            if (key !== 'id') body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
-                        });
-                        body.push(['---', '---']); // Separator
+                    } else if (item.Item && item.Status !== undefined) {
+                         body.push([item.Item, `${item.Status} ${item.Remarks ? `(${item.Remarks})` : ''}`]);
+                    } else {
+                       body.push([JSON.stringify(item, null, 2), '']);
                     }
                 }
             });
