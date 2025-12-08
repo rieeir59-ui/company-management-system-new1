@@ -7,7 +7,7 @@
     "genkit:dev": "genkit start src/ai/dev.ts",
     "genkit:watch": "genkit start --watch src/ai/dev.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 9003",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
