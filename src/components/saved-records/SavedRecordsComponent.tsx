@@ -53,12 +53,14 @@ const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
 const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const generateDefaultPdf = (record: SavedRecord) => {
-    const doc = new jsPDF();
+    const isBankTimeline = bankTimelineCategories.includes(record.fileName);
+    const doc = new jsPDF({ orientation: isBankTimeline ? 'landscape' : 'portrait' });
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
     let yPos = 20;
     const primaryColor = [45, 95, 51];
+    const margin = 14;
 
     // Header
     doc.setFontSize(16);
@@ -82,7 +84,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
     const addSection = (title: string, items: any) => {
         if (!items || (Array.isArray(items) && items.length === 0)) return;
         
-        if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+        if (yPos > (isBankTimeline ? pageHeight - 60 : pageHeight - 40)) { doc.addPage(); yPos = 20; }
         
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -144,22 +146,29 @@ const generateDefaultPdf = (record: SavedRecord) => {
         }
     };
     
-    if (bankTimelineCategories.includes(record.fileName) && Array.isArray(record.data)) {
+    if (isBankTimeline && Array.isArray(record.data)) {
         record.data.forEach((section: any) => {
-             if (section.category === 'Projects' && Array.isArray(section.items)) {
-                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+             if (section.category === 'Projects' && Array.isArray(section.items) && section.items.length > 0) {
+                if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.text(section.category, 14, yPos);
                 yPos += 8;
+
+                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id');
+                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key]));
+                
                 (doc as any).autoTable({
                     startY: yPos,
-                    head: [Object.keys(section.items[0] || {}).filter(k => k !== 'id')],
-                    body: section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key])),
+                    head: [head],
+                    body: body,
                     theme: 'grid',
                     styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
+                    headStyles: { fontStyle: 'bold', fillColor: primaryColor, textColor: [255,255,255] },
                 });
                 yPos = (doc as any).autoTable.previous.finalY + 10;
+             } else if (section.category === 'Overall Status' && Array.isArray(section.items)) {
+                addSection(section.category, section.items.map((item:any) => ({label: item.title, value: item.status})));
              } else {
                 addSection(section.category, section.items);
              }
