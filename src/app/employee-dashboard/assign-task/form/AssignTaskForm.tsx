@@ -42,6 +42,7 @@ export default function AssignTaskForm() {
     const { firestore } = useFirebase();
     const { user: currentUser, employees } = useCurrentUser();
     const { addRecord } = useRecords();
+    const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -62,6 +63,11 @@ export default function AssignTaskForm() {
     }, [employeeId, employees]);
 
     const handleSave = () => {
+        if (!isAdmin) {
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to assign tasks.' });
+             return;
+        }
+
         if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save a task.' });
             return;
@@ -247,26 +253,30 @@ export default function AssignTaskForm() {
                 </div>
 
                 <div className="flex justify-end gap-4 mt-8">
+                       {isAdmin && (
                         <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
-                        <DialogTrigger asChild>
-                            <Button><Save className="mr-2 h-4 w-4" /> Assign & Save</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Confirm Assignment</DialogTitle>
-                                <DialogDescription>
-                                    Are you sure you want to assign this task?
-                                </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                <Button onClick={handleSave}>Confirm</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            <DialogTrigger asChild>
+                                <Button><Save className="mr-2 h-4 w-4" /> Assign & Save</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Confirm Assignment</DialogTitle>
+                                    <DialogDescription>
+                                        Are you sure you want to assign this task?
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                    <Button onClick={handleSave}>Confirm</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                       )}
                     <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download as PDF</Button>
                 </div>
             </CardContent>
         </Card>
     );
 }
+
+    

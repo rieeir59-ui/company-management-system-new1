@@ -540,9 +540,9 @@ function MyProjectsComponent() {
                         <div className="space-y-2">
                             <Label className="font-semibold">Work Schedule</Label>
                             <div className="flex flex-wrap items-center gap-4">
-                                <Input type="date" value={schedule.start} onChange={e => setSchedule({ ...schedule, start: e.target.value })} className="w-auto"/>
+                                <Input type="date" value={schedule.start} onChange={e => setSchedule({ ...schedule, start: e.target.value })} className="w-auto" disabled={!canEdit}/>
                                 <span>to</span>
-                                <Input type="date" value={schedule.end} onChange={e => setSchedule({ ...schedule, end: e.target.value })} className="w-auto"/>
+                                <Input type="date" value={schedule.end} onChange={e => setSchedule({ ...schedule, end: e.target.value })} className="w-auto" disabled={!canEdit}/>
                                 {numberOfDays !== null && (
                                     <div className="font-medium text-primary rounded-md px-3 py-2 bg-primary/10">
                                         {numberOfDays} days
@@ -566,10 +566,10 @@ function MyProjectsComponent() {
                                 <TableBody>
                                     {filteredRows.map(row => (
                                         <TableRow key={row.id}>
-                                            <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} /></TableCell>
-                                            <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} /></TableCell>
+                                            <TableCell><Input value={row.projectName} onChange={e => handleRowChange(row.id, 'projectName', e.target.value)} disabled={!canEdit} /></TableCell>
+                                            <TableCell><Textarea value={row.detail} onChange={e => handleRowChange(row.id, 'detail', e.target.value)} rows={1} disabled={!canEdit} /></TableCell>
                                             <TableCell>
-                                                <Select value={row.status} onValueChange={(val: ProjectStatus) => handleRowChange(row.id, 'status', val)}>
+                                                <Select value={row.status} onValueChange={(val: ProjectStatus) => handleRowChange(row.id, 'status', val)} disabled={!canEdit}>
                                                     <SelectTrigger className="w-[180px]">
                                                     <div className="flex items-center gap-2">
                                                         <StatusIcon status={row.status} />
@@ -583,11 +583,11 @@ function MyProjectsComponent() {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} /></TableCell>
+                                            <TableCell><Input type="date" value={row.startDate} onChange={e => handleRowChange(row.id, 'startDate', e.target.value)} disabled={!canEdit} /></TableCell>
+                                            <TableCell><Input type="date" value={row.endDate} onChange={e => handleRowChange(row.id, 'endDate', e.target.value)} disabled={!canEdit} /></TableCell>
                                              <TableCell>
                                                 <Button variant="ghost" size="icon" onClick={() => openViewDialog(row)}><Eye className="h-4 w-4" /></Button>
-                                                <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                {canEdit && <Button variant="destructive" size="icon" onClick={() => removeRow(row.id)}><Trash2 className="h-4 w-4" /></Button>}
                                              </TableCell>
                                         </TableRow>
                                     ))}
@@ -601,15 +601,15 @@ function MyProjectsComponent() {
                                 </TableBody>
                             </Table>
                         </div>
-                        <Button onClick={addRow} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
+                        {canEdit && <Button onClick={addRow} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>}
 
                         <div className="space-y-2 pt-4">
                             <Label htmlFor="remarks" className="font-semibold">Remarks</Label>
-                            <Textarea id="remarks" value={remarks} onChange={e => setRemarks(e.target.value)} />
+                            <Textarea id="remarks" value={remarks} onChange={e => setRemarks(e.target.value)} disabled={!canEdit} />
                         </div>
                         
                         <div className="flex justify-end gap-4 mt-8">
-                            <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>
+                            {canEdit && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4"/>Save Record</Button>}
                             <Button onClick={handleDownloadPdf} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </CardContent>
@@ -670,3 +670,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
