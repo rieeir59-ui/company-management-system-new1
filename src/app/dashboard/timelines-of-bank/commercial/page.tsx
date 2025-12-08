@@ -12,37 +12,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-
-interface ProjectRow {
-  id: number;
-  srNo: string;
-  projectName: string;
-  area: string;
-  projectHolder: string;
-  allocationDate: string;
-  siteSurveyStart: string;
-  siteSurveyEnd: string;
-  contactStart: string;
-  contactEnd: string;
-  headCountStart: string;
-  headCountEnd: string;
-  proposalStart: string;
-  proposalEnd: string;
-  threedStart: string;
-  threedEnd: string;
-  tenderArchStart: string;
-  tenderArchEnd: string;
-  tenderMepStart: string;
-  tenderMepEnd: string;
-  boqStart: string;
-  boqEnd: string;
-  tenderStatus: string;
-  comparative: string;
-  workingDrawings: string;
-  siteVisit: string;
-  finalBill: string;
-  projectClosure: string;
-}
+import type { ProjectRow } from '@/lib/projects-data';
 
 const initialProjectRows: ProjectRow[] = [];
 

@@ -51,6 +51,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { allProjects, type ProjectRow } from '@/lib/projects-data';
 
 const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -172,10 +173,20 @@ export default function DashboardSidebar() {
     if (!item.roles) return true;
     return currentUser && item.roles.includes(currentUser.department);
   });
+  
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return [];
+    
+    const menuResults = visibleMenuItems.filter(item =>
+      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-  const filteredMenuItems = visibleMenuItems.filter(item =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const projectResults = allProjects.filter(project =>
+      project.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return { menuResults, projectResults };
+  }, [searchQuery, visibleMenuItems]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -201,14 +212,48 @@ export default function DashboardSidebar() {
           <div className="relative px-2 mb-2 group-data-[collapsible=icon]:hidden">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
             <Input 
-                placeholder="Search..."
+                placeholder="Search menu or projects..."
                 className="pl-8 bg-sidebar-accent border-sidebar-border h-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <SidebarSeparator />
-          <MemoizedSidebarMenu visibleMenuItems={filteredMenuItems} bankTimelineItems={bankTimelineItems} />
+          {searchQuery ? (
+             <SidebarMenu>
+                {searchResults.menuResults.length > 0 && (
+                     <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Menu Items</span>
+                        {searchResults.menuResults.map((item) => (
+                           <Link href={item.href} key={item.href} passHref>
+                                <SidebarMenuButton>
+                                    <item.icon className="size-5" />
+                                    <span>{item.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        ))}
+                    </SidebarMenuItem>
+                )}
+                 {searchResults.projectResults.length > 0 && (
+                     <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Projects</span>
+                         {searchResults.projectResults.map((project) => (
+                           <Link href={`/dashboard/project/${encodeURIComponent(project.projectName)}`} key={project.id} passHref>
+                                <SidebarMenuButton>
+                                    <Briefcase className="size-5" />
+                                    <span>{project.projectName}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        ))}
+                    </SidebarMenuItem>
+                )}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && (
+                    <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
+                )}
+             </SidebarMenu>
+          ) : (
+            <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} bankTimelineItems={bankTimelineItems} />
+          )}
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />
