@@ -63,7 +63,7 @@ const initialStatusRows: StatusRow[] = [
     { id: 3, title: 'Overall Status', status: 'Tender package shared.' },
 ];
 
-export default function AskariBankTimelinePage() {
+export default function Page() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
