@@ -57,154 +57,121 @@ const generateDefaultPdf = (record: SavedRecord) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
     let yPos = 20;
+    const primaryColor = [45, 95, 51];
 
+    // Header
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+    yPos += 8;
     doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
     doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos += 12;
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.text(`Record ID: ${record.id}`, 14, yPos);
     doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
     yPos += 10;
-    
-    if (record.fileName === 'Site Visit Proforma' && Array.isArray(record.data)) {
-        record.data.forEach(section => {
-            if (yPos > pageHeight - 30) {
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text(section.category, 14, yPos);
-            yPos += 8;
+    doc.setLineWidth(0.5);
+    doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
 
-            if (section.category === 'Pictures') {
-                doc.setFont('helvetica', 'normal');
-                section.items.forEach((item: { comment: string; url: string; }) => {
-                    doc.text(`- ${item.comment || 'No comment'}`, 18, yPos);
-                    yPos += 5;
-                });
-            } else if (Array.isArray(section.items)) {
-                const body = section.items.map((item: { Item: string; Status: string; Remarks: string; label?: string; value?: string; }) => {
-                    if (item.Item) {
-                        return [item.Item, item.Status, item.Remarks || 'N/A'];
-                    } else if (item.label) {
-                        return [item.label, item.value];
+
+    const addSection = (title: string, items: any) => {
+        if (!items || (Array.isArray(items) && items.length === 0)) return;
+        
+        if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text(title, 14, yPos);
+        yPos += 8;
+        doc.setTextColor(0,0,0);
+
+        let body: (string | number)[][] = [];
+
+        if (Array.isArray(items)) {
+            items.forEach((item: any) => {
+                if (typeof item === 'string') {
+                    try {
+                        // Handle JSON strings in items (like from Bill of Quantity)
+                        const parsed = JSON.parse(item);
+                        if(typeof parsed === 'object' && parsed !== null) {
+                             Object.entries(parsed).forEach(([key, val]) => {
+                                if (key !== 'id' && key !== 'isHeader') {
+                                    body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
+                                }
+                            });
+                             body.push(['---', '---']); // Separator
+                        }
+                    } catch (e) {
+                        const parts = item.split(/:(.*)/s);
+                        if (parts.length > 1) {
+                            body.push([parts[0], parts[1].trim()]);
+                        } else {
+                            body.push([item, '']);
+                        }
                     }
-                    return null;
-                }).filter(Boolean);
+                } else if (item && typeof item === 'object') {
+                    if (item.label && item.value) { // For {label, value} objects
+                        body.push([item.label, item.value]);
+                    } else { // For other objects, iterate keys
+                        Object.entries(item).forEach(([key, val]) => {
+                            if (key !== 'id') body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
+                        });
+                        body.push(['---', '---']); // Separator
+                    }
+                }
+            });
+        } else if (typeof items === 'object') { // For objects like 'header'
+             Object.entries(items).forEach(([key, val]) => {
+                body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
+            });
+        }
+        
+        if (body.length > 0) {
+            (doc as any).autoTable({
+                startY: yPos,
+                body: body,
+                theme: 'striped',
+                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+                headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240] },
+                columnStyles: { 0: { fontStyle: 'bold' } }
+            });
+            yPos = (doc as any).autoTable.previous.finalY + 10;
+        }
+    };
 
-                if (body.length > 0) {
-                    const head = body[0].length === 3 ? [['Item', 'Status', 'Remarks']] : [['Field', 'Value']];
+    if (Array.isArray(record.data)) {
+        record.data.forEach((section: any) => {
+            if (typeof section === 'object' && section !== null && section.category) {
+                 if (section.category === 'Projects' && Array.isArray(section.items)) {
+                    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.text(section.category, 14, yPos);
+                    yPos += 8;
                     (doc as any).autoTable({
                         startY: yPos,
-                        head: head,
-                        body: body,
+                        head: [Object.keys(section.items[0] || {})],
+                        body: section.items.map(item => Object.values(item)),
                         theme: 'grid',
+                        styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
                     });
                     yPos = (doc as any).autoTable.previous.finalY + 10;
-                }
+                 } else {
+                    addSection(section.category, section.items);
+                 }
             }
         });
-    } else if (bankTimelineCategories.includes(record.fileName) && record.data) {
-        record.data.forEach((section: any) => {
-            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(section.category, 14, yPos);
-            yPos += 8;
-            
-            if (section.category === 'Projects' && Array.isArray(section.items)) {
-                (doc as any).autoTable({
-                    startY: yPos,
-                    head: [Object.keys(section.items[0] || {})],
-                    body: section.items.map(item => Object.values(item)),
-                    theme: 'grid',
-                    styles: { fontSize: 5, cellPadding: 1, overflow: 'linebreak' },
-                    headStyles: { fillColor: [45, 95, 51] },
-                });
-                yPos = (doc as any).autoTable.previous.finalY + 10;
-            } else if (Array.isArray(section.items)) {
-                section.items.forEach((item: any) => {
-                    if (yPos > pageHeight - 20) { doc.addPage(); yPos = 20; }
-                    let text = '';
-                    if (typeof item === 'string') text = item;
-                    else if (item.label) text = `${item.label}: ${item.value}`;
-                    else if (item.title) text = `${item.title}: ${item.status}`;
-                    doc.text(text, 18, yPos, { maxWidth: pageWidth - 36 });
-                    yPos += (doc as any).getTextDimensions(text, { maxWidth: pageWidth - 36 }).h + 5;
-                });
-            }
-        });
-
-    } else if (Array.isArray(record.data)) {
-        record.data.forEach(section => {
-            if (yPos > pageHeight - 30) {
-                doc.addPage();
-                yPos = 20;
-            }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text(section.category, 14, yPos);
-            yPos += 8;
-            
-            if (Array.isArray(section.items)) {
-                const body = section.items.map((item: any) => {
-                    if(typeof item === 'string') {
-                        try {
-                            const parsed = JSON.parse(item);
-                            return Object.values(parsed);
-                        } catch(e) {
-                             const parts = item.split(':');
-                             return [parts[0], parts.slice(1).join(':').trim()];
-                        }
-                    } else if (item.Item) {
-                         return [item.Item, item.Status, item.Remarks];
-                    } else if (item.label) {
-                        return [item.label, item.value];
-                    }
-                    return [item];
-                });
-                 (doc as any).autoTable({
-                    startY: yPos,
-                    body: body,
-                    theme: 'grid',
-                });
-                yPos = (doc as any).autoTable.previous.finalY + 10;
-            }
-        });
+    } else if (typeof record.data === 'object' && record.data !== null) { // For flat object data
+        addSection("Details", Object.entries(record.data).map(([key, value]) => ({label: key, value: String(value)})));
     }
 
-    if (typeof record.data === 'object' && record.data !== null && !Array.isArray(record.data)) {
-         const header = record.data.header || {};
-         const items = record.data.items || [];
-         const category = record.data.category || 'Details';
-         doc.setFontSize(12);
-         doc.setFont('helvetica', 'bold');
-         doc.text(category, 14, yPos);
-         yPos += 10;
-         doc.setFontSize(10);
-         doc.setFont('helvetica', 'normal');
-         (doc as any).autoTable({
-            startY: yPos,
-            body: Object.entries(header),
-            theme: 'plain'
-         });
-         yPos = (doc as any).autoTable.previous.finalY + 10;
-         (doc as any).autoTable({
-            startY: yPos,
-            head: [Object.keys(items[0] || {})],
-            body: items.map((item: any) => Object.values(item)),
-            theme: 'grid'
-         });
-         yPos = (doc as any).autoTable.previous.finalY + 10;
-    }
 
-    // Footer
+    // Footer on all pages
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -335,7 +302,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const renderRecordContent = () => {
     if (!viewingRecord) return null;
 
-    // Specific handler for 'My Projects'
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
         const projects = scheduleData.items?.filter((item: any) => item.label.startsWith('Project:')) || [];
@@ -367,7 +333,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         );
     }
 
-    // Generic renderer for array-based data
     if (Array.isArray(viewingRecord.data)) {
         return (
             <Table>
@@ -381,22 +346,30 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                 if (typeof item === 'string') {
                                     try {
                                         const parsed = JSON.parse(item);
-                                        return (
-                                            <React.Fragment key={`${index}-${i}`}>
-                                                {Object.entries(parsed).map(([key, val]) => (
-                                                    <TableRow key={key}><TableCell className="font-medium pl-8">{key}</TableCell><TableCell>{String(val)}</TableCell></TableRow>
-                                                ))}
-                                                <TableRow><TableCell colSpan={2} className="p-1"></TableCell></TableRow>
-                                            </React.Fragment>
-                                        );
+                                        if(typeof parsed === 'object' && parsed !== null) {
+                                             return Object.entries(parsed).map(([key, val]) => {
+                                                if (key !== 'id' && key !== 'isHeader') {
+                                                    return <TableRow key={key}><TableCell className="font-medium pl-8">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell><TableCell>{String(val)}</TableCell></TableRow>
+                                                }
+                                                return null;
+                                            });
+                                        }
                                     } catch (e) {
                                         const parts = item.split(/:(.*)/s);
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
+                                        if (parts.length > 1) {
+                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
+                                        } else {
+                                            return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{item}</TableCell></TableRow>;
+                                        }
                                     }
-                                } else if (item.label) {
-                                    return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>;
-                                } else if (item.Item) {
-                                     return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>
+                                } else if (item && typeof item === 'object') {
+                                    if (item.label && item.value !== undefined) { 
+                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>;
+                                    } else if (item.Item && item.Status !== undefined) {
+                                         return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>
+                                    } else {
+                                       return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8" colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
+                                    }
                                 }
                                 return null;
                             }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
