@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Card,
@@ -16,7 +17,7 @@ const departments = [
     { name: 'ADMIN', slug: 'admin' },
     { name: 'HR', slug: 'hr' },
     { name: 'SOFTWARE ENGINEER', slug: 'software-engineer' },
-    { name: 'DRAFTMAN', slug: 'draftman' },
+    { name: 'DRAFTPERSONS', slug: 'draftpersons' },
     { name: '3D VISULIZER', slug: '3d-visualizer' },
     { name: 'ARCHITECTS', slug: 'architects' },
     { name: 'FINANCE', slug: 'finance' },

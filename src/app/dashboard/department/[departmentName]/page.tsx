@@ -20,6 +20,7 @@ import { type Employee } from '@/lib/employees';
 function formatDepartmentName(slug: string) {
   if (!slug) return '';
   if (slug.toLowerCase() === 'ceo') return 'CEO';
+  if (slug.toLowerCase() === 'draftpersons') return 'Draftpersons';
   return slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 

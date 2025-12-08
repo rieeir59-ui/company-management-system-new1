@@ -62,7 +62,7 @@ export default function TeamPage() {
     const softwareEngineers = employeesByDepartment['software-engineer'] || [];
     const quantityManagement = employeesByDepartment['quantity-management'] || [];
     const visualizer = employeesByDepartment['3d-visualizer'] || [];
-    const drafting = employeesByDepartment['draftman'] || [];
+    const drafting = employeesByDepartment['draftpersons'] || [];
 
   return (
     <div className="space-y-12">
@@ -128,7 +128,7 @@ export default function TeamPage() {
             </DepartmentSection>
 
             <DepartmentSection title="Drafting" icon={<Users className="w-5 h-5" />}>
-                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsman" />)}
+                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsperson" />)}
             </DepartmentSection>
         </div>
     </div>
