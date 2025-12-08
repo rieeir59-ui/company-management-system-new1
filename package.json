@@ -1,13 +1,14 @@
 {
   "name": "nextn",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "main": "src/app/page.tsx",
   "scripts": {
     "dev": "next dev -p 9003",
     "genkit:dev": "genkit start src/ai/dev.ts",
     "genkit:watch": "genkit start --watch src/ai/dev.ts",
-    "build": "next build && next export",
-    "start": "next start",
+    "build": "next build",
+    "start": "next start -p 9003",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
