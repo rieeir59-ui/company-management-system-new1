@@ -95,40 +95,41 @@ export default function AskariBankTimelinePage() {
                 taskMap[key] = { start: task.startDate, end: task.endDate };
             });
 
-            const updatedProjectRows = projectRows.map(row => {
-                if (row.projectName.toLowerCase() === genProjectName.toLowerCase()) {
-                    return {
-                        ...row,
-                        siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
-                        siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
-                        contactStart: taskMap['contact']?.start || row.contactStart,
-                        contactEnd: taskMap['contact']?.end || row.contactEnd,
-                        headCountStart: taskMap['headcountrequirment']?.start || row.headCountStart,
-                        headCountEnd: taskMap['headcountrequirment']?.end || row.headCountEnd,
-                        proposalStart: taskMap['proposaldesigndevelopment']?.start || row.proposalStart,
-                        proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
-                        threedStart: taskMap['3ds']?.start || row.threedStart,
-                        threedEnd: taskMap['3ds']?.end || row.threedEnd,
-                        tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
-                        tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
-                        tenderMepStart: taskMap['tenderpackagemep']?.start || row.tenderMepStart,
-                        tenderMepEnd: taskMap['tenderpackagemep']?.end || row.tenderMepEnd,
-                        boqStart: taskMap['boq']?.start || row.boqStart,
-                        boqEnd: taskMap['boq']?.end || row.boqEnd,
-                        tenderStatus: taskMap['tenderstatus']?.start || row.tenderStatus, // Just using start date for status-like fields
-                        comparative: taskMap['comparative']?.start || row.comparative,
-                        workingDrawings: taskMap['workingdrawings']?.start || row.workingDrawings,
-                        siteVisit: taskMap['sitevisit']?.start || row.siteVisit,
-                        finalBill: taskMap['finalbill']?.start || row.finalBill,
-                        projectClosure: taskMap['projectclosure']?.start || row.projectClosure,
-                    };
-                }
-                return row;
-            });
-            
-            // If the project doesn't exist, add it.
             const projectExists = projectRows.some(row => row.projectName.toLowerCase() === genProjectName.toLowerCase());
-            if (!projectExists) {
+
+            if (projectExists) {
+                 const updatedProjectRows = projectRows.map(row => {
+                    if (row.projectName.toLowerCase() === genProjectName.toLowerCase()) {
+                        return {
+                            ...row,
+                            siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
+                            siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
+                            contactStart: taskMap['contact']?.start || row.contactStart,
+                            contactEnd: taskMap['contact']?.end || row.contactEnd,
+                            headCountStart: taskMap['headcountrequirment']?.start || row.headCountStart,
+                            headCountEnd: taskMap['headcountrequirment']?.end || row.headCountEnd,
+                            proposalStart: taskMap['proposaldesigndevelopment']?.start || row.proposalStart,
+                            proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
+                            threedStart: taskMap['3ds']?.start || row.threedStart,
+                            threedEnd: taskMap['3ds']?.end || row.threedEnd,
+                            tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
+                            tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
+                            tenderMepStart: taskMap['tenderpackagemep']?.start || row.tenderMepStart,
+                            tenderMepEnd: taskMap['tenderpackagemep']?.end || row.tenderMepEnd,
+                            boqStart: taskMap['boq']?.start || row.boqStart,
+                            boqEnd: taskMap['boq']?.end || row.boqEnd,
+                            tenderStatus: taskMap['tenderstatus']?.start || row.tenderStatus,
+                            comparative: taskMap['comparative']?.start || row.comparative,
+                            workingDrawings: taskMap['workingdrawings']?.start || row.workingDrawings,
+                            siteVisit: taskMap['sitevisit']?.start || row.siteVisit,
+                            finalBill: taskMap['finalbill']?.start || row.finalBill,
+                            projectClosure: taskMap['projectclosure']?.start || row.projectClosure,
+                        };
+                    }
+                    return row;
+                });
+                 setProjectRows(updatedProjectRows);
+            } else {
                  const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
                  const newRow: ProjectRow = {
                     id: newId, srNo: String(newId), projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
@@ -155,10 +156,9 @@ export default function AskariBankTimelinePage() {
                     finalBill: taskMap['finalbill']?.start || '',
                     projectClosure: taskMap['projectclosure']?.start || '',
                 };
-                updatedProjectRows.push(newRow);
+                setProjectRows(prevRows => [...prevRows, newRow]);
             }
-
-            setProjectRows(updatedProjectRows);
+            
             toast({ title: 'Timeline Generated', description: `Dates for '${genProjectName}' have been filled in.` });
 
         } catch (error) {
@@ -384,3 +384,4 @@ export default function AskariBankTimelinePage() {
     
 
     
+
