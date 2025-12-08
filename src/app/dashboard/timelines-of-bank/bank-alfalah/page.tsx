@@ -44,15 +44,33 @@ interface ProjectRow {
   projectClosure: string;
 }
 
-const initialProjectRows: ProjectRow[] = [];
+interface StatusRow {
+  id: number;
+  title: string;
+  status: string;
+}
+
+const initialProjectRows: ProjectRow[] = [
+    { id: 1, srNo: '1', projectName: 'AKBL AWT SADDAR RWP', area: '14,000', projectHolder: 'Noman Asad Mohsin', allocationDate: '6-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: 'Received', contactEnd: '', headCountStart: '14-Oct-25', headCountEnd: '17-Oct-25', proposalStart: '17-Oct-25', proposalEnd: '21-Oct-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 2, srNo: '2', projectName: 'AKBL CHAKLALA GARRISON RWP', area: '4,831', projectHolder: 'Noman Asad Mohsin', allocationDate: '13-Sep-25', siteSurveyStart: 'In-Progress', siteSurveyEnd: '', contactStart: 'Recieved', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '1-Oct-25', proposalEnd: '3-Oct-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 3, srNo: '3', projectName: 'AKBL Priority Lounge', area: '24,000.00', projectHolder: 'Noman Haseeb Mohsin', allocationDate: '28-Mar-25', siteSurveyStart: 'DONE', siteSurveyEnd: '', contactStart: 'Recevied', contactEnd: '', headCountStart: '21-Apr-25', headCountEnd: '28-Apr-25', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: 'sent', tenderArchEnd: '', tenderMepStart: 'sent', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'sent', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 4, srNo: '4', projectName: 'AKBL Ocean Mall KHI', area: '430.00', projectHolder: 'Noman Asad Mohsin', allocationDate: '10-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+];
+
+const initialStatusRows: StatusRow[] = [
+    { id: 1, title: 'Overall Status', status: 'Site Survey scheduled' },
+    { id: 2, title: 'Overall Status', status: 'PROPOSAL SENT AGAIN.' },
+    { id: 3, title: 'Overall Status', status: 'Tender package shared.' },
+];
 
 function BankAlfalahTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
+    const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
-
+    
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -84,6 +102,7 @@ function BankAlfalahTimelineComponent() {
                     if (row.projectName.toLowerCase() === genProjectName.toLowerCase()) {
                         return {
                             ...row,
+                            area: genArea,
                             siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
                             siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
                             contactStart: taskMap['contact']?.start || row.contactStart,
@@ -160,6 +179,10 @@ function BankAlfalahTimelineComponent() {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
 
+    const handleStatusChange = (id: number, value: string) => {
+        setStatusRows(statusRows.map(row => row.id === id ? { ...row, status: value } : row));
+    };
+
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
         setProjectRows([...projectRows, {
@@ -181,6 +204,7 @@ function BankAlfalahTimelineComponent() {
             projectName: 'Bank Alfalah Projects',
             data: [
                 { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
                 { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
@@ -217,6 +241,15 @@ function BankAlfalahTimelineComponent() {
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
+        doc.autoTable({
+            head: [['Overall Status']],
+            body: statusRows.map(s => [`${s.title} - ${s.status}`]),
+            startY: lastY,
+            theme: 'grid',
+            styles: { fontSize: 8 },
+        });
+        lastY = (doc as any).autoTable.previous.finalY + 10;
+        
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
         doc.text(remarks, 14, lastY);
@@ -238,7 +271,7 @@ function BankAlfalahTimelineComponent() {
                 </div>
             </CardHeader>
             <CardContent>
-                 <Card className="mb-6 bg-muted/50">
+                <Card className="mb-6 bg-muted/50">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg"><Bot className="h-5 w-5" /> AI Timeline Generator</CardTitle>
                     </CardHeader>
@@ -324,6 +357,20 @@ function BankAlfalahTimelineComponent() {
                     </table>
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
+
+                <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                     <table className="w-full border-collapse text-sm">
+                         <tbody>
+                            {statusRows.map(row => (
+                                <tr key={row.id}>
+                                    <td className="border p-2 font-semibold w-1/3">{row.title}</td>
+                                    <td className="border p-2"><Input type="text" value={row.status} onChange={e => handleStatusChange(row.id, e.target.value)} /></td>
+                                </tr>
+                            ))}
+                         </tbody>
+                     </table>
+                </div>
                 
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
@@ -338,3 +385,6 @@ function BankAlfalahTimelineComponent() {
 export default function Page() {
   return <BankAlfalahTimelineComponent />;
 }
+
+
+    
