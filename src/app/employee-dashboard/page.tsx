@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -222,7 +221,7 @@ function MyProjectsComponent() {
     };
 
     const handleFileSubmit = async () => {
-        if (!firestore || !submittingTask || !submissionFile || !storage) return;
+        if (!firestore || !submittingTask || !submissionFile || !storage || !currentUser) return;
     
         setIsUploading(true);
         setUploadProgress(0);
@@ -250,6 +249,21 @@ function MyProjectsComponent() {
                         submissionUrl: downloadURL,
                         submissionFileName: submissionFile.name,
                     });
+                    
+                    await addRecord({
+                        fileName: 'Task Submission',
+                        projectName: submittingTask.projectName,
+                        data: [{
+                            category: 'Task Submission Details',
+                            items: [
+                                { label: 'Task', value: submittingTask.taskName },
+                                { label: 'Submitted By', value: currentUser.name },
+                                { label: 'File Name', value: submissionFile.name },
+                                { label: 'File Link', value: downloadURL },
+                            ]
+                        }]
+                    } as any);
+
                     toast({ title: 'Submission Successful', description: 'Your work has been submitted and the task is marked as complete.' });
                     setIsUploading(false);
                     setIsSubmitDialogOpen(false);
@@ -460,9 +474,9 @@ function MyProjectsComponent() {
                             <TableRow>
                                 <TableHead>Project</TableHead>
                                 <TableHead>Task</TableHead>
+                                <TableHead>Assigned By</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
-                                <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Submission</TableHead>
                                 <TableHead>Action</TableHead>
@@ -477,9 +491,9 @@ function MyProjectsComponent() {
                                 <TableRow key={project.id}>
                                     <TableCell>{project.projectName}</TableCell>
                                     <TableCell>{project.taskName}</TableCell>
+                                    <TableCell>{project.assignedBy}</TableCell>
                                     <TableCell>{project.startDate || 'N/A'}</TableCell>
                                     <TableCell>{project.endDate || 'N/A'}</TableCell>
-                                    <TableCell>{project.assignedBy}</TableCell>
                                     <TableCell>
                                         <Select
                                             value={project.status}
@@ -680,5 +694,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
