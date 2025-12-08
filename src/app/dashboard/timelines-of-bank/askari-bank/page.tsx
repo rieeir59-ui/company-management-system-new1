@@ -102,6 +102,7 @@ function AskariBankTimelineComponent() {
                     if (row.projectName.toLowerCase() === genProjectName.toLowerCase()) {
                         return {
                             ...row,
+                            area: genArea,
                             siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
                             siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
                             contactStart: taskMap['contact']?.start || row.contactStart,
@@ -384,3 +385,4 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
+
