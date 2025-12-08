@@ -35,7 +35,7 @@ import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@
 import { cn } from '@/lib/utils';
 
 const bankTimelineCategories = [
-    "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline"
+    "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
 ];
 
 const managementCategories = [
@@ -125,7 +125,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     }
                 }
             });
-        } else if (typeof items === 'object') { // For objects like 'header'
+        } else if (typeof items === 'object' && items !== null) { // For objects like 'header'
              Object.entries(items).forEach(([key, val]) => {
                 body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
             });
@@ -143,27 +143,32 @@ const generateDefaultPdf = (record: SavedRecord) => {
             yPos = (doc as any).autoTable.previous.finalY + 10;
         }
     };
+    
+    if (bankTimelineCategories.includes(record.fileName) && Array.isArray(record.data)) {
+        record.data.forEach((section: any) => {
+             if (section.category === 'Projects' && Array.isArray(section.items)) {
+                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(section.category, 14, yPos);
+                yPos += 8;
+                (doc as any).autoTable({
+                    startY: yPos,
+                    head: [Object.keys(section.items[0] || {}).filter(k => k !== 'id')],
+                    body: section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key])),
+                    theme: 'grid',
+                    styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
+                });
+                yPos = (doc as any).autoTable.previous.finalY + 10;
+             } else {
+                addSection(section.category, section.items);
+             }
+        });
 
-    if (Array.isArray(record.data)) {
+    } else if (Array.isArray(record.data)) {
         record.data.forEach((section: any) => {
             if (typeof section === 'object' && section !== null && section.category) {
-                 if (section.category === 'Projects' && Array.isArray(section.items)) {
-                    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(11);
-                    doc.text(section.category, 14, yPos);
-                    yPos += 8;
-                    (doc as any).autoTable({
-                        startY: yPos,
-                        head: [Object.keys(section.items[0] || {})],
-                        body: section.items.map(item => Object.values(item)),
-                        theme: 'grid',
-                        styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
-                    });
-                    yPos = (doc as any).autoTable.previous.finalY + 10;
-                 } else {
-                    addSection(section.category, section.items);
-                 }
+                 addSection(section.category, section.items);
             }
         });
     } else if (typeof record.data === 'object' && record.data !== null) { // For flat object data
@@ -299,8 +304,78 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setSearchQuery('');
     }
 
-    const renderRecordContent = () => {
+const renderRecordContent = () => {
     if (!viewingRecord) return null;
+
+    if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
+        const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
+        const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
+        const remarksSection = viewingRecord.data.find(s => s.category === 'Remarks');
+        const queriesSection = viewingRecord.data.find(s => s.category === 'Queries');
+        
+        return (
+            <div className="space-y-4">
+                {projectSection && Array.isArray(projectSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Projects</h3>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {Object.keys(projectSection.items[0] || {}).filter(key => key !== 'id').map(key => <TableHead key={key}>{key}</TableHead>)}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {projectSection.items.map((item: any, index: number) => (
+                                        <TableRow key={index}>
+                                            {Object.keys(item).filter(key => key !== 'id').map(key => <TableCell key={key}>{item[key]}</TableCell>)}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
+                {statusSection && Array.isArray(statusSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Overall Status</h3>
+                         <Table>
+                             <TableBody>
+                                {statusSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.title}</TableCell><TableCell>{item.status}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+                 {remarksSection && Array.isArray(remarksSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Remarks</h3>
+                         <Table>
+                             <TableBody>
+                                {remarksSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+                 {queriesSection && Array.isArray(queriesSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Queries</h3>
+                         <Table>
+                             <TableBody>
+                                {queriesSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    
 
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
