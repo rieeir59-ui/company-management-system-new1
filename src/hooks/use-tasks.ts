@@ -7,6 +7,7 @@ import { collection, query, where, onSnapshot, type Timestamp, FirestoreError } 
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useCurrentUser } from '@/context/UserContext';
 
 export interface Project {
   id: string;
@@ -26,16 +27,20 @@ export function useTasks(employeeUid?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const { user: currentUser } = useCurrentUser();
+
+  const uidToFetch = employeeUid || currentUser?.uid;
 
   useEffect(() => {
-    if (!firestore || !employeeUid) {
+    if (!firestore || !uidToFetch) {
+      setTasks([]);
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
     const tasksCollection = collection(firestore, 'tasks');
-    const q = query(tasksCollection, where('assignedTo', '==', employeeUid));
+    const q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedTasks: Project[] = [];
@@ -72,7 +77,7 @@ export function useTasks(employeeUid?: string) {
     });
 
     return () => unsubscribe();
-  }, [firestore, employeeUid, toast]);
+  }, [firestore, uidToFetch, toast]);
 
   return { tasks, isLoading };
 }
