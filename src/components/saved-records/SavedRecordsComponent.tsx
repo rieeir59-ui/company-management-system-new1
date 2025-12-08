@@ -313,160 +313,69 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setSearchQuery('');
     }
 
-const renderRecordContent = () => {
-    if (!viewingRecord) return null;
-
-    if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
-        const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
-        const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
-        const remarksSection = viewingRecord.data.find(s => s.category === 'Remarks');
-        const queriesSection = viewingRecord.data.find(s => s.category === 'Queries');
-        
-        return (
-            <div className="space-y-4">
-                {projectSection && Array.isArray(projectSection.items) && (
-                    <div>
-                        <h3 className="font-bold text-lg text-primary mb-2">Projects</h3>
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        {Object.keys(projectSection.items[0] || {}).filter(key => key !== 'id').map(key => <TableHead key={key}>{key}</TableHead>)}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {projectSection.items.map((item: any, index: number) => (
-                                        <TableRow key={index}>
-                                            {Object.keys(item).filter(key => key !== 'id').map(key => <TableCell key={key}>{item[key]}</TableCell>)}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                )}
-                {statusSection && Array.isArray(statusSection.items) && (
-                    <div>
-                        <h3 className="font-bold text-lg text-primary mb-2">Overall Status</h3>
-                         <Table>
-                             <TableBody>
-                                {statusSection.items.map((item: any, index: number) => (
-                                    <TableRow key={index}><TableCell className="font-semibold">{item.title}</TableCell><TableCell>{item.status}</TableCell></TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-                 {remarksSection && Array.isArray(remarksSection.items) && (
-                    <div>
-                        <h3 className="font-bold text-lg text-primary mb-2">Remarks</h3>
-                         <Table>
-                             <TableBody>
-                                {remarksSection.items.map((item: any, index: number) => (
-                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-                 {queriesSection && Array.isArray(queriesSection.items) && (
-                    <div>
-                        <h3 className="font-bold text-lg text-primary mb-2">Queries</h3>
-                         <Table>
-                             <TableBody>
-                                {queriesSection.items.map((item: any, index: number) => (
-                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+    const renderRecordContent = () => {
+        if (!viewingRecord || !viewingRecord.data) return <p>No data to display.</p>;
+    
+        const renderSection = (section: any, index: number) => (
+            <div key={index} className="mb-6">
+                <h3 className="font-bold text-lg text-primary mb-2 border-b">{section.category}</h3>
+                {Array.isArray(section.items) ? (
+                    <Table>
+                        <TableBody>
+                            {section.items.map((item: any, i: number) => {
+                                if (typeof item === 'object' && item !== null) {
+                                    if ('label' in item && 'value' in item) {
+                                        return <TableRow key={i}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
+                                    }
+                                    return <TableRow key={i}><TableCell colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
+                                }
+                                const parts = String(item).split(/:(.*)/s);
+                                return parts.length > 1
+                                    ? <TableRow key={i}><TableCell className="font-semibold">{parts[0]}</TableCell><TableCell>{parts[1].trim()}</TableCell></TableRow>
+                                    : <TableRow key={i}><TableCell colSpan={2}>{String(item)}</TableCell></TableRow>;
+                            })}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <p>{JSON.stringify(section.items)}</p>
                 )}
             </div>
         );
-    }
-    
 
-    if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
-        const scheduleData = viewingRecord.data[0];
-        const projects = scheduleData.items?.filter((item: any) => item.label?.startsWith('Project:')) || [];
-        return (
-            <Table>
-                <TableBody>
-                    <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule?.start || 'N/A'} to {scheduleData.schedule?.end || 'N/A'}</TableCell></TableRow>
-                    <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks || 'N/A'}</TableCell></TableRow>
-                    {projects.length > 0 && (
-                        <TableRow><TableCell className="font-bold text-primary" colSpan={2}>Projects</TableCell></TableRow>
-                    )}
-                    {projects.map((p: any, i:number) => {
-                        if(!p.label) return null;
+        if (viewingRecord.fileName === 'My Projects' && viewingRecord.data[0]) {
+            const scheduleData = viewingRecord.data[0];
+            const projects = scheduleData.items?.filter((item: any) => item?.label?.startsWith('Project:')) || [];
+            
+            return (
+                 <div className="space-y-4">
+                    {scheduleData.schedule && <p><span className="font-bold">Work Schedule:</span> {scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}</p>}
+                    {scheduleData.remarks && <p><span className="font-bold">Remarks:</span> {scheduleData.remarks}</p>}
+                    {projects.length > 0 && <h3 className="font-bold text-lg text-primary pt-4 border-t">Projects</h3>}
+                    {projects.map((p: any, i: number) => {
                         const details = p.value.split(', ').reduce((acc: any, part: string) => {
                             const [key, ...val] = part.split(': ');
                             acc[key.trim()] = val.join(': ');
                             return acc;
                         }, {});
                         return (
-                            <React.Fragment key={i}>
-                                <TableRow><TableCell className="pl-8 font-semibold" colSpan={2}>{p.label.replace('Project: ', '')}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Detail</TableCell><TableCell>{details.Detail}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Status</TableCell><TableCell>{details.Status}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Dates</TableCell><TableCell>{details.Start} to {details.End}</TableCell></TableRow>
-                            </React.Fragment>
+                            <div key={i} className="p-2 border rounded">
+                                <p className="font-bold">{p.label.replace('Project: ', '')}</p>
+                                <p className="text-sm pl-4"><span className="font-semibold">Detail:</span> {details.Detail}</p>
+                                <p className="text-sm pl-4"><span className="font-semibold">Status:</span> {details.Status}</p>
+                                <p className="text-sm pl-4"><span className="font-semibold">Dates:</span> {details.Start} to {details.End}</p>
+                            </div>
                         );
                     })}
-                </TableBody>
-            </Table>
-        );
-    }
+                </div>
+            )
+        }
 
-    if (Array.isArray(viewingRecord.data)) {
-        return (
-            <Table>
-                <TableBody>
-                    {viewingRecord.data.map((section: any, index: number) => (
-                        <React.Fragment key={index}>
-                            <TableRow className="bg-muted hover:bg-muted">
-                                <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
-                            </TableRow>
-                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
-                                if (typeof item === 'string') {
-                                    try {
-                                        const parsed = JSON.parse(item);
-                                        if(typeof parsed === 'object' && parsed !== null) {
-                                             return Object.entries(parsed).map(([key, val]) => {
-                                                if (key !== 'id' && key !== 'isHeader') {
-                                                    return <TableRow key={key}><TableCell className="font-medium pl-8">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell><TableCell>{String(val)}</TableCell></TableRow>
-                                                }
-                                                return null;
-                                            });
-                                        }
-                                    } catch (e) {
-                                        const parts = item.split(/:(.*)/s);
-                                        if (parts.length > 1) {
-                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
-                                        } else {
-                                            return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{item}</TableCell></TableRow>;
-                                        }
-                                    }
-                                } else if (item && typeof item === 'object') {
-                                    if (item.label && item.value !== undefined) { 
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>;
-                                    } else if (item.Item && item.Status !== undefined) {
-                                         return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>
-                                    } else {
-                                       return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8" colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
-                                    }
-                                }
-                                return null;
-                            }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
-                        </React.Fragment>
-                    ))}
-                </TableBody>
-            </Table>
-        );
-    }
+        if (Array.isArray(viewingRecord.data)) {
+            return viewingRecord.data.map(renderSection);
+        }
     
-    return <p>Could not render record data. Format is not recognized.</p>;
-  };
+        return <p>Could not render record data. Format is not recognized.</p>;
+    };
     
     const renderContent = () => {
         if (!activeCategory) {
@@ -626,11 +535,11 @@ const renderRecordContent = () => {
       </AlertDialog>
       
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>{viewingRecord?.fileName}: {viewingRecord?.projectName}</DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[60vh] overflow-y-auto p-4">
+                <div className="max-h-[70vh] overflow-y-auto p-4">
                     {renderRecordContent()}
                 </div>
                 <DialogFooter>
