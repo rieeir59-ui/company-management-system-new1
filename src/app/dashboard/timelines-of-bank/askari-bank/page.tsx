@@ -380,8 +380,3 @@ export default function AskariBankTimelinePage() {
         </Card>
     );
 }
-
-    
-
-    
-
