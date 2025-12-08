@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -154,8 +153,8 @@ const generateDefaultPdf = (record: SavedRecord) => {
                 doc.text(section.category, 14, yPos);
                 yPos += 8;
 
-                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id' && k !== 'isHeader');
-                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id' && k !== 'isHeader').map(key => item[key]));
+                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id');
+                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key]));
                 
                 (doc as any).autoTable({
                     startY: yPos,
@@ -240,7 +239,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     recordsToFilter = recordsToFilter.filter(r => r.fileName === selectedMgmtRecordType);
                  }
             } else if (activeCategory === 'Assigned Tasks') {
-                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment' || r.fileName === 'Task Submission');
+                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
             }
         }
     
