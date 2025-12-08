@@ -45,7 +45,7 @@ const managementCategories = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Submission"
 ];
 
 const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
@@ -119,7 +119,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     }
                 } else if (item && typeof item === 'object') {
                     if (item.label && item.value !== undefined) { // For {label, value} objects
-                        body.push([item.label, item.value]);
+                        body.push([item.label, String(item.value)]);
                     } else if (item.Item && item.Status !== undefined) {
                          body.push([item.Item, `${item.Status} ${item.Remarks ? `(${item.Remarks})` : ''}`]);
                     } else {
@@ -242,7 +242,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     recordsToFilter = recordsToFilter.filter(r => r.fileName === selectedMgmtRecordType);
                  }
             } else if (activeCategory === 'Assigned Tasks') {
-                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
+                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment' || r.fileName === 'Task Submission');
             }
         }
     
@@ -388,7 +388,7 @@ const renderRecordContent = () => {
 
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
-        const projects = scheduleData.items?.filter((item: any) => item.label && item.label.startsWith('Project:')) || [];
+        const projects = scheduleData.items?.filter((item: any) => item.label?.startsWith('Project:')) || [];
         return (
             <Table>
                 <TableBody>
