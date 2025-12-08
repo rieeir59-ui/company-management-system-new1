@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useEffect, useId } from 'react';
+import React, { memo, useState, useEffect, useId, useMemo } from 'react';
 import {
   Sidebar,
   SidebarContent,
