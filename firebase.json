@@ -1,6 +1,8 @@
 {
   "hosting": {
     "source": ".",
-    "backend": {}
+    "backend": {
+      "project": "studio-1477984206-e8ab3"
+    }
   }
 }
