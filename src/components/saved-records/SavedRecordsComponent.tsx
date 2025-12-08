@@ -388,16 +388,17 @@ const renderRecordContent = () => {
 
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
-        const projects = scheduleData.items?.filter((item: any) => item.label.startsWith('Project:')) || [];
+        const projects = scheduleData.items?.filter((item: any) => item.label && item.label.startsWith('Project:')) || [];
         return (
             <Table>
                 <TableBody>
-                    <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}</TableCell></TableRow>
+                    <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule?.start || 'N/A'} to {scheduleData.schedule?.end || 'N/A'}</TableCell></TableRow>
                     <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks || 'N/A'}</TableCell></TableRow>
                     {projects.length > 0 && (
                         <TableRow><TableCell className="font-bold text-primary" colSpan={2}>Projects</TableCell></TableRow>
                     )}
                     {projects.map((p: any, i:number) => {
+                        if(!p.label) return null;
                         const details = p.value.split(', ').reduce((acc: any, part: string) => {
                             const [key, ...val] = part.split(': ');
                             acc[key.trim()] = val.join(': ');
