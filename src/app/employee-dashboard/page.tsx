@@ -25,6 +25,7 @@ import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
+import { useTasks } from '@/hooks/use-tasks';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -110,8 +111,8 @@ function MyProjectsComponent() {
     return isAdmin || currentUser.uid === displayUser.uid;
   }, [currentUser, displayUser, isAdmin]);
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const { tasks: projects, isLoading: isLoadingTasks } = useTasks(displayUser?.uid);
+
   const [rows, setRows] = useState<ProjectRow[]>([{ id: 1, projectName: '', detail: '', status: 'not-started', startDate: '', endDate: '' }]);
   const [schedule, setSchedule] = useState({ start: '', end: '' });
   const [remarks, setRemarks] = useState('');
@@ -161,55 +162,6 @@ function MyProjectsComponent() {
         return { total, completed, inProgress, notStarted };
     }, [filteredRows, rows]);
     
-  useEffect(() => {
-    if (!firestore || !displayUser?.uid) {
-        setIsLoadingTasks(false);
-        return;
-    }
-
-    setIsLoadingTasks(true);
-    const tasksCollection = collection(firestore, 'tasks');
-    const q = query(
-        tasksCollection, 
-        where('assignedTo', '==', displayUser.uid)
-    );
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const fetchedTasks: Project[] = [];
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            fetchedTasks.push({
-                id: doc.id,
-                projectName: data.projectName || '',
-                taskName: data.taskName || '',
-                taskDescription: data.taskDescription || '',
-                status: data.status || 'not-started',
-                startDate: data.startDate || '',
-                endDate: data.endDate || '',
-                assignedBy: data.assignedBy || 'N/A',
-                submissionUrl: data.submissionUrl,
-                submissionFileName: data.submissionFileName,
-            });
-        });
-        setProjects(fetchedTasks);
-        setIsLoadingTasks(false);
-    }, (error) => {
-        console.error("Error fetching tasks: ", error);
-        const permissionError = new FirestorePermissionError({
-            path: `tasks`,
-            operation: 'list'
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not fetch assigned tasks.",
-        });
-        setIsLoadingTasks(false);
-    });
-
-    return () => unsubscribe();
-  }, [firestore, displayUser, toast]);
 
     const openSubmitDialog = (task: Project) => {
         if (!canEdit) {
@@ -718,5 +670,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
