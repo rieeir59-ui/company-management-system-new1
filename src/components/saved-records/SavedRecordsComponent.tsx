@@ -45,7 +45,7 @@ const managementCategories = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Submission"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment", "Task Submission"
 ];
 
 const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
@@ -154,8 +154,8 @@ const generateDefaultPdf = (record: SavedRecord) => {
                 doc.text(section.category, 14, yPos);
                 yPos += 8;
 
-                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id');
-                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id').map(key => item[key]));
+                const head = Object.keys(section.items[0] || {}).filter(k => k !== 'id' && k !== 'isHeader');
+                const body = section.items.map((item: any) => Object.keys(item).filter(k => k !== 'id' && k !== 'isHeader').map(key => item[key]));
                 
                 (doc as any).autoTable({
                     startY: yPos,
@@ -314,7 +314,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 const renderRecordContent = () => {
     if (!viewingRecord) return null;
 
-    // Specific handler for Bank Timelines
     if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
         const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
         const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
@@ -384,11 +383,9 @@ const renderRecordContent = () => {
         );
     }
     
-    // Specific handler for "My Projects"
     if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
         const scheduleData = viewingRecord.data[0];
-        const projects = scheduleData.items?.filter((item: any) => item?.label?.startsWith('Project:')) || [];
-        
+        const projects = scheduleData.items?.filter((item: any) => item.label && item.label.startsWith('Project:')) || [];
         return (
             <Table>
                 <TableBody>
@@ -417,7 +414,6 @@ const renderRecordContent = () => {
         );
     }
 
-    // Generic handler for all other records
     if (Array.isArray(viewingRecord.data)) {
         return (
             <Table>
@@ -438,15 +434,17 @@ const renderRecordContent = () => {
                                         }
                                     } catch (e) {
                                         const parts = item.split(/:(.*)/s);
-                                        return parts.length > 1
-                                            ? <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>
-                                            : <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{item}</TableCell></TableRow>;
+                                        if (parts.length > 1) {
+                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
+                                        } else {
+                                            return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{item}</TableCell></TableRow>;
+                                        }
                                     }
                                 } else if (item && typeof item === 'object') {
                                     if ('label' in item && 'value' in item) { 
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>;
+                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
                                     } else if ('Item' in item && 'Status' in item) {
-                                         return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>
+                                         return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>;
                                     } else {
                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8" colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
                                     }
