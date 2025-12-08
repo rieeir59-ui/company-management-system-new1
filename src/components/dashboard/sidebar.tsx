@@ -90,9 +90,8 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { visibleMenuItems: typeof menuItems, bankTimelineItems: typeof bankTimelineItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
-  const bankTimelineId = useId();
 
   return (
     <SidebarMenu>
@@ -122,33 +121,6 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems, bankTimelineItems }: { vis
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-       <SidebarMenuItem>
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton
-              className="group-data-[collapsible=icon]:justify-center"
-              tooltip="Timelines of Bank"
-            >
-              <Landmark className="size-5" />
-              <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent asChild id={bankTimelineId}>
-            <SidebarMenuSub>
-              {bankTimelineItems.map((item) => (
-                <SidebarMenuSubItem key={item.href}>
-                  <Link href={item.href} passHref>
-                    <SidebarMenuSubButton isActive={pathname === item.href}>
-                      <item.icon className="size-4 mr-2" />
-                      {item.label}
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        </Collapsible>
-      </SidebarMenuItem>
     </SidebarMenu>
   );
 });
@@ -159,6 +131,8 @@ export default function DashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const pathname = usePathname();
+  const bankTimelineId = useId();
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -175,7 +149,7 @@ export default function DashboardSidebar() {
   });
   
   const searchResults = useMemo(() => {
-    if (!searchQuery) return [];
+    if (!searchQuery) return { menuResults: [], projectResults: [] };
     
     const menuResults = visibleMenuItems.filter(item =>
       item.label.toLowerCase().includes(searchQuery.toLowerCase())
@@ -252,7 +226,38 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} bankTimelineItems={bankTimelineItems} />
+            <>
+              <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} />
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        className="group-data-[collapsible=icon]:justify-center"
+                        tooltip="Timelines of Bank"
+                      >
+                        <Landmark className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild id={bankTimelineId}>
+                      <SidebarMenuSub>
+                        {bankTimelineItems.map((item) => (
+                          <SidebarMenuSubItem key={item.href}>
+                            <Link href={item.href} passHref>
+                              <SidebarMenuSubButton isActive={pathname === item.href}>
+                                <item.icon className="size-4 mr-2" />
+                                {item.label}
+                              </SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </>
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">
