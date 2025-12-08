@@ -338,5 +338,3 @@ function CBDTimelineComponent() {
 export default function Page() {
   return <CBDTimelineComponent />;
 }
-
-    

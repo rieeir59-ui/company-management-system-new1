@@ -384,5 +384,3 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
-
-    

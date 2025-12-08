@@ -338,5 +338,3 @@ function HBLTimelineComponent() {
 export default function Page() {
   return <HBLTimelineComponent />;
 }
-
-    

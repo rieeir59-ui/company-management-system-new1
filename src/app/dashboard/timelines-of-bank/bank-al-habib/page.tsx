@@ -338,5 +338,3 @@ function BankAlHabibTimelineComponent() {
 export default function Page() {
   return <BankAlHabibTimelineComponent />;
 }
-
-    

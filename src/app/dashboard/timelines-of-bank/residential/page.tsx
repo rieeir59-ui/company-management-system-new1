@@ -338,5 +338,3 @@ function ResidentialTimelineComponent() {
 export default function Page() {
   return <ResidentialTimelineComponent />;
 }
-
-    

@@ -338,5 +338,3 @@ function DIBTimelineComponent() {
 export default function Page() {
   return <DIBTimelineComponent />;
 }
-
-    

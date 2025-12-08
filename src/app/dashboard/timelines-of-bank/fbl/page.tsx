@@ -338,5 +338,3 @@ function FBLTimelineComponent() {
 export default function Page() {
   return <FBLTimelineComponent />;
 }
-
-    

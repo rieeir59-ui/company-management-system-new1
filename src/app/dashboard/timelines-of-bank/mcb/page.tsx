@@ -338,5 +338,3 @@ function MCBTimelineComponent() {
 export default function Page() {
   return <MCBTimelineComponent />;
 }
-
-    

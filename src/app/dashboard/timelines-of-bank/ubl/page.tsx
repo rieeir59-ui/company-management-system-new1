@@ -338,5 +338,3 @@ function UBLTimelineComponent() {
 export default function Page() {
   return <UBLTimelineComponent />;
 }
-
-    
