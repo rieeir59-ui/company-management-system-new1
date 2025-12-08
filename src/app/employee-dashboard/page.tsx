@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -120,8 +121,7 @@ function MyProjectsComponent() {
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [submittingTask, setSubmittingTask] = useState<Project | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  
 
   useEffect(() => {
     if (schedule.start && schedule.end) {
@@ -220,12 +220,17 @@ function MyProjectsComponent() {
         setIsSubmitDialogOpen(true);
     };
 
-    const handleFileSubmit = async () => {
+    const handleFileSubmit = () => {
         if (!firestore || !submittingTask || !submissionFile || !storage || !currentUser) return;
     
-        setIsUploading(true);
-        setUploadProgress(0);
+        setIsSubmitDialogOpen(false);
         
+        const { id: toastId } = toast({
+          title: 'Uploading File...',
+          description: <Progress value={0} className="w-full" />,
+          duration: Infinity,
+        });
+
         const filePath = `submissions/${submittingTask.id}/${submissionFile.name}`;
         const storageRef = ref(storage, filePath);
         const uploadTask = uploadBytesResumable(storageRef, submissionFile);
@@ -233,12 +238,22 @@ function MyProjectsComponent() {
         uploadTask.on('state_changed',
             (snapshot) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
+                toast({
+                    id: toastId,
+                    title: `Uploading ${submissionFile.name}...`,
+                    description: <Progress value={progress} className="w-full" />,
+                    duration: Infinity,
+                });
             },
             (error) => {
                 console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload your file. Please try again.' });
-                setIsUploading(false);
+                 toast({
+                    id: toastId,
+                    variant: 'destructive',
+                    title: 'Upload Failed',
+                    description: 'Could not upload your file. Please try again.',
+                    duration: 5000,
+                });
             },
             async () => {
                 const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
@@ -264,14 +279,24 @@ function MyProjectsComponent() {
                         }]
                     } as any);
 
-                    toast({ title: 'Submission Successful', description: 'Your work has been submitted and the task is marked as complete.' });
-                    setIsUploading(false);
-                    setIsSubmitDialogOpen(false);
+                    toast({
+                        id: toastId,
+                        title: 'Submission Successful',
+                        description: 'Your work has been submitted and the task is marked as complete.',
+                        duration: 5000,
+                    });
+                    
+                } catch (error) {
+                    toast({
+                        id: toastId,
+                        variant: 'destructive',
+                        title: 'Update Failed',
+                        description: 'Could not update task status.',
+                        duration: 5000,
+                    });
+                } finally {
                     setSubmittingTask(null);
                     setSubmissionFile(null);
-                } catch (error) {
-                    toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update task status.' });
-                    setIsUploading(false);
                 }
             }
         );
@@ -670,12 +695,11 @@ function MyProjectsComponent() {
                     <div className="py-4">
                         <Label htmlFor="submission-file">File</Label>
                         <Input id="submission-file" type="file" onChange={(e) => setSubmissionFile(e.target.files ? e.target.files[0] : null)} />
-                        {isUploading && <Progress value={uploadProgress} className="w-full mt-2" />}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)} disabled={isUploading}>Cancel</Button>
-                        <Button onClick={handleFileSubmit} disabled={!submissionFile || isUploading}>
-                            {isUploading ? 'Uploading...' : 'Submit'}
+                        <Button variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleFileSubmit} disabled={!submissionFile}>
+                           Submit
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -694,3 +718,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
