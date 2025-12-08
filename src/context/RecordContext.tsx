@@ -67,9 +67,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
     setIsLoading(true);
     const recordsCollection = collection(firestore, 'savedRecords');
-    const q = isAdmin
-      ? query(recordsCollection, orderBy('createdAt', 'desc')) // Admin sees all
-      : query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
+    let q;
+
+    if (isAdmin) {
+      q = query(recordsCollection, orderBy('createdAt', 'desc')); // Admin sees all
+    } else {
+      q = query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
+    }
+
 
     const unsubscribe = onSnapshot(
       q,
@@ -99,10 +104,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   // Add new record
   const addRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>): Promise<DocumentReference | undefined> => {
       if (!firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-        return;
+        throw new Error('User not authenticated');
       }
 
       const dataToSave = {
