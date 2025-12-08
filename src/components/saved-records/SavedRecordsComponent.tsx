@@ -45,7 +45,7 @@ const managementCategories = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Task Assignment", "Task Submission", "Site Visit Proforma", "Site Survey Report", "Uploaded File"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
 ];
 
 const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
@@ -99,6 +99,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
             items.forEach((item: any) => {
                 if (typeof item === 'string') {
                     try {
+                        // Handle JSON strings in items (like from Bill of Quantity)
                         const parsed = JSON.parse(item);
                         if(typeof parsed === 'object' && parsed !== null) {
                              Object.entries(parsed).forEach(([key, val]) => {
@@ -106,7 +107,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                                     body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
                                 }
                             });
-                             body.push(['---', '---']);
+                             body.push(['---', '---']); // Separator
                         }
                     } catch (e) {
                         const parts = item.split(/:(.*)/s);
@@ -117,7 +118,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                         }
                     }
                 } else if (item && typeof item === 'object') {
-                    if (item.label && item.value !== undefined) {
+                    if (item.label && item.value !== undefined) { // For {label, value} objects
                         body.push([item.label, String(item.value)]);
                     } else if (item.Item && item.Status !== undefined) {
                          body.push([item.Item, `${item.Status} ${item.Remarks ? `(${item.Remarks})` : ''}`]);
@@ -126,7 +127,7 @@ const generateDefaultPdf = (record: SavedRecord) => {
                     }
                 }
             });
-        } else if (typeof items === 'object' && items !== null) {
+        } else if (typeof items === 'object' && items !== null) { // For objects like 'header'
              Object.entries(items).forEach(([key, val]) => {
                 body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
             });
@@ -200,11 +201,12 @@ const generateDefaultPdf = (record: SavedRecord) => {
                  addSection(section.category, section.items);
             }
         });
-    } else if (typeof record.data === 'object' && record.data !== null) {
+    } else if (typeof record.data === 'object' && record.data !== null) { // For flat object data
         addSection("Details", Object.entries(record.data).map(([key, value]) => ({label: key, value: String(value)})));
     }
 
 
+    // Footer on all pages
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
