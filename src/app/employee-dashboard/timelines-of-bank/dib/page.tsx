@@ -249,7 +249,7 @@ export default function DIBTimelinePage() {
                      </table>
                 </div>
                 
-                 <div className="mt-8">
+                <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
                     <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
@@ -258,4 +258,3 @@ export default function DIBTimelinePage() {
         </Card>
     );
 }
-

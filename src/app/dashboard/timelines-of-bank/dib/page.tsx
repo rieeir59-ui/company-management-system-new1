@@ -62,6 +62,7 @@ export default function DIBTimelinePage() {
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
+    const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
@@ -94,7 +95,7 @@ export default function DIBTimelinePage() {
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Overall Status', items: statusRows },
-                { category: 'Remarks', items: [{label: 'Date', value: remarksDate}] },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -138,6 +139,11 @@ export default function DIBTimelinePage() {
             styles: { fontSize: 8 },
         });
         lastY = (doc as any).autoTable.previous.finalY + 10;
+        
+        doc.text("Maam Isbah Remarks & Order", 14, lastY);
+        lastY += 7;
+        doc.text(remarks, 14, lastY);
+        lastY += 10;
         
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
@@ -243,13 +249,12 @@ export default function DIBTimelinePage() {
                      </table>
                 </div>
                 
-                <div className="mt-8">
+                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
             </CardContent>
         </Card>
     );
 }
-
-
-    
