@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +11,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface ProjectRow {
   id: number;
@@ -67,6 +69,7 @@ const initialStatusRows: StatusRow[] = [
 
 export default function UBLTimelinePage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
@@ -96,8 +99,15 @@ export default function UBLTimelinePage() {
     };
     
     const handleSave = () => {
-        console.log({ projectRows, statusRows, remarks, remarksDate });
-        toast({ title: 'Saved', description: 'UBL timeline data has been saved.' });
+        addRecord({
+            fileName: 'UBL Timeline',
+            projectName: 'UBL Projects',
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        } as any);
     };
 
     const handleDownload = () => {
@@ -259,3 +269,5 @@ export default function UBLTimelinePage() {
     );
 }
 
+
+    

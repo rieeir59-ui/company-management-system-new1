@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface ProjectRow {
   id: number;
@@ -60,6 +62,7 @@ const initialStatusRows: StatusRow[] = [
 
 export default function CBDTimelinePage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
@@ -90,8 +93,16 @@ export default function CBDTimelinePage() {
     };
     
     const handleSave = () => {
-        console.log({ projectRows, statusRows, remarks, remarksDate, queries });
-        toast({ title: 'Saved', description: 'CBD timeline data has been saved.' });
+        addRecord({
+            fileName: 'CBD Timeline',
+            projectName: 'CBD Projects',
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Queries', items: [{label: 'Queries Received', value: queries}] },
+            ]
+        } as any);
     };
 
     const handleDownload = () => {
@@ -277,4 +288,6 @@ export default function CBDTimelinePage() {
         </Card>
     );
 }
+    
+
     

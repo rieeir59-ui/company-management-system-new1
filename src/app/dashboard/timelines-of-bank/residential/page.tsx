@@ -29,10 +29,10 @@ interface ProjectRow {
   proposalEnd: string;
   threedStart: string;
   threedEnd: string;
-  tenderArchStart: string;
-  tenderArchEnd: string;
-  tenderMepStart: string;
-  tenderMepEnd: string;
+  architecturalDrawingsStart: string;
+  architecturalDrawingsEnd: string;
+  mepDrawingsStart: string;
+  mepDrawingsEnd: string;
   boqStart: string;
   boqEnd: string;
   tenderStatus: string;
@@ -50,20 +50,28 @@ interface StatusRow {
 }
 
 const initialProjectRows: ProjectRow[] = [
-    { id: 1, srNo: '1', projectName: 'DUBAI ISLAMIC BANK LHR', area: '7,550.00', projectHolder: 'ASAD MUJAHID', allocationDate: '19-Sep-25', siteSurveyStart: '20-Sep-25', siteSurveyEnd: '20-Sep-25', contactStart: 'DONE', contactEnd: '', headCountStart: '24-Sep-25', headCountEnd: '28-Sep-25', proposalStart: '3-Oct-25', proposalEnd: '3-Nov-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 1, srNo: '1', projectName: 'Mr Asim Khan', area: '', projectHolder: '', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contactStart: 'Done', contactEnd: 'Done', headCountStart: 'Done', headCountEnd: 'Done', proposalStart: '12-Oct-25', proposalEnd: 'Done', threedStart: 'Done', threedEnd: 'Done', architecturalDrawingsStart: 'Done', architecturalDrawingsEnd: 'Done', mepDrawingsStart: 'Done', mepDrawingsEnd: 'Done', boqStart: 'Done', boqEnd: 'Done', tenderStatus: 'Done', comparative: 'Done', workingDrawings: 'Done', siteVisit: 'Done', finalBill: 'Done', projectClosure: 'Done' },
+    { id: 2, srNo: '2', projectName: 'Mr Waleed Mustaq', area: '', projectHolder: 'Khizar', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contactStart: 'Done', contactEnd: 'Done', headCountStart: 'Done', headCountEnd: 'Done', proposalStart: 'Done', proposalEnd: 'Done', threedStart: 'Done', threedEnd: 'Done', architecturalDrawingsStart: 'Done', architecturalDrawingsEnd: 'Done', mepDrawingsStart: 'Done', mepDrawingsEnd: 'Done', boqStart: 'Done', boqEnd: 'Done', tenderStatus: 'Done', comparative: 'Done', workingDrawings: 'Done', siteVisit: 'Done', finalBill: 'Done', projectClosure: 'Done' },
+    { id: 3, srNo: '3', projectName: 'Mr. Shahpar Masood', area: '', projectHolder: 'Sobia/Waqas', allocationDate: '23-Jul-25', siteSurveyStart: 'n/a', siteSurveyEnd: 'n/a', contactStart: 'Done', contactEnd: '', headCountStart: '1-Jul-25', headCountEnd: '12-Aug-25', proposalStart: '6-Aug-25', proposalEnd: '23-Jul-25', threedStart: '14-Sep-25', threedEnd: '', architecturalDrawingsStart: '', architecturalDrawingsEnd: '', mepDrawingsStart: '', mepDrawingsEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 4, srNo: '4', projectName: 'Rana Sajjad', area: '', projectHolder: 'Sobia/Amna', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', architecturalDrawingsStart: '', architecturalDrawingsEnd: '', mepDrawingsStart: '', mepDrawingsEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
 ];
 
 const initialStatusRows: StatusRow[] = [
-    { id: 1, title: '1', status: 'PROPOSAL STAGE\nSite survey has been done and now Proposal has Started.' },
+    { id: 1, title: '1.', status: 'Construction In Progress' },
+    { id: 2, title: '2.', status: 'Construction In Progress (bathroom revision)' },
+    { id: 3, title: '3.', status: 'Mep and submission drawing in progress' },
+    { id: 4, title: '4.', status: 'Basement Multi Purpose area is in process.' },
 ];
 
-export default function DIBTimelinePage() {
+
+export default function ResidentialTimelinePage() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
+    const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
-
+    
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
@@ -77,9 +85,9 @@ export default function DIBTimelinePage() {
         setProjectRows([...projectRows, {
             id: newId, srNo: String(newId), projectName: '', area: '', projectHolder: '', allocationDate: '',
             siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
-            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
-            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
+            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', architecturalDrawingsStart: '',
+            architecturalDrawingsEnd: '', mepDrawingsStart: '', mepDrawingsEnd: '', boqStart: '', boqEnd: '',
+            tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
         }]);
     };
     
@@ -89,12 +97,12 @@ export default function DIBTimelinePage() {
     
     const handleSave = () => {
         addRecord({
-            fileName: 'DIB Timeline',
-            projectName: 'DIB Projects',
+            fileName: 'Residential Timeline',
+            projectName: 'Residential Projects',
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Overall Status', items: statusRows },
-                { category: 'Remarks', items: [{label: 'Date', value: remarksDate}] },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -102,13 +110,13 @@ export default function DIBTimelinePage() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("DIB Timeline", 14, 15);
+        doc.text("Residential Projects", 14, 15);
         
         const head = [
-            ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contact\nStart', 'Contact\nEnd', 'Head Count / Requirement\nStart', 'Head Count / Requirement\nEnd',
+            ['Sr.No', 'Project Name', 'Area In Sft', 'Project Holder', 'Allocation Date / RFP', 
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contact\nStart', 'Contact\nEnd', 'Head Count / Requirment\nStart', 'Head Count / Requirment\nEnd',
              'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
+             'Architectural / Interior Drawings\nStart', 'Architectural / Interior Drawings\nEnd', 'MEP Drawings\nStart', 'MEP Drawings\nEnd',
              'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
@@ -116,7 +124,7 @@ export default function DIBTimelinePage() {
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
+            p.architecturalDrawingsStart, p.architecturalDrawingsEnd, p.mepDrawingsStart, p.mepDrawingsEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawings, p.siteVisit, p.finalBill, p.projectClosure
         ]);
 
@@ -131,7 +139,7 @@ export default function DIBTimelinePage() {
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
         doc.autoTable({
-            head: [['Overall Status']],
+            head: [['OVERALL STATUS']],
             body: statusRows.map(s => [`${s.title} ${s.status}`]),
             startY: lastY,
             theme: 'grid',
@@ -139,16 +147,21 @@ export default function DIBTimelinePage() {
         });
         lastY = (doc as any).autoTable.previous.finalY + 10;
         
+        doc.text("Maam Isbah Remarks & Order", 14, lastY);
+        lastY += 7;
+        doc.text(remarks, 14, lastY);
+        lastY += 10;
+
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
-        doc.save('dib_timeline.pdf');
+        doc.save('residential_timeline.pdf');
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-center font-headline text-3xl text-primary">DIB Timeline</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">Residential Projects</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -161,16 +174,16 @@ export default function DIBTimelinePage() {
                             <tr className="bg-primary/20">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
                                 <th rowSpan={2} className="border p-1">Project Name</th>
-                                <th rowSpan={2} className="border p-1">Area in Sft</th>
+                                <th rowSpan={2} className="border p-1">Area In Sft</th>
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
                                 <th colSpan={2} className="border p-1">Contact</th>
-                                <th colSpan={2} className="border p-1">Head Count / Requirement</th>
+                                <th colSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
-                                <th colSpan={2} className="border p-1">Tender Package Architectural</th>
-                                <th colSpan={2} className="border p-1">Tender Package MEP</th>
+                                <th colSpan={2} className="border p-1">Architectural / Interior Drawings</th>
+                                <th colSpan={2} className="border p-1">MEP Drawings</th>
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
@@ -209,10 +222,10 @@ export default function DIBTimelinePage() {
                                     <td className="border"><Input type="date" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.threedEnd} onChange={e => handleProjectChange(row.id, 'threedEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderArchStart} onChange={e => handleProjectChange(row.id, 'tenderArchStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderArchEnd} onChange={e => handleProjectChange(row.id, 'tenderArchEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderMepStart} onChange={e => handleProjectChange(row.id, 'tenderMepStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderMepEnd} onChange={e => handleProjectChange(row.id, 'tenderMepEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.architecturalDrawingsStart} onChange={e => handleProjectChange(row.id, 'architecturalDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.architecturalDrawingsEnd} onChange={e => handleProjectChange(row.id, 'architecturalDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.mepDrawingsStart} onChange={e => handleProjectChange(row.id, 'mepDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.mepDrawingsEnd} onChange={e => handleProjectChange(row.id, 'mepDrawingsEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.boqStart} onChange={e => handleProjectChange(row.id, 'boqStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
@@ -230,13 +243,13 @@ export default function DIBTimelinePage() {
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
 
                 <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <h3 className="font-bold text-lg mb-2">OVERALL STATUS</h3>
                      <table className="w-full border-collapse text-sm">
                          <tbody>
                             {statusRows.map(row => (
                                 <tr key={row.id}>
                                     <td className="border p-2 font-semibold w-8">{row.title}</td>
-                                    <td className="border p-2"><Textarea value={row.status} onChange={e => handleStatusChange(row.id, e.target.value)} rows={2}/></td>
+                                    <td className="border p-2"><Input type="text" value={row.status} onChange={e => handleStatusChange(row.id, e.target.value)} /></td>
                                 </tr>
                             ))}
                          </tbody>
@@ -244,8 +257,11 @@ export default function DIBTimelinePage() {
                 </div>
                 
                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
+                
             </CardContent>
         </Card>
     );

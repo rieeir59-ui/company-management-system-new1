@@ -10,6 +10,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface ProjectRow {
   id: number;
@@ -62,6 +63,7 @@ const initialStatusRows: StatusRow[] = [
 
 export default function BankAlfalahTimelinePage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
@@ -91,8 +93,15 @@ export default function BankAlfalahTimelinePage() {
     };
     
     const handleSave = () => {
-        console.log({ projectRows, statusRows, remarks, remarksDate });
-        toast({ title: 'Saved', description: 'Bank Alfalah timeline data has been saved.' });
+        addRecord({
+            fileName: 'Bank Alfalah Timeline',
+            projectName: 'Bank Alfalah Projects',
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        } as any);
     };
 
     const handleDownload = () => {
@@ -253,3 +262,5 @@ export default function BankAlfalahTimelinePage() {
         </Card>
     );
 }
+
+    

@@ -102,7 +102,7 @@ export default function AskariBankTimelinePage() {
                 { category: 'Overall Status', items: statusRows },
                 { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
-        });
+        } as any);
     };
 
     const handleDownload = () => {
@@ -264,3 +264,4 @@ export default function AskariBankTimelinePage() {
     );
 }
 
+    

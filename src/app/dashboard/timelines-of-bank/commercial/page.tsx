@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface ProjectRow {
   id: number;
@@ -79,6 +81,7 @@ const initialStatusRows: StatusRow[] = [
 
 export default function CommercialTimelinePage() {
     const { toast } = useToast();
+    const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
@@ -109,8 +112,16 @@ export default function CommercialTimelinePage() {
     };
     
     const handleSave = () => {
-        console.log({ projectRows, statusRows, remarks, remarksDate, queries });
-        toast({ title: 'Saved', description: 'Commercial timeline data has been saved.' });
+        addRecord({
+            fileName: 'Commercial Timeline',
+            projectName: 'Commercial Projects',
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Overall Status', items: statusRows },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Queries', items: [{label: 'Queries Received', value: queries}] },
+            ]
+        } as any);
     };
 
     const handleDownload = () => {
@@ -171,8 +182,12 @@ export default function CommercialTimelinePage() {
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-center font-headline text-3xl text-primary">COMMERCIAL</CardTitle>
+                <div className="flex gap-2">
+                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
+                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto">
@@ -291,3 +306,5 @@ export default function CommercialTimelinePage() {
         </Card>
     );
 }
+
+    
