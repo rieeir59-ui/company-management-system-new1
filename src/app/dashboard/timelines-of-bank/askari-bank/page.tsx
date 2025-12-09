@@ -14,10 +14,23 @@ import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
 import { askariBankProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
+interface StatusRow {
+  id: number;
+  title: string;
+  status: string;
+}
+
+const initialStatusRows: StatusRow[] = [
+    { id: 1, title: 'Overall Status', status: 'Site Survey scheduled' },
+    { id: 2, title: 'Overall Status', status: 'PROPOSAL SENT AGAIN.' },
+    { id: 3, title: 'Overall Status', status: 'Tender package shared.' },
+];
+
 function AskariBankTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
+    const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
     
@@ -306,7 +319,7 @@ function AskariBankTimelineComponent() {
                         </tbody>
                     </table>
                 </div>
-                 <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
+                 <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
 
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Overall Status</h3>

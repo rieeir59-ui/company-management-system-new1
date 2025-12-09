@@ -257,7 +257,7 @@ export default function TimelinePage() {
                 </Table>
 
                 <div className="flex justify-between items-center mt-4">
-                     <Button onClick={addTask}><PlusCircle className="mr-2 h-4 w-4" /> Add Task</Button>
+                     <Button onClick={addTask}><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
                     <div className="flex gap-4">
                         <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                         <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
