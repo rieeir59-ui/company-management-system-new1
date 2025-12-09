@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useEffect, useId, useMemo } from 'react';
+import React, { memo, useState, useEffect, useMemo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -90,7 +90,6 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
-  const bankTimelineId = React.useId();
 
   return (
     <SidebarMenu>
@@ -131,7 +130,6 @@ export default function DashboardSidebar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
-  const bankTimelineId = React.useId();
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -256,7 +254,7 @@ export default function DashboardSidebar() {
                         <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent asChild id={bankTimelineId}>
+                    <CollapsibleContent asChild>
                       <SidebarMenuSub>
                         {bankTimelineItems.map((item) => (
                           <SidebarMenuSubItem key={item.href}>
