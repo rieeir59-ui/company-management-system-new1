@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { allProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
+import { hblProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function HBLTimelineComponent() {
     const { toast } = useToast();

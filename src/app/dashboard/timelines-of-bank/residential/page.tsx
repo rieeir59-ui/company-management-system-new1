@@ -12,14 +12,12 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import type { ProjectRow } from '@/lib/projects-data';
-
-const initialProjectRows: ProjectRow[] = [];
+import { residentialProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function ResidentialTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRows);
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
 

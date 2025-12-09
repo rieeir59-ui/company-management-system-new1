@@ -12,26 +12,12 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { allProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
-
-interface StatusRow {
-  id: number;
-  title: string;
-  status: string;
-}
-
-
-const initialStatusRows: StatusRow[] = [
-    { id: 1, title: 'Overall Status', status: 'Site Survey scheduled' },
-    { id: 2, title: 'Overall Status', status: 'PROPOSAL SENT AGAIN.' },
-    { id: 3, title: 'Overall Status', status: 'Tender package shared.' },
-];
+import { bankAlfalahProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function BankAlfalahTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
-    const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
     
@@ -143,10 +129,6 @@ function BankAlfalahTimelineComponent() {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
 
-    const handleStatusChange = (id: number, value: string) => {
-        setStatusRows(statusRows.map(row => row.id === id ? { ...row, status: value } : row));
-    };
-
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
         setProjectRows([...projectRows, {
@@ -168,7 +150,6 @@ function BankAlfalahTimelineComponent() {
             projectName: 'Bank Alfalah Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Overall Status', items: statusRows },
                 { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
@@ -204,15 +185,6 @@ function BankAlfalahTimelineComponent() {
             headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
-        
-        doc.autoTable({
-            head: [['Overall Status']],
-            body: statusRows.map(s => [`${s.title} - ${s.status}`]),
-            startY: lastY,
-            theme: 'grid',
-            styles: { fontSize: 8 },
-        });
-        lastY = (doc as any).autoTable.previous.finalY + 10;
         
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
@@ -321,20 +293,6 @@ function BankAlfalahTimelineComponent() {
                     </table>
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Row</Button>
-
-                <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
-                     <table className="w-full border-collapse text-sm">
-                         <tbody>
-                            {statusRows.map(row => (
-                                <tr key={row.id}>
-                                    <td className="border p-2 font-semibold w-1/3">{row.title}</td>
-                                    <td className="border p-2"><Input type="text" value={row.status} onChange={e => handleStatusChange(row.id, e.target.value)} /></td>
-                                </tr>
-                            ))}
-                         </tbody>
-                     </table>
-                </div>
                 
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>

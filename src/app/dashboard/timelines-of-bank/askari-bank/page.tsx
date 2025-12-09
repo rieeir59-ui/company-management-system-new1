@@ -12,7 +12,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { allProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
+import { askariBankProjects, type ProjectRow } from '@/lib/projects-data';
 
 interface StatusRow {
   id: number;
@@ -29,7 +29,7 @@ const initialStatusRows: StatusRow[] = [
 function AskariBankTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(askariBankProjects);
     const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
