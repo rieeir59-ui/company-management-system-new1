@@ -205,27 +205,49 @@ export default function Page() {
         y += 5;
         doc.line(14, y, doc.internal.pageSize.width - 14, y);
         y += 10;
+        
+        const drawRadioButton = (x: number, yPos: number, isChecked: boolean) => {
+            doc.circle(x, yPos, 2);
+            if(isChecked) doc.circle(x, yPos, 1.2, 'F');
+        }
 
         doc.setFont('helvetica', 'normal');
         doc.text('1. The proposed basis of adjustment to the Contract Sum or Guaranteed Maximum Price is:', 14, y);
         y += 8;
         
-        doc.rect(18, y-3, 4, 4);
-        if(formState.adjustmentType === 'lumpSum') doc.text('✓', 18.5, y);
-        doc.text(`Lump Sum (${formState.lumpSumType}) of Rs. ${formState.lumpSumAmount.toFixed(2)}`, 24, y);
+        drawRadioButton(20, y - 1, formState.adjustmentType === 'lumpSum');
+        drawRadioButton(30, y -1, formState.lumpSumType === 'increase');
+        doc.text(`Lump Sum (increase) `, 34, y);
+        drawRadioButton(60, y -1, formState.lumpSumType === 'decrease');
+        doc.text(`[decrease] of Rs. ${formState.lumpSumAmount.toFixed(2)}`, 64, y);
         y += 8;
 
-        doc.rect(18, y-3, 4, 4);
-        if(formState.adjustmentType === 'unitPrice') doc.text('✓', 18.5, y);
+        drawRadioButton(20, y - 1, formState.adjustmentType === 'unitPrice');
         doc.text(`Unit Price of Rs. ${formState.unitPrice.toFixed(2)} per ${formState.unitPricePer}`, 24, y);
         y += 8;
         
-        doc.rect(18, y-3, 4, 4);
-        if(formState.adjustmentType === 'asFollows') doc.text('✓', 18.5, y);
+        drawRadioButton(20, y - 1, formState.adjustmentType === 'asFollows');
         doc.text(`as follows: ${formState.asFollows}`, 24, y);
         y += 15;
 
-        doc.text(`2. The Contract Time is proposed to (${formState.timeChangeType === 'adjusted' ? 'be adjusted' : ''}) [${formState.timeChangeType === 'unchanged' ? 'remain unchanged' : ''}]. The proposed adjustment, if any, is (an increase of ${formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days) (a decrease of ${formState.timeAdjustmentType === 'decrease' ? formState.timeAdjustmentDays : '___'} days).`, 14, y, { maxWidth: doc.internal.pageSize.width - 28 });
+        doc.text('2. The Contract Time is proposed to ', 14, y);
+        let x = 14 + doc.getTextWidth('2. The Contract Time is proposed to ');
+        drawRadioButton(x + 2, y-1, formState.timeChangeType === 'adjusted');
+        doc.text('(be adjusted)', x + 5, y);
+        x += doc.getTextWidth('(be adjusted)') + 5;
+        drawRadioButton(x + 2, y-1, formState.timeChangeType === 'unchanged');
+        doc.text('[remain unchanged].', x + 5, y);
+        y+= 5;
+        
+        doc.text('The proposed adjustment, if any, is ', 14, y);
+        x = 14 + doc.getTextWidth('The proposed adjustment, if any, is ');
+        drawRadioButton(x + 2, y - 1, formState.timeAdjustmentType === 'increase');
+        doc.text(`(an increase of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days)`, x + 5, y);
+        x += doc.getTextWidth(`(an increase of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days)`) + 5;
+        
+        drawRadioButton(x + 2, y - 1, formState.timeAdjustmentType === 'decrease');
+        doc.text(`(a decrease of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'decrease' ? formState.timeAdjustmentDays : '___'} days).`, x + 5, y);
+
         y += 20;
 
         const leftNote = "When signed by the Owner and Architect and received by the Contractor, this document becomes effective IMMEDIATELY as a Construction Change Directive (CCD), and the Contractor shall proceed with the change(s) described above.";
@@ -340,7 +362,7 @@ export default function Page() {
                             <Input name="asFollows" value={formState.asFollows} onChange={handleChange} className="flex-1" />
                         </div>
                     </RadioGroup>
-                    <div>2. The Contract Time is proposed to <RadioGroup value={formState.timeChangeType} onValueChange={(v) => handleRadioChange('timeChangeType', v)} className="inline-flex gap-2"><div className="flex items-center gap-1"><RadioGroupItem value="adjusted" id="time_adj"/><Label htmlFor="time_adj">(be adjusted)</Label></div><div className="flex items-center gap-1"><RadioGroupItem value="unchanged" id="time_unc"/><Label htmlFor="time_unc">[remain unchanged]</Label></div></RadioGroup>. The proposed adjustment, if any, is (an increase of <Input type="number" name="timeAdjustmentDays" value={formState.timeAdjustmentDays} onChange={handleNumberChange} className="w-20 inline-block mx-1" /> days) (a decrease of <Input type="number" name="timeAdjustmentDays" value={formState.timeAdjustmentDays} onChange={handleNumberChange} className="w-20 inline-block mx-1" /> days).</div>
+                    <div>2. The Contract Time is proposed to <RadioGroup value={formState.timeChangeType} onValueChange={(v) => handleRadioChange('timeChangeType', v)} className="inline-flex gap-2"><div className="flex items-center gap-1"><RadioGroupItem value="adjusted" id="time_adj"/><Label htmlFor="time_adj">(be adjusted)</Label></div><div className="flex items-center gap-1"><RadioGroupItem value="unchanged" id="time_unc"/><Label htmlFor="time_unc">[remain unchanged]</Label></div></RadioGroup>. The proposed adjustment, if any, is (an increase of <Input type="number" name="timeAdjustmentDays" value={formState.timeAdjustmentDays} onChange={handleNumberChange} className="w-20 inline-block mx-1" disabled={formState.timeChangeType !== 'adjusted' || formState.timeAdjustmentType !== 'increase'} /> days) (a decrease of <Input type="number" name="timeAdjustmentDays" value={formState.timeAdjustmentDays} onChange={handleNumberChange} className="w-20 inline-block mx-1" disabled={formState.timeChangeType !== 'adjusted' || formState.timeAdjustmentType !== 'decrease'} /> days).</div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4 text-xs text-muted-foreground">
