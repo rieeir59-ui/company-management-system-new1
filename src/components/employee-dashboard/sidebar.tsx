@@ -149,7 +149,7 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
-  const bankTimelineId = useId();
+  const bankTimelineId = React.useId();
 
   return (
     <SidebarMenu>

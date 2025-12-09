@@ -90,6 +90,7 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
+  const bankTimelineId = React.useId();
 
   return (
     <SidebarMenu>
@@ -130,7 +131,7 @@ export default function DashboardSidebar() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
-  const bankTimelineId = useId();
+  const bankTimelineId = React.useId();
 
   const handleLogout = React.useCallback(() => {
     logout();
