@@ -14,7 +14,7 @@ export interface Project {
   projectName: string;
   taskName: string;
   taskDescription: string;
-  status: 'completed' | 'in-progress' | 'not-started';
+  status: 'completed' | 'in-progress' | 'not-started' | 'pending-approval';
   startDate: string;
   endDate: string;
   assignedBy: string;
@@ -29,6 +29,7 @@ export function useTasks(employeeUid?: string) {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const { user: currentUser, isUserLoading } = useCurrentUser();
+  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
   const uidToFetch = employeeUid || currentUser?.uid;
 
@@ -38,7 +39,7 @@ export function useTasks(employeeUid?: string) {
       return;
     }
 
-    if (!firestore || !uidToFetch || !currentUser) {
+    if (!firestore || !currentUser) {
       setTasks([]);
       setIsLoading(false);
       return;
@@ -46,7 +47,18 @@ export function useTasks(employeeUid?: string) {
 
     setIsLoading(true);
     const tasksCollection = collection(firestore, 'tasks');
-    const q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
+    
+    let q;
+    if (isAdmin && !employeeUid) { // Admin on main assign-task page sees all tasks
+        q = query(tasksCollection);
+    } else if (uidToFetch) { // Specific employee view (either by admin or employee themselves)
+        q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
+    } else {
+        setTasks([]);
+        setIsLoading(false);
+        return;
+    }
+
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedTasks: Project[] = [];
@@ -84,7 +96,7 @@ export function useTasks(employeeUid?: string) {
     });
 
     return () => unsubscribe();
-  }, [firestore, uidToFetch, toast, currentUser, isUserLoading]);
+  }, [firestore, uidToFetch, toast, currentUser, isUserLoading, isAdmin, employeeUid]);
 
   return { tasks, isLoading };
 }

@@ -7,14 +7,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2, FileText } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2, FileText, Check } from 'lucide-react';
 import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp, updateDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ import {
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useTasks } from '@/hooks/use-tasks';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -51,7 +52,7 @@ interface Task {
   createdAt: Timestamp;
   dueDate?: string;
   endDate?: string;
-  status: 'completed' | 'in-progress' | 'not-started';
+  status: 'completed' | 'in-progress' | 'not-started' | 'pending-approval';
   submissionUrl?: string;
   submissionFileName?: string;
 }
@@ -118,9 +119,9 @@ export default function AssignTaskPage() {
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
     const { toast } = useToast();
+    const { tasks, isLoading: isLoadingTasks } = useTasks();
     const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
-    const [tasks, setTasks] = useState<Task[]>([]);
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -135,24 +136,6 @@ export default function AssignTaskPage() {
         }, {} as Record<string, Task[]>);
     }, [tasks]);
 
-    useEffect(() => {
-        if (isUserLoading || !currentUser || !firestore) return;
-
-        const q = query(collection(firestore, 'tasks'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-            setTasks(fetchedTasks);
-        }, (err) => {
-            const permissionError = new FirestorePermissionError({
-                path: `tasks`,
-                operation: 'list'
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-
-        return () => unsubscribe();
-    }, [firestore, currentUser, isUserLoading]);
-
     const getEmployeeName = (employeeId: string) => {
         const employee = employees.find(e => e.uid === employeeId);
         return employee?.name || employeeId;
@@ -161,6 +144,17 @@ export default function AssignTaskPage() {
     const openDeleteDialog = (task: Task) => {
         setTaskToDelete(task);
         setIsDeleteDialogOpen(true);
+    };
+    
+    const handleApprove = async (task: Task) => {
+        if (!firestore) return;
+        const taskRef = doc(firestore, 'tasks', task.id);
+        try {
+            await updateDoc(taskRef, { status: 'completed' });
+            toast({ title: 'Task Approved', description: `Task "${task.taskName}" has been marked as completed.` });
+        } catch (error) {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${task.id}`, operation: 'update', requestResourceData: { status: 'completed' } }));
+        }
     };
 
     const confirmDelete = () => {
@@ -222,8 +216,7 @@ export default function AssignTaskPage() {
                                 <TableHead>Task Name</TableHead>
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
-                                <TableHead>Assigned Date</TableHead>
-                                <TableHead>End Date</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Submission</TableHead>
                                 {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>
@@ -234,8 +227,7 @@ export default function AssignTaskPage() {
                                     <TableCell>{task.taskName}</TableCell>
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
-                                    <TableCell>{task.createdAt?.toDate().toLocaleDateString()}</TableCell>
-                                    <TableCell>{task.endDate || 'N/A'}</TableCell>
+                                    <TableCell>{task.status}</TableCell>
                                     <TableCell>
                                         {task.submissionUrl ? (
                                             <Button variant="link" asChild>
@@ -249,9 +241,16 @@ export default function AssignTaskPage() {
                                     </TableCell>
                                     {isAdmin && (
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                        <div className="flex gap-1">
+                                            {task.status === 'pending-approval' && (
+                                                <Button variant="ghost" size="icon" onClick={() => handleApprove(task)} title="Approve Task">
+                                                    <Check className="h-4 w-4 text-green-500" />
+                                                </Button>
+                                            )}
+                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                     )}
                                 </TableRow>
