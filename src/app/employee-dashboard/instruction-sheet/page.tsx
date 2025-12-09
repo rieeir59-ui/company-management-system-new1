@@ -103,7 +103,9 @@ export default function InstructionSheetPage() {
   };
 
   const handleDownloadPdf = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF() as any;
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     let yPos = 20;
 
     doc.setFontSize(14);
@@ -112,7 +114,7 @@ export default function InstructionSheetPage() {
     yPos += 15;
 
     doc.setFontSize(10);
-    (doc as any).autoTable({
+    doc.autoTable({
         startY: yPos,
         theme: 'plain',
         body: [
@@ -122,7 +124,7 @@ export default function InstructionSheetPage() {
     });
     yPos = (doc as any).autoTable.previous.finalY + 10;
     
-    (doc as any).autoTable({
+    doc.autoTable({
         head: [['What?', 'How?', 'Why?']],
         body: rows.map(row => [row.what, row.how, row.why]),
         startY: yPos,
@@ -132,13 +134,18 @@ export default function InstructionSheetPage() {
 
     doc.text('TO:', 14, yPos);
     const recipients = ['Owner', 'Architect', 'Contractor', 'Field', 'Other'];
+    let checkboxX = 30;
     recipients.forEach((recipient) => {
         const isChecked = header.to.includes(recipient);
-        doc.text(`${isChecked ? '[X]' : '[ ]'} ${recipient}`, 25, yPos);
-        yPos += 6;
+        doc.rect(checkboxX, yPos - 3, 4, 4);
+        if (isChecked) {
+            doc.text('X', checkboxX + 1, yPos);
+        }
+        doc.text(recipient, checkboxX + 6, yPos);
+        checkboxX += 30;
     });
 
-    yPos += 10; // Adjust spacing after recipient list
+    yPos += 20; // Adjust spacing after recipient list
 
     const signatures = ['Owner', 'Architect', 'Contractor', 'Field', 'Other'];
     signatures.forEach((sig, i) => {
@@ -146,6 +153,13 @@ export default function InstructionSheetPage() {
         doc.line(x, yPos, x + 30, yPos);
         doc.text(sig, x + 10, yPos + 5);
     });
+
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+    }
 
     doc.save('instruction-sheet.pdf');
     toast({ title: 'Download Started', description: 'Your PDF is being generated.' });

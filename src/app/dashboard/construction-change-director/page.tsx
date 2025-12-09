@@ -162,7 +162,7 @@ export default function Page() {
         distributionOptions.forEach((opt, index) => {
             if (opt.x === 140) {
                 doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
-                if (formState.distributeTo.includes(opt.label)) doc.text('✓', opt.x + 0.5, checkboxYStart + 3 + yOffset);
+                if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
                 doc.text(opt.label, opt.x + 6, checkboxYStart + 3 + yOffset);
                 yOffset += 6;
             }
@@ -172,7 +172,7 @@ export default function Page() {
         distributionOptions.forEach((opt, index) => {
              if (opt.x === 170) {
                 doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
-                if (formState.distributeTo.includes(opt.label)) doc.text('✓', opt.x + 0.5, checkboxYStart + 3 + yOffset);
+                if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
                 doc.text(opt.label, opt.x + 6, checkboxYStart + 3 + yOffset);
                 yOffset += 6;
             }

@@ -127,13 +127,18 @@ export default function InstructionSheetPage() {
 
     doc.text('TO:', 14, yPos);
     const recipients = ['Owner', 'Architect', 'Contractor', 'Field', 'Other'];
+    let checkboxX = 30;
     recipients.forEach((recipient) => {
         const isChecked = header.to.includes(recipient);
-        doc.text(`${isChecked ? '[X]' : '[ ]'} ${recipient}`, 25, yPos);
-        yPos += 6;
+        doc.rect(checkboxX, yPos - 3, 4, 4);
+        if (isChecked) {
+             doc.text('X', checkboxX + 1, yPos);
+        }
+        doc.text(recipient, checkboxX + 6, yPos);
+        checkboxX += 30;
     });
 
-    yPos += 10; // Adjust spacing after recipient list
+    yPos += 20; // Adjust spacing after recipient list
 
     const signatures = ['Owner', 'Architect', 'Contractor', 'Field', 'Other'];
     signatures.forEach((sig, i) => {
