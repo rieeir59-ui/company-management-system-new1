@@ -28,12 +28,17 @@ export function useTasks(employeeUid?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const { firestore } = useFirebase();
   const { toast } = useToast();
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, isUserLoading } = useCurrentUser();
 
   const uidToFetch = employeeUid || currentUser?.uid;
 
   useEffect(() => {
-    if (!firestore || !uidToFetch) {
+    if (isUserLoading) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (!firestore || !uidToFetch || !currentUser) {
       setTasks([]);
       setIsLoading(false);
       return;
@@ -79,7 +84,7 @@ export function useTasks(employeeUid?: string) {
     });
 
     return () => unsubscribe();
-  }, [firestore, uidToFetch, toast]);
+  }, [firestore, uidToFetch, toast, currentUser, isUserLoading]);
 
   return { tasks, isLoading };
 }
