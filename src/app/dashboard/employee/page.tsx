@@ -87,8 +87,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 
 export default function EmployeePage() {
-  const { user: currentUser, employees } = useCurrentUser();
-  // const { employees, addEmployee, updateEmployee, deleteEmployee } = useEmployees();
+  const { user: currentUser, employees, updateEmployee } = useCurrentUser();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -103,10 +102,6 @@ export default function EmployeePage() {
     event.preventDefault();
     if (!canManageEmployees) return;
     
-    // addEmployee logic needs to be adapted as it was removed.
-    // This is now a display-only component based on the simplified context.
-    // The logic to actually add/edit/delete users would need to go back into the context
-    // and potentially interact with Firebase Auth. For now, we just show a toast.
     toast({ title: "Action Not Implemented", description: "Adding employees is currently disabled."})
     setIsAddDialogOpen(false);
   };
@@ -115,8 +110,28 @@ export default function EmployeePage() {
     event.preventDefault();
     if (!selectedEmployee || !canManageEmployees) return;
 
-    // updateEmployee logic needs to be adapted.
-    toast({ title: "Action Not Implemented", description: "Editing employees is currently disabled."})
+    const formData = new FormData(event.currentTarget);
+    const updatedData: Partial<Employee> = {};
+
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const contact = formData.get('contact') as string;
+    const department = formData.get('department') as string;
+    const password = formData.get('password') as string;
+
+    if (name && name !== selectedEmployee.name) updatedData.name = name;
+    if (email && email !== selectedEmployee.email) updatedData.email = email;
+    if (contact && contact !== selectedEmployee.contact) updatedData.contact = contact;
+    if (department && department !== selectedEmployee.department) updatedData.department = department;
+    if (password && password !== selectedEmployee.password) updatedData.password = password;
+    
+    if (Object.keys(updatedData).length > 0) {
+      updateEmployee(selectedEmployee.uid, updatedData);
+      toast({ title: "Success", description: `${updatedData.name || selectedEmployee.name}'s details have been updated.`})
+    } else {
+      toast({ title: "No Changes", description: "No details were changed."})
+    }
+    
     setIsEditDialogOpen(false);
     setSelectedEmployee(null);
   };
@@ -124,7 +139,6 @@ export default function EmployeePage() {
   const handleDeleteEmployee = () => {
     if (!selectedEmployee || !canManageEmployees) return;
 
-    // deleteEmployee logic needs to be adapted.
     toast({ title: "Action Not Implemented", description: "Deleting employees is currently disabled."})
     setIsDeleteDialogOpen(false);
     setSelectedEmployee(null);

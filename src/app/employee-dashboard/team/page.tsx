@@ -128,7 +128,7 @@ export default function TeamPage() {
             </DepartmentSection>
 
             <DepartmentSection title="Drafting" icon={<Users className="w-5 h-5" />}>
-                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsperson" />)}
+                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsman" />)}
             </DepartmentSection>
         </div>
     </div>

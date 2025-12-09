@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface UserContextType {
   user: (Employee & { uid: string; role: string; }) | null;
@@ -15,6 +16,7 @@ interface UserContextType {
   logout: () => void;
   employees: Employee[];
   employeesByDepartment: Record<string, Employee[]>;
+  updateEmployee: (uid: string, updatedData: Partial<Employee>) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -86,13 +88,24 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   };
 
+  const updateEmployee = async (uid: string, updatedData: Partial<Employee>) => {
+    setEmployees(prev => prev.map(emp => emp.uid === uid ? { ...emp, ...updatedData } : emp));
+    
+    // Also update in firestore
+    if (firestore) {
+      const userRef = doc(firestore, "users", uid);
+      await setDoc(userRef, updatedData, { merge: true });
+    }
+  };
+  
   const value = useMemo(() => ({
     user,
     isUserLoading,
     login,
     logout,
     employees,
-    employeesByDepartment
+    employeesByDepartment,
+    updateEmployee,
   }), [user, isUserLoading, employees, employeesByDepartment]);
 
 
