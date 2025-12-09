@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@
 import { addDays, subDays, differenceInDays, format, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 
-
 interface Task {
   id: number;
   taskId: string;
@@ -268,3 +267,5 @@ export default function TimelinePage() {
         </Card>
     );
 }
+
+    

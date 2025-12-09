@@ -128,7 +128,7 @@ export default function TimelinePage() {
 
     const addTask = () => {
         const newId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-        const newTaskId = tasks.length > 0 ? String(parseFloat(tasks[tasks.length - 1].taskId) + 0.1) : '1';
+        const newTaskId = tasks.length > 0 ? String(parseFloat(tasks[tasks.length - 1].taskId) + 0.1).slice(0,3) : '1';
         const newTask: Task = { id: newId, taskId: newTaskId, taskName: '', duration: '', start: '', finish: '', predecessor: '', isHeader: false };
         setTasks([...tasks, newTask]);
     };
@@ -267,3 +267,5 @@ export default function TimelinePage() {
         </Card>
     );
 }
+
+    
