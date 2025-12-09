@@ -14,7 +14,7 @@ import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Lo
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where, doc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc, type Timestamp, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -23,6 +23,7 @@ import 'jspdf-autotable';
 import { differenceInDays, parseISO } from 'date-fns';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { useTasks } from '@/hooks/use-tasks';
@@ -43,7 +44,7 @@ function formatDepartmentName(slug: string) {
     return departments[slug] || slug;
 }
 
-interface Project {
+export interface Project {
   id: string;
   projectName: string;
   taskName: string;
@@ -52,9 +53,11 @@ interface Project {
   startDate: string;
   endDate: string;
   assignedBy: string;
+  assignedTo: string;
   submissionUrl?: string;
   submissionFileName?: string;
 }
+
 
 type ProjectRow = {
   id: number;
@@ -119,9 +122,13 @@ function MyProjectsComponent() {
   const [numberOfDays, setNumberOfDays] = useState<number | null>(null);
   const [viewingRecord, setViewingRecord] = useState<ProjectRow | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [viewingTask, setViewingTask] = useState<Project | null>(null);
+  const [isTaskViewDialogOpen, setIsTaskViewDialogOpen] = useState(false);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [submittingTask, setSubmittingTask] = useState<Project | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Project | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
 
   useEffect(() => {
@@ -297,6 +304,35 @@ function MyProjectsComponent() {
   const openViewDialog = (record: ProjectRow) => {
     setViewingRecord(record);
     setIsViewDialogOpen(true);
+  };
+  
+  const openTaskViewDialog = (task: Project) => {
+      setViewingTask(task);
+      setIsTaskViewDialogOpen(true);
+  };
+
+  const openDeleteDialog = (task: Project) => {
+      setTaskToDelete(task);
+      setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!firestore || !taskToDelete) return;
+    if (!isAdmin) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete tasks.' });
+      return;
+    }
+    
+    try {
+        await deleteDoc(doc(firestore, "tasks", taskToDelete.id));
+        toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
+        setIsDeleteDialogOpen(false);
+        setTaskToDelete(null);
+    } catch(err) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskToDelete.id}`, operation: 'delete' }));
+        setIsDeleteDialogOpen(false);
+        setTaskToDelete(null);
+    }
   };
 
 
@@ -511,10 +547,18 @@ function MyProjectsComponent() {
                                             <span className="text-muted-foreground">Not Submitted</span>
                                         )}
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell className="flex gap-1">
+                                        <Button variant="ghost" size="icon" onClick={() => openTaskViewDialog(project)} title="View Task Details">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDownloadTaskPdf(project)} title="Download Task Details">
                                             <Download className="h-4 w-4" />
                                         </Button>
+                                        {isAdmin && (
+                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(project)} title="Delete Task">
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -636,6 +680,24 @@ function MyProjectsComponent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <Dialog open={isTaskViewDialogOpen} onOpenChange={setIsTaskViewDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{viewingTask?.taskName}</DialogTitle>
+                         <DialogDescription>Project: {viewingTask?.projectName}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                         <p><span className="font-semibold">Description:</span> {viewingTask?.taskDescription}</p>
+                         <p><span className="font-semibold">Assigned By:</span> {viewingTask?.assignedBy}</p>
+                        <p><span className="font-semibold">Start Date:</span> {viewingTask?.startDate}</p>
+                        <p><span className="font-semibold">End Date:</span> {viewingTask?.endDate}</p>
+                         <p className="flex items-center gap-2"><span className="font-semibold">Status:</span> <StatusIcon status={viewingTask?.status || 'not-started'} /> {viewingTask?.status}</p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsTaskViewDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -656,6 +718,20 @@ function MyProjectsComponent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the task "{taskToDelete?.taskName}".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
     </div>
   );
 }
@@ -670,5 +746,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    

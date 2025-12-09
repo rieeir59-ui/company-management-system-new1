@@ -18,6 +18,7 @@ export interface Project {
   startDate: string;
   endDate: string;
   assignedBy: string;
+  assignedTo: string;
   submissionUrl?: string;
   submissionFileName?: string;
 }
@@ -55,6 +56,7 @@ export function useTasks(employeeUid?: string) {
           startDate: data.startDate || '',
           endDate: data.endDate || '',
           assignedBy: data.assignedBy || 'N/A',
+          assignedTo: data.assignedTo || '',
           submissionUrl: data.submissionUrl,
           submissionFileName: data.submissionFileName,
         });
