@@ -38,43 +38,44 @@ export const askariBankProjects: ProjectRow[] = [
 ];
 
 export const hblProjects: ProjectRow[] = [
-    // Add HBL specific projects here
+    { id: 101, srNo: '1', projectName: 'HBL Tower Renovation', area: '55,000', projectHolder: 'Asad Luqman', allocationDate: '15-Jan-25', siteSurveyStart: '20-Jan-25', siteSurveyEnd: '25-Jan-25', contactStart: '26-Jan-25', contactEnd: '28-Jan-25', headCountStart: '29-Jan-25', headCountEnd: '5-Feb-25', proposalStart: '6-Feb-25', proposalEnd: '20-Feb-25', threedStart: '21-Feb-25', threedEnd: '5-Mar-25', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 102, srNo: '2', projectName: 'HBL Johar Town Branch', area: '3,500', projectHolder: 'Waleed', allocationDate: '1-Mar-25', siteSurveyStart: '3-Mar-25', siteSurveyEnd: '4-Mar-25', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const ublProjects: ProjectRow[] = [
-    // Add UBL specific projects here
+    { id: 201, srNo: '1', projectName: 'UBL Regional HQ', area: '120,000', projectHolder: 'Isbah Hassan', allocationDate: '1-Jan-24', siteSurveyStart: 'Completed', siteSurveyEnd: '', contactStart: 'Completed', contactEnd: '', headCountStart: 'Completed', headCountEnd: '', proposalStart: 'Completed', proposalEnd: '', threedStart: 'Completed', threedEnd: '', tenderArchStart: 'Completed', tenderArchEnd: '', tenderMepStart: 'Completed', tenderMepEnd: '', boqStart: 'Completed', boqEnd: '', tenderStatus: 'Awarded', comparative: 'Done', workingDrawings: 'In-Progress', siteVisit: 'Ongoing', finalBill: '', projectClosure: '' },
 ];
 
 export const mcbProjects: ProjectRow[] = [
-    // Add MCB specific projects here
+    { id: 301, srNo: '1', projectName: 'MCB DHA Phase 5 Branch', area: '4,200', projectHolder: 'Haseeb', allocationDate: '2-Feb-25', siteSurveyStart: '5-Feb-25', siteSurveyEnd: '6-Feb-25', contactStart: 'Received', contactEnd: '', headCountStart: '10-Feb-25', headCountEnd: '15-Feb-25', proposalStart: '16-Feb-25', proposalEnd: '28-Feb-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
 ];
 
 export const fblProjects: ProjectRow[] = [
-    // Add Faysal Bank specific projects here
+    { id: 401, srNo: '1', projectName: 'Faysal Bank Islamic Centre', area: '7,800', projectHolder: 'Asad', allocationDate: '18-May-25', siteSurveyStart: '20-May-25', siteSurveyEnd: '21-May-25', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const dibProjects: ProjectRow[] = [
-    // Add Dubai Islamic Bank specific projects here
+     { id: 501, srNo: '1', projectName: 'DIB Gulberg Flagship', area: '6,000', projectHolder: 'Luqman', allocationDate: '25-Jun-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const bankAlfalahProjects: ProjectRow[] = [
-    // Add Bank Alfalah specific projects here
+     { id: 601, srNo: '1', projectName: 'BAFL Model Town Branch', area: '3,900', projectHolder: 'Waleed', allocationDate: '30-Jul-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const bankAlHabibProjects: ProjectRow[] = [
-    // Add Bank Al Habib specific projects here
+    { id: 701, srNo: '1', projectName: 'BAHL Main Boulevard Branch', area: '4,500', projectHolder: 'Kizzar', allocationDate: '1-Aug-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const cbdProjects: ProjectRow[] = [
-    // Add Commercial Bank of Dubai specific projects here
+    { id: 801, srNo: '1', projectName: 'CBD Head Office Interior', area: '25,000', projectHolder: 'Isbah Hassan', allocationDate: '10-Sep-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const commercialProjects: ProjectRow[] = [
-    // Add Commercial projects here
+    { id: 901, srNo: '1', projectName: 'Plaza 101', area: '150,000', projectHolder: 'Asad', allocationDate: '5-Jan-25', siteSurveyStart: 'Done', siteSurveyEnd: 'Done', contactStart: 'Done', contactEnd: '', headCountStart: 'In-Progress', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
 ];
 
 export const residentialProjects: ProjectRow[] = [
-    // Add Residential projects here
+    { id: 1001, srNo: '1', projectName: 'Mr. Usman\'s Residence', area: '8,500', projectHolder: 'Haseeb', allocationDate: '12-Mar-25', siteSurveyStart: '14-Mar-25', siteSurveyEnd: '15-Mar-25', contactStart: 'Done', contactEnd: '', headCountStart: '20-Mar-25', headCountEnd: '25-Mar-25', proposalStart: '26-Mar-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
 ];
 
 // This can be used for pages that might show all projects or as a fallback.
