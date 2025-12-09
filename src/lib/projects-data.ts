@@ -42,7 +42,9 @@ export const hblProjects: ProjectRow[] = [
     { id: 102, srNo: '2', projectName: 'HBL Johar Town Branch', area: '3,500', projectHolder: 'Waleed', allocationDate: '1-Mar-25', siteSurveyStart: '3-Mar-25', siteSurveyEnd: '4-Mar-25', contactStart: '5-Mar-25', contactEnd: '6-Mar-25', headCountStart: '7-Mar-25', headCountEnd: '10-Mar-25', proposalStart: '11-Mar-25', proposalEnd: '18-Mar-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
     { id: 103, srNo: '3', projectName: 'HBL Gulberg Main Branch', area: '4,800', projectHolder: 'Haseeb', allocationDate: '10-Apr-25', siteSurveyStart: '12-Apr-25', siteSurveyEnd: '13-Apr-25', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '18-Apr-25', proposalEnd: '25-Apr-25', threedStart: '26-Apr-25', threedEnd: '5-May-25', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
     { id: 104, srNo: '4', projectName: 'HBL Corporate Center, Islamabad', area: '120,000', projectHolder: 'Isbah Hassan', allocationDate: '1-Jun-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
-    { id: 105, srNo: '5', projectName: 'HBL Prestige Lounge, Karachi', area: '2,500', projectHolder: 'Asad', allocationDate: '15-Jul-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
+    { id: 105, srNo: '5', projectName: 'HBL Prestige Lounge, Karachi', area: '2,500', projectHolder: 'Asad', allocationDate: '15-Jul-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 106, srNo: '6', projectName: 'HBL Garden Town Renovation', area: '3,200', projectHolder: 'Luqman', allocationDate: '20-Aug-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 107, srNo: '7', projectName: 'HBL Faisalabad Main Branch', area: '5,500', projectHolder: 'Waleed', allocationDate: '5-Sep-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export const ublProjects: ProjectRow[] = [
@@ -78,10 +80,9 @@ export const commercialProjects: ProjectRow[] = [
 ];
 
 export const residentialProjects: ProjectRow[] = [
-    { id: 1001, srNo: '1', projectName: 'Mr. Usman\'s Residence', area: '8,500', projectHolder: 'Haseeb', allocationDate: '12-Mar-25', siteSurveyStart: '14-Mar-25', siteSurveyEnd: '15-Mar-25', contactStart: 'Done', contactEnd: '', headCountStart: '20-Mar-25', headCountEnd: '25-Mar-25', proposalStart: '26-Mar-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 1001, srNo: '1', projectName: "Mr. Usman's Residence", area: '8,500', projectHolder: 'Haseeb', allocationDate: '12-Mar-25', siteSurveyStart: '14-Mar-25', siteSurveyEnd: '15-Mar-25', contactStart: 'Done', contactEnd: '', headCountStart: '20-Mar-25', headCountEnd: '25-Mar-25', proposalStart: '26-Mar-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: '' },
 ];
 
-// This can be used for pages that might show all projects or as a fallback.
 export const allProjects: ProjectRow[] = [
     ...askariBankProjects,
     ...hblProjects,
@@ -95,3 +96,17 @@ export const allProjects: ProjectRow[] = [
     ...commercialProjects,
     ...residentialProjects
 ];
+
+export const bankProjectsMap: Record<string, ProjectRow[]> = {
+    "askari bank": askariBankProjects,
+    "hbl": hblProjects,
+    "ubl": ublProjects,
+    "mcb": mcbProjects,
+    "fbl": fblProjects,
+    "dib": dibProjects,
+    "bank alfalah": bankAlfalahProjects,
+    "bank al habib": bankAlHabibProjects,
+    "cbd": cbdProjects,
+    "commercial": commercialProjects,
+    "residential": residentialProjects,
+};

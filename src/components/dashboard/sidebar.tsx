@@ -51,7 +51,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 
 const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -62,8 +62,8 @@ const menuItems = [
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
-    { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
+    { href: '/dashboard/settings', label: 'Settings', roles: ['software-engineer', 'admin'] },
+    { href: '/dashboard/credentials', label: 'Credentials', roles: ['software-engineer', 'admin', 'ceo'] },
 ];
 
 const bankTimelineItems = [
@@ -150,16 +150,33 @@ export default function DashboardSidebar() {
   
   const searchResults = useMemo(() => {
     if (!searchQuery) return { menuResults: [], projectResults: [] };
-    
+
+    const lowerCaseQuery = searchQuery.toLowerCase();
+
     const menuResults = visibleMenuItems.filter(item =>
-      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+      item.label.toLowerCase().includes(lowerCaseQuery)
     );
 
-    const projectResults = allProjects.filter(project =>
-      project.projectName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let projectResults: ProjectRow[] = [];
 
-    return { menuResults, projectResults };
+    // Check if query matches a bank key
+    const matchingBank = Object.keys(bankProjectsMap).find(bankKey =>
+        bankKey.toLowerCase().includes(lowerCaseQuery)
+    );
+    
+    if (matchingBank) {
+      projectResults = bankProjectsMap[matchingBank];
+    } else {
+      // Fallback to searching project names
+      projectResults = allProjects.filter(project =>
+        project.projectName.toLowerCase().includes(lowerCaseQuery)
+      );
+    }
+    
+    // Remove duplicates by project ID
+    const uniqueProjectResults = Array.from(new Map(projectResults.map(p => [p.id, p])).values());
+
+    return { menuResults, projectResults: uniqueProjectResults };
   }, [searchQuery, visibleMenuItems]);
   
   return (

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useId, useEffect } from 'react';
+import React, { memo, useState, useId, useEffect, useMemo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -75,6 +75,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 
 const menuItems = [
     { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -223,9 +224,33 @@ export default function EmployeeDashboardSidebar() {
     router.push('/login');
   }, [logout, router, toast]);
 
-  const filteredMenuItems = menuItems.filter(item =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const searchResults = useMemo(() => {
+    if (!searchQuery) return { menuResults: [], projectResults: [] };
+
+    const lowerCaseQuery = searchQuery.toLowerCase();
+
+    const menuResults = menuItems.filter(item =>
+      item.label.toLowerCase().includes(lowerCaseQuery)
+    );
+
+    let projectResults: ProjectRow[] = [];
+
+    const matchingBank = Object.keys(bankProjectsMap).find(bankKey =>
+        bankKey.toLowerCase().includes(lowerCaseQuery)
+    );
+
+    if (matchingBank) {
+      projectResults = bankProjectsMap[matchingBank];
+    } else {
+      projectResults = allProjects.filter(project =>
+        project.projectName.toLowerCase().includes(lowerCaseQuery)
+      );
+    }
+    
+    const uniqueProjectResults = Array.from(new Map(projectResults.map(p => [p.id, p])).values());
+
+    return { menuResults, projectResults: uniqueProjectResults };
+  }, [searchQuery]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -258,10 +283,44 @@ export default function EmployeeDashboardSidebar() {
             />
           </div>
           <SidebarSeparator />
-          <MemoizedSidebarMenu 
-            menuItems={filteredMenuItems} 
-            bankTimelineItems={bankTimelineItems}
-          />
+          {searchQuery ? (
+             <SidebarMenu>
+                {searchResults.menuResults.length > 0 && (
+                     <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Menu Items</span>
+                        {searchResults.menuResults.map((item) => (
+                           <Link href={item.href} key={item.href} passHref>
+                                <SidebarMenuButton>
+                                    <item.icon className="size-5" />
+                                    <span>{item.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        ))}
+                    </SidebarMenuItem>
+                )}
+                {searchResults.projectResults.length > 0 && (
+                     <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Projects</span>
+                         {searchResults.projectResults.map((project) => (
+                           <Link href={`/employee-dashboard/project/${encodeURIComponent(project.projectName)}`} key={project.id} passHref>
+                                <SidebarMenuButton>
+                                    <Briefcase className="size-5" />
+                                    <span>{project.projectName}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        ))}
+                    </SidebarMenuItem>
+                )}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && (
+                    <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
+                )}
+             </SidebarMenu>
+          ) : (
+            <MemoizedSidebarMenu 
+                menuItems={menuItems} 
+                bankTimelineItems={bankTimelineItems}
+            />
+          )}
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarSeparator />
