@@ -131,6 +131,15 @@ export default function Page() {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         
+        const drawCheckbox = (x: number, y: number, checked: boolean) => {
+            doc.setLineWidth(0.2);
+            doc.rect(x, y - 3, 4, 4);
+            if (checked) {
+                doc.setFillColor(0, 0, 0);
+                doc.rect(x, y - 3, 4, 4, 'F');
+            }
+        };
+        
         const checkboxYStart = y - 4;
         const distributionOptions = [
             { label: 'Owner', x: 140 },
@@ -143,8 +152,7 @@ export default function Page() {
         let yOffset = 0;
         distributionOptions.forEach((opt) => {
             if (opt.x === 140) {
-                doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
-                if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
+                drawCheckbox(opt.x, checkboxYStart + yOffset, formState.distributeTo.includes(opt.label));
                 doc.text(opt.label, opt.x + 6, checkboxYStart + 3 + yOffset);
                 yOffset += 6;
             }
@@ -153,8 +161,7 @@ export default function Page() {
         yOffset = 6; // Reset for second column
         distributionOptions.forEach((opt) => {
              if (opt.x === 170) {
-                doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
-                if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
+                drawCheckbox(opt.x, checkboxYStart + yOffset, formState.distributeTo.includes(opt.label));
                 doc.text(opt.label, opt.x + 6, checkboxYStart + 3 + yOffset);
                 yOffset += 6;
             }
@@ -207,15 +214,9 @@ export default function Page() {
         const increaseWidth = doc.getTextWidth(increaseText);
         
         doc.text(increaseText, currentX, y);
-        if (formState.lumpSumType === 'increase') {
-            doc.circle(currentX + increaseWidth / 2, y - 1, increaseWidth / 2 + 1);
-        }
         currentX += increaseWidth + 2;
 
         doc.text(decreaseText, currentX, y);
-        if (formState.lumpSumType === 'decrease') {
-             doc.circle(currentX + doc.getTextWidth(decreaseText) / 2, y - 1, doc.getTextWidth(decreaseText) / 2 + 1);
-        }
         currentX += doc.getTextWidth(decreaseText) + 2;
         doc.text(`of Rs. ${formState.lumpSumAmount.toFixed(2)}`, currentX, y);
         y += 8;
@@ -243,16 +244,9 @@ export default function Page() {
         let decreaseTextTime = `(a decrease of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'decrease' ? formState.timeAdjustmentDays : '___'} days).`;
         
         doc.text(increaseTextTime, x + 5, y);
-        if(formState.timeAdjustmentType === 'increase') {
-           doc.circle(x + 5 + doc.getTextWidth(increaseTextTime) / 2, y-1, doc.getTextWidth(increaseTextTime) / 2 + 1);
-        }
         x += doc.getTextWidth(increaseTextTime) + 5;
         
         doc.text(decreaseTextTime, x + 5, y);
-        if(formState.timeAdjustmentType === 'decrease') {
-            doc.circle(x + 5 + doc.getTextWidth(decreaseTextTime) / 2, y-1, doc.getTextWidth(decreaseTextTime) / 2 + 1);
-        }
-
 
         y += 20;
 
@@ -428,3 +422,4 @@ export default function Page() {
     </div>
   );
 }
+
