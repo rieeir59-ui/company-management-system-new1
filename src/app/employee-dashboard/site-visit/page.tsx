@@ -27,7 +27,6 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-<<<<<<< HEAD
                  <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 items-start py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                          <Checkbox
@@ -45,27 +44,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                       onChange={(e) => onRemarkChange(item, e.target.value)}
                       className="h-10 text-sm"
                       rows={1}
-=======
-                <div key={item} className="flex items-start gap-2">
-                    <Checkbox
-                      id={item.replace(/\s+/g, '-')}
-                      checked={checklistState[item] || false}
-                      onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
-                      className="mt-1"
->>>>>>> c890dd3 (ye dekho istrah arh ahy jisbox pe main tick kron wo box fil hona chahiye)
                     />
-                    <div className="grid gap-1.5 leading-none flex-1">
-                      <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
-                          {item}
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Remarks"
-                        value={remarksState[item] || ''}
-                        onChange={(e) => onRemarkChange(item, e.target.value)}
-                        className="h-7 text-xs"
-                      />
-                    </div>
                 </div>
             ))}
         </div>
@@ -82,6 +61,7 @@ type PictureRow = {
   progress?: number;
   downloadURL?: string;
   error?: string;
+  isUploaded?: boolean;
 };
 
 export default function SiteVisitPage() {
@@ -158,17 +138,15 @@ export default function SiteVisitPage() {
                 ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
                 ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
                 ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                { category: 'Pictures', items: [] } // Placeholder for pictures
+                { category: 'Pictures', items: [] as { comment: string; url: string }[] } // Placeholder for pictures
             ]
         };
 
         try {
-            // Save text data immediately
             const savedDocRef = await addRecord(dataToSave as any);
             
-            // Now handle file uploads in the background
             pictures.filter(p => p.file).forEach(p => {
-                const upload = p as Required<PictureRow>; // Ensure file is not null
+                const upload = p as Required<PictureRow>;
                 const filePath = `site-visits/${Date.now()}_${upload.file.name}`;
                 const storageRef = ref(storage, filePath);
                 const uploadTask = uploadBytesResumable(storageRef, upload.file);
@@ -186,14 +164,16 @@ export default function SiteVisitPage() {
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                         setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
                         
-                        // Update the existing Firestore document with the new image URL
                         if (savedDocRef && firestore) {
                             const newPictureData = { comment: upload.comment, url: downloadURL };
-                            const docData = (await getDoc(savedDocRef)).data()?.data || [];
-                            const pictureSection = docData.find((s:any) => s.category === 'Pictures');
-                            if (pictureSection) {
-                                pictureSection.items.push(newPictureData);
-                                await updateDoc(savedDocRef, { data: docData });
+                            const currentDoc = await getDoc(savedDocRef);
+                            if (currentDoc.exists()) {
+                                const docData = currentDoc.data().data || [];
+                                const pictureSection = docData.find((s:any) => s.category === 'Pictures');
+                                if (pictureSection) {
+                                    pictureSection.items.push(newPictureData);
+                                    await updateDoc(savedDocRef, { data: docData });
+                                }
                             }
                         }
                     }
@@ -222,13 +202,15 @@ export default function SiteVisitPage() {
         doc.autoTable({
             startY: yPos,
             theme: 'plain',
+            styles: { fontSize: 10 },
             body: [
-              ['Site Name', basicInfo.siteName],
-              ['City', basicInfo.city],
-              ['Date', basicInfo.date],
-              ['Number of visits', basicInfo.visitNumber],
-              ['Architect Name', basicInfo.architectName],
+              ['Site Name:', basicInfo.siteName],
+              ['City:', basicInfo.city],
+              ['Date:', basicInfo.date],
+              ['Number of visits:', basicInfo.visitNumber],
+              ['Architect Name:', basicInfo.architectName],
             ],
+            columnStyles: { 0: { fontStyle: 'bold' } }
         });
         yPos = doc.autoTable.previous.finalY + 10;
         
@@ -241,7 +223,7 @@ export default function SiteVisitPage() {
 
             const body = items.map(item => {
               const status = checklistState[item] ? 'Yes' : 'No';
-              const remarks = remarksState[item] || '';
+              const remarks = remarksState[item] || 'N/A';
               return [item, status, remarks];
             });
 
@@ -251,34 +233,12 @@ export default function SiteVisitPage() {
               body, 
               theme: 'grid', 
               headStyles: { fillColor: [240, 240, 240], textColor: 0 },
+              styles: { cellPadding: 2, fontSize: 9 },
               columnStyles: { 
                 0: { cellWidth: 80 },
                 1: { cellWidth: 20 },
                 2: { cellWidth: 'auto' }
               },
-<<<<<<< HEAD
-=======
-              didDrawCell: (data: any) => {
-                if(data.column.index === 0 && data.section === 'body') {
-                    const itemText = items[data.row.index];
-                    const isChecked = checklistState[itemText] || false;
-                    doc.setLineWidth(0.2);
-                    doc.rect(data.cell.x + 2, data.cell.y + 2, 4, 4);
-                    if(isChecked) {
-                        doc.setFont('ZapfDingbats');
-                        doc.text('✓', data.cell.x + 3, data.cell.y + 5);
-                        doc.setFont('helvetica');
-                    }
-                    if (!data.cell.styles) {
-                        data.cell.styles = {};
-                    }
-                    if (!data.cell.styles.padding) {
-                        data.cell.styles.padding = {};
-                    }
-                    data.cell.styles.padding.left = 8;
-                }
-              }
->>>>>>> c890dd3 (ye dekho istrah arh ahy jisbox pe main tick kron wo box fil hona chahiye)
             });
             yPos = doc.autoTable.previous.finalY + 5;
         });
@@ -292,8 +252,9 @@ export default function SiteVisitPage() {
             yPos += 8;
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(doc.splitTextToSize(content, pageWidth - margin * 2), margin, yPos);
-            yPos += doc.splitTextToSize(content, pageWidth - margin * 2).length * 5 + 10;
+            const splitContent = doc.splitTextToSize(content, pageWidth - margin * 2);
+            doc.text(splitContent, margin, yPos);
+            yPos += splitContent.length * 5 + 10;
         };
 
         addTextAreaSection('8. Observations', observations);

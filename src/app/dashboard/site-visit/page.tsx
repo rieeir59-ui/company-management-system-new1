@@ -27,7 +27,6 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
-<<<<<<< HEAD
                  <div key={item} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 items-start py-2 border-b last:border-b-0">
                     <div className="flex items-center gap-3">
                          <Checkbox
@@ -45,27 +44,7 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                       onChange={(e) => onRemarkChange(item, e.target.value)}
                       className="h-10 text-sm"
                       rows={1}
-=======
-                <div key={item} className="flex items-start gap-2">
-                    <Checkbox
-                      id={item.replace(/\s+/g, '-')}
-                      checked={checklistState[item] || false}
-                      onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
-                      className="mt-1"
->>>>>>> c890dd3 (ye dekho istrah arh ahy jisbox pe main tick kron wo box fil hona chahiye)
                     />
-                    <div className="grid gap-1.5 leading-none flex-1">
-                      <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal">
-                          {item}
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Remarks"
-                        value={remarksState[item] || ''}
-                        onChange={(e) => onRemarkChange(item, e.target.value)}
-                        className="h-7 text-xs"
-                      />
-                    </div>
                 </div>
             ))}
         </div>
@@ -260,29 +239,6 @@ export default function SiteVisitPage() {
                 1: { cellWidth: 20 },
                 2: { cellWidth: 'auto' }
               },
-<<<<<<< HEAD
-=======
-              didDrawCell: (data: any) => {
-                if(data.column.index === 0 && data.section === 'body') {
-                    const itemText = items[data.row.index];
-                    const isChecked = checklistState[itemText] || false;
-                    doc.setLineWidth(0.2);
-                    doc.rect(data.cell.x + 2, data.cell.y + 2, 4, 4);
-                    if(isChecked) {
-                        doc.setFont('ZapfDingbats');
-                        doc.text('✓', data.cell.x + 3, data.cell.y + 5);
-                        doc.setFont('helvetica');
-                    }
-                    if (!data.cell.styles) {
-                        data.cell.styles = {};
-                    }
-                    if (!data.cell.styles.padding) {
-                        data.cell.styles.padding = {};
-                    }
-                    data.cell.styles.padding.left = 8;
-                }
-              }
->>>>>>> c890dd3 (ye dekho istrah arh ahy jisbox pe main tick kron wo box fil hona chahiye)
             });
             yPos = doc.autoTable.previous.finalY + 5;
         });
@@ -429,5 +385,3 @@ export default function SiteVisitPage() {
         </Card>
     );
 }
-
-    
