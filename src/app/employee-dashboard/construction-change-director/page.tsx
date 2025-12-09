@@ -51,6 +51,7 @@ export default function Page() {
     architectDate: '',
     contractorBy: '',
     contractorDate: '',
+    contractorAddress: '',
     ownerBy: '',
     ownerAddress: '',
     ownerDate: '',
@@ -94,7 +95,7 @@ export default function Page() {
     addRecord(dataToSave as any);
   };
 
-  const handleDownloadPdf = () => {
+ const handleDownloadPdf = () => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
@@ -117,7 +118,7 @@ export default function Page() {
     ];
 
     let yOffset = 0;
-    distributionOptions.forEach((opt, index) => {
+    distributionOptions.forEach((opt) => {
         if (opt.x === 140) {
             doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
             if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
@@ -127,7 +128,7 @@ export default function Page() {
     });
     
     yOffset = 6; // Reset for second column
-    distributionOptions.forEach((opt, index) => {
+    distributionOptions.forEach((opt) => {
          if (opt.x === 170) {
             doc.rect(opt.x, checkboxYStart + yOffset, 4, 4);
             if (formState.distributeTo.includes(opt.label)) doc.rect(opt.x, checkboxYStart + yOffset, 4, 4, 'F');
@@ -165,19 +166,35 @@ export default function Page() {
     y += 10;
     
     const drawRadioButton = (x: number, yPos: number, isChecked: boolean) => {
-        doc.circle(x, yPos, 2);
-        if(isChecked) doc.circle(x, yPos, 1.2, 'F');
+        doc.circle(x, yPos, 2); // Outer circle
+        if(isChecked) doc.circle(x, yPos, 1.2, 'F'); // Inner filled circle
     }
 
     doc.setFont('helvetica', 'normal');
     doc.text('1. The proposed basis of adjustment to the Contract Sum or Guaranteed Maximum Price is:', 14, y);
     y += 8;
     
+    // Lump Sum option
     drawRadioButton(20, y - 1, formState.adjustmentType === 'lumpSum');
-    drawRadioButton(30, y -1, formState.lumpSumType === 'increase');
-    doc.text(`Lump Sum (increase) `, 34, y);
-    drawRadioButton(60, y -1, formState.lumpSumType === 'decrease');
-    doc.text(`[decrease] of Rs. ${formState.lumpSumAmount.toFixed(2)}`, 64, y);
+    doc.text(`Lump Sum`, 24, y);
+    let currentX = 24 + doc.getTextWidth('Lump Sum') + 2;
+    
+    const increaseText = '(increase)';
+    const decreaseText = '[decrease]';
+    const increaseWidth = doc.getTextWidth(increaseText);
+    
+    doc.text(increaseText, currentX, y);
+    if (formState.lumpSumType === 'increase') {
+        doc.circle(currentX + increaseWidth / 2, y - 1, increaseWidth / 2 + 1);
+    }
+    currentX += increaseWidth + 2;
+
+    doc.text(decreaseText, currentX, y);
+    if (formState.lumpSumType === 'decrease') {
+         doc.circle(currentX + doc.getTextWidth(decreaseText) / 2, y - 1, doc.getTextWidth(decreaseText) / 2 + 1);
+    }
+    currentX += doc.getTextWidth(decreaseText) + 2;
+    doc.text(`of Rs. ${formState.lumpSumAmount.toFixed(2)}`, currentX, y);
     y += 8;
 
     drawRadioButton(20, y - 1, formState.adjustmentType === 'unitPrice');
@@ -199,12 +216,19 @@ export default function Page() {
     
     doc.text('The proposed adjustment, if any, is ', 14, y);
     x = 14 + doc.getTextWidth('The proposed adjustment, if any, is ');
-    drawRadioButton(x + 2, y - 1, formState.timeAdjustmentType === 'increase');
-    doc.text(`(an increase of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days)`, x + 5, y);
-    x += doc.getTextWidth(`(an increase of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days)`) + 5;
+    let increaseTextTime = `(an increase of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'increase' ? formState.timeAdjustmentDays : '___'} days)`;
+    let decreaseTextTime = `(a decrease of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'decrease' ? formState.timeAdjustmentDays : '___'} days).`;
     
-    drawRadioButton(x + 2, y - 1, formState.timeAdjustmentType === 'decrease');
-    doc.text(`(a decrease of ${formState.timeChangeType === 'adjusted' && formState.timeAdjustmentType === 'decrease' ? formState.timeAdjustmentDays : '___'} days).`, x + 5, y);
+    doc.text(increaseTextTime, x + 5, y);
+    if(formState.timeAdjustmentType === 'increase') {
+       doc.circle(x + 5 + doc.getTextWidth(increaseTextTime) / 2, y-1, doc.getTextWidth(increaseTextTime) / 2 + 1);
+    }
+    x += doc.getTextWidth(increaseTextTime) + 5;
+    
+    doc.text(decreaseTextTime, x + 5, y);
+    if(formState.timeAdjustmentType === 'decrease') {
+        doc.circle(x + 5 + doc.getTextWidth(decreaseTextTime) / 2, y-1, doc.getTextWidth(decreaseTextTime) / 2 + 1);
+    }
 
     y += 20;
 
