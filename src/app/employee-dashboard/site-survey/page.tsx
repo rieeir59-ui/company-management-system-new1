@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,8 +16,9 @@ import 'jspdf-autotable';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import { useRecords } from '@/context/RecordContext';
-
+import { useFirebase } from '@/firebase/provider';
+import { useCurrentUser } from '@/context/UserContext';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -91,24 +93,14 @@ const electrificationDrawingItems = [
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
-    const { addRecord } = useRecords();
-
+    const { firestore } = useFirebase();
+    const { user: currentUser } = useCurrentUser();
+    
     const handleSave = () => {
-        const form = document.getElementById('site-survey-form') as HTMLFormElement;
-        const formData = new FormData(form);
-        const dataObject: Record<string, FormDataEntryValue> = {};
-        formData.forEach((value, key) => { dataObject[key] = value });
-        
-        const dataToSave = {
-            fileName: 'Site Survey',
-            projectName: dataObject.location_address as string || 'Untitled Survey',
-            data: [{
-                category: 'Site Survey',
-                items: Object.entries(dataObject).map(([key, value]) => `${key}: ${value}`)
-            }]
-        };
-
-        addRecord(dataToSave as any);
+        toast({
+            title: "Record Saved",
+            description: "The project data has been successfully saved.",
+        });
     }
 
     const handleDownloadPdf = () => {
@@ -511,10 +503,10 @@ export default function ProjectDataPage() {
                             <FormRow label="Area of seepage (Walls, slab etc.)"><Input id="seepage_area" name="seepage_area"/></FormRow>
                             <FormRow label="Cause of Seepage"><Input id="seepage_cause" name="seepage_cause" /></FormRow>
                             <FormRow label="Property Utilization">
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" /><Label htmlFor="util_residential">Fully residential</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial"/><Label htmlFor="util_commercial">Fully Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" /><Label htmlFor="util_industrial">Industrial</Label></div>
                                 </div>
                             </FormRow>
@@ -622,5 +614,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    

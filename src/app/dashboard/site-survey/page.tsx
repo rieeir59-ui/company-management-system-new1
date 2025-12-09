@@ -156,53 +156,53 @@ export default function ProjectDataPage() {
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             doc.text(title, margin + 2, yPos + 5.5);
-            yPos += 8;
+            yPos += 10; // Increased space after title
         };
 
         const drawField = (label: string, value: string) => {
           if (yPos > 275) { doc.addPage(); yPos = 20; }
           doc.setLineWidth(0.2);
-          doc.rect(margin, yPos, pageWidth - margin * 2, 10);
+          doc.rect(margin, yPos, pageWidth - margin * 2, 8);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          doc.text(label, margin + 2, yPos + 6);
-          doc.text(value, margin + 60, yPos + 6);
-          yPos += 10;
+          doc.text(label, margin + 2, yPos + 5.5);
+          doc.text(value, margin + 60, yPos + 5.5);
+          yPos += 8;
         };
         
         const drawCheckboxField = (label: string, options: {id: string, label: string}[]) => {
             if (yPos > 275) { doc.addPage(); yPos = 20; }
             doc.setLineWidth(0.2);
-            doc.rect(margin, yPos, pageWidth - margin * 2, 10);
+            doc.rect(margin, yPos, pageWidth - margin * 2, 8);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            doc.text(label, margin + 2, yPos + 6);
+            doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             options.forEach(opt => {
-                doc.rect(margin + xOffset, yPos + 2.5, 5, 5);
-                if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 6);
-                doc.text(opt.label, margin + xOffset + 7, yPos + 6);
+                doc.rect(margin + xOffset, yPos + 2, 4, 4);
+                if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
+                doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
                 xOffset += 40;
             });
-            yPos += 10;
+            yPos += 8;
         };
         
         const drawRadioField = (label: string, name: string, options: string[]) => {
             if (yPos > 275) { doc.addPage(); yPos = 20; }
             doc.setLineWidth(0.2);
-            doc.rect(margin, yPos, pageWidth - margin * 2, 10);
+            doc.rect(margin, yPos, pageWidth - margin * 2, 8);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            doc.text(label, margin + 2, yPos + 6);
+            doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             const selectedValue = getRadioValue(name);
             options.forEach(opt => {
-                doc.circle(margin + xOffset + 2.5, yPos + 5, 2.5);
-                if (selectedValue === opt.toLowerCase()) doc.circle(margin + xOffset + 2.5, yPos + 5, 1.5, 'F');
-                doc.text(opt, margin + xOffset + 7, yPos + 6);
+                doc.circle(margin + xOffset + 2.5, yPos + 4, 2);
+                if (selectedValue === opt.toLowerCase()) doc.circle(margin + xOffset + 2.5, yPos + 4, 1.2, 'F');
+                doc.text(opt, margin + xOffset + 6, yPos + 5.5);
                 xOffset += 40;
             });
-             yPos += 10;
+             yPos += 8;
         }
 
         // --- SECTIONS ---
@@ -212,13 +212,11 @@ export default function ProjectDataPage() {
         drawField('City', getInputValue('location_city'));
         drawField('Region', getInputValue('location_region'));
         drawField('Address', getInputValue('location_address'));
-        yPos += 5;
 
         addSectionTitle('Legal File');
         drawField('Name of Owner', getInputValue('legal_owner_name'));
         drawRadioField('Is Completion Certificate available', 'completion_cert', ['Yes', 'No']);
         drawRadioField('Is the property leased', 'is_leased', ['Yes', 'No']);
-        yPos += 5;
 
         addSectionTitle('Area');
         drawField('Maximum frontage:', getInputValue('area_frontage'));
@@ -228,14 +226,15 @@ export default function ProjectDataPage() {
         drawField('Building plot size', getInputValue('area_plot_size'));
         drawField('Covered Area', getInputValue('area_covered'));
         drawField('No. of Stories / floors', getInputValue('area_stories'));
-        yPos += 5;
         
         addSectionTitle('Bounded As');
         drawField('Front', getInputValue('bounded_front'));
         drawField('Back', getInputValue('bounded_back'));
         drawField('Right', getInputValue('bounded_right'));
         drawField('Left', getInputValue('bounded_left'));
-        yPos += 5;
+        
+        doc.addPage();
+        yPos = 20;
 
         addSectionTitle('Utilities');
         drawField('Sanctioned electrical load', getInputValue('sanctioned_load_text'));
@@ -248,10 +247,6 @@ export default function ProjectDataPage() {
         drawField('Type of water', getInputValue('water_type'));
         drawRadioField('Gas Connection', 'gas_connection', ['Yes', 'No']);
         drawRadioField('Connected to Sewerage line', 'sewerage_connection', ['Yes', 'No']);
-        yPos += 5;
-        
-        doc.addPage();
-        yPos = 20;
 
         addSectionTitle('Building overview');
         drawRadioField('Independent premises', 'independent_premises', ['Yes', 'No']);
@@ -262,7 +257,6 @@ export default function ProjectDataPage() {
         drawRadioField('Age of Premises', 'building_age', ['0-5', '5-10', '>10 years']);
         drawRadioField('Interior of Premises', 'interior_type', ['Single Hall', 'Rooms']);
         drawRadioField('Type of construction', 'construction_type', ['Beam-Column in RCC', 'Composite', 'Load Bearing']);
-        yPos += 5;
 
         addSectionTitle('Building Details');
         drawRadioField('Seepage', 'seepage', ['Yes', 'No']);
@@ -290,7 +284,9 @@ export default function ProjectDataPage() {
         drawField('Other retainable', getInputValue('retainable_other_text'));
         drawField('Plot level from road', getInputValue('plot_level'));
         drawRadioField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
-        yPos += 5;
+
+        doc.addPage();
+        yPos = 20;
 
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
@@ -298,10 +294,6 @@ export default function ProjectDataPage() {
         drawField('Expected Advance', getInputValue('rental_expected_advance'));
         drawField('Expected period of lease', getInputValue('rental_lease_period'));
         drawField('Annual increase in rental', getInputValue('rental_annual_increase'));
-        yPos += 5;
-        
-        doc.addPage();
-        yPos = 20;
         
         addSectionTitle('Survey Conducted By');
         drawField('Name', getInputValue('survey_conducted_by_name'));
@@ -311,8 +303,6 @@ export default function ProjectDataPage() {
         drawField('Landline', getInputValue('survey_conducted_by_landline'));
         drawField('Email', getInputValue('survey_conducted_by_email'));
         drawField('Date', getInputValue('survey_conducted_by_date'));
-        yPos += 5;
-
 
         addSectionTitle('Survey Checklist');
         drawField('Project', getInputValue('survey_project'));
@@ -321,8 +311,7 @@ export default function ProjectDataPage() {
         drawField('Project Number', getInputValue('survey_project_number'));
         drawField('Start Date', getInputValue('survey_start_date'));
         drawField('Project Incharge', getInputValue('survey_project_incharge'));
-        yPos += 5;
-
+        
         const generateChecklistTable = (title: string, items: {no: number, title: string}[], prefix: string) => {
             if (yPos > 250) { doc.addPage(); yPos = 20; }
             doc.setFont('helvetica', 'bold');
@@ -330,7 +319,7 @@ export default function ProjectDataPage() {
             doc.text(title, margin, yPos);
             yPos += 8;
             doc.setTextColor(0, 0, 0);
-            doc.autoTable({
+            (doc as any).autoTable({
                 startY: yPos,
                 head: [['Sr.No', 'Drawing Title', 'Remarks']],
                 body: items.map(item => [item.no.toString(), item.title, getInputValue(`${prefix}_remarks_${item.no}`)]),
@@ -514,10 +503,10 @@ export default function ProjectDataPage() {
                             <FormRow label="Area of seepage (Walls, slab etc.)"><Input id="seepage_area" name="seepage_area"/></FormRow>
                             <FormRow label="Cause of Seepage"><Input id="seepage_cause" name="seepage_cause" /></FormRow>
                             <FormRow label="Property Utilization">
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" /><Label htmlFor="util_residential">Fully residential</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial"/><Label htmlFor="util_commercial">Fully Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" /><Label htmlFor="util_industrial">Industrial</Label></div>
                                 </div>
                             </FormRow>
