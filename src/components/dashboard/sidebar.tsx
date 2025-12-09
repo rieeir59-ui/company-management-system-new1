@@ -32,17 +32,15 @@ import {
   FileText,
   Database,
   FileUp,
-  ClipboardCheck,
-  Calendar,
-  Search as SearchIcon,
-  Landmark,
-  Building2,
-  Home,
   Briefcase,
   Archive,
   Eye,
   FileSearch,
   ListChecks,
+  Landmark,
+  Building2,
+  Home,
+  Search as SearchIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -62,8 +60,8 @@ const menuItems = [
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
-    { href: '/dashboard/settings', label: 'Settings', roles: ['software-engineer', 'admin'] },
-    { href: '/dashboard/credentials', label: 'Credentials', roles: ['software-engineer', 'admin', 'ceo'] },
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
+    { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
 
 const bankTimelineItems = [

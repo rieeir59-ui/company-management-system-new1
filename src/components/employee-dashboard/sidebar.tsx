@@ -67,6 +67,8 @@ import {
   Eye,
   Archive,
   Search as SearchIcon,
+  Settings,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
