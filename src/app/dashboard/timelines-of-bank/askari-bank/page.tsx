@@ -12,25 +12,12 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { askariBankProjects, type ProjectRow } from '@/lib/projects-data';
-
-interface StatusRow {
-  id: number;
-  title: string;
-  status: string;
-}
-
-const initialStatusRows: StatusRow[] = [
-    { id: 1, title: 'Overall Status', status: 'Site Survey scheduled' },
-    { id: 2, title: 'Overall Status', status: 'PROPOSAL SENT AGAIN.' },
-    { id: 3, title: 'Overall Status', status: 'Tender package shared.' },
-];
+import { askariBankProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function AskariBankTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>(askariBankProjects);
-    const [statusRows, setStatusRows] = useState<StatusRow[]>(initialStatusRows);
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
     
