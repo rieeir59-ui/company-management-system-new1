@@ -12,9 +12,9 @@ import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc, type Timestamp, updateDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,7 @@ import {
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useTasks } from '@/hooks/use-tasks';
+import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -44,18 +44,6 @@ const departments = [
     { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
 ];
 
-interface Task {
-  id: string;
-  taskName: string;
-  assignedTo: string;
-  assignedBy: string;
-  createdAt: Timestamp;
-  dueDate?: string;
-  endDate?: string;
-  status: 'completed' | 'in-progress' | 'not-started' | 'pending-approval';
-  submissionUrl?: string;
-  submissionFileName?: string;
-}
 
 function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }) {
     const taskStats = useMemo(() => {
@@ -71,7 +59,7 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
             } else if (task.status === 'in-progress') {
                 inProgress++;
             }
-            if (task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed') {
+            if (task.endDate && new Date(task.endDate) < new Date() && task.status !== 'completed') {
                 overdue++;
             }
         });
@@ -115,11 +103,11 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
 }
 
 export default function AssignTaskPage() {
-    const { user: currentUser, employees, employeesByDepartment, isUserLoading } = useCurrentUser();
+    const { user: currentUser, employees, employeesByDepartment } = useCurrentUser();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
     const { toast } = useToast();
-    const { tasks, isLoading: isLoadingTasks } = useTasks();
+    const { tasks } = useTasks();
     const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
@@ -147,7 +135,7 @@ export default function AssignTaskPage() {
     };
     
     const handleApprove = async (task: Task) => {
-        if (!firestore) return;
+        if (!firestore || !isAdmin) return;
         const taskRef = doc(firestore, 'tasks', task.id);
         try {
             await updateDoc(taskRef, { status: 'completed' });

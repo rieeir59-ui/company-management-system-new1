@@ -41,12 +41,12 @@ service cloud.firestore {
       allow create: if isAdmin();
       // Admin can update anything.
       // Employee can update status to 'in-progress' or submit for approval ('pending-approval' with submission URL).
-      allow update: if isAdmin() ||
-                    (isAssignedEmployee(resource.data) && 
+      allow update: if isAdmin() || 
+                    (isAssignedEmployee(resource.data) &&
                       (
                         (request.resource.data.status == 'in-progress' && resource.data.status == 'not-started') ||
-                        (request.resource.data.status == 'pending-approval' && resource.data.status == 'in-progress' && 'submissionUrl' in request.resource.data)
-                      ) && request.resource.data.keys().hasAll(['status', 'submissionUrl', 'submissionFileName'])
+                        (request.resource.data.status == 'pending-approval' && resource.data.status == 'in-progress' && 'submissionUrl' in request.resource.data && request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'submissionUrl', 'submissionFileName']))
+                      )
                     );
       // Only admins can delete tasks.
       allow delete: if isAdmin();
