@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -38,6 +39,7 @@ import {
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Textarea } from '@/components/ui/textarea';
 
 type ReportEntry = {
   id: number;
