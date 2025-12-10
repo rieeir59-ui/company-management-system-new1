@@ -160,10 +160,12 @@ export default function DailyReportPage() {
   }, [dateInterval, entriesByDate]);
 
   const getWeekOfMonth = (date: Date): number => {
+    if (!isValid(date)) return 0;
     const dayOfMonth = date.getDate();
+    // getDay() returns 0 for Sunday, 1 for Monday... We want Monday to be start of week.
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    // Adjust so Sunday is 0, Monday is 1 etc.
-    const adjustedFirstDay = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+    // Adjust so Monday is 0, Sunday is 6
+    const adjustedFirstDay = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1; 
     return Math.ceil((dayOfMonth + adjustedFirstDay) / 7);
   };
 
@@ -264,8 +266,8 @@ export default function DailyReportPage() {
             const totalMinutes = totalDayUnitsInMinutes % 60;
             
             const rows = dayEntries.map((entry, entryIndex) => [
-                dayIndex === 0 && entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
-                dayIndex === 0 && entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
+                entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
+                entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -355,7 +357,7 @@ export default function DailyReportPage() {
                         <div className="flex justify-between text-sm px-4 pb-4">
                             <span><b>DATE FROM:</b> {dateFrom}</span>
                              <span><b>TO DATE:</b> {dateTo}</span>
-                            <span><b>WEEK OF MONTH:</b> {dateFrom ? getWeekOfMonth(parseISO(dateFrom)) : ''}</span>
+                            <span><b>WEEK OF MONTH:</b> {dateFrom && isValid(parseISO(dateFrom)) ? getWeekOfMonth(parseISO(dateFrom)) : ''}</span>
                         </div>
                         <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
                         <Table>
@@ -374,7 +376,7 @@ export default function DailyReportPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {dateInterval.map((day, dayIndex) => {
+                                {dateInterval.map((day) => {
                                     const dayString = format(day, 'yyyy-MM-dd');
                                     const dayEntries = entriesByDate[dayString] || [];
                                     if (dayEntries.length === 0) return null;
@@ -388,7 +390,7 @@ export default function DailyReportPage() {
                                     return (
                                         <React.Fragment key={dayString}>
                                             {dayEntries.map((entry, entryIndex) => (
-                                                <TableRow>
+                                                <TableRow key={entry.id}>
                                                     {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
                                                     {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
                                                     <TableCell>{entry.startTime}</TableCell>
