@@ -63,6 +63,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 
 const departments = [
@@ -205,6 +206,18 @@ export default function EmployeePage() {
     document.body.removeChild(link);
   }
 
+  const [addFormDepartments, setAddFormDepartments] = useState<string[]>([]);
+  const [editFormDepartments, setEditFormDepartments] = useState<string[]>([]);
+
+  // Update edit form departments when selectedEmployee changes
+  useState(() => {
+    if (selectedEmployee) {
+      setEditFormDepartments(selectedEmployee.departments || []);
+    }
+  }, [selectedEmployee]);
+
+  const departmentOptions = departments.map(d => ({ value: d.slug, label: d.name }));
+
   return (
     <>
       <DashboardPageHeader
@@ -238,28 +251,33 @@ export default function EmployeePage() {
                     <form onSubmit={handleAddEmployee}>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" name="name" className="col-span-3" required />
+                            <Label htmlFor="name" className="text-right">Name</Label>
+                            <Input id="name" name="name" className="col-span-3" required />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">Email</Label>
-                        <Input id="email" name="email" type="email" className="col-span-3" required />
+                            <Label htmlFor="email" className="text-right">Email</Label>
+                            <Input id="email" name="email" type="email" className="col-span-3" required />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="contact" className="text-right">Contact</Label>
-                        <Input id="contact" name="contact" className="col-span-3" />
+                            <Label htmlFor="contact" className="text-right">Contact</Label>
+                            <Input id="contact" name="contact" className="col-span-3" />
                         </div>
                         <div className="grid grid-cols-4 items-start gap-4">
-                          <Label htmlFor="departments" className="text-right pt-2">Departments</Label>
-                          <select id="departments" name="departments" multiple required className="col-span-3 border border-input rounded-md p-2 text-sm h-32">
-                            {departments.map(dept => (
-                              <option key={dept.slug} value={dept.slug}>{dept.name}</option>
-                            ))}
-                          </select>
+                          <Label className="text-right pt-2">Departments</Label>
+                          <div className="col-span-3">
+                              <MultiSelect
+                                  options={departmentOptions}
+                                  selected={addFormDepartments}
+                                  onChange={setAddFormDepartments}
+                                  placeholder="Select departments..."
+                              />
+                               {/* Hidden inputs to carry values for form submission */}
+                              {addFormDepartments.map(dept => <input key={dept} type="hidden" name="departments" value={dept} />)}
+                          </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="password" className="text-right">Password</Label>
-                        <Input id="password" name="password" type="password" className="col-span-3" required />
+                            <Label htmlFor="password" className="text-right">Password</Label>
+                            <Input id="password" name="password" type="password" className="col-span-3" required />
                         </div>
                     </div>
                     <DialogFooter>
@@ -344,7 +362,7 @@ export default function EmployeePage() {
       </Card>
       
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => { setIsEditDialogOpen(isOpen); if (!isOpen) setSelectedEmployee(null); }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Employee</DialogTitle>
@@ -352,38 +370,45 @@ export default function EmployeePage() {
               Update the details for {selectedEmployee?.name}.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleEditEmployee}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-name" className="text-right">Name</Label>
-                <Input id="edit-name" name="name" defaultValue={selectedEmployee?.name} className="col-span-3" required />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-email" className="text-right">Email</Label>
-                <Input id="edit-email" name="email" type="email" defaultValue={selectedEmployee?.email} className="col-span-3" required />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-contact" className="text-right">Contact</Label>
-                <Input id="edit-contact" name="contact" defaultValue={selectedEmployee?.contact} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="edit-departments" className="text-right pt-2">Departments</Label>
-                  <select id="edit-departments" name="departments" multiple defaultValue={selectedEmployee?.departments} required className="col-span-3 border border-input rounded-md p-2 text-sm h-32">
-                    {departments.map(dept => (
-                      <option key={dept.slug} value={dept.slug}>{dept.name}</option>
-                    ))}
-                  </select>
-              </div>
-               <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-password" className="text-right">Password</Label>
-                  <Input id="edit-password" name="password" type="password" defaultValue={selectedEmployee?.password} className="col-span-3" required />
+          {selectedEmployee && (
+            <form onSubmit={handleEditEmployee}>
+                <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-name" className="text-right">Name</Label>
+                    <Input id="edit-name" name="name" defaultValue={selectedEmployee.name} className="col-span-3" required />
                 </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-              <Button type="submit">Save Changes</Button>
-            </DialogFooter>
-          </form>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-email" className="text-right">Email</Label>
+                    <Input id="edit-email" name="email" type="email" defaultValue={selectedEmployee.email} className="col-span-3" required />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-contact" className="text-right">Contact</Label>
+                    <Input id="edit-contact" name="contact" defaultValue={selectedEmployee.contact} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                    <Label className="text-right pt-2">Departments</Label>
+                    <div className="col-span-3">
+                         <MultiSelect
+                            options={departmentOptions}
+                            selected={editFormDepartments}
+                            onChange={setEditFormDepartments}
+                            placeholder="Select departments..."
+                        />
+                         {/* Hidden inputs to carry values for form submission */}
+                        {editFormDepartments.map(dept => <input key={dept} type="hidden" name="departments" value={dept} />)}
+                    </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-password" className="text-right">Password</Label>
+                    <Input id="edit-password" name="password" type="password" defaultValue={selectedEmployee.password} className="col-span-3" required />
+                    </div>
+                </div>
+                <DialogFooter>
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                <Button type="submit">Save Changes</Button>
+                </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 
