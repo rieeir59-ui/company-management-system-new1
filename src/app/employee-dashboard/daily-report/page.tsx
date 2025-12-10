@@ -25,7 +25,7 @@ import {
   PlusCircle,
   Save,
   Trash2,
-  Calendar,
+  Calendar as CalendarIcon,
   Eye,
 } from 'lucide-react';
 import {
@@ -46,11 +46,20 @@ import {
   parseISO,
   differenceInMinutes,
   isValid,
-  getWeek,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type ReportEntry = {
   id: number;
@@ -86,55 +95,80 @@ export default function DailyReportPage() {
   const { user: currentUser } = useCurrentUser();
   const { addRecord, records } = useRecords();
 
-  const [dateFrom, setDateFrom] = useState(
-    format(new Date(), 'yyyy-MM-dd')
-  );
-  const [dateTo, setDateTo] = useState(
-    format(new Date(), 'yyyy-MM-dd')
-  );
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedWeek, setSelectedWeek] = useState('all');
+  
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [isCustomRange, setIsCustomRange] = useState(false);
   
   const [entries, setEntries] = useState<ReportEntry[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report');
-    const loadedEntries: ReportEntry[] = [];
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser?.uid);
+    const loadedEntriesMap = new Map<number, ReportEntry>();
+
     dailyReportRecords.forEach(record => {
       if (record.data && Array.isArray(record.data)) {
         record.data.forEach((dayData: any) => {
           if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
             dayData.items.forEach((item: any) => {
-              loadedEntries.push({
-                id: item.id || Date.now() + Math.random(),
-                date: item.date,
-                startTime: item.startTime,
-                endTime: item.endTime,
-                customerJobNumber: item.customerJobNumber,
-                projectName: item.projectName,
-                designType: item.designType,
-                projectType: item.projectType,
-                description: item.description,
-              });
+              const entryId = item.id || Date.now() + Math.random();
+              if (!loadedEntriesMap.has(entryId)) {
+                  loadedEntriesMap.set(entryId, {
+                    id: entryId,
+                    date: item.date,
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    customerJobNumber: item.customerJobNumber,
+                    projectName: item.projectName,
+                    designType: item.designType,
+                    projectType: item.projectType,
+                    description: item.description,
+                  });
+              }
             });
           }
         });
       }
     });
-    setEntries(loadedEntries);
-  }, [records]);
+    setEntries(Array.from(loadedEntriesMap.values()));
+  }, [records, currentUser]);
 
   const dateInterval = useMemo(() => {
     try {
-      const start = parseISO(dateFrom);
-      const end = parseISO(dateTo);
-      if (isValid(start) && isValid(end) && end >= start) {
-        return eachDayOfInterval({ start, end });
+      if (isCustomRange && dateFrom && dateTo) {
+         if (isValid(dateFrom) && isValid(dateTo) && dateTo >= dateFrom) {
+            return eachDayOfInterval({ start: dateFrom, end: dateTo });
+         }
+      } else {
+        const monthStart = startOfMonth(currentDate);
+        if (selectedWeek === 'all') {
+          return eachDayOfInterval({ start: monthStart, end: endOfMonth(currentDate) });
+        } else {
+          const weekIndex = parseInt(selectedWeek, 10) - 1;
+          let weekStart = startOfWeek(addMonths(monthStart, 0), { weekStartsOn: 1 });
+          weekStart = new Date(weekStart.setDate(weekStart.getDate() + weekIndex * 7));
+          
+          if(weekStart.getMonth() !== currentDate.getMonth()){
+             weekStart = startOfMonth(currentDate);
+          }
+
+          let weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+          
+          if(weekEnd.getMonth() !== currentDate.getMonth()){
+            weekEnd = endOfMonth(currentDate);
+          }
+
+          return eachDayOfInterval({ start: weekStart, end: weekEnd });
+        }
       }
     } catch (e) {
-      // Invalid date format
+      console.error("Error creating date interval:", e);
     }
     return [];
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
       return entries.reduce((acc, entry) => {
@@ -158,16 +192,6 @@ export default function DailyReportPage() {
     const minutes = totalMinutes % 60;
     return `${hours}:${String(minutes).padStart(2, '0')}`;
   }, [dateInterval, entriesByDate]);
-
-  const getWeekOfMonth = (date: Date): number => {
-    if (!isValid(date)) return 0;
-    const dayOfMonth = date.getDate();
-    // getDay() returns 0 for Sunday, 1 for Monday... We want Monday to be start of week.
-    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    // Adjust so Monday is 0, Sunday is 6
-    const adjustedFirstDay = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1; 
-    return Math.ceil((dayOfMonth + adjustedFirstDay) / 7);
-  };
 
   const addEntry = (date: string) => {
     setEntries([
@@ -233,7 +257,7 @@ export default function DailyReportPage() {
         styles: { fontSize: 9 },
         body: [
             [`EMPLOYEE NAME: ${currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${currentUser?.departments.join(', ') || 'N/A'}`],
-            [`DATE FROM: ${dateFrom}`, `TO DATE: ${dateTo}`, `WEEK OF MONTH: ${dateFrom ? getWeekOfMonth(parseISO(dateFrom)) : ''}`],
+            [`DATE FROM: ${format(dateInterval[0], 'yyyy-MM-dd')}`, `TO DATE: ${format(dateInterval[dateInterval.length-1], 'yyyy-MM-dd')}`],
              [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
         ],
         columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
@@ -284,7 +308,7 @@ export default function DailyReportPage() {
                     { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
                 ]);
             }
-            return rows;
+            return rows.length > 0 ? rows : [['', format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
         }),
         theme: 'grid',
         headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
@@ -305,7 +329,6 @@ export default function DailyReportPage() {
         styles: { fontSize: 8 },
     });
     
-    // Add footer to all pages
     const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -316,110 +339,148 @@ export default function DailyReportPage() {
     doc.save('weekly-work-report.pdf');
   };
 
+  const years = [2024, 2025, 2026];
+  const months = Array.from({ length: 12 }, (_, i) => ({ value: i, label: format(new Date(0, i), 'MMMM') }));
+
+  const filterByDateRange = () => setIsCustomRange(true);
+  const filterByMonthWeek = () => setIsCustomRange(false);
+
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-center font-headline text-3xl text-primary flex items-center justify-center gap-2">
-          <Calendar /> Daily Work Report
+          <CalendarIcon /> Daily Work Report
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Card className="p-4 bg-muted/50">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <Label>Date From</Label>
-              <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-2 p-4 border rounded-md">
+                <Label className="font-semibold">Filter by Month & Week</Label>
+                <div className="flex gap-2">
+                  <Select value={String(currentDate.getFullYear())} onValueChange={(year) => setCurrentDate(new Date(parseInt(year), currentDate.getMonth(), 1))}>
+                     <SelectTrigger><SelectValue/></SelectTrigger>
+                     <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+                  </Select>
+                   <Select value={String(currentDate.getMonth())} onValueChange={(month) => setCurrentDate(new Date(currentDate.getFullYear(), parseInt(month), 1))}>
+                     <SelectTrigger><SelectValue/></SelectTrigger>
+                     <SelectContent>{months.map(m => <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                     <SelectTrigger><SelectValue/></SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="all">All Month</SelectItem>
+                        <SelectItem value="1">Week 1</SelectItem>
+                        <SelectItem value="2">Week 2</SelectItem>
+                        <SelectItem value="3">Week 3</SelectItem>
+                        <SelectItem value="4">Week 4</SelectItem>
+                        <SelectItem value="5">Week 5</SelectItem>
+                     </SelectContent>
+                  </Select>
+                </div>
+                 <Button onClick={filterByMonthWeek} className="w-full mt-2" variant={!isCustomRange ? "default" : "secondary"}>Apply Month/Week Filter</Button>
             </div>
-            <div>
-              <Label>To Date</Label>
-              <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+             <div className="space-y-2 p-4 border rounded-md">
+                <Label className="font-semibold">Filter by Date Range</Label>
+                 <div className="flex gap-2">
+                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFrom ? format(dateFrom, "PPP") : <span>Date From</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus /></PopoverContent></Popover>
+                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateTo ? format(dateTo, "PPP") : <span>To Date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus /></PopoverContent></Popover>
+                </div>
+                <Button onClick={filterByDateRange} className="w-full mt-2" variant={isCustomRange ? "default" : "secondary"} disabled={!dateFrom || !dateTo}>Filter by Date Range</Button>
             </div>
-             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-                <DialogTrigger asChild>
-                    <Button><Eye className="mr-2 h-4 w-4" /> View Report</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-7xl">
-                    <DialogHeader>
-                        <DialogTitle>Weekly Work Report</DialogTitle>
-                        <DialogDescription>
-                            Preview of your report from {dateFrom} to {dateTo}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="max-h-[70vh] overflow-y-auto p-1">
-                        <div className="text-center p-4">
-                            <h2 className="font-bold text-lg">ISBAH HASSAN & ASSOCIATES</h2>
-                            <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
-                        </div>
-                         <div className="flex justify-between text-sm px-4 pb-2">
-                            <span><b>EMPLOYEE NAME:</b> {currentUser?.name}</span>
-                            <span><b>EMPLOYEE POSITION:</b> {currentUser?.departments.join(', ')}</span>
-                        </div>
-                        <div className="flex justify-between text-sm px-4 pb-4">
-                            <span><b>DATE FROM:</b> {dateFrom}</span>
-                             <span><b>TO DATE:</b> {dateTo}</span>
-                            <span><b>WEEK OF MONTH:</b> {dateFrom && isValid(parseISO(dateFrom)) ? getWeekOfMonth(parseISO(dateFrom)) : ''}</span>
-                        </div>
-                        <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted hover:bg-muted text-xs">
-                                    <TableHead className="w-[100px]">DAY</TableHead>
-                                    <TableHead className="w-[100px]">DATE</TableHead>
-                                    <TableHead>START</TableHead>
-                                    <TableHead>END</TableHead>
-                                    <TableHead>CUSTOMER JOB</TableHead>
-                                    <TableHead>PROJECT NAME</TableHead>
-                                    <TableHead>DESIGN TYPE</TableHead>
-                                    <TableHead>PROJECT TYPE</TableHead>
-                                    <TableHead>DESCRIPTION</TableHead>
-                                    <TableHead className="text-right">TOTAL UNITS</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {dateInterval.map((day) => {
-                                    const dayString = format(day, 'yyyy-MM-dd');
-                                    const dayEntries = entriesByDate[dayString] || [];
-                                    if (dayEntries.length === 0) return null;
-                                     const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
-                                        const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
-                                        return acc + (hours * 60) + minutes;
-                                    }, 0);
-                                    const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
-                                    const totalMinutes = totalDayUnitsInMinutes % 60;
-                                    
-                                    return (
-                                        <React.Fragment key={dayString}>
-                                            {dayEntries.map((entry, entryIndex) => (
-                                                <TableRow key={entry.id}>
-                                                    {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
-                                                    {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
-                                                    <TableCell>{entry.startTime}</TableCell>
-                                                    <TableCell>{entry.endTime}</TableCell>
-                                                    <TableCell>{entry.customerJobNumber}</TableCell>
-                                                    <TableCell>{entry.projectName}</TableCell>
-                                                    <TableCell>{entry.designType}</TableCell>
-                                                    <TableCell>{entry.projectType}</TableCell>
-                                                    <TableCell>{entry.description}</TableCell>
-                                                    <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                             <TableRow className="bg-muted/50 font-bold">
-                                                <TableCell colSpan={9} className="text-right">TOTAL UNITS</TableCell>
-                                                <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
-                                            </TableRow>
-                                        </React.Fragment>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
           </div>
         </Card>
+
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+            <DialogTrigger asChild>
+                <Button className="w-full"><Eye className="mr-2 h-4 w-4" /> View Full Report</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-7xl">
+                <DialogHeader>
+                    <DialogTitle>Weekly Work Report</DialogTitle>
+                    <DialogDescription>
+                        Preview of your report.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[70vh] overflow-y-auto p-1">
+                    <div className="text-center p-4">
+                        <h2 className="font-bold text-lg">ISBAH HASSAN & ASSOCIATES</h2>
+                        <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
+                    </div>
+                     <div className="flex justify-between text-sm px-4 pb-2">
+                        <span><b>EMPLOYEE NAME:</b> {currentUser?.name}</span>
+                        <span><b>EMPLOYEE POSITION:</b> {currentUser?.departments.join(', ')}</span>
+                    </div>
+                    <div className="flex justify-between text-sm px-4 pb-4">
+                        <span><b>DATE FROM:</b> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</span>
+                         <span><b>TO DATE:</b> {dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}</span>
+                    </div>
+                    <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-muted hover:bg-muted text-xs">
+                                <TableHead className="w-[100px]">DAY</TableHead>
+                                <TableHead className="w-[100px]">DATE</TableHead>
+                                <TableHead>START</TableHead>
+                                <TableHead>END</TableHead>
+                                <TableHead>CUSTOMER JOB</TableHead>
+                                <TableHead>PROJECT NAME</TableHead>
+                                <TableHead>DESIGN TYPE</TableHead>
+                                <TableHead>PROJECT TYPE</TableHead>
+                                <TableHead>DESCRIPTION</TableHead>
+                                <TableHead className="text-right">TOTAL UNITS</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {dateInterval.map((day) => {
+                                const dayString = format(day, 'yyyy-MM-dd');
+                                const dayEntries = entriesByDate[dayString] || [];
+                                if (dayEntries.length === 0) return (
+                                    <TableRow key={dayString}>
+                                        <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
+                                        <TableCell>{format(day, 'dd-MMM')}</TableCell>
+                                        <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
+                                    </TableRow>
+                                );
+                                 const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                                    const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+                                    return acc + (hours * 60) + minutes;
+                                }, 0);
+                                const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
+                                const totalMinutes = totalDayUnitsInMinutes % 60;
+                                
+                                return (
+                                    <React.Fragment key={dayString}>
+                                        {dayEntries.map((entry, entryIndex) => (
+                                            <TableRow key={entry.id}>
+                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
+                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
+                                                <TableCell>{entry.startTime}</TableCell>
+                                                <TableCell>{entry.endTime}</TableCell>
+                                                <TableCell>{entry.customerJobNumber}</TableCell>
+                                                <TableCell>{entry.projectName}</TableCell>
+                                                <TableCell>{entry.designType}</TableCell>
+                                                <TableCell>{entry.projectType}</TableCell>
+                                                <TableCell>{entry.description}</TableCell>
+                                                <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                         <TableRow className="bg-muted/50 font-bold">
+                                            <TableCell colSpan={8} className="text-right">TOTAL UNITS</TableCell>
+                                            <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
+                                        </TableRow>
+                                    </React.Fragment>
+                                )
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         
         <Accordion type="multiple" defaultValue={dateInterval.map(d => format(d, 'yyyy-MM-dd'))} className="w-full space-y-2">
             {dateInterval.map(day => {
