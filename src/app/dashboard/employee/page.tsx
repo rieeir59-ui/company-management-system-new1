@@ -96,7 +96,7 @@ export default function EmployeePage() {
   
   const { toast } = useToast();
 
-  const canManageEmployees = currentUser && ['software-engineer', 'admin', 'ceo'].includes(currentUser.department);
+  const canManageEmployees = currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
 
   const handleAddEmployee = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -116,13 +116,18 @@ export default function EmployeePage() {
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const contact = formData.get('contact') as string;
-    const department = formData.get('department') as string;
+    const departments = formData.getAll('departments') as string[];
     const password = formData.get('password') as string;
 
     if (name && name !== selectedEmployee.name) updatedData.name = name;
     if (email && email !== selectedEmployee.email) updatedData.email = email;
     if (contact && contact !== selectedEmployee.contact) updatedData.contact = contact;
-    if (department && department !== selectedEmployee.department) updatedData.department = department;
+    
+    // Check if departments array is different
+    if (departments.length > 0 && (departments.length !== selectedEmployee.departments.length || departments.some(d => !selectedEmployee.departments.includes(d)))) {
+        updatedData.departments = departments;
+    }
+
     if (password && password !== selectedEmployee.password) updatedData.password = password;
     
     if (Object.keys(updatedData).length > 0) {
@@ -160,11 +165,11 @@ export default function EmployeePage() {
     const footerText = "Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522 , info@isbahhassan.com , www.isbahhassan.com";
 
     doc.autoTable({
-      head: [['Name', 'Email', 'Department']],
+      head: [['Name', 'Email', 'Departments']],
       body: employees.map(emp => [
         emp.name,
         emp.email,
-        departments.find(d => d.slug === emp.department)?.name || emp.department
+        emp.departments.map(d => departments.find(dept => dept.slug === d)?.name || d).join(', ')
       ]),
       didDrawPage: function (data) {
         // Add footer to all pages
@@ -177,11 +182,11 @@ export default function EmployeePage() {
   }
 
   const handleDownloadCsv = () => {
-    const csvHeader = ['Name', 'Email', 'Department'];
+    const csvHeader = ['Name', 'Email', 'Departments'];
     const csvRows = employees.map(emp => [
       `"${emp.name}"`,
       `"${emp.email}"`,
-      `"${departments.find(d => d.slug === emp.department)?.name || emp.department}"`
+      `"${emp.departments.map(d => departments.find(dept => dept.slug === d)?.name || d).join(', ')}"`
     ]);
 
     const csvContent = [
@@ -244,18 +249,13 @@ export default function EmployeePage() {
                         <Label htmlFor="contact" className="text-right">Contact</Label>
                         <Input id="contact" name="contact" className="col-span-3" />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="department" className="text-right">Department</Label>
-                        <Select name="department" required>
-                            <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder="Select a department" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {departments.map(dept => (
-                                <SelectItem key={dept.slug} value={dept.slug}>{dept.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
+                        <div className="grid grid-cols-4 items-start gap-4">
+                          <Label htmlFor="departments" className="text-right pt-2">Departments</Label>
+                          <select id="departments" name="departments" multiple required className="col-span-3 border border-input rounded-md p-2 text-sm h-32">
+                            {departments.map(dept => (
+                              <option key={dept.slug} value={dept.slug}>{dept.name}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="password" className="text-right">Password</Label>
@@ -281,7 +281,7 @@ export default function EmployeePage() {
                 </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Department</TableHead>
+                <TableHead>Departments</TableHead>
                 {canManageEmployees && (
                     <TableHead>
                         <span className="sr-only">Actions</span>
@@ -302,7 +302,7 @@ export default function EmployeePage() {
                       <div className="text-sm text-muted-foreground md:hidden">{employee.email}</div>
                     </TableCell>
                     <TableCell>{employee.email}</TableCell>
-                    <TableCell>{departments.find(d => d.slug === employee.department)?.name || employee.department}</TableCell>
+                    <TableCell>{employee.departments.map(d => departments.find(dept => dept.slug === d)?.name || d).join(', ')}</TableCell>
                     {canManageEmployees && (
                         <TableCell>
                         <DropdownMenu>
@@ -366,18 +366,13 @@ export default function EmployeePage() {
                 <Label htmlFor="edit-contact" className="text-right">Contact</Label>
                 <Input id="edit-contact" name="contact" defaultValue={selectedEmployee?.contact} className="col-span-3" />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-department" className="text-right">Department</Label>
-                <Select name="department" defaultValue={selectedEmployee?.department} required>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a department" />
-                  </SelectTrigger>
-                  <SelectContent>
+              <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="edit-departments" className="text-right pt-2">Departments</Label>
+                  <select id="edit-departments" name="departments" multiple defaultValue={selectedEmployee?.departments} required className="col-span-3 border border-input rounded-md p-2 text-sm h-32">
                     {departments.map(dept => (
-                      <SelectItem key={dept.slug} value={dept.slug}>{dept.name}</SelectItem>
+                      <option key={dept.slug} value={dept.slug}>{dept.name}</option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
               </div>
                <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="edit-password" className="text-right">Password</Label>
