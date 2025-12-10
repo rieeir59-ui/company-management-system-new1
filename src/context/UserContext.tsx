@@ -10,7 +10,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface UserContextType {
-  user: (Employee & { uid: string; role: string; }) | null;
+  user: (Employee & { uid: string; }) | null;
   isUserLoading: boolean;
   login: (user: Employee & { uid: string }) => void;
   logout: () => void;
@@ -39,14 +39,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
              uid: firebaseUser.uid,
              email: firebaseUser.email || '',
              name: userData.name || '',
-             role: userData.role || 'employee',
-             department: userData.department || 'employee',
+             departments: userData.departments || [],
              contact: userData.contact || '',
              record: userData.record || '',
              avatarId: userData.avatarId || '',
              password: ''
           };
-           setUser({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
+           setUser({ ...employeeDetails, uid: firebaseUser.uid });
         } else {
           // This case might happen if a user is in auth but not in DB
            setUser(null);
@@ -62,18 +61,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const employeesByDepartment = useMemo(() => {
     return employees.reduce((acc, employee) => {
-        const { department } = employee;
-        if (!acc[department]) {
-        acc[department] = [];
-        }
-        acc[department].push(employee);
+        employee.departments.forEach(department => {
+            if (!acc[department]) {
+                acc[department] = [];
+            }
+            acc[department].push(employee);
+        });
         return acc;
     }, {} as Record<string, Employee[]>);
   }, [employees]);
 
 
   const login = (loggedInUser: Employee & { uid: string }) => {
-    setUser({ ...loggedInUser, role: loggedInUser.department });
+    setUser(loggedInUser);
   };
 
   const logout = () => {

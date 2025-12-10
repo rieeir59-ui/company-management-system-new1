@@ -96,7 +96,7 @@ export default function EmployeePage() {
   
   const { toast } = useToast();
 
-  const canManageEmployees = currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  const canManageEmployees = currentUser && Array.isArray(currentUser.departments) && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
 
   const handleAddEmployee = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

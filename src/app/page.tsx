@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -39,7 +40,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      if (['ceo', 'admin', 'software-engineer'].includes(user.department)) {
+      if (user.departments.some(d => ['ceo', 'admin', 'software-engineer'].includes(d))) {
           router.push('/dashboard');
       } else {
           router.push('/employee-dashboard');

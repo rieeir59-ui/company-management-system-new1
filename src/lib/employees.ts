@@ -6,7 +6,7 @@ export type Employee = {
   email: string;
   record: string;
   avatarId: string;
-  departments: string[]; // Changed to an array of strings
+  departments: string[]; // An employee can belong to multiple departments
   password?: string;
 };
 

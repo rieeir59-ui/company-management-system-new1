@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,16 +31,16 @@ export default function LoginPage() {
         uid: firebaseUser.uid,
         name: employeeDetails.name,
         email: employeeDetails.email,
-        role: employeeDetails.department, // Security rules use 'role'
-        department: employeeDetails.department,
+        role: employeeDetails.departments[0] || 'employee', // For security rules, use the first department as role
+        departments: employeeDetails.departments,
         contact: employeeDetails.contact,
         record: employeeDetails.record,
     }, { merge: true });
 
-    login({ ...employeeDetails, uid: firebaseUser.uid, role: employeeDetails.department });
+    login({ ...employeeDetails, uid: firebaseUser.uid });
     toast({ title: 'Login Successful', description: `Welcome back, ${employeeDetails.name}!` });
 
-    if (['ceo', 'admin', 'software-engineer'].includes(employeeDetails.department)) {
+    if (employeeDetails.departments.some((d: string) => ['ceo', 'admin', 'software-engineer'].includes(d))) {
         router.push('/dashboard');
     } else {
         router.push('/employee-dashboard');
