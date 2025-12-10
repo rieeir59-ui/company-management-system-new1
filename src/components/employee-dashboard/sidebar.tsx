@@ -69,6 +69,7 @@ import {
   Search as SearchIcon,
   Settings,
   KeyRound,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +85,7 @@ const menuItems = [
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
+    { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/project-checklist', label: 'Project Checklist', icon: ListChecks },
