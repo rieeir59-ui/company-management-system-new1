@@ -173,15 +173,18 @@ export default function DailyReportPage() {
   
   const handleDownload = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
     doc.setFontSize(10);
     let yPos = 15;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text('ISBAH HASSAN & ASSOCIATES', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
     yPos += 7;
     doc.setFontSize(10);
-    doc.text('WEEKLY WORK REPORT', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    doc.text('WEEKLY WORK REPORT', pageWidth / 2, yPos, { align: 'center' });
     yPos += 10;
     
     (doc as any).autoTable({
@@ -207,7 +210,7 @@ export default function DailyReportPage() {
         const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
         const totalMinutes = totalDayUnitsInMinutes % 60;
         
-        if (yPos > 180) { doc.addPage(); yPos = 20; }
+        if (yPos > 150) { doc.addPage(); yPos = 20; }
 
         (doc as any).autoTable({
             startY: yPos,
@@ -231,11 +234,31 @@ export default function DailyReportPage() {
             ]],
             theme: 'grid',
             headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
-            didDrawPage: (data: any) => { yPos = data.cursor.y + 10; },
+            didDrawPage: (data: any) => { yPos = data.cursor.y + 5; },
              columnStyles: { 8: { halign: 'right' } }
         });
          yPos = (doc as any).autoTable.previous.finalY + 5;
     });
+
+    if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+
+    (doc as any).autoTable({
+        startY: yPos,
+        theme: 'grid',
+        body: [
+            ['EMPLOYEE SIGNATURE: ____________________', 'MANAGER STUDIO: ____________________', 'MANAGER ACCOUNTS: ____________________', 'CEO SIGNATURE: ____________________'],
+            [{ content: 'NOTE: ALL ARCHITECT/DESIGNER/DRAFTSMEN SHOULD SUBMIT THESE TIME SHEET EVERY SATURDAY ON WEEKLY BASIS ORDERED BY ISBAH HASSAN', colSpan: 4, styles: { fontStyle: 'bold' } }],
+        ],
+        styles: { fontSize: 8 },
+    });
+    
+    // Add footer to all pages
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+    }
 
     doc.save('weekly-work-report.pdf');
   };
