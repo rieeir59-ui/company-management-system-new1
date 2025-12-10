@@ -173,7 +173,7 @@ export default function DailyReportPage() {
     setEntries([
       ...entries,
       {
-        id: Date.now(),
+        id: Date.now() + Math.random(),
         date: date,
         startTime: '',
         endTime: '',
