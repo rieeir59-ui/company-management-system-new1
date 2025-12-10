@@ -296,7 +296,7 @@ function MyProjectsComponent() {
                                         <Select
                                             value={project.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(project.id, newStatus)}
-                                            disabled={!canEdit || project.status === 'pending-approval' || project.status === 'completed'}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                               <StatusBadge status={project.status} />
@@ -304,6 +304,7 @@ function MyProjectsComponent() {
                                             <SelectContent>
                                                 <SelectItem value="not-started">Not Started</SelectItem>
                                                 <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
