@@ -108,7 +108,7 @@ export default function AssignTaskPage() {
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const { tasks } = useTasks();
-    const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
+    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

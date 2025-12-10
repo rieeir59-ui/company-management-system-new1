@@ -21,6 +21,7 @@ export interface Project {
   assignedTo: string;
   submissionUrl?: string;
   submissionFileName?: string;
+  createdAt: Timestamp;
 }
 
 export function useTasks(employeeUid?: string) {
@@ -29,7 +30,7 @@ export function useTasks(employeeUid?: string) {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const { user: currentUser, isUserLoading } = useCurrentUser();
-  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
+  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
   const uidToFetch = employeeUid || currentUser?.uid;
 
@@ -76,6 +77,7 @@ export function useTasks(employeeUid?: string) {
           assignedTo: data.assignedTo || '',
           submissionUrl: data.submissionUrl,
           submissionFileName: data.submissionFileName,
+          createdAt: data.createdAt,
         });
       });
       setTasks(fetchedTasks);

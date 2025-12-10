@@ -11,7 +11,7 @@ service cloud.firestore {
     function isAdmin() {
       // Use `exists` for performance and safety over `get`.
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer', 'architects']);
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
     
     // Helper: Check if user is the assigned employee for a task
@@ -36,7 +36,7 @@ service cloud.firestore {
     match /tasks/{taskId} {
       // Admins can read any task. Employees can only read tasks assigned to them.
       allow list, get: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
-      allow create: if isLoggedIn();
+      allow create: if isLoggedIn() && isAdmin();
       // An admin or Waleed can update any task status. An employee can only update the status of their own assigned task.
       allow update: if isAdmin() || 
                     (isLoggedIn() && request.auth.token.email == 'waleed@ri-hub.com' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'submissionUrl', 'submissionFileName'])) ||
