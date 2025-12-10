@@ -258,7 +258,7 @@ export default function EmployeeDashboardSidebar() {
         <SidebarHeader className="p-4">
             <Link href="/employee-dashboard" className="flex items-center gap-2 text-primary font-bold text-2xl font-headline">
                 <Users className="w-8 h-8" />
-                <span className="group-data-[collapsible=icon]:hidden">RI-HUB</span>
+                <span className="group-data-[collapsible=icon]:hidden">IHA STUDIO</span>
             </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
@@ -337,3 +337,5 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
+
+    

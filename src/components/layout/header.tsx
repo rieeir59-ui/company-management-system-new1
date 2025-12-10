@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -33,7 +34,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-card shadow-sm">
       <div className="bg-sidebar text-white text-sm py-2">
         <div className="container flex justify-between items-center h-10">
-          <div className="flex-1 text-center animate-in fade-in slide-in-from-top-2 duration-1000">Welcome to RI-HUB (Software Engineers)</div>
+          <div className="flex-1 text-center animate-in fade-in slide-in-from-top-2 duration-1000">Welcome to IHA STUDIO (Software Engineers)</div>
           <div className="flex items-center space-x-3">
              <Link href="#" className="text-white hover:text-primary"><MessageCircle size={18} /></Link>
              <Link href="https://www.facebook.com/isbahhassanassociates101ydha/" target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary"><Facebook size={18} /></Link>
@@ -56,7 +57,7 @@ export default function Header() {
             >
               <div className="flex items-center gap-2 text-black pr-8">
                 <RiIdLogo />
-                <span className="font-bold text-3xl">RI-HUB</span>
+                <span className="font-bold text-3xl">IHA STUDIO</span>
               </div>
             </div>
           </Link>
@@ -82,3 +83,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
