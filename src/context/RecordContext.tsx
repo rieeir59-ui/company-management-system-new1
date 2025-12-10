@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
@@ -132,7 +133,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   // Update record
   const updateRecord = useCallback(
-    async (id: string, updatedData: Partial<SavedRecord>) => {
+    async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>) => {
       if (!firestore || !currentUser) return;
       
       const recordToUpdate = records.find(r => r.id === id);

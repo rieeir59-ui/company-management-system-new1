@@ -255,7 +255,7 @@ const ChecklistItem = ({ item, checked, onCheckedChange }: { item: string, check
     );
 };
 
-export default function ProjectChecklist() {
+export default function ProjectChecklistComponent() {
     const { toast } = useToast();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
@@ -357,8 +357,6 @@ export default function ProjectChecklist() {
         }
 
         const recordToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Project Checklist',
             projectName: projectName || 'Untitled Project',
             data: selectedDataForSave,

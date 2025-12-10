@@ -299,7 +299,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const canEditOrDelete = (record: SavedRecord) => {
         if (!currentUser) return false;
-        const isAdmin = ['admin', 'software-engineer', 'ceo'].includes(currentUser.department);
+        const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
@@ -606,7 +606,7 @@ const renderRecordContent = () => {
                              </TableHeader>
                              <TableBody>
                                  {filteredRecords.map(record => {
-                                     const Icon = getIconForCategory(record.fileName);
+                                     const Icon = getIconForFile(record.fileName);
                                      return (
                                          <TableRow key={record.id}>
                                              <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
