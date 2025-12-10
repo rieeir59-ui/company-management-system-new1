@@ -343,7 +343,12 @@ export default function DailyReportPage() {
   const months = Array.from({ length: 12 }, (_, i) => ({ value: i, label: format(new Date(0, i), 'MMMM') }));
 
   const filterByDateRange = () => setIsCustomRange(true);
-  const filterByMonthWeek = () => setIsCustomRange(false);
+  const filterByMonthWeek = () => {
+      setIsCustomRange(false);
+      // Reset custom range dates if we switch back
+      setDateFrom(undefined);
+      setDateTo(undefined);
+  };
 
 
   return (
