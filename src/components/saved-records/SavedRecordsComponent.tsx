@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { getIconForCategory } from '@/lib/icons';
+import { getIconForCategory, getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
