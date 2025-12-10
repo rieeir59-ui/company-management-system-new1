@@ -143,6 +143,30 @@ export default function DailyReportPage() {
       }, {} as Record<string, ReportEntry[]>);
   }, [entries]);
 
+  const totalPeriodUnits = useMemo(() => {
+    const totalMinutes = dateInterval.reduce((total, day) => {
+        const dayString = format(day, 'yyyy-MM-dd');
+        const dayEntries = entriesByDate[dayString] || [];
+        const dayTotalMinutes = dayEntries.reduce((acc, entry) => {
+            const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+            return acc + (hours * 60) + minutes;
+        }, 0);
+        return total + dayTotalMinutes;
+    }, 0);
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}:${String(minutes).padStart(2, '0')}`;
+  }, [dateInterval, entriesByDate]);
+
+  const getWeekOfMonth = (date: Date): number => {
+    const dayOfMonth = date.getDate();
+    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    // Adjust so Sunday is 0, Monday is 1 etc.
+    const adjustedFirstDay = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+    return Math.ceil((dayOfMonth + adjustedFirstDay) / 7);
+  };
+
   const addEntry = (date: string) => {
     setEntries([
       ...entries,
@@ -207,45 +231,41 @@ export default function DailyReportPage() {
         styles: { fontSize: 9 },
         body: [
             [`EMPLOYEE NAME: ${currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${currentUser?.departments.join(', ') || 'N/A'}`],
-            [`DATE FROM: ${dateFrom}`, `TO DATE: ${dateTo}`, `WEEK NUMBER: ${dateFrom ? getWeek(parseISO(dateFrom)) : ''}`],
+            [`DATE FROM: ${dateFrom}`, `TO DATE: ${dateTo}`, `WEEK OF MONTH: ${dateFrom ? getWeekOfMonth(parseISO(dateFrom)) : ''}`],
+             [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
         ],
         columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
     });
 
     yPos = (doc as any).autoTable.previous.finalY + 2;
 
-    dateInterval.forEach(day => {
-        const dayString = format(day, 'yyyy-MM-dd');
-        const dayEntries = entriesByDate[dayString] || [];
-        const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
-            const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
-            return acc + (hours * 60) + minutes;
-        }, 0);
-        const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
-        const totalMinutes = totalDayUnitsInMinutes % 60;
-        
-        if (yPos > 150) { doc.addPage(); yPos = 20; }
-
-        (doc as any).autoTable({
-            startY: yPos,
-            head: [[
-                { content: 'DAY', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'DATE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'TIME', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'CUSTOMER JOB', colSpan: 1, styles: { halign: 'center' } },
-                { content: 'PROJECT NAME', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'DESIGN TYPE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'PROJECT TYPE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'DESCRIPTION', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'TOTAL UNITS', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-            ], [
-                { content: 'START', styles: { halign: 'center' } },
-                { content: 'END', styles: { halign: 'center' } },
-                { content: 'NUMBER', styles: { halign: 'center' } },
-            ]],
-            body: dayEntries.map((entry, index) => [
-                index === 0 ? format(day, 'EEEE').toUpperCase() : '',
-                index === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
+    (doc as any).autoTable({
+        startY: yPos,
+        head: [[
+            { content: 'DAY', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'DATE', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'TIME\nSTART', styles: { halign: 'center' } },
+            { content: 'TIME\nEND', styles: { halign: 'center' } },
+            { content: 'CUSTOMER JOB\nNUMBER', styles: { halign: 'center' } },
+            { content: 'PROJECT NAME', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'DESIGN TYPE', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'PROJECT TYPE', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'DESCRIPTION', styles: { halign: 'center', valign: 'middle' } },
+            { content: 'TOTAL UNITS', styles: { halign: 'center', valign: 'middle' } },
+        ]],
+        body: dateInterval.flatMap((day, dayIndex) => {
+            const dayString = format(day, 'yyyy-MM-dd');
+            const dayEntries = entriesByDate[dayString] || [];
+             const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+                return acc + (hours * 60) + minutes;
+            }, 0);
+            const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
+            const totalMinutes = totalDayUnitsInMinutes % 60;
+            
+            const rows = dayEntries.map((entry, entryIndex) => [
+                dayIndex === 0 && entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
+                dayIndex === 0 && entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -254,18 +274,22 @@ export default function DailyReportPage() {
                 entry.projectType, 
                 entry.description,
                 calculateTotalUnits(entry.startTime, entry.endTime)
-            ]),
-            foot: [[
-                { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
-                { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
-            ]],
-            theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
-            didDrawPage: (data: any) => { yPos = data.cursor.y + 5; },
-            columnStyles: { 9: { halign: 'center' } }
-        });
-         yPos = (doc as any).autoTable.previous.finalY + 5;
+            ]);
+            
+            if (dayEntries.length > 0) {
+                 rows.push([
+                    { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
+                ]);
+            }
+            return rows;
+        }),
+        theme: 'grid',
+        headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
+        didDrawPage: (data: any) => { yPos = data.cursor.y + 5; },
+        columnStyles: { 9: { halign: 'center' } }
     });
+     yPos = (doc as any).autoTable.previous.finalY + 5;
 
     if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
 
@@ -330,15 +354,17 @@ export default function DailyReportPage() {
                         </div>
                         <div className="flex justify-between text-sm px-4 pb-4">
                             <span><b>DATE FROM:</b> {dateFrom}</span>
-                            <span><b>TO DATE:</b> {dateTo}</span>
-                             <span><b>WEEK NUMBER:</b> {dateFrom ? getWeek(parseISO(dateFrom)) : ''}</span>
+                             <span><b>TO DATE:</b> {dateTo}</span>
+                            <span><b>WEEK OF MONTH:</b> {dateFrom ? getWeekOfMonth(parseISO(dateFrom)) : ''}</span>
                         </div>
+                        <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
                         <Table>
                             <TableHeader>
-                                <TableRow className="bg-muted hover:bg-muted">
+                                <TableRow className="bg-muted hover:bg-muted text-xs">
                                     <TableHead className="w-[100px]">DAY</TableHead>
                                     <TableHead className="w-[100px]">DATE</TableHead>
-                                    <TableHead colSpan={2} className="text-center">TIME</TableHead>
+                                    <TableHead>START</TableHead>
+                                    <TableHead>END</TableHead>
                                     <TableHead>CUSTOMER JOB</TableHead>
                                     <TableHead>PROJECT NAME</TableHead>
                                     <TableHead>DESIGN TYPE</TableHead>
@@ -346,53 +372,41 @@ export default function DailyReportPage() {
                                     <TableHead>DESCRIPTION</TableHead>
                                     <TableHead className="text-right">TOTAL UNITS</TableHead>
                                 </TableRow>
-                                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                    <TableHead></TableHead>
-                                    <TableHead></TableHead>
-                                    <TableHead className="text-center">START</TableHead>
-                                    <TableHead className="text-center">END</TableHead>
-                                    <TableHead className="text-center">NUMBER</TableHead>
-                                    <TableHead></TableHead>
-                                    <TableHead></TableHead>
-                                    <TableHead></TableHead>
-                                    <TableHead></TableHead>
-                                    <TableHead></TableHead>
-                                </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {dateInterval.flatMap(day => {
+                                {dateInterval.map((day, dayIndex) => {
                                     const dayString = format(day, 'yyyy-MM-dd');
                                     const dayEntries = entriesByDate[dayString] || [];
                                     if (dayEntries.length === 0) return null;
-
-                                    const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                                     const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                                         const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                                         return acc + (hours * 60) + minutes;
                                     }, 0);
                                     const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
                                     const totalMinutes = totalDayUnitsInMinutes % 60;
-
-                                    const rows = dayEntries.map((entry, index) => (
-                                        <TableRow key={entry.id}>
-                                            {index === 0 && <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell>}
-                                            {index === 0 && <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell>}
-                                            <TableCell className="text-center">{entry.startTime}</TableCell>
-                                            <TableCell className="text-center">{entry.endTime}</TableCell>
-                                            <TableCell className="text-center">{entry.customerJobNumber}</TableCell>
-                                            <TableCell>{entry.projectName}</TableCell>
-                                            <TableCell>{entry.designType}</TableCell>
-                                            <TableCell>{entry.projectType}</TableCell>
-                                            <TableCell>{entry.description}</TableCell>
-                                            <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
-                                        </TableRow>
-                                    ));
-                                    rows.push(
-                                        <TableRow key={`${dayString}-total`} className="bg-muted/50 font-bold">
-                                            <TableCell colSpan={7} className="text-right">TOTAL UNITS</TableCell>
-                                            <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
-                                        </TableRow>
-                                    );
-                                    return rows;
+                                    
+                                    return (
+                                        <React.Fragment key={dayString}>
+                                            {dayEntries.map((entry, entryIndex) => (
+                                                <TableRow>
+                                                    {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
+                                                    {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
+                                                    <TableCell>{entry.startTime}</TableCell>
+                                                    <TableCell>{entry.endTime}</TableCell>
+                                                    <TableCell>{entry.customerJobNumber}</TableCell>
+                                                    <TableCell>{entry.projectName}</TableCell>
+                                                    <TableCell>{entry.designType}</TableCell>
+                                                    <TableCell>{entry.projectType}</TableCell>
+                                                    <TableCell>{entry.description}</TableCell>
+                                                    <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                             <TableRow className="bg-muted/50 font-bold">
+                                                <TableCell colSpan={9} className="text-right">TOTAL UNITS</TableCell>
+                                                <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
+                                            </TableRow>
+                                        </React.Fragment>
+                                    )
                                 })}
                             </TableBody>
                         </Table>
@@ -475,4 +489,3 @@ export default function DailyReportPage() {
     </Card>
   );
 }
-
