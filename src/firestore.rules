@@ -34,7 +34,8 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow list, get: if isLoggedIn();
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow list, get: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
       allow create: if isLoggedIn();
       // Admin can update anything.
       // Employee can update status to 'in-progress' or submit for approval ('pending-approval' with submission URL).
