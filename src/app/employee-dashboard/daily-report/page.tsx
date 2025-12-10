@@ -46,6 +46,7 @@ import {
   parseISO,
   differenceInMinutes,
   isValid,
+  getWeek,
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -150,11 +151,11 @@ export default function DailyReportPage() {
         date: date,
         startTime: '',
         endTime: '',
-        customerJobNumber: '',
-        projectName: '',
-        designType: 'DESIGN',
-        projectType: 'DESIGN',
-        description: '',
+        customerJobNumber: 'IHA-J000-0000',
+        projectName: 'C-B-D',
+        designType: 'EXTERIOR',
+        projectType: 'COMMERCIAL',
+        description: 'MEETING',
       },
     ]);
   };
@@ -206,7 +207,7 @@ export default function DailyReportPage() {
         styles: { fontSize: 9 },
         body: [
             [`EMPLOYEE NAME: ${currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${currentUser?.departments.join(', ') || 'N/A'}`],
-            [`DATE FROM: ${dateFrom}`, `TO DATE: ${dateTo}`, `WEEK NUMBER: __`],
+            [`DATE FROM: ${dateFrom}`, `TO DATE: ${dateTo}`, `WEEK NUMBER: ${dateFrom ? getWeek(parseISO(dateFrom)) : ''}`],
         ],
         columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
     });
@@ -228,10 +229,23 @@ export default function DailyReportPage() {
         (doc as any).autoTable({
             startY: yPos,
             head: [[
-                { content: format(day, 'EEEE').toUpperCase(), colSpan: 9, styles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold' } }
+                { content: 'DAY', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'DATE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'TIME', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'CUSTOMER JOB', colSpan: 1, styles: { halign: 'center' } },
+                { content: 'PROJECT NAME', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'DESIGN TYPE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'PROJECT TYPE', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'DESCRIPTION', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'TOTAL UNITS', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+            ], [
+                { content: 'START', styles: { halign: 'center' } },
+                { content: 'END', styles: { halign: 'center' } },
+                { content: 'NUMBER', styles: { halign: 'center' } },
             ]],
-            body: dayEntries.map(entry => [
-                format(parseISO(entry.date), 'dd-MMM'), 
+            body: dayEntries.map((entry, index) => [
+                index === 0 ? format(day, 'EEEE').toUpperCase() : '',
+                index === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -242,13 +256,13 @@ export default function DailyReportPage() {
                 calculateTotalUnits(entry.startTime, entry.endTime)
             ]),
             foot: [[
-                { content: 'TOTAL UNITS', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } },
-                { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold' } }
+                { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
             ]],
             theme: 'grid',
-            headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
+            headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
             didDrawPage: (data: any) => { yPos = data.cursor.y + 5; },
-             columnStyles: { 8: { halign: 'right' } }
+            columnStyles: { 9: { halign: 'center' } }
         });
          yPos = (doc as any).autoTable.previous.finalY + 5;
     });
@@ -298,38 +312,86 @@ export default function DailyReportPage() {
                 <DialogTrigger asChild>
                     <Button><Eye className="mr-2 h-4 w-4" /> View Report</Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-6xl">
+                <DialogContent className="max-w-7xl">
                     <DialogHeader>
                         <DialogTitle>Weekly Work Report</DialogTitle>
                         <DialogDescription>
                             Preview of your report from {dateFrom} to {dateTo}.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                    <div className="max-h-[70vh] overflow-y-auto p-1">
+                        <div className="text-center p-4">
+                            <h2 className="font-bold text-lg">ISBAH HASSAN & ASSOCIATES</h2>
+                            <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
+                        </div>
+                         <div className="flex justify-between text-sm px-4 pb-2">
+                            <span><b>EMPLOYEE NAME:</b> {currentUser?.name}</span>
+                            <span><b>EMPLOYEE POSITION:</b> {currentUser?.departments.join(', ')}</span>
+                        </div>
+                        <div className="flex justify-between text-sm px-4 pb-4">
+                            <span><b>DATE FROM:</b> {dateFrom}</span>
+                            <span><b>TO DATE:</b> {dateTo}</span>
+                             <span><b>WEEK NUMBER:</b> {dateFrom ? getWeek(parseISO(dateFrom)) : ''}</span>
+                        </div>
                         {dateInterval.map(day => {
                              const dayString = format(day, 'yyyy-MM-dd');
                              const dayEntries = entriesByDate[dayString] || [];
+                             if (dayEntries.length === 0) return null;
+                             
+                             const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                                const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+                                return acc + (hours * 60) + minutes;
+                            }, 0);
+                            const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
+                            const totalMinutes = totalDayUnitsInMinutes % 60;
+
                              return (
-                                <Card key={dayString} className="mb-4">
-                                    <CardHeader><CardTitle>{format(day, 'EEEE, dd MMM yyyy')}</CardTitle></CardHeader>
-                                    <CardContent>
-                                         <Table>
-                                            <TableHeader>
-                                                <TableRow><TableHead>Time</TableHead><TableHead>Project</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Units</TableHead></TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {dayEntries.map(entry => (
-                                                    <TableRow key={entry.id}>
-                                                        <TableCell>{entry.startTime} - {entry.endTime}</TableCell>
-                                                        <TableCell>{entry.projectName}</TableCell>
-                                                        <TableCell>{entry.description}</TableCell>
-                                                        <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
+                                <div key={dayString} className="mb-4">
+                                     <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-muted hover:bg-muted">
+                                                <TableHead className="w-[100px]">DAY</TableHead>
+                                                <TableHead className="w-[100px]">DATE</TableHead>
+                                                <TableHead colSpan={2} className="text-center">TIME</TableHead>
+                                                <TableHead>CUSTOMER JOB</TableHead>
+                                                <TableHead>PROJECT NAME</TableHead>
+                                                <TableHead>DESIGN TYPE</TableHead>
+                                                <TableHead>PROJECT TYPE</TableHead>
+                                                <TableHead>DESCRIPTION</TableHead>
+                                                <TableHead className="text-right">TOTAL UNITS</TableHead>
+                                            </TableRow>
+                                             <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                                <TableHead></TableHead>
+                                                <TableHead></TableHead>
+                                                <TableHead className="text-center">START</TableHead>
+                                                <TableHead className="text-center">END</TableHead>
+                                                <TableHead className="text-center">NUMBER</TableHead>
+                                                <TableHead></TableHead>
+                                                <TableHead></TableHead>
+                                                <TableHead></TableHead>
+                                                <TableHead></TableHead>
+                                                <TableHead></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {dayEntries.map((entry, index) => (
+                                                <TableRow key={entry.id}>
+                                                    {index === 0 && <TableCell rowSpan={dayEntries.length} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell>}
+                                                    {index === 0 && <TableCell rowSpan={dayEntries.length} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell>}
+                                                    <TableCell className="text-center">{entry.startTime}</TableCell>
+                                                    <TableCell className="text-center">{entry.endTime}</TableCell>
+                                                    <TableCell className="text-center">{entry.customerJobNumber}</TableCell>
+                                                    <TableCell>{entry.projectName}</TableCell>
+                                                    <TableCell>{entry.designType}</TableCell>
+                                                    <TableCell>{entry.projectType}</TableCell>
+                                                    <TableCell>{entry.description}</TableCell>
+                                                    <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                    <div className="text-right font-bold pr-4 py-2 bg-muted/50 rounded-b-lg">TOTAL UNITS: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
+                                </div>
                              )
                         })}
                     </div>
