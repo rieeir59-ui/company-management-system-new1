@@ -1,8 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -72,10 +72,15 @@ function MultiSelect({
                 }}
               >
                 {options.find(opt => opt.value === item)?.label || item}
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Remove ${item}`}
                   className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
                       handleUnselect(item);
                     }
                   }}
@@ -89,7 +94,7 @@ function MultiSelect({
                   }}
                 >
                   <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </button>
+                </span>
               </Badge>
             ))}
           </div>
