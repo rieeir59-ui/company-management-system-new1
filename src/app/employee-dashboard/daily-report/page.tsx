@@ -26,7 +26,17 @@ import {
   Save,
   Trash2,
   Calendar,
+  Eye,
 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useRecords } from '@/context/RecordContext';
@@ -83,6 +93,7 @@ export default function DailyReportPage() {
   );
   
   const [entries, setEntries] = useState<ReportEntry[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report');
@@ -283,7 +294,50 @@ export default function DailyReportPage() {
               <Label>To Date</Label>
               <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
             </div>
-            <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download Report</Button>
+             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                <DialogTrigger asChild>
+                    <Button><Eye className="mr-2 h-4 w-4" /> View Report</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-6xl">
+                    <DialogHeader>
+                        <DialogTitle>Weekly Work Report</DialogTitle>
+                        <DialogDescription>
+                            Preview of your report from {dateFrom} to {dateTo}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                        {dateInterval.map(day => {
+                             const dayString = format(day, 'yyyy-MM-dd');
+                             const dayEntries = entriesByDate[dayString] || [];
+                             return (
+                                <Card key={dayString} className="mb-4">
+                                    <CardHeader><CardTitle>{format(day, 'EEEE, dd MMM yyyy')}</CardTitle></CardHeader>
+                                    <CardContent>
+                                         <Table>
+                                            <TableHeader>
+                                                <TableRow><TableHead>Time</TableHead><TableHead>Project</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Units</TableHead></TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {dayEntries.map(entry => (
+                                                    <TableRow key={entry.id}>
+                                                        <TableCell>{entry.startTime} - {entry.endTime}</TableCell>
+                                                        <TableCell>{entry.projectName}</TableCell>
+                                                        <TableCell>{entry.description}</TableCell>
+                                                        <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                             )
+                        })}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
           </div>
         </Card>
         
