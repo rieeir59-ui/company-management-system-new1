@@ -42,7 +42,8 @@ service cloud.firestore {
                     (isAssignedEmployee(resource.data) &&
                       (
                         (request.resource.data.status == 'in-progress' && resource.data.status == 'not-started') ||
-                        (request.resource.data.status == 'pending-approval' && resource.data.status == 'in-progress' && 'submissionUrl' in request.resource.data && request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'submissionUrl', 'submissionFileName']))
+                        (request.resource.data.status == 'pending-approval' && resource.data.status == 'in-progress' && 'submissionUrl' in request.resource.data && request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'submissionUrl', 'submissionFileName'])) ||
+                        (request.resource.data.status == 'not-started' && resource.data.status == 'in-progress')
                       )
                     ) || (isAdmin() && request.resource.data.status == 'completed' && resource.data.status == 'pending-approval');
       // Only admins can delete tasks.
