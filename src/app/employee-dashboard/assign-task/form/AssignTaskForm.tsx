@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, Check, ChevronsUpDown } from 'lucide-react';
+import { Save, Download, Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
@@ -37,12 +37,13 @@ import { cn } from '@/lib/utils';
 export default function AssignTaskForm() {
     const searchParams = useSearchParams();
     const employeeId = searchParams.get('employeeId');
+    const recordId = searchParams.get('id');
 
     const { toast } = useToast();
     const { firestore } = useFirebase();
     const { user: currentUser, employees } = useCurrentUser();
-    const { addRecord } = useRecords();
-    const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
+    const { addRecord, updateRecord, getRecordById } = useRecords();
+    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
     const [isSaveOpen, setIsSaveOpen] = useState(false);
     const [taskName, setTaskName] = useState('');
@@ -52,15 +53,46 @@ export default function AssignTaskForm() {
     const [endDate, setEndDate] = useState('');
     const [projectName, setProjectName] = useState('');
     const [comboboxOpen, setComboboxOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(!!recordId);
+    
+    useEffect(() => {
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && record.data) {
+                const taskData = record.data.find((d: any) => d.category === 'Task Assignment')?.items;
+                if (taskData) {
+                    const data: Record<string, string> = {};
+                    taskData.forEach((item: { label: string; value: any }) => {
+                        data[item.label] = item.value;
+                    });
+                    
+                    setProjectName(data.projectName || '');
+                    setTaskName(data.taskName || '');
+                    setTaskDescription(data.taskDescription || '');
+                    setStartDate(data.startDate || '');
+                    setEndDate(data.endDate || '');
+
+                    const assignedEmployee = employees.find(e => e.name === data.assignedTo);
+                    if (assignedEmployee) {
+                        setAssignedTo(assignedEmployee.uid);
+                    }
+                }
+            } else if (recordId) {
+                toast({ variant: "destructive", title: "Error", description: "Could not find the specified record."});
+            }
+        }
+        setIsLoading(false);
+    }, [recordId, getRecordById, employees, toast]);
+
 
     useEffect(() => {
-        if (employeeId) {
+        if (!recordId && employeeId) {
             const employee = employees.find(e => e.record === employeeId);
             if (employee) {
                 setAssignedTo(employee.uid);
             }
         }
-    }, [employeeId, employees]);
+    }, [employeeId, employees, recordId]);
 
     const handleSave = () => {
         if (!isAdmin) {
@@ -78,7 +110,7 @@ export default function AssignTaskForm() {
             return;
         }
 
-        const dataToSave = {
+        const taskCoreData = {
             taskName,
             taskDescription,
             assignedTo,
@@ -87,7 +119,6 @@ export default function AssignTaskForm() {
             projectName,
             assignedBy: currentUser.name,
             assignedById: currentUser.uid,
-            createdAt: serverTimestamp(),
             status: 'not-started',
         };
 
@@ -96,9 +127,8 @@ export default function AssignTaskForm() {
             projectName: projectName || `Task: ${taskName}`,
             data: [{
                 category: 'Task Assignment',
-                items: Object.entries(dataToSave).map(([key, value]) => {
-                    if (key === 'createdAt') return { label: key, value: new Date().toISOString() };
-                    if (key === 'assignedTo') {
+                items: Object.entries(taskCoreData).map(([key, value]) => {
+                     if (key === 'assignedTo') {
                          const assignedEmployee = employees.find(e => e.uid === value);
                          return { label: key, value: assignedEmployee?.name || value };
                     }
@@ -107,27 +137,31 @@ export default function AssignTaskForm() {
             }],
         };
 
-        addDoc(collection(firestore, 'tasks'), dataToSave)
-            .then(() => {
-                 addRecord(recordToSave as any);
+        if(recordId) {
+            updateRecord(recordId, recordToSave);
+        } else {
+             addDoc(collection(firestore, 'tasks'), { ...taskCoreData, createdAt: serverTimestamp() })
+                .then(() => {
+                    addRecord(recordToSave as any);
 
-                toast({ title: 'Task Assigned', description: `Task "${taskName}" has been assigned and recorded.` });
-                setIsSaveOpen(false);
-                setTaskName('');
-                setTaskDescription('');
-                setAssignedTo(employeeId ? (employees.find(e => e.record === employeeId)?.uid || '') : '');
-                setStartDate('');
-                setEndDate('');
-                setProjectName('');
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'tasks',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            });
+                    toast({ title: 'Task Assigned', description: `Task "${taskName}" has been assigned and recorded.` });
+                    setIsSaveOpen(false);
+                    setTaskName('');
+                    setTaskDescription('');
+                    setAssignedTo(employeeId ? (employees.find(e => e.record === employeeId)?.uid || '') : '');
+                    setStartDate('');
+                    setEndDate('');
+                    setProjectName('');
+                })
+                .catch(serverError => {
+                    const permissionError = new FirestorePermissionError({
+                        path: 'tasks',
+                        operation: 'create',
+                        requestResourceData: { ...taskCoreData, createdAt: { "_methodName": "serverTimestamp" } },
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                });
+        }
     };
     
     const handleDownloadPdf = async () => {
@@ -175,11 +209,20 @@ export default function AssignTaskForm() {
         doc.save('task-assignment.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });
     };
+    
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-4">Loading record...</span>
+            </div>
+        )
+    }
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="text-center font-headline text-3xl text-primary">Assign a New Task</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">{recordId ? 'Edit Task' : 'Assign a New Task'}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
                 <div className="space-y-2">
@@ -233,7 +276,7 @@ export default function AssignTaskForm() {
                                                     assignedTo === employee.uid ? "opacity-100" : "opacity-0"
                                                     )}
                                                 />
-                                                {employee.name} ({employee.department})
+                                                {employee.name} ({employee.departments.join(', ')})
                                                 </CommandItem>
                                             ))}
                                         </CommandGroup>
@@ -256,13 +299,13 @@ export default function AssignTaskForm() {
                        {isAdmin && (
                         <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
                             <DialogTrigger asChild>
-                                <Button><Save className="mr-2 h-4 w-4" /> Assign & Save</Button>
+                                <Button><Save className="mr-2 h-4 w-4" />{recordId ? 'Update & Save' : 'Assign & Save'}</Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Confirm Assignment</DialogTitle>
+                                    <DialogTitle>Confirm {recordId ? 'Update' : 'Assignment'}</DialogTitle>
                                     <DialogDescription>
-                                        Are you sure you want to assign this task?
+                                        Are you sure you want to {recordId ? 'update this record' : 'assign this task'}?
                                     </DialogDescription>
                                 </DialogHeader>
                                 <DialogFooter>
@@ -278,5 +321,3 @@ export default function AssignTaskForm() {
         </Card>
     );
 }
-
-    
