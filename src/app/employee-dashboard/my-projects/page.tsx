@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useMemo, useState, useEffect } from 'react';
@@ -104,11 +105,6 @@ function MyProjectsReportComponent() {
             <p className="mt-2 text-muted-foreground">
                 <span className="font-semibold">Employee:</span> {displayUser?.name}
             </p>
-            {scheduleData.schedule && (
-                 <p className="text-muted-foreground">
-                    <span className="font-semibold">Schedule:</span> {scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}
-                 </p>
-            )}
         </div>
 
         <Table>
