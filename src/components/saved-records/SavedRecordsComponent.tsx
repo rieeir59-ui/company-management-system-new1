@@ -48,7 +48,6 @@ const managementRecordTypes = [
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
     "Project Information"
 ];
-
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
     { name: "Project Information", icon: FolderOpen },
@@ -76,7 +75,7 @@ const managementCategoriesWithIcons = [
     { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
     { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
     { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
-];
+]
 
 
 const generatePdfForRecord = (record: SavedRecord) => {
@@ -274,8 +273,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             if (selectedMgmtRecordType) {
                  const typesToFilter = selectedMgmtRecordType === "Site Survey" 
                     ? ["Site Survey Report", "Site Visit Proforma"] 
-                    : selectedMgmtRecordType === "Project Information"
-                    ? ["Project Information"]
                     : [selectedMgmtRecordType];
                  recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
             } else {
@@ -709,3 +706,4 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
