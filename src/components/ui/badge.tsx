@@ -35,9 +35,12 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 const statusConfig = {
+    'Completed': { icon: CheckCircle2, color: 'bg-green-100 text-green-800 border-green-200', label: 'Completed' },
     'completed': { icon: CheckCircle2, color: 'bg-green-100 text-green-800 border-green-200', label: 'Completed' },
     'pending-approval': { icon: AlertCircle, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Pending Approval' },
+    'In Progress': { icon: Clock, color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'In Progress' },
     'in-progress': { icon: Clock, color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'In Progress' },
+    'Not Started': { icon: XCircle, color: 'bg-red-100 text-red-800 border-red-200', label: 'Not Started' },
     'not-started': { icon: XCircle, color: 'bg-red-100 text-red-800 border-red-200', label: 'Not Started' },
 };
 
@@ -54,3 +57,5 @@ export const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) =
 
 
 export { Badge, badgeVariants }
+
+    

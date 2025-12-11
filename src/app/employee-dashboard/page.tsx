@@ -256,17 +256,22 @@ function MyProjectsComponent() {
     
     const combinedSchedule = useMemo(() => {
         const assigned = allProjects.map(p => ({
-            id: p.id,
-            projectName: p.projectName,
+            ...p,
             detail: p.taskName,
-            status: p.status,
-            startDate: p.startDate,
-            endDate: p.endDate,
             isManual: false,
         }));
         const manual = manualEntries.map(e => ({ ...e, isManual: true }));
-        return [...assigned, ...manual];
-    }, [allProjects, manualEntries]);
+        // Ensure manual entries have all fields to match Task type for simplicity in table
+        const normalizedManual = manual.map(m => ({
+            ...m,
+            taskName: m.detail,
+            taskDescription: m.detail,
+            assignedBy: currentUser?.name || '',
+            assignedTo: currentUser?.uid || '',
+            createdAt: new Date() as any,
+        }))
+        return [...assigned, ...normalizedManual];
+    }, [allProjects, manualEntries, currentUser]);
 
     const addManualEntry = () => {
         setManualEntries(prev => [...prev, {
@@ -580,3 +585,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
