@@ -459,7 +459,7 @@ function MyProjectsComponent() {
                 </div>
                 <div className="flex justify-end w-full gap-2">
                     <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
-                    <Button onClick={handleDownloadSchedule}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button onClick={handleDownloadSchedule}><Eye className="mr-2 h-4 w-4" /> View Project Report</Button>
                 </div>
             </CardFooter>
         </Card>
