@@ -1,46 +1,51 @@
 
 'use server';
-import { ai } from '@/ai/genkit';
+/**
+ * @fileOverview Generates a project timeline.
+ *
+ * - generateTimeline - A function that creates a timeline based on project name and area.
+ * - GenerateTimelineInput - The input type for the generateTimeline function.
+ * [>..] - GenerateTimelineOutput - The return type for the generateTimeline function.
+ */
+
+import { generate } from 'genkit/ai';
+import { configureGenkit } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
+import {ai} from '@/ai/genkit';
 
-const TaskSchema = z.object({
-  taskName: z.string().describe('The name of the project task or milestone.'),
-  startDate: z.string().describe('The start date of the task in YYYY-MM-DD format.'),
-  endDate: z.string().describe('The end date of the task in YYYY-MM-DD format.'),
-});
-
-const TimelineOutputSchema = z.object({
-  tasks: z.array(TaskSchema).describe('A list of all project tasks with their start and end dates.'),
-});
-
-export type TimelineOutput = z.infer<typeof TimelineOutputSchema>;
-
-const GenerateTimelineInputSchema = z.object({
+export const GenerateTimelineInputSchema = z.object({
   projectName: z.string().describe('The name of the project.'),
   area: z.string().describe('The area of the project in square feet.'),
 });
-
 export type GenerateTimelineInput = z.infer<typeof GenerateTimelineInputSchema>;
 
-export async function generateTimeline(input: GenerateTimelineInput): Promise<TimelineOutput> {
-  const llmResponse = await generateTimelineFlow(input);
-  return llmResponse;
-}
+export const GenerateTimelineOutputSchema = z.object({
+  tasks: z.array(
+    z.object({
+      taskName: z.string().describe('The name of the project task or phase.'),
+      startDate: z.string().describe('The start date of the task in YYYY-MM-DD format.'),
+      endDate: z.string().describe('The end date of the task in YYYY-MM-DD format.'),
+    })
+  ).describe('A list of project tasks with their start and end dates.'),
+});
+export type GenerateTimelineOutput = z.infer<typeof GenerateTimelineOutputSchema>;
 
-const generateTimelineFlow = ai.defineFlow(
-  {
-    name: 'generateTimelineFlow',
-    inputSchema: GenerateTimelineInputSchema,
-    outputSchema: TimelineOutputSchema,
-  },
-  async (input) => {
 
-    const llmResponse = await ai.generate({
-      prompt: `
-      You are a project manager for an architecture firm. Based on the project name and area, generate a realistic timeline.
-      The project name is "${input.projectName}" and the area is ${input.area} sft.
-      
-      Create a list of tasks. The main tasks are:
+export async function generateTimeline(
+  input: GenerateTimelineInput
+): Promise<GenerateTimelineOutput> {
+  const { output } = await generate({
+    model: 'googleai/gemini-pro',
+    prompt: `
+      You are a project management assistant for an architectural firm.
+      Based on the project name and area, generate a realistic timeline of key phases.
+      Today's date is ${new Date().toISOString().split('T')[0]}.
+
+      Project Name: ${input.projectName}
+      Area: ${input.area} sft
+
+      Provide the timeline for the following tasks:
       - Site Survey
       - Contact
       - Head Count / Requirment
@@ -55,15 +60,25 @@ const generateTimelineFlow = ai.defineFlow(
       - Site Visit
       - Final Bill
       - Project Closure
-      
-      For each task, provide a reasonable start and end date in YYYY-MM-DD format. The start date should be based on the current date. Be realistic about the duration based on the project area.
-    `,
-      model: 'googleai/gemini-pro',
-      output: {
-        schema: TimelineOutputSchema,
-      },
-    });
 
-    return llmResponse.output!;
+      Your response MUST be in a valid JSON format that adheres to the following Zod schema:
+      ${JSON.stringify(GenerateTimelineOutputSchema.shape)}
+    `,
+    output: {
+      format: 'json',
+    },
+  });
+
+  if (!output) {
+    throw new Error('Failed to generate timeline. No output received from the model.');
   }
-);
+  
+  const parsedOutput = GenerateTimelineOutputSchema.safeParse(output);
+
+  if (!parsedOutput.success) {
+      console.error('AI output validation failed:', parsedOutput.error);
+      throw new Error('The AI returned data in an unexpected format.');
+  }
+
+  return parsedOutput.data;
+}

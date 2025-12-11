@@ -6,12 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, PlusCircle, Trash2, Bot } from 'lucide-react';
+import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
-import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
 import { bankAlHabibProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function BankAlHabibTimelineComponent() {
@@ -20,110 +19,6 @@ function BankAlHabibTimelineComponent() {
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
-    
-    const [genProjectName, setGenProjectName] = useState('');
-    const [genArea, setGenArea] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-
-    const handleGenerateTimeline = async () => {
-        if (!genProjectName || !genArea) {
-            toast({
-                variant: 'destructive',
-                title: 'Missing Information',
-                description: 'Please enter a project name and area to generate a timeline.',
-            });
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            const result = await generateTimeline({ projectName: genProjectName, area: genArea });
-            
-            const taskMap: Record<string, { start: string, end: string }> = {};
-            result.tasks.forEach(task => {
-                const key = task.taskName.toLowerCase().replace(/[^a-z0-9]/g, '');
-                taskMap[key] = { start: task.startDate, end: task.endDate };
-            });
-
-            const projectExists = projectRows.some(row => row.projectName.toLowerCase() === genProjectName.toLowerCase());
-
-            if (projectExists) {
-                 const updatedProjectRows = projectRows.map(row => {
-                    if (row.projectName.toLowerCase() === genProjectName.toLowerCase()) {
-                        return {
-                            ...row,
-                            area: genArea,
-                            siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
-                            siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
-                            contactStart: taskMap['contact']?.start || row.contactStart,
-                            contactEnd: taskMap['contact']?.end || row.contactEnd,
-                            headCountStart: taskMap['headcountrequirment']?.start || row.headCountStart,
-                            headCountEnd: taskMap['headcountrequirment']?.end || row.headCountEnd,
-                            proposalStart: taskMap['proposaldesigndevelopment']?.start || row.proposalStart,
-                            proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
-                            threedStart: taskMap['3ds']?.start || row.threedStart,
-                            threedEnd: taskMap['3ds']?.end || row.threedEnd,
-                            tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
-                            tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
-                            tenderMepStart: taskMap['tenderpackagemep']?.start || row.tenderMepStart,
-                            tenderMepEnd: taskMap['tenderpackagemep']?.end || row.tenderMepEnd,
-                            boqStart: taskMap['boq']?.start || row.boqStart,
-                            boqEnd: taskMap['boq']?.end || row.boqEnd,
-                            tenderStatus: taskMap['tenderstatus']?.start || row.tenderStatus,
-                            comparative: taskMap['comparative']?.start || row.comparative,
-                            workingDrawings: taskMap['workingdrawings']?.start || row.workingDrawings,
-                            siteVisit: taskMap['sitevisit']?.start || row.siteVisit,
-                            finalBill: taskMap['finalbill']?.start || row.finalBill,
-                            projectClosure: taskMap['projectclosure']?.start || row.projectClosure,
-                        };
-                    }
-                    return row;
-                });
-                 setProjectRows(updatedProjectRows);
-            } else {
-                 const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-                 const newRow: ProjectRow = {
-                    id: newId, srNo: String(newId), projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
-                    siteSurveyStart: taskMap['sitesurvey']?.start || '',
-                    siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contact']?.start || '',
-                    contactEnd: taskMap['contact']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
-                    proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
-                    proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
-                    threedStart: taskMap['3ds']?.start || '',
-                    threedEnd: taskMap['3ds']?.end || '',
-                    tenderArchStart: taskMap['tenderpackagearchitectural']?.start || '',
-                    tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || '',
-                    tenderMepStart: taskMap['tenderpackagemep']?.start || '',
-                    tenderMepEnd: taskMap['tenderpackagemep']?.end || '',
-                    boqStart: taskMap['boq']?.start || '',
-                    boqEnd: taskMap['boq']?.end || '',
-                    tenderStatus: taskMap['tenderstatus']?.start || '',
-                    comparative: taskMap['comparative']?.start || '',
-                    workingDrawings: taskMap['workingdrawings']?.start || '',
-                    siteVisit: taskMap['sitevisit']?.start || '',
-                    finalBill: taskMap['finalbill']?.start || '',
-                    projectClosure: taskMap['projectclosure']?.start || '',
-                };
-                setProjectRows(prevRows => [...prevRows, newRow]);
-            }
-            
-            toast({ title: 'Timeline Generated', description: `Dates for '${genProjectName}' have been filled in.` });
-
-        } catch (error) {
-            console.error(error);
-            toast({
-                variant: 'destructive',
-                title: 'Generation Failed',
-                description: 'Could not generate the timeline. Please try again.',
-            });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
@@ -131,8 +26,9 @@ function BankAlHabibTimelineComponent() {
 
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
+        const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
-            id: newId, srNo: String(newId), projectName: '', area: '', projectHolder: '', allocationDate: '',
+            id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
             siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
@@ -207,19 +103,6 @@ function BankAlHabibTimelineComponent() {
                 </div>
             </CardHeader>
             <CardContent>
-                <Card className="mb-6 bg-muted/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Bot className="h-5 w-5" /> AI Timeline Generator</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full"><Input placeholder="Project Name" value={genProjectName} onChange={(e) => setGenProjectName(e.target.value)} /></div>
-                        <div className="flex-1 w-full"><Input placeholder="Area in sft" value={genArea} onChange={(e) => setGenArea(e.target.value)} /></div>
-                        <Button onClick={handleGenerateTimeline} disabled={isGenerating} className="w-full md:w-auto">
-                            {isGenerating ? 'Generating...' : 'Generate Timeline'}
-                        </Button>
-                    </CardContent>
-                </Card>
-
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
                         <thead>
