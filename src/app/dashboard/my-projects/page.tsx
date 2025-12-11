@@ -351,7 +351,7 @@ function MyProjectsComponent() {
         </Card>
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Tasks" value={projectStats.total} icon={<Briefcase className="h-6 w-6 text-muted-foreground" />} />
+            <StatCard title="Total Projects" value={projectStats.total} icon={<Briefcase className="h-6 w-6 text-muted-foreground" />} />
             <StatCard title="Completed" value={projectStats.completed} icon={<CheckCircle2 className="h-6 w-6" />} color="bg-green-500 text-white" />
             <StatCard title="In Progress" value={projectStats.inProgress} icon={<Clock className="h-6 w-6" />} color="bg-blue-500 text-white" />
             <StatCard title="Not Started" value={projectStats.notStarted} icon={<XCircle className="h-6 w-6" />} color="bg-red-500 text-white" />
@@ -451,7 +451,7 @@ function MyProjectsComponent() {
                                   <Select
                                     value={item.status}
                                     onValueChange={(newStatus: Task['status']) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
-                                    disabled={item.status === 'pending-approval'}
+                                    disabled={!canEdit || item.status === 'pending-approval'}
                                   >
                                     <SelectTrigger className="w-[180px]">
                                       <StatusBadge status={item.status as Task['status']} />
@@ -595,3 +595,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
