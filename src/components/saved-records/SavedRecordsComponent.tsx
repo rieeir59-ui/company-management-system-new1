@@ -48,7 +48,6 @@ const managementRecordTypes = [
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
     "Project Information"
 ];
-
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
     { name: "Project Information", icon: FolderOpen },
@@ -76,7 +75,7 @@ const managementCategoriesWithIcons = [
     { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
     { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
     { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
-];
+]
 
 
 const generatePdfForRecord = (record: SavedRecord) => {
