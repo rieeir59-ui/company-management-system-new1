@@ -366,7 +366,7 @@ export default function ProjectDataPage() {
     }
     
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 project-data-page">
             <div className='no-print'>
                 <DashboardPageHeader
                     title="Site Survey"
@@ -629,4 +629,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
