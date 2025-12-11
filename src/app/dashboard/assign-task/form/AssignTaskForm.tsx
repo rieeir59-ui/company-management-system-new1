@@ -117,7 +117,6 @@ export default function AssignTaskForm() {
             assignedBy: currentUser.name,
             assignedById: currentUser.uid,
             status: 'not-started',
-            userId: assignedTo, // Crucial for security rules
         };
 
         const recordToSave = {
@@ -320,3 +319,4 @@ export default function AssignTaskForm() {
         </Card>
     );
 }
+

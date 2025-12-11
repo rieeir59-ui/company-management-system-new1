@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -28,25 +29,16 @@ service cloud.firestore {
 
     // SAVED RECORDS collection
     match /savedRecords/{recordId} {
-      allow get: if isLoggedIn();
-      allow list: if isLoggedIn() && (isAdmin() || request.query.filters.employeeId == request.auth.uid);
+      allow get, list: if isLoggedIn();
       allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
       allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
     }
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks assigned to them.
-      allow get: if isAdmin() || isAssignee();
-      allow list: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
-      
-      // Only admins can create new tasks.
+      allow read: if isAdmin() || isAssignee();
       allow create: if isAdmin();
-      
-      // Admin can update any field. Assignee can only update status.
-      allow update: if isAdmin() || (isAssignee() && request.resource.data.keys().hasOnly(['status']));
-
-      // Only admins can delete tasks.
+      allow update: if isAdmin() || isAssignee();
       allow delete: if isAdmin();
     }
 
