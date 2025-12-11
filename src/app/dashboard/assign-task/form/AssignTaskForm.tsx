@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -116,6 +117,7 @@ export default function AssignTaskForm() {
             assignedBy: currentUser.name,
             assignedById: currentUser.uid,
             status: 'not-started',
+            userId: assignedTo, // Crucial for security rules
         };
 
         const recordToSave = {

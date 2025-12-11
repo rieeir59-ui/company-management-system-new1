@@ -14,6 +14,11 @@ service cloud.firestore {
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
+    
+    // Helper: Check if the user owns the task document
+    function isTaskOwner() {
+      return request.auth != null && resource.data.userId == request.auth.uid;
+    }
 
     // USERS collection
     match /users/{uid} {
@@ -30,8 +35,10 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Any authenticated user can read or write to any task document.
-      allow read, write: if isLoggedIn();
+      allow read: if isAdmin() || isTaskOwner();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isTaskOwner();
+      allow delete: if isAdmin();
     }
 
     // UPLOADED FILES collection

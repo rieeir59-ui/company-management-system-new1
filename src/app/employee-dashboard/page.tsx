@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -193,24 +194,24 @@ function MyProjectsComponent() {
     };
 
   const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
-    if (!firestore) return;
-    
-    const taskRef = doc(firestore, 'tasks', taskId);
+    if (!firestore || !currentUser) return;
+
     try {
-      await updateDoc(taskRef, { status: newStatus });
-      toast({
-        title: 'Status Updated',
-        description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
-      });
+        const taskRef = doc(firestore, 'tasks', taskId);
+        await updateDoc(taskRef, { status: newStatus });
+        toast({
+            title: 'Status Updated',
+            description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
+        });
     } catch (serverError) {
-      const permissionError = new FirestorePermissionError({
-        path: `tasks/${taskId}`,
-        operation: 'update',
-        requestResourceData: { status: newStatus }
-      });
-      errorEmitter.emit('permission-error', permissionError);
+        const permissionError = new FirestorePermissionError({
+            path: `tasks/${taskId}`,
+            operation: 'update',
+            requestResourceData: { status: newStatus }
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
-  };
+};
   
     const handleScheduleEntryChange = (id: string, field: keyof Task, value: string) => {
         if (field === 'status') {
@@ -397,7 +398,7 @@ function MyProjectsComponent() {
                                     <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
-                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
+                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleStatusChange(entry.id, v)}>
                                             <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><StatusBadge status={entry.status} /></SelectTrigger>
                                             <SelectContent>
                                                  <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
