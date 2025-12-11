@@ -99,13 +99,33 @@ function MyProjectsComponent() {
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
   const [remarks, setRemarks] = useState('');
  
+  const combinedSchedule = useMemo(() => {
+        const assigned = allProjects.map(p => ({
+            ...p,
+            detail: p.taskName,
+            isManual: false,
+        }));
+        const manual = manualEntries.map(e => ({ ...e, isManual: true }));
+        // Ensure manual entries have all fields to match Task type for simplicity in table
+        const normalizedManual = manual.map(m => ({
+            ...m,
+            taskName: m.detail,
+            taskDescription: m.detail,
+            assignedBy: currentUser?.name || '',
+            assignedTo: currentUser?.uid || '',
+            createdAt: new Date() as any,
+        }))
+        return [...assigned, ...normalizedManual];
+    }, [allProjects, manualEntries, currentUser]);
+    
   const projectStats = useMemo(() => {
-      const total = allProjects.length;
-      const completed = allProjects.filter(p => p.status === 'completed').length;
-      const inProgress = allProjects.filter(p => p.status === 'in-progress' || p.status === 'pending-approval').length;
-      const notStarted = allProjects.filter(p => p.status === 'not-started').length;
+      const allItems = combinedSchedule;
+      const total = allItems.length;
+      const completed = allItems.filter(p => p.status === 'completed' || p.status === 'Completed').length;
+      const inProgress = allItems.filter(p => p.status === 'in-progress' || p.status === 'In Progress' || p.status === 'pending-approval').length;
+      const notStarted = allItems.filter(p => p.status === 'not-started' || p.status === 'Not Started').length;
       return { total, completed, inProgress, notStarted };
-  }, [allProjects]);
+  }, [combinedSchedule]);
     
 
     const openSubmitDialog = (task: Task) => {
@@ -256,24 +276,7 @@ function MyProjectsComponent() {
         toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
     };
     
-    const combinedSchedule = useMemo(() => {
-        const assigned = allProjects.map(p => ({
-            ...p,
-            detail: p.taskName,
-            isManual: false,
-        }));
-        const manual = manualEntries.map(e => ({ ...e, isManual: true }));
-        // Ensure manual entries have all fields to match Task type for simplicity in table
-        const normalizedManual = manual.map(m => ({
-            ...m,
-            taskName: m.detail,
-            taskDescription: m.detail,
-            assignedBy: currentUser?.name || '',
-            assignedTo: currentUser?.uid || '',
-            createdAt: new Date() as any,
-        }))
-        return [...assigned, ...normalizedManual];
-    }, [allProjects, manualEntries, currentUser]);
+    
 
     const addManualEntry = () => {
         setManualEntries(prev => [...prev, {
@@ -397,7 +400,7 @@ function MyProjectsComponent() {
                                         <Select
                                             value={project.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
-                                            disabled={project.status === 'pending-approval'}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                               <StatusBadge status={project.status} />
@@ -597,3 +600,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
