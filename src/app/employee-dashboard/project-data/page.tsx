@@ -13,6 +13,7 @@ import { Save, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -43,6 +44,7 @@ const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = '
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-data');
     const { toast } = useToast();
+    const { addRecord } = useRecords();
 
     const [formData, setFormData] = useState({
         project_name: '', project_address: '', project_owner: '', architect_project_no: '',
@@ -72,16 +74,27 @@ export default function ProjectDataPage() {
     };
 
     const handleSave = () => {
-        toast({
-            title: "Record Saved",
-            description: "The project data has been successfully saved.",
-        });
+        const dataToSave = {
+          fileName: 'Project Data',
+          projectName: formData.project_name || 'Untitled Project Data',
+          data: [
+            { category: 'Project Information', items: Object.entries(formData).slice(0, 10).map(([key, value]) => ({ label: key, value })) },
+            { category: 'General Information', items: Object.entries(formData).slice(10, 21).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Site Legal Description', items: Object.entries(formData).slice(21, 33).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Contacts', items: Object.entries(formData).slice(33, 40).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Site Information Sources', items: Object.entries(formData).slice(40, 49).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Public Services', items: Object.entries(formData).slice(49, 60).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Financial Data', items: Object.entries(formData).slice(60, 71).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Method of Handling', items: Object.entries(formData).slice(71, 80).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Sketch of Property', items: [{ label: 'Notations', value: formData.sketch_notes }] },
+          ]
+        };
+        
+        addRecord(dataToSave as any);
     }
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
-        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 15;
         const margin = 14;
         const col1X = margin;
@@ -207,13 +220,6 @@ export default function ProjectDataPage() {
         ]);
         
         addSection('Sketch of Property', [['Notations:', formData.sketch_notes]]);
-        
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i);
-          doc.setFontSize(8);
-          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
-        }
         
         doc.save('project_data.pdf');
         toast({

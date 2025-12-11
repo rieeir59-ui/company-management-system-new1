@@ -13,6 +13,7 @@ import { Save, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -43,6 +44,7 @@ const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = '
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-data');
     const { toast } = useToast();
+    const { addRecord } = useRecords();
 
     const [formData, setFormData] = useState({
         project_name: '', project_address: '', project_owner: '', architect_project_no: '',
@@ -72,10 +74,23 @@ export default function ProjectDataPage() {
     };
 
     const handleSave = () => {
-        toast({
-            title: "Record Saved",
-            description: "The project data has been successfully saved.",
-        });
+       const dataToSave = {
+          fileName: 'Project Data',
+          projectName: formData.project_name || 'Untitled Project Data',
+          data: [
+            { category: 'Project Information', items: Object.entries(formData).slice(0, 10).map(([key, value]) => ({ label: key, value })) },
+            { category: 'General Information', items: Object.entries(formData).slice(10, 21).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Site Legal Description', items: Object.entries(formData).slice(21, 33).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Contacts', items: Object.entries(formData).slice(33, 40).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Site Information Sources', items: Object.entries(formData).slice(40, 49).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Public Services', items: Object.entries(formData).slice(49, 60).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Financial Data', items: Object.entries(formData).slice(60, 71).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Method of Handling', items: Object.entries(formData).slice(71, 80).map(([key, value]) => ({ label: key, value })) },
+            { category: 'Sketch of Property', items: [{ label: 'Notations', value: formData.sketch_notes }] },
+          ]
+        };
+        
+        addRecord(dataToSave as any);
     }
 
     const handleDownloadPdf = () => {

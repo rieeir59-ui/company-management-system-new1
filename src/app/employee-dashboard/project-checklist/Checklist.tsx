@@ -331,11 +331,6 @@ export default function ProjectChecklistComponent() {
     };
 
     const handleSave = async () => {
-        if (!currentUser) {
-            toast({ variant: "destructive", title: "Error", description: "You must be logged in to save."});
-            return;
-        }
-
         const selectedDataForSave = getSelectedItems().map(s => ({
             category: `${s.mainTitle} - ${s.subTitle}`,
             items: s.items
@@ -346,7 +341,7 @@ export default function ProjectChecklistComponent() {
             architectName: architectName,
             projectNo: projectNo,
             projectDate: projectDate,
-            items: [],
+            items: [], // Kept for consistent data structure if needed later
         }
         selectedDataForSave.unshift(headerData);
 
@@ -356,8 +351,6 @@ export default function ProjectChecklistComponent() {
         }
 
         const recordToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Project Checklist',
             projectName: projectName || 'Untitled Project',
             data: selectedDataForSave,
@@ -366,7 +359,7 @@ export default function ProjectChecklistComponent() {
         if (recordId) {
             updateRecord(recordId, recordToSave);
         } else {
-            addRecord(recordToSave);
+            addRecord(recordToSave as any);
         }
     };
     

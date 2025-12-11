@@ -277,15 +277,10 @@ export default function ProjectChecklistComponent() {
             if (record && record.data) {
                 setProjectName(record.projectName || '');
                 const headerInfo = record.data.find((d: any) => d.category === 'Project Header');
-                if (headerInfo && headerInfo.items) {
-                    const headerData = headerInfo.items.reduce((acc: any, item: string) => {
-                         const [key, ...value] = item.split(':');
-                         if(key) acc[key.trim()] = value.join(':').trim();
-                         return acc;
-                    }, {});
-                    setArchitectName(headerData['Architect Name'] || '');
-                    setProjectNo(headerData['Project No'] || '');
-                    setProjectDate(headerData['Project Date'] || '');
+                if (headerInfo) {
+                    setArchitectName(headerInfo.architectName || '');
+                    setProjectNo(headerInfo.projectNo || '');
+                    setProjectDate(headerInfo.projectDate || '');
                 }
 
                 const newCheckedState = initializeState();
@@ -337,11 +332,6 @@ export default function ProjectChecklistComponent() {
     };
 
     const handleSave = async () => {
-        if (!currentUser) {
-            toast({ variant: "destructive", title: "Error", description: "You must be logged in to save."});
-            return;
-        }
-
         const selectedDataForSave = getSelectedItems().map(s => ({
             category: `${s.mainTitle} - ${s.subTitle}`,
             items: s.items
@@ -349,11 +339,10 @@ export default function ProjectChecklistComponent() {
         
         const headerData = {
             category: "Project Header",
-            items: [
-                `Architect Name: ${architectName}`,
-                `Project No: ${projectNo}`,
-                `Project Date: ${projectDate}`,
-            ],
+            architectName: architectName,
+            projectNo: projectNo,
+            projectDate: projectDate,
+            items: [], // Kept for consistent data structure if needed later
         }
         selectedDataForSave.unshift(headerData);
 
