@@ -123,6 +123,7 @@ const menuItems = [
     { href: '/employee-dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
+    { href: '/employee-dashboard/saved-records', label: 'Saved Records', icon: Database },
 ];
 
 const bankTimelineItems = [
@@ -168,18 +169,6 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
           </Link>
         </SidebarMenuItem>
       ))}
-       <SidebarMenuItem>
-        <Link href="/employee-dashboard/saved-records" passHref>
-            <SidebarMenuButton
-                isActive={pathname === '/employee-dashboard/saved-records'}
-                className={cn(pathname === '/employee-dashboard/saved-records' && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                tooltip="My Saved Records"
-            >
-                <Database className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-            </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
       <SidebarMenuItem>
         <Collapsible>
           <CollapsibleTrigger asChild>

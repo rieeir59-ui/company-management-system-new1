@@ -60,6 +60,7 @@ const menuItems = [
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
+    { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
@@ -107,18 +108,6 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: type
           </Link>
         </SidebarMenuItem>
       ))}
-      <SidebarMenuItem>
-        <Link href="/dashboard/saved-records" passHref>
-            <SidebarMenuButton
-                isActive={pathname === '/dashboard/saved-records'}
-                className={cn(pathname === '/dashboard/saved-records' && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                tooltip="Saved Records"
-            >
-                <Database className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Saved Records</span>
-            </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
        <SidebarMenuItem>
           <Collapsible>
             <CollapsibleTrigger asChild>
