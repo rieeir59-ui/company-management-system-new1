@@ -412,19 +412,19 @@ function MyProjectsComponent() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Project Name</TableHead>
-                                <TableHead>Detail</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Start Date</TableHead>
-                                <TableHead>End Date</TableHead>
-                                <TableHead>Actions</TableHead>
+                                <TableHead className="font-semibold">Project Name</TableHead>
+                                <TableHead className="font-semibold">Detail</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {scheduleEntries.map(entry => (
-                                <TableRow key={entry.id}>
-                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)}/></TableCell>
-                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1}/></TableCell>
+                                <TableRow key={entry.id} className="text-base">
+                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base"/></TableCell>
+                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base" /></TableCell>
                                     <TableCell>
                                         <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
                                             <SelectTrigger><SelectValue/></SelectTrigger>
@@ -435,8 +435,8 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)}/></TableCell>
-                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)}/></TableCell>
+                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)} className="text-base"/></TableCell>
+                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)} className="text-base"/></TableCell>
                                     <TableCell className="flex gap-1">
                                         <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
                                         <Button variant="destructive" size="icon" onClick={() => removeScheduleEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
