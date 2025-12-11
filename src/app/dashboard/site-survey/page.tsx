@@ -94,10 +94,31 @@ export default function ProjectDataPage() {
     const { addRecord } = useRecords();
     
     const handleSave = () => {
-        toast({
-            title: "Record Saved",
-            description: "The project data has been successfully saved.",
-        });
+        const form = document.getElementById('site-survey-form') as HTMLFormElement;
+        if (!form) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find form data to save.' });
+            return;
+        }
+
+        const formData = new FormData(form);
+        const data: { [key: string]: any } = {};
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+
+        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
+        const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
+
+        const recordData = {
+            fileName: "Site Survey Report",
+            projectName: data['location_address'] || 'Untitled Site Survey',
+            data: [{
+                category: 'Site Survey Data',
+                items: Object.entries(data).map(([key, value]) => ({ label: key, value: String(value) }))
+            }]
+        };
+
+        addRecord(recordData as any);
     }
 
     const handleDownloadPdf = () => {
@@ -611,5 +632,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    
