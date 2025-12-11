@@ -32,6 +32,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
+import { StatusBadge } from '@/components/ui/badge';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -211,10 +212,10 @@ export default function AssignTaskPage() {
                         <TableBody>
                             {tasks.map(task => (
                                 <TableRow key={task.id} className="text-base">
-                                    <TableCell>{task.taskName}</TableCell>
-                                    <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
-                                    <TableCell>{task.assignedBy}</TableCell>
-                                    <TableCell>{task.status}</TableCell>
+                                    <TableCell className="text-base">{task.taskName}</TableCell>
+                                    <TableCell className="text-base">{getEmployeeName(task.assignedTo)}</TableCell>
+                                    <TableCell className="text-base">{task.assignedBy}</TableCell>
+                                    <TableCell className="text-base"><StatusBadge status={task.status} /></TableCell>
                                     {isAdmin && (
                                     <TableCell className="text-right">
                                         <div className="flex gap-1 justify-end">

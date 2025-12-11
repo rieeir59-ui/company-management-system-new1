@@ -25,7 +25,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/badge';
 import Link from 'next/link';
 
 const departments: Record<string, string> = {
@@ -43,22 +43,6 @@ const departments: Record<string, string> = {
 function formatDepartmentName(slug: string) {
     return departments[slug] || slug;
 }
-
-const StatusBadge = ({ status }: { status: Task['status'] }) => {
-    const statusConfig = {
-        'completed': { icon: CheckCircle2, color: 'bg-green-100 text-green-800 border-green-200', label: 'Completed' },
-        'pending-approval': { icon: Clock, color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Pending Approval' },
-        'in-progress': { icon: Clock, color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'In Progress' },
-        'not-started': { icon: XCircle, color: 'bg-red-100 text-red-800 border-red-200', label: 'Not Started' },
-    };
-    const { icon: Icon, color, label } = statusConfig[status] || statusConfig['not-started'];
-    return (
-        <Badge variant="outline" className={cn("gap-1.5", color)}>
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-        </Badge>
-    );
-};
 
 const StatCard = ({ title, value, icon }: { title: string, value: number, icon: React.ReactNode }) => (
     <Card>
@@ -336,10 +320,10 @@ function MyProjectsComponent() {
                             </TableRow>
                             ) : allProjects.map((project) => (
                                 <TableRow key={project.id} className="text-base">
-                                    <TableCell className="font-medium">{project.taskName}</TableCell>
-                                    <TableCell>{project.assignedBy}</TableCell>
-                                    <TableCell>{project.startDate || 'N/A'}</TableCell>
-                                    <TableCell>{project.endDate || 'N/A'}</TableCell>
+                                    <TableCell className="font-medium text-base">{project.taskName}</TableCell>
+                                    <TableCell className="text-base">{project.assignedBy}</TableCell>
+                                    <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell className="text-base">{project.endDate || 'N/A'}</TableCell>
                                     <TableCell>
                                         <Select
                                             value={project.status}
@@ -406,11 +390,11 @@ function MyProjectsComponent() {
                                     <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
                                         <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
-                                            <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><SelectValue/></SelectTrigger>
+                                            <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><StatusBadge status={entry.status} /></SelectTrigger>
                                             <SelectContent>
-                                                 <SelectItem value="not-started">Not Started</SelectItem>
-                                                 <SelectItem value="in-progress">In Progress</SelectItem>
-                                                 <SelectItem value="completed">Completed</SelectItem>
+                                                 <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
+                                                 <SelectItem value="in-progress"><StatusBadge status="in-progress" /></SelectItem>
+                                                 <SelectItem value="completed"><StatusBadge status="completed" /></SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
