@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRecords } from '@/context/RecordContext';
 
 const factorsData = {
   humanFactors: {
@@ -146,6 +147,7 @@ const ChecklistItem = ({ item, value, onChange }: { item: { label: string; level
 
 export default function PredesignAssessmentPage() {
   const { toast } = useToast();
+  const { addRecord } = useRecords();
   const [headerInfo, setHeaderInfo] = useState({
     projectName: '',
     architect: '',
@@ -164,10 +166,20 @@ export default function PredesignAssessmentPage() {
 
 
   const handleSave = () => {
-    toast({
-      title: "Record Saved",
-      description: "The predesign assessment has been saved.",
-    });
+    const dataToSave = {
+        fileName: 'Predesign general assessment',
+        projectName: headerInfo.projectName || 'Untitled Assessment',
+        data: [{
+            category: 'Header',
+            items: Object.entries(headerInfo).map(([key, value]) => ({ label: key, value }))
+        },
+        ...Object.entries(factorsData).map(([key, factor]) => ({
+            category: factor.title,
+            items: factor.items.map(item => ({ label: item.label, value: formValues[item.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()] || ''}))
+        }))
+        ]
+    };
+    addRecord(dataToSave as any);
   };
 
   const handleDownload = () => {
