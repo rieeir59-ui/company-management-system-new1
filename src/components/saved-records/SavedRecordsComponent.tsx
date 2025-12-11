@@ -48,6 +48,7 @@ const managementRecordTypes = [
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
     "Project Information"
 ];
+
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
     { name: "Project Information", icon: FolderOpen },
@@ -707,3 +708,4 @@ const renderRecordContent = () => {
   );
 }
 
+    
