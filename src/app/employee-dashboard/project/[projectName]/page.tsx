@@ -5,10 +5,17 @@ import { useParams } from 'next/navigation';
 import { allProjects } from '@/lib/projects-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { differenceInDays, parse, isValid } from 'date-fns';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { useToast } from '@/hooks/use-toast';
+
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 const DetailItem = ({ label, value }: { label: string; value?: string | null }) => (
     <div>
@@ -40,6 +47,7 @@ const TimelineRow = ({ label, start, end }: { label: string; start?: string | nu
 
 export default function ProjectDetailPage() {
   const params = useParams();
+  const { toast } = useToast();
   const projectName = Array.isArray(params.projectName)
     ? params.projectName[0]
     : params.projectName;
@@ -47,6 +55,85 @@ export default function ProjectDetailPage() {
   const project = allProjects.find(
     (p) => encodeURIComponent(p.projectName) === projectName
   );
+
+  const singleMilestones = project ? [
+    { label: 'Tender Status', value: project.tenderStatus },
+    { label: 'Comparative', value: project.comparative },
+    { label: 'Working Drawings', value: project.workingDrawings },
+    { label: 'Site Visit', value: project.siteVisit },
+    { label: 'Final Bill', value: project.finalBill },
+    { label: 'Project Closure', value: project.projectClosure },
+  ].filter(item => item.value) : [];
+
+   const handleDownload = () => {
+    if (!project) return;
+    
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    let yPos = 20;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(project.projectName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+    yPos += 15;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+
+    doc.autoTable({
+        startY: yPos,
+        theme: 'plain',
+        body: [
+            ['Serial No.', project.srNo],
+            ['Area', project.area ? `${project.area} sft` : 'N/A'],
+            ['Project Holder', project.projectHolder || 'N/A'],
+            ['Allocation Date', project.allocationDate || 'N/A'],
+        ],
+        columnStyles: { 0: { fontStyle: 'bold' } },
+    });
+    yPos = doc.autoTable.previous.finalY + 15;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text("Project Timeline", 14, yPos);
+    yPos += 8;
+
+    const timelineBody = [
+        ["Site Survey", project.siteSurveyStart || 'N/A', project.siteSurveyEnd || 'N/A'],
+        ["Contact", project.contactStart || 'N/A', project.contactEnd || 'N/A'],
+        ["Head Count / Requirement", project.headCountStart || 'N/A', project.headCountEnd || 'N/A'],
+        ["Proposal / Design Development", project.proposalStart || 'N/A', project.proposalEnd || 'N/A'],
+        ["3D's", project.threedStart || 'N/A', project.threedEnd || 'N/A'],
+        ["Tender Package Architectural", project.tenderArchStart || 'N/A', project.tenderArchEnd || 'N/A'],
+        ["Tender Package MEP", project.tenderMepStart || 'N/A', project.tenderMepEnd || 'N/A'],
+        ["BOQ", project.boqStart || 'N/A', project.boqEnd || 'N/A'],
+    ];
+
+    doc.autoTable({
+        startY: yPos,
+        head: [['Phase', 'Start Date', 'End Date']],
+        body: timelineBody,
+        theme: 'grid',
+        headStyles: { fillColor: [45, 95, 51] },
+    });
+    yPos = doc.autoTable.previous.finalY + 15;
+
+    if (singleMilestones.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Other Milestones", 14, yPos);
+        yPos += 8;
+        doc.autoTable({
+            startY: yPos,
+            head: [['Milestone', 'Date/Status']],
+            body: singleMilestones.map(m => [m.label, m.value]),
+            theme: 'grid',
+            headStyles: { fillColor: [45, 95, 51] },
+        });
+    }
+
+    doc.save(`${project.projectName.replace(/ /g, '_')}_Details.pdf`);
+    toast({ title: 'Download Started', description: 'Your project details PDF is being generated.' });
+  }
 
   if (!project) {
     return (
@@ -60,26 +147,20 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const singleMilestones = [
-    { label: 'Tender Status', value: project.tenderStatus },
-    { label: 'Comparative', value: project.comparative },
-    { label: 'Working Drawings', value: project.workingDrawings },
-    { label: 'Site Visit', value: project.siteVisit },
-    { label: 'Final Bill', value: project.finalBill },
-    { label: 'Project Closure', value: project.projectClosure },
-  ].filter(item => item.value);
-
   return (
     <div className="space-y-6">
-       <div className="flex items-center gap-4">
-        <Button asChild variant="outline" size="icon">
-          <Link href="/employee-dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <h1 className="text-3xl font-bold font-headline text-primary">
-          {project.projectName}
-        </h1>
+       <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="outline" size="icon">
+            <Link href="/employee-dashboard">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold font-headline text-primary">
+            {project.projectName}
+          </h1>
+        </div>
+        <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
       </div>
 
       <Card>
