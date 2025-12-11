@@ -172,47 +172,47 @@ const generatePdfForRecord = (record: SavedRecord) => {
         };
 
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
-        const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
+        const details = record.data.find((d:any) => d.category === 'Agreement Details')?.items || [];
         addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
         addText(`Between the Owner: ${details.find((d:any)=>d.label.includes('Owner'))?.value || '________________'}`);
         addText(`For the Design of: ${details.find((d:any)=>d.label.includes('Design'))?.value || '________________'}`);
         addText(`Address: ${details.find((d:any)=>d.label.includes('Address'))?.value || '________________'}`);
         
-        const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
+        const costBody = record.data.find((d:any) => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
         addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
-        const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
+        const paymentBody = record.data.find((d:any) => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
         addText('Project Management', true, 0, 12, 8);
         addText('Top Supervision:', true, 2, 10, 5);
-        addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
+        addList(record.data.find((d:any) => d.category === 'Top Supervision')?.items || []);
 
         addText('Detailed Supervision:', true, 2, 10, 5);
-        addText(record.data.find(d => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
+        addText(record.data.find((d:any) => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
 
         addText('Please Note:', true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Notes')?.items || []);
-        addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
+        addList(record.data.find((d:any) => d.category === 'Notes')?.items || []);
+        addText(record.data.find((d:any) => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
 
         doc.addPage(); yPos = 20;
 
         addText("Architect's Responsibilities", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === "Architect's Responsibilities")?.items || []);
+        addList(record.data.find((d:any) => d.category === "Architect's Responsibilities")?.items || []);
 
         addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Not Responsible For')?.items || []);
+        addList(record.data.find((d:any) => d.category === 'Not Responsible For')?.items || []);
 
         addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Termination')?.items || []);
+        addList(record.data.find((d:any) => d.category === 'Termination')?.items || []);
 
         doc.addPage(); yPos = 20;
 
         addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Compensation')?.items || []);
+        addList(record.data.find((d:any) => d.category === 'Compensation')?.items || []);
 
         yPos += 10;
         if (yPos > 270) { doc.addPage(); yPos = 20; }
