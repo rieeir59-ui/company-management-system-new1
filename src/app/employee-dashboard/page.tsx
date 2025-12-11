@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -26,10 +25,7 @@ import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import Link from 'next/link';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -276,28 +272,6 @@ function MyProjectsComponent() {
            // error is handled by context
         }
     };
-    
-    const handleDownloadSchedule = () => {
-        const doc = new jsPDF();
-        doc.setFontSize(16);
-        doc.text('My Project Schedule', 14, 22);
-        doc.setFontSize(10);
-        doc.text(`Employee: ${displayUser?.name}`, 14, 30);
-        doc.text(`Schedule: ${scheduleStartDate} to ${scheduleEndDate}`, 14, 36);
-
-        (doc as any).autoTable({
-            startY: 42,
-            head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
-            body: scheduleEntries.map(e => [e.projectName, e.taskDescription, e.status, e.startDate, e.endDate]),
-        });
-        
-        let finalY = (doc as any).lastAutoTable.finalY + 10;
-        doc.text('Remarks:', 14, finalY);
-        doc.text(remarks, 14, finalY + 5);
-
-        doc.save('my-project-schedule.pdf');
-    };
-
 
   const openViewDialog = (task: Task) => {
     setViewingTask(task);
@@ -426,12 +400,12 @@ function MyProjectsComponent() {
                         </TableHeader>
                         <TableBody>
                             {scheduleEntries.map(entry => (
-                                <TableRow key={entry.id} className="text-base">
+                                <TableRow key={entry.id}>
                                     <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
                                         <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
-                                            <SelectTrigger><SelectValue/></SelectTrigger>
+                                            <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><SelectValue/></SelectTrigger>
                                             <SelectContent>
                                                  <SelectItem value="not-started">Not Started</SelectItem>
                                                  <SelectItem value="in-progress">In Progress</SelectItem>
@@ -459,7 +433,7 @@ function MyProjectsComponent() {
                 </div>
                 <div className="flex justify-end w-full gap-2">
                     <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
-                    <Button onClick={handleDownloadSchedule}><Eye className="mr-2 h-4 w-4" /> View Project Report</Button>
+                    <Button asChild><Link href="/employee-dashboard/my-projects"><Eye className="mr-2 h-4 w-4" /> View Project Report</Link></Button>
                 </div>
             </CardFooter>
         </Card>
