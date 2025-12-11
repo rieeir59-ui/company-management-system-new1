@@ -30,10 +30,7 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow list, get: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
-      allow create: if isLoggedIn();
-      allow update: if isLoggedIn();
-      allow delete: if isLoggedIn();
+      allow read, write: if isLoggedIn();
     }
 
     // UPLOADED FILES collection
