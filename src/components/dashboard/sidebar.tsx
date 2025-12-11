@@ -41,6 +41,7 @@ import {
   Building2,
   Home,
   Search as SearchIcon,
+  Compass,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -61,6 +62,7 @@ const menuItems = [
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
     { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
+    { href: '/dashboard/site-survey', label: 'Site Survey', icon: Compass },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
