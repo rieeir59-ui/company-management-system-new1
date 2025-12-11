@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -57,7 +58,7 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
             total++;
             if (task.status === 'completed') {
                 completed++;
-            } else if (task.status === 'in-progress') {
+            } else if (task.status === 'in-progress' || task.status === 'pending-approval') {
                 inProgress++;
             }
             if (task.endDate && new Date(task.endDate) < new Date() && task.status !== 'completed') {
@@ -135,17 +136,20 @@ export default function AssignTaskPage() {
         setIsDeleteDialogOpen(true);
     };
     
-    const handleApprove = async (task: Task) => {
-        if (!firestore || !isAdmin) return;
-        const taskRef = doc(firestore, 'tasks', task.id);
+    const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
+        if (!firestore || !isAdmin) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
+          return;
+        }
+        const taskRef = doc(firestore, 'tasks', taskId);
         try {
-            await updateDoc(taskRef, { status: 'completed' });
-            toast({ title: 'Task Approved', description: `Task "${task.taskName}" has been marked as completed.` });
+            await updateDoc(taskRef, { status: newStatus });
+            toast({ title: 'Status Updated', description: 'Task status has been updated.' });
         } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${task.id}`, operation: 'update', requestResourceData: { status: 'completed' } }));
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
         }
     };
-
+    
     const confirmDelete = () => {
         if (!taskToDelete || !firestore) return;
         if (!isAdmin) {
@@ -215,7 +219,23 @@ export default function AssignTaskPage() {
                                     <TableCell className="text-base">{task.taskName}</TableCell>
                                     <TableCell className="text-base">{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell className="text-base">{task.assignedBy}</TableCell>
-                                    <TableCell className="text-base"><StatusBadge status={task.status} /></TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={task.status}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}
+                                            disabled={!isAdmin}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                                <StatusBadge status={task.status} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="not-started">Not Started</SelectItem>
+                                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="pending-approval">Pending Approval</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
                                     {isAdmin && (
                                     <TableCell className="text-right">
                                         <div className="flex gap-1 justify-end">
@@ -227,7 +247,7 @@ export default function AssignTaskPage() {
                                                 </Button>
                                             )}
                                             {task.status === 'pending-approval' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleApprove(task)} title="Approve Task">
+                                                <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task.id, 'completed')} title="Approve Task">
                                                     <Check className="h-4 w-4 text-green-500" />
                                                 </Button>
                                             )}

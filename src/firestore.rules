@@ -30,6 +30,7 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
+      // Any authenticated user can read or write to any task document.
       allow read, write: if isLoggedIn();
     }
 
