@@ -26,6 +26,10 @@ import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -423,8 +427,8 @@ function MyProjectsComponent() {
                         <TableBody>
                             {scheduleEntries.map(entry => (
                                 <TableRow key={entry.id} className="text-base">
-                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base"/></TableCell>
-                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base" /></TableCell>
+                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
+                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
                                         <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
                                             <SelectTrigger><SelectValue/></SelectTrigger>
@@ -435,8 +439,8 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)} className="text-base"/></TableCell>
-                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)} className="text-base"/></TableCell>
+                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
+                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell className="flex gap-1">
                                         <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
                                         <Button variant="destructive" size="icon" onClick={() => removeScheduleEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
