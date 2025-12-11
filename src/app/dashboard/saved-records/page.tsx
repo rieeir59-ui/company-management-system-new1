@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen, Compass } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -445,7 +445,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         );
     }
     
-    // Generic renderer
     if (Array.isArray(viewingRecord.data)) {
         return (
             <Table>
@@ -489,9 +488,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
         
         if (activeCategory === 'Banks' && !selectedBank) {
+            const banks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD", "Commercial", "Residential"];
             return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {initialBanks.map(bank => (
+                    {banks.map(bank => (
                         <SectionCard 
                             key={bank} 
                             title={bank} 
@@ -504,16 +504,20 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
 
         if (activeCategory === 'Management Records' && !selectedMgmtRecordType) {
-            const mgmtRecordCategories = [...managementRecordTypes, "Site Survey Report"].reduce((acc, curr) => {
-                if (!acc.includes(curr)) acc.push(curr);
-                if (curr === "Site Visit Proforma") acc.push("Site Survey");
-                return acc;
-            }, [] as string[]).filter(c => c !== "Site Survey Report");
+            const mgmtRecordCategories = [
+              "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
+              "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
+              "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
+              "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
+              "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
+              "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
+              "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
+            ];
 
             return (
                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {mgmtRecordCategories.map(cat => {
-                        const Icon = cat === 'Site Survey' ? Compass : getIconForCategory(cat);
+                        const Icon = getIconForCategory(cat);
                         return (
                              <SectionCard 
                                 key={cat} 
