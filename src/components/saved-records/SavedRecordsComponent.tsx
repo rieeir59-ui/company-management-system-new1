@@ -237,6 +237,8 @@ const SectionCard = ({ title, icon: Icon, onClick, className }: { title: string,
     </Card>
 );
 
+const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD", "Commercial", "Residential"];
+
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord } = useRecords();
     const { user: currentUser } = useCurrentUser();
@@ -704,3 +706,5 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
+    
