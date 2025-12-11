@@ -85,13 +85,13 @@ function MyProjectsComponent() {
 
 
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
-  const [submittingTask, setSubmittingTask = useState<Task | null>(null);
-  const [submissionFile, setSubmissionFile = useState<File | null>(null);
+  const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
+  const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [viewingTask, setViewingTask = useState<Task | null>(null);
-  const [remarks, setRemarks = useState('');
-  const [scheduleStartDate, setScheduleStartDate = useState('');
-  const [scheduleEndDate, setScheduleEndDate = useState('');
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [remarks, setRemarks] = useState('');
+  const [scheduleStartDate, setScheduleStartDate] = useState('');
+  const [scheduleEndDate, setScheduleEndDate] = useState('');
 
   const projectStats = useMemo(() => {
       const total = allProjects.length;
