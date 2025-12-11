@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -23,9 +24,7 @@ export async function generateTimeline(
       You are a project manager for an architectural firm.
       Generate a realistic timeline for the given project.
       The timeline should include key phases like Site Survey, Design, Tendering, and Construction.
-      The output should be a JSON object with a "tasks" array.
-      Each task object must have "taskName", "startDate", and "endDate" in "YYYY-MM-DD" format.
-      Base the timeline duration on the project's area.
+      The output must be a valid JSON object that conforms to the provided schema. Do not add any extra text or markdown formatting around the JSON.
 
       Project Name: ${input.projectName}
       Area: ${input.area} sft
@@ -35,7 +34,6 @@ export async function generateTimeline(
     `,
     output: {
       format: 'json',
-      schema: GenerateTimelineOutputSchema,
     },
     config: {
       temperature: 0.3,
