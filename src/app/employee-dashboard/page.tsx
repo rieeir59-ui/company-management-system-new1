@@ -33,7 +33,7 @@ const departments: Record<string, string> = {
     'admin': 'Admin',
     'hr': 'HR',
     'software-engineer': 'Software Engineer',
-    'draftman': 'Draftsman',
+    'draftpersons': 'Draftsperson',
     '3d-visualizer': '3D Visualizer',
     'architects': 'Architects',
     'finance': 'Finance',
@@ -85,13 +85,13 @@ function MyProjectsComponent() {
 
 
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
-  const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
-  const [submissionFile, setSubmissionFile] = useState<File | null>(null);
+  const [submittingTask, setSubmittingTask = useState<Task | null>(null);
+  const [submissionFile, setSubmissionFile = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [viewingTask, setViewingTask] = useState<Task | null>(null);
-  const [remarks, setRemarks] = useState('');
-  const [scheduleStartDate, setScheduleStartDate] = useState('');
-  const [scheduleEndDate, setScheduleEndDate] = useState('');
+  const [viewingTask, setViewingTask = useState<Task | null>(null);
+  const [remarks, setRemarks = useState('');
+  const [scheduleStartDate, setScheduleStartDate = useState('');
+  const [scheduleEndDate, setScheduleEndDate = useState('');
 
   const projectStats = useMemo(() => {
       const total = allProjects.length;
@@ -220,16 +220,32 @@ function MyProjectsComponent() {
     }
   };
   
-    const handleScheduleEntryChange = (id: number, field: keyof Task, value: string) => {
-        setScheduleEntries(prev => prev.map(entry => (entry.id === id ? { ...entry, [field]: value } : entry)));
+    const handleScheduleEntryChange = (id: string, field: keyof Task, value: string) => {
+        if (field === 'status') {
+            handleStatusChange(id, value as Task['status']);
+        } else {
+             if (!firestore || !canEdit) return;
+             const taskRef = doc(firestore, 'tasks', id);
+             updateDoc(taskRef, { [field]: value }).catch(err => {
+                 const permissionError = new FirestorePermissionError({
+                    path: `tasks/${id}`,
+                    operation: 'update',
+                    requestResourceData: { [field]: value }
+                  });
+                  errorEmitter.emit('permission-error', permissionError);
+             });
+        }
     };
 
     const addScheduleEntry = () => {
-        setScheduleEntries(prev => [...prev, { id: Date.now(), taskName: 'New Project', projectName: 'New Project', taskDescription: '', status: 'not-started', startDate: '', endDate: '', assignedBy: currentUser?.name || '', assignedTo: displayUser?.uid || '' , createdAt: new Date() as any }]);
+        // This is now purely a UI-driven action that should be handled by an admin on the assign task page.
+        // For employees, they can only modify existing tasks.
+        toast({ title: 'Info', description: 'To add a new project, please contact an administrator.'})
     };
     
-    const removeScheduleEntry = (id: number) => {
-        setScheduleEntries(prev => prev.filter(entry => entry.id !== id));
+    const removeScheduleEntry = (id: string) => {
+       // Similar to adding, deletion should be an admin action from the main task board.
+       toast({ title: 'Info', description: 'To remove a project, please contact an administrator.'})
     };
 
     const handleSaveSchedule = async () => {
@@ -319,7 +335,7 @@ function MyProjectsComponent() {
                                     <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
                             </TableRow>
                             ) : allProjects.map((project) => (
-                                <TableRow key={project.id} className="text-base">
+                                <TableRow key={project.id}>
                                     <TableCell className="font-medium text-base">{project.taskName}</TableCell>
                                     <TableCell className="text-base">{project.assignedBy}</TableCell>
                                     <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
@@ -395,6 +411,7 @@ function MyProjectsComponent() {
                                                  <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
                                                  <SelectItem value="in-progress"><StatusBadge status="in-progress" /></SelectItem>
                                                  <SelectItem value="completed"><StatusBadge status="completed" /></SelectItem>
+                                                 <SelectItem value="pending-approval" disabled><StatusBadge status="pending-approval" /></SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
@@ -402,14 +419,13 @@ function MyProjectsComponent() {
                                     <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell className="flex gap-1">
                                         <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
-                                        <Button variant="destructive" size="icon" onClick={() => removeScheduleEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </div>
-                <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
+                {isAdmin && <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>}
             </CardContent>
              <CardFooter className="flex-col items-start gap-4">
                 <div>
@@ -477,3 +493,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
