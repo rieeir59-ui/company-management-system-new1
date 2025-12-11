@@ -14,8 +14,8 @@ service cloud.firestore {
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
-    
-    // Helper: Check if the user owns the task document
+
+    // Helper: Check if the user is the owner of the task being accessed
     function isTaskOwner() {
       return request.auth != null && resource.data.userId == request.auth.uid;
     }
@@ -35,14 +35,14 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks assigned to them.
+      // Admins can read any task. Employees can only read tasks they own.
       allow get: if isAdmin() || isTaskOwner();
       allow list: if isAdmin() || (isLoggedIn() && request.query.where.field == 'assignedTo' && request.query.where.value == request.auth.uid);
       
       // Only admins can create new tasks.
       allow create: if isAdmin();
       
-      // Admins or the assigned user can update the task.
+      // Admins or the assigned user (owner) can update the task.
       allow update: if isAdmin() || isTaskOwner();
       
       // Only admins can delete tasks.
@@ -52,7 +52,7 @@ service cloud.firestore {
     // UPLOADED FILES collection
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
-      write: if isLoggedIn();
+      allow write: if isLoggedIn();
     }
   }
 }
