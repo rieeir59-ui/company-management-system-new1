@@ -96,7 +96,6 @@ function MyProjectsComponent() {
 
 
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
-  const [schedule, setSchedule] = useState({ start: '', end: '' });
   const [remarks, setRemarks] = useState('');
  
   const projectStats = useMemo(() => {
@@ -298,7 +297,6 @@ function MyProjectsComponent() {
             projectName: `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
-                schedule: schedule,
                 remarks: remarks,
                 items: combinedSchedule.map(item => ({
                     label: `Project: ${item.projectName}`,
@@ -314,7 +312,6 @@ function MyProjectsComponent() {
       doc.text('My Project Schedule', 14, 22);
       doc.setFontSize(10);
       doc.text(`Employee: ${displayUser?.name}`, 14, 30);
-      doc.text(`Schedule: ${schedule.start || ''} to ${schedule.end || ''}`, 14, 36);
 
       const body = combinedSchedule.map(item => [item.projectName, item.detail, item.status, item.startDate, item.endDate]);
 
@@ -433,10 +430,6 @@ function MyProjectsComponent() {
                 <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="flex gap-4 mb-4">
-                    <Input type="date" value={schedule.start} onChange={(e) => setSchedule(s => ({...s, start: e.target.value}))} />
-                    <Input type="date" value={schedule.end} onChange={(e) => setSchedule(s => ({...s, end: e.target.value}))} />
-                </div>
                  <Table>
                     <TableHeader>
                         <TableRow>
@@ -453,7 +446,23 @@ function MyProjectsComponent() {
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
-                                <TableCell><StatusBadge status={item.status as Task['status']} /></TableCell>
+                                <TableCell>
+                                  <Select
+                                    value={item.status}
+                                    onValueChange={(newStatus: Task['status']) => item.isManual ? handleManualEntryChange(item.id, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
+                                    disabled={!canEdit || item.status === 'pending-approval'}
+                                  >
+                                    <SelectTrigger className="w-[180px]">
+                                      <StatusBadge status={item.status as Task['status']} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="not-started">Not Started</SelectItem>
+                                      <SelectItem value="in-progress">In Progress</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                      {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
                                 <TableCell>{item.startDate}</TableCell>
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
@@ -558,16 +567,16 @@ function MyProjectsComponent() {
 
          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Are you sure?</DialogTitle>
-                    <DialogDescription>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
                         This will permanently delete the entry "{deletingEntry?.projectName}".
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button variant="destructive" onClick={confirmDeleteManualEntry}>Delete</Button>
-                </DialogFooter>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteManualEntry}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
             </DialogContent>
         </Dialog>
 
