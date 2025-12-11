@@ -84,7 +84,7 @@ export default function ProjectDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
+          <CardTitle>Project Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailItem label="Serial No." value={project.srNo} />
