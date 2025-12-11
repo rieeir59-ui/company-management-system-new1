@@ -5,6 +5,7 @@ import { UserProvider } from '@/context/UserContext';
 import { FileProvider } from '@/context/FileContext';
 import { RecordProvider } from '@/context/RecordContext';
 import { FirebaseProvider } from '@/firebase/provider';
+import React from 'react';
 
 export default function RootLayout({
   children,
@@ -19,15 +20,17 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseProvider>
-          <UserProvider>
-              <FileProvider>
-                <RecordProvider>
-                  {children}
-                </RecordProvider>
-              </FileProvider>
-          </UserProvider>
-        </FirebaseProvider>
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <FirebaseProvider>
+            <UserProvider>
+                <FileProvider>
+                  <RecordProvider>
+                    {children}
+                  </RecordProvider>
+                </FileProvider>
+            </UserProvider>
+          </FirebaseProvider>
+        </React.Suspense>
         <Toaster />
       </body>
     </html>
