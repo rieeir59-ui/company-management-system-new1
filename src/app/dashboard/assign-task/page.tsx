@@ -136,17 +136,25 @@ export default function AssignTaskPage() {
         setIsDeleteDialogOpen(true);
     };
     
-    const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
-        if (!firestore || !isAdmin) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
+    const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
+        if (!firestore || !currentUser) {
+          toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
           return;
         }
-        const taskRef = doc(firestore, 'tasks', taskId);
+
+        const canUpdate = isAdmin || task.assignedTo === currentUser.uid;
+
+        if (!canUpdate) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
+            return;
+        }
+
+        const taskRef = doc(firestore, 'tasks', task.id);
         try {
             await updateDoc(taskRef, { status: newStatus });
             toast({ title: 'Status Updated', description: 'Task status has been updated.' });
         } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${task.id}`, operation: 'update', requestResourceData: { status: newStatus } }));
         }
     };
     
@@ -210,7 +218,7 @@ export default function AssignTaskPage() {
                                 <TableHead className="font-semibold">Assigned To</TableHead>
                                 <TableHead className="font-semibold">Assigned By</TableHead>
                                 <TableHead className="font-semibold">Status</TableHead>
-                                {isAdmin && <TableHead className="font-semibold text-right">Action</TableHead>}
+                                <TableHead className="font-semibold text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -222,8 +230,8 @@ export default function AssignTaskPage() {
                                     <TableCell>
                                         <Select
                                             value={task.status}
-                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(task.id, newStatus)}
-                                            disabled={!isAdmin}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
+                                            disabled={!isAdmin && currentUser?.uid !== task.assignedTo}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                                 <StatusBadge status={task.status} />
@@ -236,7 +244,6 @@ export default function AssignTaskPage() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    {isAdmin && (
                                     <TableCell className="text-right">
                                         <div className="flex gap-1 justify-end">
                                             {task.submissionUrl && (
@@ -246,17 +253,18 @@ export default function AssignTaskPage() {
                                                     </a>
                                                 </Button>
                                             )}
-                                            {task.status === 'pending-approval' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task.id, 'completed')} title="Approve Task">
+                                            {isAdmin && task.status === 'pending-approval' && (
+                                                <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task, 'completed')} title="Approve Task">
                                                     <Check className="h-4 w-4 text-green-500" />
                                                 </Button>
                                             )}
-                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                            {isAdmin && (
+                                              <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
+                                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                              </Button>
+                                            )}
                                         </div>
                                     </TableCell>
-                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>

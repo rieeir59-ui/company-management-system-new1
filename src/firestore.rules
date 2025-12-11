@@ -17,7 +17,7 @@ service cloud.firestore {
 
     // Helper: Check if the user is the owner of the task being accessed
     function isTaskOwner() {
-      return request.auth != null && resource.data.userId == request.auth.uid;
+      return request.auth != null && resource.data.assignedTo == request.auth.uid;
     }
 
     // USERS collection
@@ -35,16 +35,12 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks they own.
-      allow get: if isAdmin() || isTaskOwner();
-      allow list: if isAdmin() || (isLoggedIn() && request.query.where.field == 'assignedTo' && request.query.where.value == request.auth.uid);
-      
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow list, get: if isLoggedIn();
       // Only admins can create new tasks.
       allow create: if isAdmin();
-      
-      // Admins or the assigned user (owner) can update the task.
+      // Admins or the assigned user can update the task.
       allow update: if isAdmin() || isTaskOwner();
-      
       // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
