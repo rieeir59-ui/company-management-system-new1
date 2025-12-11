@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -257,8 +257,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (!searchQuery) return recordsToFilter;
     
         return recordsToFilter.filter(record =>
-            record.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+            (record.projectName && record.projectName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (record.fileName && record.fileName.toLowerCase().includes(searchQuery.toLowerCase()))
         );
     
     }, [userRecords, activeCategory, selectedBank, selectedMgmtRecordType, searchQuery]);
@@ -527,8 +527,8 @@ const renderRecordContent = () => {
                  <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle>{selectedBank || selectedMgmtRecordType || activeCategory}</CardTitle>
-                         {selectedBank && <Button onClick={handleBackToBanks} variant="outline">Back to Banks</Button>}
-                         {selectedMgmtRecordType && <Button onClick={handleBackToMgmtCategories} variant="outline">Back to Management Categories</Button>}
+                         {selectedBank && <Button onClick={handleBackToBanks} variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Banks</Button>}
+                         {selectedMgmtRecordType && <Button onClick={handleBackToMgmtCategories} variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Management Categories</Button>}
                     </div>
                  </CardHeader>
                  <CardContent>
@@ -596,12 +596,12 @@ const renderRecordContent = () => {
             {activeCategory && (
                  <div>
                     <Button onClick={handleBackToCategories} variant="outline" className="mb-4">
-                        Back to Categories
+                       <ArrowLeft className="mr-2 h-4 w-4"/> Back to Categories
                     </Button>
                     <div className="relative mb-4">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder={`Search in ${activeCategory}...`}
+                            placeholder={`Search in ${selectedBank || selectedMgmtRecordType || activeCategory}...`}
                             className="pl-8"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -652,3 +652,5 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
+    
