@@ -106,9 +106,6 @@ export default function ProjectDataPage() {
             data[key] = value;
         }
 
-        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
-        const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
-
         const recordData = {
             fileName: "Site Survey Report",
             projectName: data['location_address'] || 'Untitled Site Survey',
@@ -632,3 +629,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+

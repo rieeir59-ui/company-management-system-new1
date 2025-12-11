@@ -105,7 +105,7 @@ export default function ProjectDataPage() {
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
-        
+
         const recordData = {
             fileName: "Site Survey Report",
             projectName: data['location_address'] || 'Untitled Site Survey',
