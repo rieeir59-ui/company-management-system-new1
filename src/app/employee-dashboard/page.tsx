@@ -23,6 +23,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { StatusBadge } from '@/components/ui/badge';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -52,6 +54,15 @@ const StatCard = ({ title, value, icon }: { title: string, value: number, icon: 
     </Card>
 );
 
+type ManualEntry = {
+    id: number;
+    projectName: string;
+    detail: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+};
+
 function MyProjectsComponent() {
   const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
@@ -78,6 +89,10 @@ function MyProjectsComponent() {
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+
+  const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
+  const [schedule, setSchedule] = useState({ start: '', end: '' });
+  const [remarks, setRemarks] = useState('');
  
   const projectStats = useMemo(() => {
       const total = allProjects.length;
@@ -203,11 +218,84 @@ function MyProjectsComponent() {
         }
     };
   
-  const openViewDialog = (task: Task) => {
-    setViewingTask(task);
-    setIsViewDialogOpen(true);
-  };
-  
+    const openViewDialog = (task: Task) => {
+        setViewingTask(task);
+        setIsViewDialogOpen(true);
+    };
+    
+    const combinedSchedule = useMemo(() => {
+        const assigned = allProjects.map(p => ({
+            id: p.id,
+            projectName: p.projectName,
+            detail: p.taskName,
+            status: p.status,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            isManual: false,
+        }));
+        const manual = manualEntries.map(e => ({ ...e, isManual: true }));
+        return [...assigned, ...manual];
+    }, [allProjects, manualEntries]);
+
+    const addManualEntry = () => {
+        setManualEntries(prev => [...prev, {
+            id: Date.now(),
+            projectName: '',
+            detail: '',
+            status: 'Not Started',
+            startDate: '',
+            endDate: '',
+        }]);
+    };
+
+    const handleManualEntryChange = (id: number, field: keyof ManualEntry, value: string) => {
+        setManualEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
+    };
+
+    const removeManualEntry = (id: number) => {
+        setManualEntries(prev => prev.filter(e => e.id !== id));
+    };
+
+    const handleSaveSchedule = async () => {
+        await addRecord({
+            fileName: 'My Projects',
+            projectName: `${displayUser?.name}'s Project Schedule`,
+            data: [{
+                category: "My Project Schedule",
+                schedule: schedule,
+                remarks: remarks,
+                items: combinedSchedule.map(item => ({
+                    label: `Project: ${item.projectName}`,
+                    value: `Detail: ${item.detail}, Status: ${item.status}, Start: ${item.startDate}, End: ${item.endDate}`,
+                })),
+            }],
+        } as any);
+    };
+    
+    const handleDownloadSchedule = () => {
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('My Project Schedule', 14, 22);
+      doc.setFontSize(10);
+      doc.text(`Employee: ${displayUser?.name}`, 14, 30);
+      doc.text(`Schedule: ${schedule.start || ''} to ${schedule.end || ''}`, 14, 36);
+
+      const body = combinedSchedule.map(item => [item.projectName, item.detail, item.status, item.startDate, item.endDate]);
+
+      (doc as any).autoTable({
+          startY: 42,
+          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+          body: body,
+          headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
+      });
+      
+      let finalY = (doc as any).lastAutoTable.finalY + 10;
+      doc.text('Remarks:', 14, finalY);
+      doc.text(remarks, 14, finalY + 5);
+
+      doc.save('my-project-schedule.pdf');
+    };
+
   if (isUserLoading || !displayUser) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -238,7 +326,7 @@ function MyProjectsComponent() {
         <Card>
             <CardHeader>
                 <CardTitle>{canEdit ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
-                <CardDescription>A list of tasks assigned to this employee.</CardDescription>
+                <CardDescription>A list of tasks assigned by the administration.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoadingTasks ? (
@@ -301,6 +389,64 @@ function MyProjectsComponent() {
                     </Table>
                 )}
             </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>My Project Schedule</CardTitle>
+                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex gap-4 mb-4">
+                    <Input type="date" value={schedule.start} onChange={(e) => setSchedule(s => ({...s, start: e.target.value}))} />
+                    <Input type="date" value={schedule.end} onChange={(e) => setSchedule(s => ({...s, end: e.target.value}))} />
+                </div>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Project Name</TableHead>
+                            <TableHead>Detail</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                            <TableHead></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {combinedSchedule.map(item => (
+                             <TableRow key={item.id}>
+                                <TableCell>
+                                    {item.isManual ? <Input value={item.projectName} onChange={(e) => handleManualEntryChange(item.id, 'projectName', e.target.value)} /> : item.projectName}
+                                </TableCell>
+                                <TableCell>
+                                    {item.isManual ? <Input value={item.detail} onChange={(e) => handleManualEntryChange(item.id, 'detail', e.target.value)} /> : item.detail}
+                                </TableCell>
+                                <TableCell>
+                                    {item.isManual ? <Input value={item.status} onChange={(e) => handleManualEntryChange(item.id, 'status', e.target.value)} /> : <StatusBadge status={item.status as Task['status']} />}
+                                </TableCell>
+                                <TableCell>
+                                    {item.isManual ? <Input type="date" value={item.startDate} onChange={(e) => handleManualEntryChange(item.id, 'startDate', e.target.value)} /> : item.startDate}
+                                </TableCell>
+                                <TableCell>
+                                    {item.isManual ? <Input type="date" value={item.endDate} onChange={(e) => handleManualEntryChange(item.id, 'endDate', e.target.value)} /> : item.endDate}
+                                </TableCell>
+                                <TableCell>
+                                    {item.isManual && <Button variant="ghost" size="icon" onClick={() => removeManualEntry(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <Button onClick={addManualEntry} className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Project</Button>
+                <div className="mt-4">
+                    <Label htmlFor="remarks">Remarks:</Label>
+                    <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+                </div>
+            </CardContent>
+            <CardFooter className="justify-end gap-2">
+                <Button variant="outline" onClick={handleSaveSchedule}><Save className="h-4 w-4 mr-2"/>Save Schedule</Button>
+                <Button onClick={handleDownloadSchedule}><Download className="h-4 w-4 mr-2" />Download PDF</Button>
+            </CardFooter>
         </Card>
         
         <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
