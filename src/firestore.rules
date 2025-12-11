@@ -14,6 +14,8 @@ service cloud.firestore {
     }
     
     // Helper: Check if the user is the owner of the task
+    // On read/delete, `resource` refers to the existing document.
+    // On write, `request.resource` refers to the incoming document.
     function isTaskOwner() {
       return request.auth != null && resource.data.userId == request.auth.uid;
     }
@@ -33,9 +35,17 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow list, get: if isLoggedIn();
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow get: if isAdmin() || isTaskOwner();
+      allow list: if isLoggedIn(); // List is further restricted in the app query
+      
+      // Only admins can create new tasks.
       allow create: if isAdmin();
+      
+      // Admins or the assigned user can update a task.
       allow update: if isAdmin() || isTaskOwner();
+      
+      // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
 
