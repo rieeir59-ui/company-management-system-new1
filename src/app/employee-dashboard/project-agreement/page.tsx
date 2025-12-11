@@ -12,11 +12,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -95,8 +91,7 @@ const initialPaymentSchedule = [
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
@@ -130,51 +125,35 @@ export default function ProjectAgreementPage() {
     };
 
     const handleSave = async () => {
-        if (!currentUser || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const recordData = {
             fileName: 'Project Agreement',
             projectName: designOf || 'Untitled Project Agreement',
             data: [
-                { category: "Agreement Details", items: [`Made as of the day: ${day}`, `Between the Owner: ${owner}`, `For the Design of: ${designOf}`, `Address: ${address}`] },
-                { category: "Cost Breakdown", items: [`Covered Area of Project: ${coveredArea}`, `Consultancy Charges: ${consultancyCharges}`, `Sales Tax @ 16%: ${salesTax}`, `Withholding Tax @ 10%: ${withholdingTax}`, `Final Consultancy Charges: ${finalCharges}`] },
-                { category: "Payment Schedule", items: paymentSchedule.map(p => `${p.description}: ${p.percentage}`) },
-                { category: "Top Supervision", items: agreementText.topSupervision },
-                { category: "Detailed Supervision", items: [agreementText.detailedSupervision] },
-                { category: "Notes", items: agreementText.notes },
-                { category: "Extra Services Note", items: [agreementText.extraServicesNote] },
-                { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities },
-                { category: "Not Responsible For", items: agreementText.notResponsible },
-                { category: "Termination", items: agreementText.termination },
-                { category: "Compensation", items: agreementText.compensation },
+                { category: "Agreement Details", items: [{label: "Made as of the day", value: day}, {label: "Between the Owner", value: owner}, {label: "For the Design of", value: designOf}, {label: "Address", value: address}] },
+                { category: "Cost Breakdown", items: [{label: "Covered Area of Project", value: coveredArea}, {label: "Consultancy Charges", value: consultancyCharges}, {label: "Sales Tax @ 16%", value: salesTax}, {label: "Withholding Tax @ 10%", value: withholdingTax}, {label: "Final Consultancy Charges", value: finalCharges}] },
+                { category: "Payment Schedule", items: paymentSchedule.map(p => ({label: p.description, value: p.percentage})) },
+                { category: "Top Supervision", items: agreementText.topSupervision.map(item => ({value: item})) },
+                { category: "Detailed Supervision", items: [{value: agreementText.detailedSupervision}] },
+                { category: "Notes", items: agreementText.notes.map(item => ({value: item})) },
+                { category: "Extra Services Note", items: [{value: agreementText.extraServicesNote}] },
+                { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities.map(item => ({value: item})) },
+                { category: "Not Responsible For", items: agreementText.notResponsible.map(item => ({value: item})) },
+                { category: "Termination", items: agreementText.termination.map(item => ({value: item})) },
+                { category: "Compensation", items: agreementText.compensation.map(item => ({value: item})) },
             ]
         };
 
-        const dataToSave = {
-            ...recordData,
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
-            createdAt: serverTimestamp(),
-        };
-
         try {
-            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
-            toast({ title: 'Record Saved', description: "The project agreement has been saved." });
-        } catch (serverError) {
-             const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+            await addRecord(recordData as any);
+        } catch (error) {
+             // Error is handled by the context
         }
     }
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 20;
 
         const addText = (text: string, isBold = false, indent = 0, size = 10, spaceAfter = 7) => {
@@ -249,6 +228,13 @@ export default function ProjectAgreementPage() {
         addText('Architect', false, 0, 10, 15);
         addText('____________________', false, 0, 10, 2);
         addText('Client', false, 0, 10, 5);
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
 
 
         doc.save('Project-Agreement.pdf');
