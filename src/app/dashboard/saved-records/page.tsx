@@ -45,7 +45,7 @@ const managementRecordTypes = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Uploaded File", "Task Assignment"
+    "My Projects", "Site Visit Proforma", "Uploaded File", "Task Assignment", "Site Survey Report"
 ];
 
 const generatePdfForRecord = (record: SavedRecord) => {
@@ -488,10 +488,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
         
         if (activeCategory === 'Banks' && !selectedBank) {
-            const banks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD", "Commercial", "Residential"];
             return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {banks.map(bank => (
+                    {initialBanks.map(bank => (
                         <SectionCard 
                             key={bank} 
                             title={bank} 
@@ -517,7 +516,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             return (
                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {mgmtRecordCategories.map(cat => {
-                        const Icon = getIconForCategory(cat);
+                        const Icon = cat === 'Site Survey' ? Compass : getIconForCategory(cat);
                         return (
                              <SectionCard 
                                 key={cat} 
