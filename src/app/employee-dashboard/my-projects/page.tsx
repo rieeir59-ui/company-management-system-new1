@@ -15,8 +15,8 @@ import 'jspdf-autotable';
 function MyProjectsReportComponent() {
   const { user: currentUser } = useCurrentUser();
   const searchParams = useSearchParams();
-  const employeeId = searchParams.get('employeeId'); // Check if we are viewing for a specific employee
-  const displayUser = employeeId ? null : currentUser; // For now, only supports current user view
+  const employeeId = searchParams.get('employeeId');
+  const displayUser = employeeId ? null : currentUser; 
   
   const { records, isLoading } = useRecords();
   
@@ -63,6 +63,7 @@ function MyProjectsReportComponent() {
         startY: 42,
         head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
         body: body,
+        headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
     });
     
     let finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -97,23 +98,27 @@ function MyProjectsReportComponent() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>My Project Schedule</CardTitle>
-        <CardContent className="pt-2 px-0">
-          <p><strong>Employee:</strong> {displayUser?.name}</p>
-          {scheduleData.schedule && <p><strong>Schedule:</strong> {scheduleData.schedule.start || ''} to {scheduleData.schedule.end || ''}</p>}
-        </CardContent>
-      </CardHeader>
-      <CardContent>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <div>
+            <h1 className="text-3xl font-bold">My Project Schedule</h1>
+            <p className="mt-2 text-muted-foreground">
+                <span className="font-semibold">Employee:</span> {displayUser?.name}
+            </p>
+            {scheduleData.schedule && (
+                 <p className="text-muted-foreground">
+                    <span className="font-semibold">Schedule:</span> {scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}
+                 </p>
+            )}
+        </div>
+
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="font-bold bg-primary/20 text-primary-foreground">Project Name</TableHead>
-              <TableHead className="font-bold bg-primary/20 text-primary-foreground">Detail</TableHead>
-              <TableHead className="font-bold bg-primary/20 text-primary-foreground">Status</TableHead>
-              <TableHead className="font-bold bg-primary/20 text-primary-foreground">Start Date</TableHead>
-              <TableHead className="font-bold bg-primary/20 text-primary-foreground">End Date</TableHead>
+            <TableRow className="bg-primary hover:bg-primary/90">
+              <TableHead className="font-bold text-primary-foreground">Project Name</TableHead>
+              <TableHead className="font-bold text-primary-foreground">Detail</TableHead>
+              <TableHead className="font-bold text-primary-foreground">Status</TableHead>
+              <TableHead className="font-bold text-primary-foreground">Start Date</TableHead>
+              <TableHead className="font-bold text-primary-foreground">End Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -142,11 +147,10 @@ function MyProjectsReportComponent() {
                 <p className="text-muted-foreground">{scheduleData.remarks}</p>
             </div>
         )}
-      </CardContent>
-       <CardFooter className="justify-end">
+      <div className="flex justify-end pt-6">
             <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
 
