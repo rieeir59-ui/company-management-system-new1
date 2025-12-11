@@ -125,29 +125,40 @@ export default function ProjectAgreementPage() {
     };
 
     const handleSave = async () => {
-        const recordData = {
-            fileName: 'Project Agreement',
-            projectName: designOf || 'Untitled Project Agreement',
-            data: [
-                { category: "Agreement Details", items: [{label: "Made as of the day", value: day}, {label: "Between the Owner", value: owner}, {label: "For the Design of", value: designOf}, {label: "Address", value: address}] },
-                { category: "Cost Breakdown", items: [{label: "Covered Area of Project", value: coveredArea}, {label: "Consultancy Charges", value: consultancyCharges}, {label: "Sales Tax @ 16%", value: salesTax}, {label: "Withholding Tax @ 10%", value: withholdingTax}, {label: "Final Consultancy Charges", value: finalCharges}] },
-                { category: "Payment Schedule", items: paymentSchedule.map(p => ({label: p.description, value: p.percentage})) },
-                { category: "Top Supervision", items: agreementText.topSupervision.map(item => ({value: item})) },
-                { category: "Detailed Supervision", items: [{value: agreementText.detailedSupervision}] },
-                { category: "Notes", items: agreementText.notes.map(item => ({value: item})) },
-                { category: "Extra Services Note", items: [{value: agreementText.extraServicesNote}] },
-                { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities.map(item => ({value: item})) },
-                { category: "Not Responsible For", items: agreementText.notResponsible.map(item => ({value: item})) },
-                { category: "Termination", items: agreementText.termination.map(item => ({value: item})) },
-                { category: "Compensation", items: agreementText.compensation.map(item => ({value: item})) },
-            ]
-        };
+      const recordData = {
+        fileName: 'Project Agreement',
+        projectName: designOf || 'Untitled Project Agreement',
+        data: [
+          { category: "Agreement Details", items: [
+              { label: "Made as of the day", value: day },
+              { label: "Between the Owner", value: owner },
+              { label: "For the Design of", value: designOf },
+              { label: "Address", value: address }
+          ]},
+          { category: "Cost Breakdown", items: [
+              { label: "Covered Area of Project", value: coveredArea },
+              { label: "Consultancy Charges", value: consultancyCharges },
+              { label: "Sales Tax @ 16%", value: salesTax },
+              { label: "Withholding Tax @ 10%", value: withholdingTax },
+              { label: "Final Consultancy Charges", value: finalCharges }
+          ]},
+          { category: "Payment Schedule", items: paymentSchedule.map(p => ({ label: p.description, value: p.percentage })) },
+          { category: "Top Supervision", items: agreementText.topSupervision.map(item => ({ label: '•', value: item })) },
+          { category: "Detailed Supervision", items: [{ label: 'Details', value: agreementText.detailedSupervision }] },
+          { category: "Notes", items: agreementText.notes.map(item => ({ label: '•', value: item })) },
+          { category: "Extra Services Note", items: [{ label: 'Note', value: agreementText.extraServicesNote }] },
+          { category: "Architect's Responsibilities", items: agreementText.architectResponsibilities.map(item => ({ label: '•', value: item })) },
+          { category: "Not Responsible For", items: agreementText.notResponsible.map(item => ({ label: '•', value: item })) },
+          { category: "Termination", items: agreementText.termination.map(item => ({ label: '•', value: item })) },
+          { category: "Compensation", items: agreementText.compensation.map(item => ({ label: '•', value: item })) },
+        ]
+      };
 
-        try {
-            await addRecord(recordData as any);
-        } catch (error) {
-             // Error is handled by the context
-        }
+      try {
+        await addRecord(recordData as any);
+      } catch (error) {
+           // Error is handled by the context
+      }
     }
 
     const handleDownloadPdf = () => {

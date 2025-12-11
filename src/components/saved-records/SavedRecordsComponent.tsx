@@ -89,7 +89,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         }
     };
     
-    // Default generic PDF generation
+    // Generic PDF generation
     const generateGenericPdf = () => {
         addDefaultHeader();
 
@@ -130,52 +130,76 @@ const generatePdfForRecord = (record: SavedRecord) => {
         doc.save(`${record.projectName}_${record.fileName}.pdf`);
     };
 
-    // Specific PDF for Bill of Quantity
-    if (record.fileName === 'Bill of Quantity' && record.data[0]?.category === 'Bill of Quantity') {
-        const boqData = record.data[0];
-        const header = JSON.parse(boqData.header);
-        const items = boqData.items.map((i: string) => JSON.parse(i));
-        const totalAmount = items.reduce((sum: number, item: any) => sum + (item.qty * item.rate), 0);
+    if (record.fileName === 'Project Agreement') {
+        const addText = (text: string, isBold = false, indent = 0, size = 10, spaceAfter = 7) => {
+            if (yPos > 270) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+            doc.setFontSize(size);
+            const splitText = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - 28 - indent);
+            doc.text(splitText, 14 + indent, yPos);
+            yPos += (splitText.length * 4) + spaceAfter;
+        };
+        const addList = (items: { label: string, value: string }[]) => {
+            items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
+        };
+        const addSimpleList = (items: { value: string }[]) => {
+            items.forEach(item => addText(`• ${item.value}`, false, 5, 10, 5));
+        };
 
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ISBAH HASSAN & ASSOCIATES', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 7;
-        doc.setFontSize(12);
-        doc.text('BILL OF QUANTITY', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
-        yPos += 10;
-        doc.setFontSize(10);
-        doc.text(`Project: ${header.projectName}`, 14, yPos);
-        yPos += 10;
+        addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
+        const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
+        addText(`Made as of the day ${details.find(d=>d.label.includes('day'))?.value || '________________'}`);
+        addText(`Between the Owner: ${details.find(d=>d.label.includes('Owner'))?.value || '________________'}`);
+        addText(`For the Design of: ${details.find(d=>d.label.includes('Design'))?.value || '________________'}`);
+        addText(`Address: ${details.find(d=>d.label.includes('Address'))?.value || '________________'}`);
         
-        const head = [['Sr. No', 'Description', 'Unit', 'Qty', 'Rate', 'Amount (Rs)']];
-        const body = items.map((item: any) => {
-            if (item.isHeader) {
-                return [{ content: `${item.srNo} ${item.description}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }];
-            }
-            return [
-                item.srNo, item.description, item.unit, item.qty.toString(),
-                item.rate.toFixed(2), (item.qty * item.rate).toFixed(2)
-            ];
-        });
-
-        (doc as any).autoTable({
-            head, body, startY: yPos, theme: 'grid', styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
-            headStyles: { fillColor: primaryColor },
-            didParseCell: (data: any) => {
-                const row = items[data.row.index];
-                if (row?.isHeader) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = '#f0f0f0'; }
-            }
-        });
-        
+        const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
+        (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
         yPos = (doc as any).autoTable.previous.finalY + 10;
-        doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL AMOUNT RS: ${totalAmount.toFixed(2)}`, 14, yPos);
+        
+        addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
+        const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
+        (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        
+        addText('Project Management', true, 0, 12, 8);
+        addText('Top Supervision:', true, 2, 10, 5);
+        addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
+
+        addText('Detailed Supervision:', true, 2, 10, 5);
+        addText(record.data.find(d => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
+
+        addText('Please Note:', true, 0, 12, 8);
+        addList(record.data.find(d => d.category === 'Notes')?.items || []);
+        addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
+
+        doc.addPage(); yPos = 20;
+
+        addText("Architect's Responsibilities", true, 0, 12, 8);
+        addList(record.data.find(d => d.category === "Architect's Responsibilities")?.items || []);
+
+        addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
+        addList(record.data.find(d => d.category === 'Not Responsible For')?.items || []);
+
+        addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
+        addList(record.data.find(d => d.category === 'Termination')?.items || []);
+
+        doc.addPage(); yPos = 20;
+
+        addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
+        addList(record.data.find(d => d.category === 'Compensation')?.items || []);
+
+        yPos += 10;
+        if (yPos > 270) { doc.addPage(); yPos = 20; }
+        addText('____________________', false, 0, 10, 2);
+        addText('Architect', false, 0, 10, 15);
+        addText('____________________', false, 0, 10, 2);
+        addText('Client', false, 0, 10, 5);
 
         addFooter();
-        doc.save('bill-of-quantity.pdf');
+        doc.save('Project-Agreement.pdf');
+
     } else {
-        // Fallback to generic PDF for other types
         generateGenericPdf();
     }
 };
@@ -423,38 +447,6 @@ const renderRecordContent = () => {
         );
     }
     
-
-    if (viewingRecord.fileName === 'My Projects' && viewingRecord.data && viewingRecord.data[0]) {
-        const scheduleData = viewingRecord.data[0];
-        const projects = scheduleData.items?.filter((item: any) => item.label && item.label.startsWith('Project:')) || [];
-        return (
-            <Table>
-                <TableBody>
-                    {scheduleData.schedule && <TableRow><TableCell className="font-semibold">Work Schedule</TableCell><TableCell>{scheduleData.schedule.start || 'N/A'} to {scheduleData.schedule.end || 'N/A'}</TableCell></TableRow>}
-                    {scheduleData.remarks && <TableRow><TableCell className="font-semibold">Remarks</TableCell><TableCell>{scheduleData.remarks || 'N/A'}</TableCell></TableRow>}
-                    {projects.length > 0 && (
-                        <TableRow><TableCell className="font-bold text-primary bg-muted" colSpan={2}>Projects</TableCell></TableRow>
-                    )}
-                    {projects.map((p: any, i:number) => {
-                        const details = p.value.split(', ').reduce((acc: any, part: string) => {
-                            const [key, ...val] = part.split(': ');
-                            acc[key.trim()] = val.join(': ');
-                            return acc;
-                        }, {});
-                        return (
-                            <React.Fragment key={i}>
-                                <TableRow><TableCell className="pl-8 font-semibold" colSpan={2}>{p.label.replace('Project: ', '')}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Detail</TableCell><TableCell>{details.Detail}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Status</TableCell><TableCell>{details.Status}</TableCell></TableRow>
-                                <TableRow><TableCell className="pl-12">Dates</TableCell><TableCell>{details.Start} to {details.End}</TableCell></TableRow>
-                            </React.Fragment>
-                        );
-                    })}
-                </TableBody>
-            </Table>
-        );
-    }
-
     if (Array.isArray(viewingRecord.data)) {
         return (
             <Table>
@@ -466,31 +458,15 @@ const renderRecordContent = () => {
                             </TableRow>
                             {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
                                 if (typeof item === 'string') {
-                                    try {
-                                        const parsed = JSON.parse(item);
-                                        if(typeof parsed === 'object' && parsed !== null) {
-                                             return Object.entries(parsed).filter(([key]) => key !== 'id' && key !== 'isHeader').map(([key, val]) => (
-                                                <TableRow key={key}><TableCell className="font-medium pl-8">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell><TableCell>{String(val)}</TableCell></TableRow>
-                                            ));
-                                        }
-                                    } catch (e) {
-                                        const parts = item.split(/:(.*)/s);
-                                        if (parts.length > 1) {
-                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
-                                        } else {
-                                            return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{item}</TableCell></TableRow>;
-                                        }
-                                    }
-                                } else if (item && typeof item === 'object') {
-                                    if ('label' in item && 'value' in item) { 
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
-                                    } else if ('Item' in item && 'Status' in item) {
-                                         return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.Item}</TableCell><TableCell>{item.Status} {item.Remarks ? `(${item.Remarks})` : ''}</TableCell></TableRow>;
-                                    } else {
-                                       return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8" colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
+                                    const parts = item.split(/:(.*)/s);
+                                    if (parts.length > 1) {
+                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
                                     }
                                 }
-                                return null;
+                                if (item && typeof item === 'object' && item.label && item.value !== undefined) {
+                                    return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
+                                }
+                                return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{JSON.stringify(item)}</TableCell></TableRow>;
                             }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
                         </React.Fragment>
                     ))}
