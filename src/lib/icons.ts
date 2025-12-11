@@ -38,6 +38,7 @@ import {
   FilePen,
   File as FileIcon,
   type LucideIcon,
+  FolderOpen,
 } from 'lucide-react';
 
 export const fileNameToIconMap: Record<string, LucideIcon> = {
@@ -58,6 +59,7 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Project Application Summary": CheckSquare,
     "Project Checklist": ListChecks,
     "Project Data": Database,
+    "Project Information": Folder,
     "Proposal Request": Briefcase,
     "Rate Analysis": BarChart2,
     "Shop Drawing and Sample Record": FileIcon,
@@ -78,7 +80,7 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Site Visit Proforma": Eye,
     "Site Survey Report": FileSearch,
     "Uploaded File": FileUp,
-    "Project Information": Folder,
+    "Daily Work Report": ClipboardList,
 };
 
 export const getIconForFile = (fileName: string): LucideIcon => {
@@ -96,4 +98,3 @@ export const categoryToIconMap: Record<string, LucideIcon> = {
 export const getIconForCategory = (categoryName: string): LucideIcon => {
     return categoryToIconMap[categoryName] || Folder;
 };
-

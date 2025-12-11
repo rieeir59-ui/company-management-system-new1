@@ -44,7 +44,8 @@ export const allFileNames = [
   "Site Visit Proforma",
   "Site Survey Report",
   "Uploaded File",
-  "Daily Work Report"
+  "Daily Work Report",
+  "Project Information"
 ];
 
 const fileNameToUrlMap: Record<string, string> = {
@@ -65,6 +66,7 @@ const fileNameToUrlMap: Record<string, string> = {
   "Project Application Summary": "project-application-summary",
   "Project Checklist": "project-checklist",
   "Project Data": "project-data",
+  "Project Information": "project-information",
   "Proposal Request": "proposal-request",
   "Rate Analysis": "rate-analysis",
   "Shop Drawing and Sample Record": "shop-drawings-record",
