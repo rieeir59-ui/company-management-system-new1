@@ -462,9 +462,9 @@ function MyProjectsComponent() {
                                       <StatusBadge status={item.status as Task['status']} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="not-started">Not Started</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
+                                      <SelectItem value="Not Started">Not Started</SelectItem>
+                                      <SelectItem value="In Progress">In Progress</SelectItem>
+                                      <SelectItem value="Completed">Completed</SelectItem>
                                       {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>
@@ -600,5 +600,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    

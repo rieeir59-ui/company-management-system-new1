@@ -455,7 +455,7 @@ function MyProjectsComponent() {
                                 <TableCell>
                                   <Select
                                     value={item.status}
-                                    onValueChange={(newStatus: Task['status']) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
+                                    onValueChange={(newStatus: any) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
                                     disabled={!canEdit || item.status === 'pending-approval'}
                                   >
                                     <SelectTrigger className="w-[180px]">
@@ -465,6 +465,9 @@ function MyProjectsComponent() {
                                       <SelectItem value="not-started">Not Started</SelectItem>
                                       <SelectItem value="in-progress">In Progress</SelectItem>
                                       <SelectItem value="completed">Completed</SelectItem>
+                                      <SelectItem value="Not Started">Not Started</SelectItem>
+                                      <SelectItem value="In Progress">In Progress</SelectItem>
+                                      <SelectItem value="Completed">Completed</SelectItem>
                                       {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>
@@ -600,5 +603,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
