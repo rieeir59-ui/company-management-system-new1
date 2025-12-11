@@ -45,7 +45,8 @@ const managementRecordTypes = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Uploaded File", "Task Assignment", "Site Survey Report"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
+    "Site Survey" // Added for category view
 ];
 
 const generatePdfForRecord = (record: SavedRecord) => {
@@ -144,10 +145,10 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
         const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
-        addText(`Made as of the day ${details.find(d=>d.label.includes('day'))?.value || '________________'}`);
-        addText(`Between the Owner: ${details.find(d=>d.label.includes('Owner'))?.value || '________________'}`);
-        addText(`For the Design of: ${details.find(d=>d.label.includes('Design'))?.value || '________________'}`);
-        addText(`Address: ${details.find(d=>d.label.includes('Address'))?.value || '________________'}`);
+        addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
+        addText(`Between the Owner: ${details.find((d:any)=>d.label.includes('Owner'))?.value || '________________'}`);
+        addText(`For the Design of: ${details.find((d:any)=>d.label.includes('Design'))?.value || '________________'}`);
+        addText(`Address: ${details.find((d:any)=>d.label.includes('Address'))?.value || '________________'}`);
         
         const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
@@ -240,7 +241,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 recordsToFilter = recordsToFilter.filter(r => r.fileName === categoryName);
             }
         } else if (activeCategory === 'Management Records') {
-            recordsToFilter = recordsToFilter.filter(r => managementRecordTypes.includes(r.fileName) || r.fileName === "Site Survey Report");
+            recordsToFilter = recordsToFilter.filter(r => managementRecordTypes.includes(r.fileName));
              if (selectedMgmtRecordType) {
                 const typesToFilter = selectedMgmtRecordType === "Site Survey" ? ["Site Survey Report", "Site Visit Proforma"] : [selectedMgmtRecordType];
                 recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
@@ -505,18 +506,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (activeCategory === 'Management Records' && !selectedMgmtRecordType) {
             const mgmtRecordCategories = [
               "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
-              "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
+              "Consent of Surety", "Construction Change Directive",
               "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
               "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
               "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
               "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-              "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
+              "My Projects", "Site Visit Proforma", "Site Survey", "Uploaded File", "Task Assignment"
             ];
 
             return (
                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {mgmtRecordCategories.map(cat => {
-                        const Icon = cat === 'Site Survey' ? Compass : getIconForCategory(cat);
+                        const Icon = getIconForCategory(cat);
                         return (
                              <SectionCard 
                                 key={cat} 
