@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { memo, useState, useEffect, useMemo } from 'react';
+import React, { memo, useState, useEffect, useMemo, useId } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -90,6 +90,7 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: typeof menuItems }) => {
   const pathname = usePathname();
+  const timelinesId = useId();
 
   return (
     <SidebarMenu>
@@ -119,6 +120,33 @@ const MemoizedSidebarMenu = memo(({ visibleMenuItems }: { visibleMenuItems: type
             </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
+       <SidebarMenuItem>
+          <Collapsible>
+            <CollapsibleTrigger asChild id={timelinesId}>
+              <SidebarMenuButton
+                className="group-data-[collapsible=icon]:justify-center"
+                tooltip="Timelines of Bank"
+              >
+                <Landmark className="size-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent asChild>
+              <SidebarMenuSub>
+                {bankTimelineItems.map((item) => (
+                  <SidebarMenuSubItem key={item.href}>
+                    <Link href={item.href} passHref>
+                      <SidebarMenuSubButton isActive={pathname === item.href}>
+                        <item.icon className="size-4 mr-2" />
+                        {item.label}
+                      </SidebarMenuSubButton>
+                    </Link>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarMenuItem>
     </SidebarMenu>
   );
 });
@@ -129,7 +157,6 @@ export default function DashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const pathname = usePathname();
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -240,38 +267,7 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <>
-              <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} />
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton
-                        className="group-data-[collapsible=icon]:justify-center"
-                        tooltip="Timelines of Bank"
-                      >
-                        <Landmark className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                      <SidebarMenuSub>
-                        {bankTimelineItems.map((item) => (
-                          <SidebarMenuSubItem key={item.href}>
-                            <Link href={item.href} passHref>
-                              <SidebarMenuSubButton isActive={pathname === item.href}>
-                                <item.icon className="size-4 mr-2" />
-                                {item.label}
-                              </SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </>
+            <MemoizedSidebarMenu visibleMenuItems={visibleMenuItems} />
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">
