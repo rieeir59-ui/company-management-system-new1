@@ -90,6 +90,13 @@ function MyProjectsComponent() {
   }, [currentUser, displayUser, isAdmin]);
 
   const { tasks: allProjects, isLoading: isLoadingTasks } = useTasks(displayUser?.uid);
+  
+  const [scheduleEntries, setScheduleEntries] = useState<Task[]>([]);
+  
+  useEffect(() => {
+    setScheduleEntries(allProjects);
+  }, [allProjects]);
+
 
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
@@ -97,6 +104,8 @@ function MyProjectsComponent() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [remarks, setRemarks] = useState('');
+  const [scheduleStartDate, setScheduleStartDate] = useState('');
+  const [scheduleEndDate, setScheduleEndDate] = useState('');
 
   const projectStats = useMemo(() => {
       const total = allProjects.length;
@@ -224,6 +233,66 @@ function MyProjectsComponent() {
       errorEmitter.emit('permission-error', permissionError);
     }
   };
+  
+    const handleScheduleEntryChange = (id: number, field: keyof Task, value: string) => {
+        setScheduleEntries(prev => prev.map(entry => (entry.id === id ? { ...entry, [field]: value } : entry)));
+    };
+
+    const addScheduleEntry = () => {
+        setScheduleEntries(prev => [...prev, { id: Date.now(), taskName: 'New Project', projectName: 'New Project', taskDescription: '', status: 'not-started', startDate: '', endDate: '', assignedBy: currentUser?.name || '', assignedTo: displayUser?.uid || '' , createdAt: new Date() as any }]);
+    };
+    
+    const removeScheduleEntry = (id: number) => {
+        setScheduleEntries(prev => prev.filter(entry => entry.id !== id));
+    };
+
+    const handleSaveSchedule = async () => {
+        if (!canEdit) {
+            toast({ variant: 'destructive', title: 'Permission Denied' });
+            return;
+        }
+
+        try {
+            await addRecord({
+                fileName: 'My Projects',
+                projectName: `${displayUser?.name}'s Project Schedule`,
+                data: [{
+                    category: 'My Project Schedule',
+                    schedule: { start: scheduleStartDate, end: scheduleEndDate },
+                    remarks: remarks,
+                    items: scheduleEntries.map(entry => ({
+                        label: `Project: ${entry.projectName}`,
+                        value: `Detail: ${entry.taskDescription}, Status: ${entry.status}, Start: ${entry.startDate}, End: ${entry.endDate}`
+                    }))
+                }]
+            } as any);
+
+        } catch (error) {
+           // error is handled by context
+        }
+    };
+    
+    const handleDownloadSchedule = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text('My Project Schedule', 14, 22);
+        doc.setFontSize(10);
+        doc.text(`Employee: ${displayUser?.name}`, 14, 30);
+        doc.text(`Schedule: ${scheduleStartDate} to ${scheduleEndDate}`, 14, 36);
+
+        (doc as any).autoTable({
+            startY: 42,
+            head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+            body: scheduleEntries.map(e => [e.projectName, e.taskDescription, e.status, e.startDate, e.endDate]),
+        });
+        
+        let finalY = (doc as any).lastAutoTable.finalY + 10;
+        doc.text('Remarks:', 14, finalY);
+        doc.text(remarks, 14, finalY + 5);
+
+        doc.save('my-project-schedule.pdf');
+    };
+
 
   const openViewDialog = (task: Task) => {
     setViewingTask(task);
@@ -331,14 +400,69 @@ function MyProjectsComponent() {
                     </Table>
                 )}
             </CardContent>
-            <CardFooter className="flex-col items-start gap-4">
+        </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>My Project Schedule</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="space-y-2 mb-4">
+                    <Label>Work Schedule</Label>
+                    <div className="flex gap-2 items-center">
+                        <Input type="date" value={scheduleStartDate} onChange={e => setScheduleStartDate(e.target.value)} />
+                        <span>to</span>
+                        <Input type="date" value={scheduleEndDate} onChange={e => setScheduleEndDate(e.target.value)} />
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Detail</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {scheduleEntries.map(entry => (
+                                <TableRow key={entry.id}>
+                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)}/></TableCell>
+                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1}/></TableCell>
+                                    <TableCell>
+                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(entry.id, 'status', v)}>
+                                            <SelectTrigger><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                 <SelectItem value="not-started">Not Started</SelectItem>
+                                                 <SelectItem value="in-progress">In Progress</SelectItem>
+                                                 <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)}/></TableCell>
+                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)}/></TableCell>
+                                    <TableCell className="flex gap-1">
+                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
+                                        <Button variant="destructive" size="icon" onClick={() => removeScheduleEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
+            </CardContent>
+             <CardFooter className="flex-col items-start gap-4">
                 <div>
                   <Label htmlFor="remarks">Remarks</Label>
                   <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Add any remarks here..."/>
                 </div>
                 <div className="flex justify-end w-full gap-2">
-                    <Button variant="outline">Save</Button>
-                    <Button>Download PDF</Button>
+                    <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
+                    <Button onClick={handleDownloadSchedule}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardFooter>
         </Card>
