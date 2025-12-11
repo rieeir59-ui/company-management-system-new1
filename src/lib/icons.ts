@@ -39,6 +39,7 @@ import {
   File as FileIcon,
   type LucideIcon,
   FolderOpen,
+  ClipboardList,
 } from 'lucide-react';
 
 export const fileNameToIconMap: Record<string, LucideIcon> = {
