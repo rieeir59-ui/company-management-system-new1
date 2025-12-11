@@ -43,7 +43,8 @@ export const allFileNames = [
   "Task Assignment",
   "Site Visit Proforma",
   "Site Survey Report",
-  "Uploaded File"
+  "Uploaded File",
+  "Daily Work Report"
 ];
 
 const fileNameToUrlMap: Record<string, string> = {
@@ -84,6 +85,7 @@ const fileNameToUrlMap: Record<string, string> = {
   "Site Visit Proforma": "site-visit",
   "Site Survey Report": "site-survey-report",
   "Uploaded File": "files-record",
+  "Daily Work Report": "daily-report"
 };
 
 export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashboard' | 'employee-dashboard'): string | null {

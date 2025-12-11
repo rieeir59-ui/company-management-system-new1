@@ -52,9 +52,8 @@ const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
 
 const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
-const generateDefaultPdf = (record: SavedRecord) => {
-    const isBankTimeline = bankTimelineCategories.includes(record.fileName);
-    const doc = new jsPDF({ orientation: isBankTimeline ? 'landscape' : 'portrait' });
+const generatePdfForRecord = (record: SavedRecord) => {
+    const doc = new jsPDF({ orientation: 'portrait' });
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
@@ -62,159 +61,123 @@ const generateDefaultPdf = (record: SavedRecord) => {
     const primaryColor = [45, 95, 51];
     const margin = 14;
 
-    // Header
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 8;
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 12;
-
-    doc.setFontSize(9);
-    doc.text(`Record ID: ${record.id}`, 14, yPos);
-    doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
-    yPos += 10;
-    doc.setLineWidth(0.5);
-    doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
-
-
-    const addSection = (title: string, items: any) => {
-        if (!items || (Array.isArray(items) && items.length === 0)) return;
-        
-        if (yPos > (isBankTimeline ? pageHeight - 60 : pageHeight - 40)) { doc.addPage(); yPos = 20; }
-        
+    const addDefaultHeader = () => {
+        doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text(title, 14, yPos);
+        doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
         yPos += 8;
-        doc.setTextColor(0,0,0);
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 12;
 
-        let body: (string | number)[][] = [];
+        doc.setFontSize(9);
+        doc.text(`Record ID: ${record.id}`, 14, yPos);
+        doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
+    };
 
-        if (Array.isArray(items)) {
-            items.forEach((item: any) => {
-                if (typeof item === 'string') {
-                    try {
-                        // Handle JSON strings in items (like from Bill of Quantity)
-                        const parsed = JSON.parse(item);
-                        if(typeof parsed === 'object' && parsed !== null) {
-                             Object.entries(parsed).forEach(([key, val]) => {
-                                if (key !== 'id' && key !== 'isHeader') {
-                                    body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
-                                }
-                            });
-                             body.push(['---', '---']); // Separator
-                        }
-                    } catch (e) {
-                        const parts = item.split(/:(.*)/s);
-                        if (parts.length > 1) {
-                            body.push([parts[0], parts[1].trim()]);
-                        } else {
-                            body.push([item, '']);
-                        }
-                    }
-                } else if (item && typeof item === 'object') {
-                    if (item.label && item.value !== undefined) { // For {label, value} objects
-                        body.push([item.label, String(item.value)]);
-                    } else if (item.Item && item.Status !== undefined) {
-                         body.push([item.Item, `${item.Status} ${item.Remarks ? `(${item.Remarks})` : ''}`]);
-                    } else {
-                       body.push([JSON.stringify(item, null, 2), '']);
-                    }
-                }
-            });
-        } else if (typeof items === 'object' && items !== null) { // For objects like 'header'
-             Object.entries(items).forEach(([key, val]) => {
-                body.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(val)]);
-            });
-        }
-        
-        if (body.length > 0) {
-            (doc as any).autoTable({
-                startY: yPos,
-                body: body,
-                theme: 'striped',
-                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240] },
-                columnStyles: { 0: { fontStyle: 'bold' } }
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
+    const addFooter = () => {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
     };
     
-    if (isBankTimeline && Array.isArray(record.data)) {
-        record.data.forEach((section: any) => {
-             if (section.category === 'Projects' && Array.isArray(section.items) && section.items.length > 0) {
-                if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text(section.category, 14, yPos);
-                yPos += 8;
+    // Default generic PDF generation
+    const generateGenericPdf = () => {
+        addDefaultHeader();
 
-                 const head1 = [
-                    { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
-                    { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                    { content: 'Site Survey', colSpan: 2 }, { content: 'Contact', colSpan: 2 }, { content: 'Head Count / Requirment', colSpan: 2 },
-                    { content: 'Proposal / Design Development', colSpan: 2 }, { content: '3D\'s', colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 },
-                    { content: 'Tender Package MEP', colSpan: 2 }, { content: 'BOQ', colSpan: 2 },
-                    { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 }, { content: 'Working Drawings', rowSpan: 2 },
-                    { content: 'Site Visit', rowSpan: 2 }, { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
-                ];
+        if (Array.isArray(record.data)) {
+            record.data.forEach((section: any) => {
+                if (typeof section === 'object' && section !== null && section.category) {
+                    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                    doc.text(section.category, 14, yPos);
+                    yPos += 8;
+                    doc.setTextColor(0,0,0);
 
-                const head2 = Array(8).fill(0).flatMap(() => ['Start Date', 'End Date']);
-                const finalHead = [head1, head2];
+                    const body = (Array.isArray(section.items) ? section.items : [section.items]).map((item: any) => {
+                         if (typeof item === 'string') {
+                            const parts = item.split(/:(.*)/s);
+                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                         } else if (item && item.label && item.value !== undefined) {
+                            return [item.label, String(item.value)];
+                         }
+                         return [JSON.stringify(item), ''];
+                    });
 
-                const body = section.items.map((item: any) => [
-                    item.srNo, item.projectName, item.area, item.projectHolder, item.allocationDate,
-                    item.siteSurveyStart, item.siteSurveyEnd, item.contactStart, item.contactEnd,
-                    item.headCountStart, item.headCountEnd, item.proposalStart, item.proposalEnd,
-                    item.threedStart, item.threedEnd, item.tenderArchStart, item.tenderArchEnd,
-                    item.tenderMepStart, item.tenderMepEnd, item.boqStart, item.boqEnd,
-                    item.tenderStatus, item.comparative, item.workingDrawings,
-                    item.siteVisit, item.finalBill, item.projectClosure
-                ]);
-                
-                (doc as any).autoTable({
-                    startY: yPos,
-                    head: finalHead,
-                    body: body,
-                    theme: 'grid',
-                    styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
-                    headStyles: { fontStyle: 'bold', fillColor: primaryColor, textColor: [255,255,255], halign: 'center' },
-                });
-                yPos = (doc as any).autoTable.previous.finalY + 10;
+                    (doc as any).autoTable({
+                        startY: yPos,
+                        body: body,
+                        theme: 'striped',
+                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+                        headStyles: { fontStyle: 'bold' },
+                        columnStyles: { 0: { fontStyle: 'bold' } }
+                    });
+                     yPos = (doc as any).autoTable.previous.finalY + 10;
+                }
+            });
+        }
+        addFooter();
+        doc.save(`${record.projectName}_${record.fileName}.pdf`);
+    };
 
-             } else if (section.category === 'Overall Status' && Array.isArray(section.items)) {
-                addSection(section.category, section.items.map((item:any) => ({label: item.title, value: item.status})));
-             } else {
-                addSection(section.category, section.items);
-             }
+    // Specific PDF for Bill of Quantity
+    if (record.fileName === 'Bill of Quantity' && record.data[0]?.category === 'Bill of Quantity') {
+        const boqData = record.data[0];
+        const header = JSON.parse(boqData.header);
+        const items = boqData.items.map((i: string) => JSON.parse(i));
+        const totalAmount = items.reduce((sum: number, item: any) => sum + (item.qty * item.rate), 0);
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ISBAH HASSAN & ASSOCIATES', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 7;
+        doc.setFontSize(12);
+        doc.text('BILL OF QUANTITY', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 10;
+        doc.setFontSize(10);
+        doc.text(`Project: ${header.projectName}`, 14, yPos);
+        yPos += 10;
+        
+        const head = [['Sr. No', 'Description', 'Unit', 'Qty', 'Rate', 'Amount (Rs)']];
+        const body = items.map((item: any) => {
+            if (item.isHeader) {
+                return [{ content: `${item.srNo} ${item.description}`, colSpan: 6, styles: { fontStyle: 'bold', fillColor: '#f0f0f0' } }];
+            }
+            return [
+                item.srNo, item.description, item.unit, item.qty.toString(),
+                item.rate.toFixed(2), (item.qty * item.rate).toFixed(2)
+            ];
         });
 
-    } else if (Array.isArray(record.data)) {
-        record.data.forEach((section: any) => {
-            if (typeof section === 'object' && section !== null && section.category) {
-                 addSection(section.category, section.items);
+        (doc as any).autoTable({
+            head, body, startY: yPos, theme: 'grid', styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
+            headStyles: { fillColor: primaryColor },
+            didParseCell: (data: any) => {
+                const row = items[data.row.index];
+                if (row?.isHeader) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = '#f0f0f0'; }
             }
         });
-    } else if (typeof record.data === 'object' && record.data !== null) { // For flat object data
-        addSection("Details", Object.entries(record.data).map(([key, value]) => ({label: key, value: String(value)})));
+        
+        yPos = (doc as any).autoTable.previous.finalY + 10;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL AMOUNT RS: ${totalAmount.toFixed(2)}`, 14, yPos);
+
+        addFooter();
+        doc.save('bill-of-quantity.pdf');
+    } else {
+        // Fallback to generic PDF for other types
+        generateGenericPdf();
     }
-
-
-    // Footer on all pages
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-    }
-
-    doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
 const SectionCard = ({ title, icon: Icon, onClick, className }: { title: string, icon: React.ElementType, onClick: () => void, className?: string }) => (
@@ -705,7 +668,7 @@ const renderRecordContent = () => {
                     {renderRecordContent()}
                 </div>
                 <DialogFooter>
-                    <Button onClick={() => viewingRecord && generateDefaultPdf(viewingRecord)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button onClick={() => viewingRecord && generatePdfForRecord(viewingRecord)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                     <DialogClose asChild><Button variant="outline">Close</Button></DialogClose>
                 </DialogFooter>
             </DialogContent>
