@@ -342,12 +342,12 @@ function MyProjectsComponent() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Task</TableHead>
-                                <TableHead>Assigned By</TableHead>
-                                <TableHead>Start Date</TableHead>
-                                <TableHead>End Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead className="font-semibold">Task</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -356,7 +356,7 @@ function MyProjectsComponent() {
                                     <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
                             </TableRow>
                             ) : allProjects.map((project) => (
-                                <TableRow key={project.id}>
+                                <TableRow key={project.id} className="text-base">
                                     <TableCell className="font-medium">{project.taskName}</TableCell>
                                     <TableCell>{project.assignedBy}</TableCell>
                                     <TableCell>{project.startDate || 'N/A'}</TableCell>

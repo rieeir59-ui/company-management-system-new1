@@ -201,16 +201,16 @@ export default function AssignTaskPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Task Name</TableHead>
-                                <TableHead>Assigned To</TableHead>
-                                <TableHead>Assigned By</TableHead>
-                                <TableHead>Status</TableHead>
-                                {isAdmin && <TableHead>Action</TableHead>}
+                                <TableHead className="font-semibold">Task Name</TableHead>
+                                <TableHead className="font-semibold">Assigned To</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                {isAdmin && <TableHead className="font-semibold">Action</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {tasks.map(task => (
-                                <TableRow key={task.id}>
+                                <TableRow key={task.id} className="text-base">
                                     <TableCell>{task.taskName}</TableCell>
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
