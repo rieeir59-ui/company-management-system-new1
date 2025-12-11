@@ -16,9 +16,7 @@ import 'jspdf-autotable';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -93,8 +91,7 @@ const electrificationDrawingItems = [
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const handleSave = () => {
         toast({
@@ -614,3 +611,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
