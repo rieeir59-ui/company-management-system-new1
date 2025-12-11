@@ -201,9 +201,11 @@ function MyProjectsComponent() {
     const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
         if (!firestore || !currentUser) return;
         
-        if (!canEdit) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
-            return;
+        const isOwnTask = currentUser.uid === task.assignedTo;
+
+        if (!isAdmin && !isOwnTask) {
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
+             return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
@@ -359,7 +361,7 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
-                <CardTitle>{canEdit ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
+                <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
                 <CardDescription>A list of tasks assigned by the administration.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -595,5 +597,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
