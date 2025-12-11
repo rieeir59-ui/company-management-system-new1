@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -433,7 +434,7 @@ function MyProjectsComponent() {
                 </div>
                 <div className="flex justify-end w-full gap-2">
                     <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
-                    <Button asChild><Link href="/employee-dashboard/my-projects"><Eye className="mr-2 h-4 w-4" /> View Project Report</Link></Button>
+                    <Button asChild><Link href="/employee-dashboard/my-projects"><Eye className="mr-2 h-4 w-4" /> View Schedule</Link></Button>
                 </div>
             </CardFooter>
         </Card>
