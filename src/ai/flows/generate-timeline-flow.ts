@@ -35,7 +35,8 @@ const generateTimelineFlow = ai.defineFlow(
   },
   async (input) => {
 
-    const prompt = `
+    const llmResponse = await ai.generate({
+      prompt: `
       You are a project manager for an architecture firm. Based on the project name and area, generate a realistic timeline.
       The project name is "${input.projectName}" and the area is ${input.area} sft.
       
@@ -56,10 +57,7 @@ const generateTimelineFlow = ai.defineFlow(
       - Project Closure
       
       For each task, provide a reasonable start and end date in YYYY-MM-DD format. The start date should be based on the current date. Be realistic about the duration based on the project area.
-    `;
-
-    const llmResponse = await ai.generate({
-      prompt: prompt,
+    `,
       model: 'googleai/gemini-pro',
       output: {
         schema: TimelineOutputSchema,
