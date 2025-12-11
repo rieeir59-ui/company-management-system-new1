@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -346,14 +347,13 @@ function MyProjectsComponent() {
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Submission</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {allProjects.length === 0 ? (
                             <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned yet.</TableCell>
+                                    <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
                             </TableRow>
                             ) : allProjects.map((project) => (
                                 <TableRow key={project.id}>
@@ -377,22 +377,15 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell>
-                                        {project.submissionUrl ? (
-                                             <Button variant="link" size="sm" asChild>
-                                                <a href={project.submissionUrl} target="_blank" rel="noopener noreferrer">{project.submissionFileName || 'View File'}</a>
-                                            </Button>
-                                        ) : (
-                                            <Button variant="outline" size="sm" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
-                                                <Upload className="h-4 w-4 mr-2"/>
-                                                Submit
-                                            </Button>
-                                        )}
-                                    </TableCell>
                                     <TableCell className="text-right">
-                                       <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
-                                          <Eye className="h-4 w-4"/>
-                                       </Button>
+                                        <div className="flex gap-1 justify-end">
+                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

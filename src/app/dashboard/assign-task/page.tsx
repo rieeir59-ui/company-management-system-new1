@@ -205,7 +205,6 @@ export default function AssignTaskPage() {
                                 <TableHead>Assigned To</TableHead>
                                 <TableHead>Assigned By</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Submission</TableHead>
                                 {isAdmin && <TableHead>Action</TableHead>}
                             </TableRow>
                         </TableHeader>
@@ -216,17 +215,6 @@ export default function AssignTaskPage() {
                                     <TableCell>{getEmployeeName(task.assignedTo)}</TableCell>
                                     <TableCell>{task.assignedBy}</TableCell>
                                     <TableCell>{task.status}</TableCell>
-                                    <TableCell>
-                                        {task.submissionUrl ? (
-                                            <Button variant="link" asChild>
-                                                <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
-                                                    <FileText className="h-4 w-4" /> View Submission
-                                                </a>
-                                            </Button>
-                                        ) : (
-                                            <span className="text-muted-foreground">N/A</span>
-                                        )}
-                                    </TableCell>
                                     {isAdmin && (
                                     <TableCell>
                                         <div className="flex gap-1">
