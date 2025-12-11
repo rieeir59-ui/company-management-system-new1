@@ -171,7 +171,7 @@ export default function SiteSurveyReportPage() {
                 const imgWidth = 120;
                 const imgHeight = (img.height * imgWidth) / img.width;
                 const x = (pageWidth - imgWidth) / 2;
-
+                
                 const fileType = pic.file.type.split('/')[1]?.toUpperCase();
                 if (!fileType || !['JPG', 'JPEG', 'PNG'].includes(fileType)) {
                     console.error('Unsupported image type for PDF:', pic.file.type);
