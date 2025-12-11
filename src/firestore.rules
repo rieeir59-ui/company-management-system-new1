@@ -35,16 +35,24 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow read: if isAdmin() || isTaskOwner();
+      // Admins can read any task. Employees can only read tasks assigned to them.
+      allow get: if isAdmin() || isTaskOwner();
+      allow list: if isAdmin() || (isLoggedIn() && request.query.where.field == 'assignedTo' && request.query.where.value == request.auth.uid);
+      
+      // Only admins can create new tasks.
       allow create: if isAdmin();
+      
+      // Admins or the assigned user can update the task.
       allow update: if isAdmin() || isTaskOwner();
+      
+      // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
 
     // UPLOADED FILES collection
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
-      allow write: if isLoggedIn();
+      write: if isLoggedIn();
     }
   }
 }
