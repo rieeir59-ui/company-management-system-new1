@@ -18,41 +18,37 @@ export type GenerateTimelineOutput = z.infer<
 export async function generateTimeline(
   input: GenerateTimelineInput
 ): Promise<GenerateTimelineOutput> {
-  const llmResponse = await ai.generate({
-    model: 'googleai/gemini-1.5-flash-latest',
+  return generateTimelineFlow(input);
+}
+
+const generateTimelinePrompt = ai.definePrompt(
+  {
+    name: 'generateTimelinePrompt',
+    inputSchema: GenerateTimelineInputSchema,
+    outputSchema: GenerateTimelineOutputSchema,
     prompt: `
       You are a project manager for an architectural firm.
       Generate a realistic timeline for the given project.
       The timeline should include key phases like Site Survey, Design, Tendering, and Construction.
-      The output must be a valid JSON object that conforms to the provided schema. Do not add any extra text or markdown formatting around the JSON.
 
-      Project Name: ${input.projectName}
-      Area: ${input.area} sft
-
-      Here is the required JSON schema:
-      ${JSON.stringify(GenerateTimelineOutputSchema.jsonSchema)}
+      Project Name: {{{projectName}}}
+      Area: {{{area}}} sft
     `,
-    output: {
-      format: 'json',
-    },
-    config: {
-      temperature: 0.3,
-    },
-  });
+  },
+);
 
-  const structuredResponse = llmResponse.output();
-
-  if (!structuredResponse) {
-    throw new Error('Failed to generate a structured timeline from the AI model.');
+const generateTimelineFlow = ai.defineFlow(
+  {
+    name: 'generateTimelineFlow',
+    inputSchema: GenerateTimelineInputSchema,
+    outputSchema: GenerateTimelineOutputSchema,
+  },
+  async (input) => {
+    const llmResponse = await generateTimelinePrompt(input);
+    const output = llmResponse.output();
+    if (!output) {
+      throw new Error('Failed to generate a structured timeline from the AI model.');
+    }
+    return output;
   }
-
-  // Validate the response against the Zod schema
-  const parsed = GenerateTimelineOutputSchema.safeParse(structuredResponse);
-
-  if (!parsed.success) {
-    console.error('AI response validation failed:', parsed.error);
-    throw new Error('The AI returned data in an unexpected format.');
-  }
-
-  return parsed.data;
-}
+);
