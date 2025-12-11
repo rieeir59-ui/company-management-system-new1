@@ -45,10 +45,12 @@ const managementRecordTypes = [
     "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
     "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
+    "Project Information"
 ];
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
+    { name: "Project Information", icon: FolderOpen },
     { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
     { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
     { name: "Change Order", icon: getIconForCategory("Change Order")},
@@ -272,7 +274,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             }
         } else if (activeCategory === 'Management Records') {
             if (selectedMgmtRecordType) {
-                 const typesToFilter = selectedMgmtRecordType === "Site Survey" ? ["Site Survey Report", "Site Visit Proforma"] : [selectedMgmtRecordType];
+                 const typesToFilter = selectedMgmtRecordType === "Site Survey" 
+                    ? ["Site Survey Report", "Site Visit Proforma"] 
+                    : selectedMgmtRecordType === "Project Information"
+                    ? ["Project Information"]
+                    : [selectedMgmtRecordType];
                  recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
             } else {
                 recordsToFilter = recordsToFilter.filter(r => managementRecordTypes.includes(r.fileName));
@@ -706,5 +712,3 @@ const renderRecordContent = () => {
     </div>
   );
 }
-
-    

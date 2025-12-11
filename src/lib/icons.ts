@@ -78,6 +78,7 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Site Visit Proforma": Eye,
     "Site Survey Report": FileSearch,
     "Uploaded File": FileUp,
+    "Project Information": Folder,
 };
 
 export const getIconForFile = (fileName: string): LucideIcon => {

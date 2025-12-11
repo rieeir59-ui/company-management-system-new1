@@ -22,6 +22,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { useSearchParams } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -60,8 +61,7 @@ const residenceRequirements = [
 function ProjectInformationComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord, updateRecord, getRecordById } = useRecords();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
 
@@ -149,70 +149,55 @@ function ProjectInformationComponent() {
     );
 
      useEffect(() => {
-        if (recordId && firestore) {
-            const fetchRecord = async () => {
-                setIsLoading(true);
-                try {
-                    const docRef = doc(firestore, 'savedRecords', recordId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const record = docSnap.data();
-                        
-                        const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items.reduce((acc: any, item: string) => {
-                            const [key, ...value] = item.split(':');
-                            acc[key.trim()] = value.join(':').trim();
-                            return acc;
-                        }, {}) || {};
-
-                        const loadedFormState: any = {};
-                        for (const key in formState) {
-                          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                          if (mainData[formattedKey] !== undefined) {
-                            if (typeof formState[key as keyof typeof formState] === 'boolean') {
-                                loadedFormState[key] = mainData[formattedKey] === 'true';
-                            } else {
-                                loadedFormState[key] = mainData[formattedKey];
-                            }
-                          }
-                        }
-                        setFormState(s => ({...s, ...loadedFormState}));
-                        
-                        const loadedConsultants = JSON.parse(JSON.stringify(consultants));
-                        const consultantData = record.data.find((d: any) => d.category === 'Consultants')?.items || [];
-                        consultantData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedConsultants[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && Array.isArray(record.data)) {
+                 const mainData: Record<string, string> = {};
+                 record.data.forEach((section: any) => {
+                    if (section.category === 'Project Information' && Array.isArray(section.items)) {
+                        section.items.forEach((item: {label: string, value: string}) => {
+                           // Convert "Project Name" to "projectName"
+                           const key = item.label.charAt(0).toLowerCase() + item.label.slice(1).replace(/\s/g, '');
+                           mainData[key] = item.value;
                         });
-                        setConsultants(loadedConsultants);
-
-                        const loadedRequirements = JSON.parse(JSON.stringify(requirements));
-                        const requirementsData = record.data.find((d: any) => d.category === 'Requirements')?.items || [];
-                        requirementsData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedRequirements[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
-                        });
-                        setRequirements(loadedRequirements);
-                        
-
-                    } else {
-                        toast({ variant: "destructive", title: "Error", description: "Record not found."});
                     }
-                } catch (e) {
-                     toast({ variant: "destructive", title: "Error", description: "Failed to load record."});
-                     console.error("Error fetching document:", e);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            fetchRecord();
-        } else {
-          setIsLoading(false);
+                 });
+
+                 const loadedFormState: any = {};
+                 for (const key in formState) {
+                   if (mainData[key] !== undefined) {
+                     if (typeof formState[key as keyof typeof formState] === 'boolean') {
+                         loadedFormState[key] = mainData[key] === 'true';
+                     } else {
+                         loadedFormState[key] = mainData[key];
+                     }
+                   }
+                 }
+                 setFormState(s => ({...s, ...loadedFormState}));
+                
+                const loadedConsultants = JSON.parse(JSON.stringify(consultants));
+                const consultantData = record.data.find((d: any) => d.category === 'Consultants')?.items || [];
+                consultantData.forEach((item: { label: string, value: string }) => {
+                    try {
+                        loadedConsultants[item.label.trim()] = JSON.parse(item.value);
+                    } catch {}
+                });
+                setConsultants(loadedConsultants);
+
+                const loadedRequirements = JSON.parse(JSON.stringify(requirements));
+                const requirementsData = record.data.find((d: any) => d.category === 'Requirements')?.items || [];
+                requirementsData.forEach((item: { label: string, value: string }) => {
+                    try {
+                        loadedRequirements[item.label.trim()] = JSON.parse(item.value);
+                    } catch {}
+                });
+                setRequirements(loadedRequirements);
+            } else if(recordId) {
+                toast({ variant: "destructive", title: "Error", description: "Record not found."});
+            }
         }
-    }, [recordId, firestore, toast]);
+        setIsLoading(false);
+    }, [recordId, getRecordById, toast]);
 
     const handleRequirementChange = (item: string, field: 'nos' | 'remarks', value: string) => {
         setRequirements(prev => ({
@@ -242,51 +227,20 @@ function ProjectInformationComponent() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
-            data: [{
-                category: 'Project Information',
-                items: Object.entries(formState).map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
-            }, {
-                category: 'Consultants',
-                items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
-            },
-            {
-                category: 'Requirements',
-                items: Object.entries(requirements).map(([req, values]) => `${req}: ${JSON.stringify(values)}`)
-            }],
+            data: [
+                { category: 'Project Information', items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) })) },
+                { category: 'Consultants', items: Object.entries(consultants).map(([type, values]) => ({ label: type, value: JSON.stringify(values) })) },
+                { category: 'Requirements', items: Object.entries(requirements).map(([req, values]) => ({ label: req, value: JSON.stringify(values) })) },
+            ]
         };
 
-        try {
-            if (recordId) {
-                const docRef = doc(firestore, 'savedRecords', recordId);
-                await updateDoc(docRef, {
-                    projectName: dataToSave.projectName,
-                    data: dataToSave.data,
-                });
-                toast({ title: 'Record Updated', description: "The project information has been updated." });
-            } else {
-                await addDoc(collection(firestore, 'savedRecords'), {
-                    employeeId: currentUser.record,
-                    employeeName: currentUser.name,
-                    ...dataToSave,
-                    createdAt: serverTimestamp(),
-                });
-                toast({ title: 'Record Saved', description: "The project information has been saved." });
-            }
-        } catch (serverError) {
-             const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: recordId ? 'update' : 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        if (recordId) {
+            await updateRecord(recordId, dataToSave);
+        } else {
+            await addRecord(dataToSave as any);
         }
     };
     
@@ -326,7 +280,7 @@ function ProjectInformationComponent() {
           doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
           if (checked) {
               doc.setFillColor(0, 0, 0); // Set fill color to black
-              doc.rect(x, y - 3.5, 4, 4, 'F'); // Draw a filled rectangle
+              doc.rect(x + 0.5, y - 3, 3, 3, 'F'); // Draw a filled rectangle
           }
       };
 
@@ -493,8 +447,8 @@ function ProjectInformationComponent() {
       addSectionTitle("Requirements");
       const reqsBody = residenceRequirements.map(req => [
           req,
-          requirements[req]?.nos || '',
-          requirements[req]?.remarks || '',
+          requirements[req].nos || '',
+          requirements[req].remarks || '',
       ]);
       doc.autoTable({
         startY: yPos,
