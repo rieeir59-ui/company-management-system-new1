@@ -193,29 +193,42 @@ function MyProjectsComponent() {
         );
     };
 
-  const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
+  const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
     if (!firestore || !currentUser) return;
+    
+    // An employee can only update their own task's status.
+    // The security rule enforces this, but we also check here for better UX.
+    if (!isAdmin && task.assignedTo !== currentUser.uid) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
+        return;
+    }
 
+    const taskRef = doc(firestore, 'tasks', task.id);
     try {
-        const taskRef = doc(firestore, 'tasks', taskId);
-        await updateDoc(taskRef, { status: newStatus });
+        // According to the new rule, `assignedTo` must be sent along with `status` for employee updates.
+        await updateDoc(taskRef, {
+          status: newStatus,
+          assignedTo: task.assignedTo // Re-asserting the assignedTo field
+        });
+
         toast({
             title: 'Status Updated',
             description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
         });
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
-            path: `tasks/${taskId}`,
+            path: `tasks/${task.id}`,
             operation: 'update',
-            requestResourceData: { status: newStatus }
+            requestResourceData: { status: newStatus, assignedTo: task.assignedTo }
         });
         errorEmitter.emit('permission-error', permissionError);
     }
 };
   
     const handleScheduleEntryChange = (id: string, field: keyof Task, value: string) => {
-        if (field === 'status') {
-            handleStatusChange(id, value as Task['status']);
+        const entry = scheduleEntries.find(e => e.id === id);
+        if (field === 'status' && entry) {
+            handleStatusChange(entry, value as Task['status']);
         } else {
              if (!firestore || !canEdit) return;
              const taskRef = doc(firestore, 'tasks', id);
@@ -336,7 +349,7 @@ function MyProjectsComponent() {
                                     <TableCell>
                                         <Select
                                             value={project.status}
-                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project.id, newStatus)}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
                                             disabled={!canEdit || project.status === 'pending-approval'}
                                         >
                                             <SelectTrigger className="w-[180px]">
@@ -398,7 +411,7 @@ function MyProjectsComponent() {
                                     <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
-                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleStatusChange(entry.id, v)}>
+                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleStatusChange(entry, v)}>
                                             <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><StatusBadge status={entry.status} /></SelectTrigger>
                                             <SelectContent>
                                                  <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
