@@ -231,7 +231,7 @@ export default function AssignTaskPage() {
                                         <Select
                                             value={task.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                            disabled={!isAdmin && currentUser?.uid !== task.assignedTo}
+                                            disabled={!canEdit}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                                 <StatusBadge status={task.status} />
