@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen, Compass } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +38,7 @@ const bankTimelineCategories = [
     "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
 ];
 
-const managementCategories = [
+const managementRecordTypes = [
     "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
     "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
     "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
@@ -47,10 +47,34 @@ const managementCategories = [
     "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
 ];
+const managementCategoriesWithIcons = [
+    { name: "Site Survey", icon: Compass },
+    { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
+    { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
+    { name: "Change Order", icon: getIconForCategory("Change Order")},
+    { name: "Consent of Surety", icon: getIconForCategory("Consent of Surety")},
+    { name: "Construction Change Directive", icon: getIconForCategory("Construction Change Directive")},
+    { name: "Construction Activity Schedule", icon: getIconForCategory("Construction Activity Schedule")},
+    { name: "Continuation Sheet", icon: getIconForCategory("Continuation Sheet")},
+    { name: "Drawings List", icon: getIconForCategory("Drawings List")},
+    { name: "Instruction Sheet", icon: getIconForCategory("Instruction Sheet")},
+    { name: "List of Contractors", icon: getIconForCategory("List of Contractors")},
+    { name: "List of Sub-Consultants", icon: getIconForCategory("List of Sub-Consultants")},
+    { name: "Preliminary Project Budget", icon: getIconForCategory("Preliminary Project Budget")},
+    { name: "Project Agreement", icon: getIconForCategory("Project Agreement")},
+    { name: "Project Application Summary", icon: getIconForCategory("Project Application Summary")},
+    { name: "Project Checklist", icon: getIconForCategory("Project Checklist")},
+    { name: "Project Data", icon: getIconForCategory("Project Data")},
+    { name: "Proposal Request", icon: getIconForCategory("Proposal Request")},
+    { name: "Rate Analysis", icon: getIconForCategory("Rate Analysis")},
+    { name: "Shop Drawing and Sample Record", icon: getIconForCategory("Shop Drawing and Sample Record")},
+    { name: "Timeline Schedule", icon: getIconForCategory("Timeline Schedule")},
+    { name: "My Projects", icon: getIconForCategory("My Projects")},
+    { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
+    { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
+    { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
+]
 
-const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
-
-const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD"];
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -73,7 +97,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
         yPos += 12;
 
         doc.setFontSize(9);
-        doc.text(`Record ID: ${record.id}`, 14, yPos);
         doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
         yPos += 10;
         doc.setLineWidth(0.5);
@@ -147,47 +170,47 @@ const generatePdfForRecord = (record: SavedRecord) => {
         };
 
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
-        const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
-        addText(`Made as of the day ${details.find(d=>d.label.includes('day'))?.value || '________________'}`);
-        addText(`Between the Owner: ${details.find(d=>d.label.includes('Owner'))?.value || '________________'}`);
-        addText(`For the Design of: ${details.find(d=>d.label.includes('Design'))?.value || '________________'}`);
-        addText(`Address: ${details.find(d=>d.label.includes('Address'))?.value || '________________'}`);
+        const details = record.data.find((d: any) => d.category === 'Agreement Details')?.items || [];
+        addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
+        addText(`Between the Owner: ${details.find((d:any)=>d.label.includes('Owner'))?.value || '________________'}`);
+        addText(`For the Design of: ${details.find((d:any)=>d.label.includes('Design'))?.value || '________________'}`);
+        addText(`Address: ${details.find((d:any)=>d.label.includes('Address'))?.value || '________________'}`);
         
-        const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
+        const costBody = record.data.find((d: any) => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
         addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
-        const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
+        const paymentBody = record.data.find((d: any) => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
         yPos = (doc as any).autoTable.previous.finalY + 10;
         
         addText('Project Management', true, 0, 12, 8);
         addText('Top Supervision:', true, 2, 10, 5);
-        addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
+        addList(record.data.find((d: any) => d.category === 'Top Supervision')?.items || []);
 
         addText('Detailed Supervision:', true, 2, 10, 5);
-        addText(record.data.find(d => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
+        addText(record.data.find((d: any) => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
 
         addText('Please Note:', true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Notes')?.items || []);
-        addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
+        addList(record.data.find((d: any) => d.category === 'Notes')?.items || []);
+        addText(record.data.find((d: any) => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
 
         doc.addPage(); yPos = 20;
 
         addText("Architect's Responsibilities", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === "Architect's Responsibilities")?.items || []);
+        addList(record.data.find((d: any) => d.category === "Architect's Responsibilities")?.items || []);
 
         addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Not Responsible For')?.items || []);
+        addList(record.data.find((d: any) => d.category === 'Not Responsible For')?.items || []);
 
         addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Termination')?.items || []);
+        addList(record.data.find((d: any) => d.category === 'Termination')?.items || []);
 
         doc.addPage(); yPos = 20;
 
         addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Compensation')?.items || []);
+        addList(record.data.find((d: any) => d.category === 'Compensation')?.items || []);
 
         yPos += 10;
         if (yPos > 270) { doc.addPage(); yPos = 20; }
@@ -234,24 +257,28 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return records;
     }, [records, employeeOnly, currentUser]);
 
+    const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
+
     const filteredRecords = useMemo(() => {
         let recordsToFilter = userRecords;
     
-        if (activeCategory) {
-            if (activeCategory === 'Banks') {
-                recordsToFilter = recordsToFilter.filter(r => bankTimelineCategories.includes(r.fileName));
-                if (selectedBank) {
-                    const categoryName = bankNameToCategory(selectedBank);
-                    recordsToFilter = recordsToFilter.filter(r => r.fileName === categoryName);
-                }
-            } else if (activeCategory === 'Management Records') {
-                 recordsToFilter = recordsToFilter.filter(r => managementCategories.includes(r.fileName));
-                 if (selectedMgmtRecordType) {
-                    recordsToFilter = recordsToFilter.filter(r => r.fileName === selectedMgmtRecordType);
-                 }
-            } else if (activeCategory === 'Assigned Tasks') {
-                recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
+        if (activeCategory === 'Banks') {
+            recordsToFilter = recordsToFilter.filter(r => bankTimelineCategories.includes(r.fileName));
+            if (selectedBank) {
+                const categoryName = bankNameToCategory(selectedBank);
+                recordsToFilter = recordsToFilter.filter(r => r.fileName === categoryName);
             }
+        } else if (activeCategory === 'Management Records') {
+            if (selectedMgmtRecordType) {
+                 const typesToFilter = selectedMgmtRecordType === "Site Survey" ? ["Site Survey Report", "Site Visit Proforma"] : [selectedMgmtRecordType];
+                 recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
+            } else {
+                recordsToFilter = recordsToFilter.filter(r => managementRecordTypes.includes(r.fileName));
+            }
+        } else if (activeCategory === 'Assigned Tasks') {
+            recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
+        } else if (activeCategory) {
+            recordsToFilter = []; // If category is active but not one of the main ones, show nothing until a sub-cat is picked
         }
     
         if (!searchQuery) return recordsToFilter;
@@ -446,6 +473,34 @@ const renderRecordContent = () => {
             </div>
         );
     }
+
+    if (viewingRecord.fileName === 'Site Survey Report' && Array.isArray(viewingRecord.data)) {
+        const data = viewingRecord.data.reduce((acc, section) => {
+            acc[section.category] = section.items;
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        return (
+            <div className="space-y-4">
+                {Object.entries(data).map(([category, items]) => (
+                    <div key={category}>
+                        <h3 className="font-bold text-lg text-primary mb-2">{category}</h3>
+                        <Table>
+                            <TableBody>
+                                {items.map((item, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell className="font-semibold">{item.label}</TableCell>
+                                        <TableCell>{item.value}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
     
     if (Array.isArray(viewingRecord.data)) {
         return (
@@ -507,17 +562,14 @@ const renderRecordContent = () => {
         if (activeCategory === 'Management Records' && !selectedMgmtRecordType) {
             return (
                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {managementCategories.map(cat => {
-                        const Icon = getIconForCategory(cat);
-                        return (
-                             <SectionCard 
-                                key={cat} 
-                                title={cat} 
-                                icon={Icon}
-                                onClick={() => handleMgmtRecordTypeSelect(cat)}
-                            />
-                        )
-                    })}
+                    {managementCategoriesWithIcons.map(cat => (
+                         <SectionCard 
+                            key={cat.name} 
+                            title={cat.name} 
+                            icon={cat.icon}
+                            onClick={() => handleMgmtRecordTypeSelect(cat.name)}
+                        />
+                    ))}
                 </div>
             );
         }
@@ -652,5 +704,3 @@ const renderRecordContent = () => {
     </div>
   );
 }
-
-    
