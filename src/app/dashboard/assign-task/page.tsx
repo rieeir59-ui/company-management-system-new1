@@ -14,7 +14,7 @@ import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useState, useMemo } from 'react';
 import { useFirebase } from '@/firebase/provider';
-import { doc, deleteDoc, type Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -142,10 +142,10 @@ export default function AssignTaskPage() {
           return;
         }
 
-        const canUpdate = isAdmin || task.assignedTo === currentUser.uid;
+        const canUpdate = isAdmin; // Only admin can change status from this dashboard
 
         if (!canUpdate) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task from here.' });
             return;
         }
 
@@ -231,7 +231,7 @@ export default function AssignTaskPage() {
                                         <Select
                                             value={task.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                            disabled={!canEdit}
+                                            disabled={!isAdmin}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                                 <StatusBadge status={task.status} />

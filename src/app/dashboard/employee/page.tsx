@@ -48,13 +48,6 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { type Employee } from '@/lib/employees';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +56,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { MultiSelect } from '@/components/ui/multi-select';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 
 
 const departments = [
@@ -152,6 +145,7 @@ export default function EmployeePage() {
 
   const openEditDialog = (employee: Employee) => {
     setSelectedEmployee(employee);
+    setEditFormDepartments(employee.departments || []);
     setIsEditDialogOpen(true);
   };
 
@@ -209,14 +203,7 @@ export default function EmployeePage() {
   const [addFormDepartments, setAddFormDepartments] = useState<string[]>([]);
   const [editFormDepartments, setEditFormDepartments] = useState<string[]>([]);
 
-  // Update edit form departments when selectedEmployee changes
-  useState(() => {
-    if (selectedEmployee) {
-      setEditFormDepartments(selectedEmployee.departments || []);
-    }
-  }, [selectedEmployee]);
-
-  const departmentOptions = departments.map(d => ({ value: d.slug, label: d.name }));
+  const departmentOptions: MultiSelectOption[] = departments.map(d => ({ value: d.slug, label: d.name }));
 
   return (
     <>

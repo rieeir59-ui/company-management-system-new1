@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -54,54 +55,33 @@ function MultiSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={`w-full justify-between ${
-            selected.length > 1 ? 'h-full' : 'h-10'
-          }`}
+          className={cn("w-full justify-between", selected.length > 1 ? 'h-full' : 'h-10')}
           onClick={() => setOpen(!open)}
         >
           <div className="flex flex-wrap gap-1">
             {selected.length === 0 && <span className="text-muted-foreground">{placeholder}</span>}
-            {selected.map((item) => (
-              <Badge
-                variant="secondary"
-                key={item}
-                className="mr-1 mb-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleUnselect(item);
-                }}
-              >
-                {options.find(opt => opt.value === item)?.label || item}
-                <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Remove ${item}`}
-                  className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleUnselect(item);
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
+            {selected.map((item) => {
+              const label = options.find(opt => opt.value === item)?.label || item;
+              return (
+                <Badge
+                  variant="secondary"
+                  key={item}
+                  className="mr-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleUnselect(item);
                   }}
                 >
-                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </span>
-              </Badge>
-            ))}
+                  {label}
+                  <X className="ml-1 h-3 w-3 cursor-pointer" />
+                </Badge>
+              );
+            })}
           </div>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command className={className}>
           <CommandInput placeholder="Search ..." />
           <CommandList>

@@ -18,16 +18,11 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
-import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { format } from 'date-fns';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -78,18 +73,12 @@ function MyProjectsComponent() {
 
   const { tasks: allProjects, isLoading: isLoadingTasks } = useTasks(displayUser?.uid);
   
-  const [manualEntries, setManualEntries] = useState<Task[]>([]);
-  const scheduleEntries = useMemo(() => [...allProjects, ...manualEntries], [allProjects, manualEntries]);
-  
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
-  const [remarks, setRemarks] = useState('');
-  const [scheduleStartDate, setScheduleStartDate] = useState('');
-  const [scheduleEndDate, setScheduleEndDate] = useState('');
-
+ 
   const projectStats = useMemo(() => {
       const total = allProjects.length;
       const completed = allProjects.filter(p => p.status === 'completed').length;
@@ -192,17 +181,14 @@ function MyProjectsComponent() {
     const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
         if (!firestore || !currentUser) return;
         
-        if (!isAdmin && task.assignedTo !== currentUser.uid) {
+        if (!canEdit) {
             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
             return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
         try {
-            await updateDoc(taskRef, {
-              status: newStatus
-            });
-
+            await updateDoc(taskRef, { status: newStatus });
             toast({
                 title: 'Status Updated',
                 description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
@@ -217,83 +203,6 @@ function MyProjectsComponent() {
         }
     };
   
-    const handleScheduleEntryChange = (id: string, field: keyof Task, value: string) => {
-        const entry = allProjects.find(e => e.id === id);
-        if (field === 'status' && entry) {
-            handleStatusChange(entry, value as Task['status']);
-        } else if (entry) { // It's an assigned task, only status can be changed by employee through select
-             if (!firestore || !canEdit) return;
-             const taskRef = doc(firestore, 'tasks', id);
-             updateDoc(taskRef, { [field]: value }).catch(err => {
-                 const permissionError = new FirestorePermissionError({
-                    path: `tasks/${id}`,
-                    operation: 'update',
-                    requestResourceData: { [field]: value }
-                  });
-                  errorEmitter.emit('permission-error', permissionError);
-             });
-        } else { // It's a manual entry
-            setManualEntries(prev => prev.map(e => e.id === id ? {...e, [field]: value} : e));
-        }
-    };
-
-    const addScheduleEntry = () => {
-        setManualEntries(prev => [...prev, {
-            id: String(Date.now()),
-            projectName: '',
-            taskName: '',
-            taskDescription: '',
-            status: 'not-started',
-            startDate: '',
-            endDate: '',
-            assignedBy: currentUser?.name || '',
-            assignedTo: currentUser?.uid || '',
-            createdAt: new Date() as any, // This won't be saved, just for type compliance
-        }]);
-    };
-    
-    const removeScheduleEntry = (id: string) => {
-       const isManual = manualEntries.some(e => e.id === id);
-       if (isManual) {
-           setManualEntries(prev => prev.filter(e => e.id !== id));
-       } else if (isAdmin) {
-           // Admin can delete assigned tasks from here if needed
-           const taskToDelete = allProjects.find(t => t.id === id);
-            if (!taskToDelete || !firestore) return;
-            deleteDoc(doc(firestore, 'tasks', id))
-            .then(() => toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` }))
-            .catch(err => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${id}`, operation: 'delete' })));
-       } else {
-           toast({ title: 'Info', description: 'Assigned tasks can only be removed by an administrator.'})
-       }
-    };
-
-    const handleSaveSchedule = async () => {
-        if (!canEdit) {
-            toast({ variant: 'destructive', title: 'Permission Denied' });
-            return;
-        }
-
-        try {
-            await addRecord({
-                fileName: 'My Projects',
-                projectName: `${displayUser?.name}'s Project Schedule`,
-                data: [{
-                    category: 'My Project Schedule',
-                    schedule: { start: scheduleStartDate, end: scheduleEndDate },
-                    remarks: remarks,
-                    items: scheduleEntries.map(entry => ({
-                        label: `Project: ${entry.projectName}`,
-                        value: `Detail: ${entry.taskDescription}, Status: ${entry.status}, Start: ${entry.startDate}, End: ${entry.endDate}`
-                    }))
-                }]
-            } as any);
-
-        } catch (error) {
-           // error is handled by context
-        }
-    };
-
   const openViewDialog = (task: Task) => {
     setViewingTask(task);
     setIsViewDialogOpen(true);
@@ -320,7 +229,7 @@ function MyProjectsComponent() {
         </Card>
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Tasks (All Time)" value={projectStats.total} icon={<Briefcase className="h-4 w-4 text-muted-foreground" />} />
+            <StatCard title="Total Tasks" value={projectStats.total} icon={<Briefcase className="h-4 w-4 text-muted-foreground" />} />
             <StatCard title="Completed" value={projectStats.completed} icon={<CheckCircle2 className="h-4 w-4 text-green-500" />} />
             <StatCard title="In Progress" value={projectStats.inProgress} icon={<Clock className="h-4 w-4 text-blue-500" />} />
             <StatCard title="Not Started" value={projectStats.notStarted} icon={<XCircle className="h-4 w-4 text-red-500" />} />
@@ -392,73 +301,6 @@ function MyProjectsComponent() {
                     </Table>
                 )}
             </CardContent>
-        </Card>
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>My Project Schedule</CardTitle>
-            </CardHeader>
-            <CardContent>
-                 <div className="space-y-2 mb-4">
-                    <Label>Work Schedule</Label>
-                    <div className="flex gap-2 items-center">
-                        <Input type="date" value={scheduleStartDate} onChange={e => setScheduleStartDate(e.target.value)} />
-                        <span>to</span>
-                        <Input type="date" value={scheduleEndDate} onChange={e => setScheduleEndDate(e.target.value)} />
-                    </div>
-                </div>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="font-semibold">Project Name</TableHead>
-                                <TableHead className="font-semibold">Detail</TableHead>
-                                <TableHead className="font-semibold">Status</TableHead>
-                                <TableHead className="font-semibold">Start Date</TableHead>
-                                <TableHead className="font-semibold">End Date</TableHead>
-                                <TableHead className="font-semibold">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {scheduleEntries.map(entry => (
-                                <TableRow key={entry.id}>
-                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(String(entry.id), 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
-                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(String(entry.id), 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
-                                    <TableCell>
-                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(String(entry.id), 'status', v)}>
-                                            <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><StatusBadge status={entry.status} /></SelectTrigger>
-                                            <SelectContent>
-                                                 <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
-                                                 <SelectItem value="in-progress"><StatusBadge status="in-progress" /></SelectItem>
-                                                 <SelectItem value="completed"><StatusBadge status="completed" /></SelectItem>
-                                                 <SelectItem value="pending-approval" disabled><StatusBadge status="pending-approval" /></SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(String(entry.id), 'startDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
-                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(String(entry.id), 'endDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
-                                    <TableCell className="flex gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
-                                         <Button variant="ghost" size="icon" onClick={() => removeScheduleEntry(String(entry.id))}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
-            </CardContent>
-             <CardFooter className="flex-col items-start gap-4">
-                <div>
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Add any remarks here..."/>
-                </div>
-                <div className="flex justify-end w-full gap-2">
-                    <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
-                </div>
-            </CardFooter>
         </Card>
         
         <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
