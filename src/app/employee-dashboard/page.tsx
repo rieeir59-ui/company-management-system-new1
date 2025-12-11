@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -27,6 +26,7 @@ import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 const departments: Record<string, string> = {
     'ceo': 'CEO',
@@ -194,15 +194,7 @@ function MyProjectsComponent() {
 
   const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
     if (!firestore) return;
-    if (!canEdit) {
-        toast({
-            variant: "destructive",
-            title: "Permission Denied",
-            description: "You do not have permission to change the status of this task.",
-        });
-        return;
-    }
-
+    
     const taskRef = doc(firestore, 'tasks', taskId);
     try {
       await updateDoc(taskRef, { status: newStatus });
@@ -493,5 +485,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
