@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2, Eye, Upload, File as FileIcon } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Loader2, Trash2, Eye, Upload, File as FileIcon, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
@@ -58,7 +58,7 @@ type ManualEntry = {
     id: number;
     projectName: string;
     detail: string;
-    status: string;
+    status: 'Not Started' | 'In Progress' | 'Completed';
     startDate: string;
     endDate: string;
 };
@@ -89,6 +89,11 @@ function MyProjectsComponent() {
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deletingEntry, setDeletingEntry] = useState<ManualEntry | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
   const [schedule, setSchedule] = useState({ start: '', end: '' });
@@ -221,6 +226,32 @@ function MyProjectsComponent() {
     const openViewDialog = (task: Task) => {
         setViewingTask(task);
         setIsViewDialogOpen(true);
+    };
+
+    const openEditDialog = (entry: ManualEntry) => {
+        setEditingEntry({ ...entry });
+        setIsEditDialogOpen(true);
+    };
+    
+    const handleUpdateManualEntry = () => {
+        if (!editingEntry) return;
+        setManualEntries(prev => prev.map(e => e.id === editingEntry.id ? editingEntry : e));
+        setIsEditDialogOpen(false);
+        setEditingEntry(null);
+        toast({title: 'Entry Updated', description: 'Manual project entry has been updated.'});
+    }
+
+    const openDeleteDialog = (entry: ManualEntry) => {
+        setDeletingEntry(entry);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDeleteManualEntry = () => {
+        if (!deletingEntry) return;
+        removeManualEntry(deletingEntry.id);
+        setIsDeleteDialogOpen(false);
+        setDeletingEntry(null);
+        toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
     };
     
     const combinedSchedule = useMemo(() => {
@@ -409,29 +440,33 @@ function MyProjectsComponent() {
                             <TableHead>Status</TableHead>
                             <TableHead>Start Date</TableHead>
                             <TableHead>End Date</TableHead>
-                            <TableHead></TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {combinedSchedule.map(item => (
                              <TableRow key={item.id}>
-                                <TableCell>
-                                    {item.isManual ? <Input value={item.projectName} onChange={(e) => handleManualEntryChange(item.id, 'projectName', e.target.value)} /> : item.projectName}
-                                </TableCell>
-                                <TableCell>
-                                    {item.isManual ? <Input value={item.detail} onChange={(e) => handleManualEntryChange(item.id, 'detail', e.target.value)} /> : item.detail}
-                                </TableCell>
-                                <TableCell>
-                                    {item.isManual ? <Input value={item.status} onChange={(e) => handleManualEntryChange(item.id, 'status', e.target.value)} /> : <StatusBadge status={item.status as Task['status']} />}
-                                </TableCell>
-                                <TableCell>
-                                    {item.isManual ? <Input type="date" value={item.startDate} onChange={(e) => handleManualEntryChange(item.id, 'startDate', e.target.value)} /> : item.startDate}
-                                </TableCell>
-                                <TableCell>
-                                    {item.isManual ? <Input type="date" value={item.endDate} onChange={(e) => handleManualEntryChange(item.id, 'endDate', e.target.value)} /> : item.endDate}
-                                </TableCell>
-                                <TableCell>
-                                    {item.isManual && <Button variant="ghost" size="icon" onClick={() => removeManualEntry(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                                <TableCell>{item.projectName}</TableCell>
+                                <TableCell>{item.detail}</TableCell>
+                                <TableCell><StatusBadge status={item.status as Task['status']} /></TableCell>
+                                <TableCell>{item.startDate}</TableCell>
+                                <TableCell>{item.endDate}</TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex gap-1 justify-end">
+                                       <Button variant="ghost" size="icon" onClick={() => item.isManual ? openEditDialog(item as ManualEntry) : openViewDialog(item as Task)}>
+                                            <Eye className="h-4 w-4"/>
+                                        </Button>
+                                        {item.isManual && (
+                                            <>
+                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -470,6 +505,32 @@ function MyProjectsComponent() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Edit Manual Entry</DialogTitle></DialogHeader>
+                {editingEntry && (
+                    <div className="grid gap-4 py-4">
+                        <Input placeholder="Project Name" value={editingEntry.projectName} onChange={e => setEditingEntry({...editingEntry, projectName: e.target.value})} />
+                        <Input placeholder="Detail" value={editingEntry.detail} onChange={e => setEditingEntry({...editingEntry, detail: e.target.value})} />
+                        <Select value={editingEntry.status} onValueChange={(val: ManualEntry['status']) => setEditingEntry({...editingEntry, status: val})}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Not Started">Not Started</SelectItem>
+                                <SelectItem value="In Progress">In Progress</SelectItem>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Input type="date" value={editingEntry.startDate} onChange={e => setEditingEntry({...editingEntry, startDate: e.target.value})} />
+                        <Input type="date" value={editingEntry.endDate} onChange={e => setEditingEntry({...editingEntry, endDate: e.target.value})} />
+                    </div>
+                )}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleUpdateManualEntry}>Save Changes</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
             <DialogContent className="max-w-2xl">
@@ -489,6 +550,22 @@ function MyProjectsComponent() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Are you sure?</DialogTitle>
+                    <DialogDescription>
+                        This will permanently delete the entry "{deletingEntry?.projectName}".
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={confirmDeleteManualEntry}>Delete</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }

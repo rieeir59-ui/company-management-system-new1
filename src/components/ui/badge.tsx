@@ -42,7 +42,8 @@ const statusConfig = {
 };
 
 export const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) => {
-    const { icon: Icon, color, label } = statusConfig[status] || statusConfig['not-started'];
+    const config = statusConfig[status] || statusConfig['not-started'];
+    const { icon: Icon, color, label } = config;
     return (
         <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold", color)}>
             <Icon className="h-3.5 w-3.5" />
