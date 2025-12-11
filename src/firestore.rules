@@ -14,11 +14,6 @@ service cloud.firestore {
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
-    
-    // Helper: Check if user is the assigned employee for a task
-    function isAssignedEmployee(task) {
-      return isLoggedIn() && task.assignedTo == request.auth.uid;
-    }
 
     // USERS collection
     match /users/{uid} {
@@ -38,9 +33,8 @@ service cloud.firestore {
       // Admins can read any task. Employees can only read tasks assigned to them.
       allow list, get: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
       allow create: if isLoggedIn() && isAdmin();
-      // An admin or Waleed can update any task status. An employee can only update the status of their own assigned task.
+      // An admin can update any task. An employee can only update the status of their own assigned task.
       allow update: if isAdmin() || 
-                    (isLoggedIn() && request.auth.token.email == 'waleed@ri-hub.com' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'submissionUrl', 'submissionFileName'])) ||
                     (isLoggedIn() && resource.data.assignedTo == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'submissionUrl', 'submissionFileName']));
       // Only admins can delete tasks.
       allow delete: if isAdmin();

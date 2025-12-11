@@ -205,7 +205,7 @@ export default function AssignTaskPage() {
                                 <TableHead className="font-semibold">Assigned To</TableHead>
                                 <TableHead className="font-semibold">Assigned By</TableHead>
                                 <TableHead className="font-semibold">Status</TableHead>
-                                {isAdmin && <TableHead className="font-semibold">Action</TableHead>}
+                                {isAdmin && <TableHead className="font-semibold text-right">Action</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -216,8 +216,15 @@ export default function AssignTaskPage() {
                                     <TableCell>{task.assignedBy}</TableCell>
                                     <TableCell>{task.status}</TableCell>
                                     {isAdmin && (
-                                    <TableCell>
-                                        <div className="flex gap-1">
+                                    <TableCell className="text-right">
+                                        <div className="flex gap-1 justify-end">
+                                            {task.submissionUrl && (
+                                                <Button variant="ghost" size="icon" asChild title="View Submission">
+                                                    <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer">
+                                                        <FileText className="h-4 w-4 text-blue-500" />
+                                                    </a>
+                                                </Button>
+                                            )}
                                             {task.status === 'pending-approval' && (
                                                 <Button variant="ghost" size="icon" onClick={() => handleApprove(task)} title="Approve Task">
                                                     <Check className="h-4 w-4 text-green-500" />
