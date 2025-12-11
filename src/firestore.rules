@@ -10,40 +10,42 @@ service cloud.firestore {
 
     // Helper: Check if user is an admin
     function isAdmin() {
+      // Use exists for performance and safety over get.
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
 
+    // Helper: Check if the user is the one the task is assigned to
+    function isAssignee() {
+      return request.auth != null &&
+             resource.data.assignedTo == request.auth.uid;
+    }
+
     // USERS collection
     match /users/{uid} {
-      allow read, write: if isLoggedIn() && request.auth.uid == uid;
-      allow list: if isLoggedIn();
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn() && request.auth.uid == uid;
     }
 
     // SAVED RECORDS collection
     match /savedRecords/{recordId} {
       allow read: if isLoggedIn(); 
-      allow create: if isLoggedIn(); // Any authenticated user can create a record
-      allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid); // Only owner or admin
+      allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
+      allow update, delete: if isAdmin() || resource.data.employeeId == request.auth.uid;
     }
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks assigned to them.
-      allow read: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
-      // Only admins can create new tasks.
+      allow read: if isAdmin() || isAssignee();
       allow create: if isAdmin();
-      // Employee can update ONLY their own tasks. Admin can update any task.
-      allow update: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
-      // Only admins can delete tasks.
+      allow update: if isAdmin() || isAssignee();
       allow delete: if isAdmin();
     }
 
     // UPLOADED FILES collection
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
-      allow create: if isLoggedIn();
-      allow delete, update: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
+      allow write: if isLoggedIn();
     }
   }
 }
