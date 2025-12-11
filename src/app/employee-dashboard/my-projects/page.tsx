@@ -336,7 +336,7 @@ function MyProjectsComponent() {
         <Card>
             <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
+                <CardDescription>A list of all your assigned and manually added tasks.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -367,7 +367,7 @@ function MyProjectsComponent() {
                                     disabled={!canEdit || item.status === 'pending-approval'}
                                   >
                                     <SelectTrigger className="w-[180px]">
-                                      <StatusBadge status={item.status as Task['status']} />
+                                      <StatusBadge status={item.status} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="not-started">Not Started</SelectItem>
