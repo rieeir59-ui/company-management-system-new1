@@ -22,6 +22,7 @@ export interface Project {
   submissionUrl?: string;
   submissionFileName?: string;
   createdAt: Timestamp;
+  isManual?: boolean;
 }
 
 export function useTasks(employeeUid?: string) {
@@ -78,6 +79,7 @@ export function useTasks(employeeUid?: string) {
           submissionUrl: data.submissionUrl,
           submissionFileName: data.submissionFileName,
           createdAt: data.createdAt,
+          isManual: data.isManual || false,
         });
       });
       setTasks(fetchedTasks);
@@ -102,3 +104,5 @@ export function useTasks(employeeUid?: string) {
 
   return { tasks, isLoading };
 }
+
+    
