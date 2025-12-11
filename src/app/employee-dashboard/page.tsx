@@ -451,7 +451,7 @@ function MyProjectsComponent() {
                                   <Select
                                     value={item.status}
                                     onValueChange={(newStatus: Task['status']) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
-                                    disabled={!canEdit || item.status === 'pending-approval'}
+                                    disabled={item.status === 'pending-approval'}
                                   >
                                     <SelectTrigger className="w-[180px]">
                                       <StatusBadge status={item.status as Task['status']} />
@@ -595,5 +595,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
