@@ -36,20 +36,9 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      
-      // Admin can read any task. Employee can read only their own tasks.
       allow read: if isAdmin() || isAssignee();
-
-      // Only Admin can create tasks
       allow create: if isAdmin();
-
-      // Employee can update ONLY the 'status' field of their own tasks
-      allow update: if isAssignee()
-                    && request.resource.data.keys().hasOnly(["status"])
-                    && request.resource.data.size() == 1;
-
-      // Admin can update any field or delete the task
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() || isAssignee();
     }
 
     // UPLOADED FILES collection
