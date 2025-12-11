@@ -31,13 +31,11 @@ service cloud.firestore {
     // TASKS collection
     match /tasks/{taskId} {
       // Admins can read any task. Employees can only read tasks assigned to them.
-      allow list: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
-      allow get: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
+      allow list, get: if isAdmin() || (isLoggedIn() && request.query.filters.assignedTo == request.auth.uid);
       // Only admins can create new tasks.
       allow create: if isAdmin();
-      // Any logged-in user can update the status or submission details of a task.
-      allow update: if isLoggedIn() && 
-                    request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'submissionUrl', 'submissionFileName']);
+      // Any logged-in user can update any task.
+      allow update: if isLoggedIn();
       // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
