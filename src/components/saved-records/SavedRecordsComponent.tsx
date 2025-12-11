@@ -48,6 +48,7 @@ const managementRecordTypes = [
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
     "Project Information"
 ];
+
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
     { name: "Project Information", icon: FolderOpen },
@@ -75,7 +76,7 @@ const managementCategoriesWithIcons = [
     { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
     { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
     { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
-]
+];
 
 
 const generatePdfForRecord = (record: SavedRecord) => {
@@ -166,9 +167,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
         };
         const addList = (items: { label: string, value: string }[]) => {
             items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
-        };
-        const addSimpleList = (items: { value: string }[]) => {
-            items.forEach(item => addText(`• ${item.value}`, false, 5, 10, 5));
         };
 
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
@@ -508,7 +506,6 @@ const renderRecordContent = () => {
             </div>
         );
     }
-
     
     if (Array.isArray(viewingRecord.data)) {
         return (
