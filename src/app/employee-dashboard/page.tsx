@@ -78,13 +78,9 @@ function MyProjectsComponent() {
 
   const { tasks: allProjects, isLoading: isLoadingTasks } = useTasks(displayUser?.uid);
   
-  const [scheduleEntries, setScheduleEntries] = useState<Task[]>([]);
+  const [manualEntries, setManualEntries] = useState<Task[]>([]);
+  const scheduleEntries = useMemo(() => [...allProjects, ...manualEntries], [allProjects, manualEntries]);
   
-  useEffect(() => {
-    setScheduleEntries(allProjects);
-  }, [allProjects]);
-
-
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
@@ -193,43 +189,39 @@ function MyProjectsComponent() {
         );
     };
 
-  const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
-    if (!firestore || !currentUser) return;
-    
-    // An employee can only update their own task's status.
-    // The security rule enforces this, but we also check here for better UX.
-    if (!isAdmin && task.assignedTo !== currentUser.uid) {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
-        return;
-    }
+    const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
+        if (!firestore || !currentUser) return;
+        
+        if (!isAdmin && task.assignedTo !== currentUser.uid) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
+            return;
+        }
 
-    const taskRef = doc(firestore, 'tasks', task.id);
-    try {
-        // According to the new rule, `assignedTo` must be sent along with `status` for employee updates.
-        await updateDoc(taskRef, {
-          status: newStatus,
-          assignedTo: task.assignedTo // Re-asserting the assignedTo field
-        });
+        const taskRef = doc(firestore, 'tasks', task.id);
+        try {
+            await updateDoc(taskRef, {
+              status: newStatus
+            });
 
-        toast({
-            title: 'Status Updated',
-            description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
-        });
-    } catch (serverError) {
-        const permissionError = new FirestorePermissionError({
-            path: `tasks/${task.id}`,
-            operation: 'update',
-            requestResourceData: { status: newStatus, assignedTo: task.assignedTo }
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
-};
+            toast({
+                title: 'Status Updated',
+                description: `Task status changed to ${newStatus.replace('-', ' ')}.`,
+            });
+        } catch (serverError) {
+            const permissionError = new FirestorePermissionError({
+                path: `tasks/${task.id}`,
+                operation: 'update',
+                requestResourceData: { status: newStatus }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+    };
   
     const handleScheduleEntryChange = (id: string, field: keyof Task, value: string) => {
-        const entry = scheduleEntries.find(e => e.id === id);
+        const entry = allProjects.find(e => e.id === id);
         if (field === 'status' && entry) {
             handleStatusChange(entry, value as Task['status']);
-        } else {
+        } else if (entry) { // It's an assigned task, only status can be changed by employee through select
              if (!firestore || !canEdit) return;
              const taskRef = doc(firestore, 'tasks', id);
              updateDoc(taskRef, { [field]: value }).catch(err => {
@@ -240,18 +232,40 @@ function MyProjectsComponent() {
                   });
                   errorEmitter.emit('permission-error', permissionError);
              });
+        } else { // It's a manual entry
+            setManualEntries(prev => prev.map(e => e.id === id ? {...e, [field]: value} : e));
         }
     };
 
     const addScheduleEntry = () => {
-        // This is now purely a UI-driven action that should be handled by an admin on the assign task page.
-        // For employees, they can only modify existing tasks.
-        toast({ title: 'Info', description: 'To add a new project, please contact an administrator.'})
+        setManualEntries(prev => [...prev, {
+            id: String(Date.now()),
+            projectName: '',
+            taskName: '',
+            taskDescription: '',
+            status: 'not-started',
+            startDate: '',
+            endDate: '',
+            assignedBy: currentUser?.name || '',
+            assignedTo: currentUser?.uid || '',
+            createdAt: new Date() as any, // This won't be saved, just for type compliance
+        }]);
     };
     
     const removeScheduleEntry = (id: string) => {
-       // Similar to adding, deletion should be an admin action from the main task board.
-       toast({ title: 'Info', description: 'To remove a project, please contact an administrator.'})
+       const isManual = manualEntries.some(e => e.id === id);
+       if (isManual) {
+           setManualEntries(prev => prev.filter(e => e.id !== id));
+       } else if (isAdmin) {
+           // Admin can delete assigned tasks from here if needed
+           const taskToDelete = allProjects.find(t => t.id === id);
+            if (!taskToDelete || !firestore) return;
+            deleteDoc(doc(firestore, 'tasks', id))
+            .then(() => toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` }))
+            .catch(err => errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${id}`, operation: 'delete' })));
+       } else {
+           toast({ title: 'Info', description: 'Assigned tasks can only be removed by an administrator.'})
+       }
     };
 
     const handleSaveSchedule = async () => {
@@ -408,10 +422,10 @@ function MyProjectsComponent() {
                         <TableBody>
                             {scheduleEntries.map(entry => (
                                 <TableRow key={entry.id}>
-                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(entry.id, 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
-                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(entry.id, 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
+                                    <TableCell><Input value={entry.projectName} onChange={e => handleScheduleEntryChange(String(entry.id), 'projectName', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
+                                    <TableCell><Textarea value={entry.taskDescription} onChange={e => handleScheduleEntryChange(String(entry.id), 'taskDescription', e.target.value)} rows={1} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1" /></TableCell>
                                     <TableCell>
-                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleStatusChange(entry, v)}>
+                                        <Select value={entry.status} onValueChange={(v: Task['status']) => handleScheduleEntryChange(String(entry.id), 'status', v)}>
                                             <SelectTrigger className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"><StatusBadge status={entry.status} /></SelectTrigger>
                                             <SelectContent>
                                                  <SelectItem value="not-started"><StatusBadge status="not-started" /></SelectItem>
@@ -421,17 +435,20 @@ function MyProjectsComponent() {
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
-                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(entry.id, 'startDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
-                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(entry.id, 'endDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
+                                    <TableCell><Input type="date" value={entry.startDate} onChange={e => handleScheduleEntryChange(String(entry.id), 'startDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
+                                    <TableCell><Input type="date" value={entry.endDate} onChange={e => handleScheduleEntryChange(String(entry.id), 'endDate', e.target.value)} className="text-base border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-muted p-1"/></TableCell>
                                     <TableCell className="flex gap-1">
                                         <Button variant="ghost" size="icon" onClick={() => openViewDialog(entry)}><Eye className="h-4 w-4"/></Button>
+                                         <Button variant="ghost" size="icon" onClick={() => removeScheduleEntry(String(entry.id))}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </div>
-                {isAdmin && <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>}
+                <Button onClick={addScheduleEntry} className="mt-4"><PlusCircle className="mr-2 h-4 w-4" /> Add Project</Button>
             </CardContent>
              <CardFooter className="flex-col items-start gap-4">
                 <div>
@@ -440,7 +457,6 @@ function MyProjectsComponent() {
                 </div>
                 <div className="flex justify-end w-full gap-2">
                     <Button variant="outline" onClick={handleSaveSchedule}><Save className="mr-2 h-4 w-4" /> Save Schedule</Button>
-                    <Button asChild><Link href="/employee-dashboard/my-projects"><Eye className="mr-2 h-4 w-4" /> View Schedule</Link></Button>
                 </div>
             </CardFooter>
         </Card>
