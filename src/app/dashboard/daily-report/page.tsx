@@ -102,9 +102,11 @@ export default function DailyReportPage() {
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
   useEffect(() => {
+    if(currentUser && !selectedEmployeeId) {
       setSelectedEmployeeId(currentUser?.uid);
       setSelectedEmployee(currentUser);
-  }, [currentUser]);
+    }
+  }, [currentUser, selectedEmployeeId]);
 
   const handleEmployeeChange = (employeeUid: string) => {
       setSelectedEmployeeId(employeeUid);
@@ -131,6 +133,7 @@ export default function DailyReportPage() {
     }
 
     const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeId);
+    
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
     dailyReportRecords.forEach(record => {
@@ -195,11 +198,17 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-      return entries.reduce((acc, entry) => {
+      const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
+      return entries
+        .filter(entry => {
+            const entryDate = parseISO(entry.date);
+            return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+        })
+        .reduce((acc, entry) => {
           (acc[entry.date] = acc[entry.date] || []).push(entry);
           return acc;
       }, {} as Record<string, ReportEntry[]>);
-  }, [entries]);
+  }, [entries, dateInterval, isAdmin, selectedEmployeeId, currentUser]);
 
   const totalPeriodUnits = useMemo(() => {
     const totalMinutes = dateInterval.reduce((total, day) => {
@@ -595,3 +604,5 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
+    
