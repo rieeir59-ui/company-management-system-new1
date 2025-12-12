@@ -48,7 +48,6 @@ const managementRecordTypes = [
     "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
     "Project Information"
 ];
-
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
     { name: "Project Information", icon: FolderOpen },
@@ -277,8 +276,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             if (selectedMgmtRecordType) {
                 const typesToFilter = selectedMgmtRecordType === "Site Survey" 
                     ? ["Site Survey Report", "Site Visit Proforma"]
-                    : selectedMgmtRecordType === "Project Information"
-                    ? ["Project Information", "Project Data"]
                     : [selectedMgmtRecordType];
                 recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
             } else {
