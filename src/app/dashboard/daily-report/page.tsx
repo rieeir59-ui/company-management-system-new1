@@ -424,7 +424,13 @@ export default function DailyReportPage() {
                                             <CommandItem
                                             key={employee.uid}
                                             value={employee.name}
-                                            onSelect={() => handleEmployeeChange(employee.uid)}
+                                            onSelect={(currentValue) => {
+                                                const selected = employees.find(e => e.name.toLowerCase() === currentValue.toLowerCase());
+                                                if (selected) {
+                                                    handleEmployeeChange(selected.uid);
+                                                }
+                                                setComboboxOpen(false);
+                                            }}
                                             >
                                             <Check
                                                 className={cn(
@@ -639,3 +645,5 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
+    
