@@ -396,10 +396,15 @@ export default function DailyReportPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Card className="p-4 bg-muted/50">
-            {isAdmin && (
-                <div className="mb-6">
-                    <Label htmlFor="employee-select" className="font-semibold text-lg flex items-center gap-2"><User /> View Report For:</Label>
+        {isAdmin && (
+            <Card className="p-4 bg-background border-primary/30 shadow-md">
+                <CardHeader className="p-2">
+                    <CardTitle className="text-xl flex items-center gap-2">
+                        <User /> Admin Controls
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                    <Label htmlFor="employee-select" className="font-semibold">View Report For:</Label>
                     <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                         <PopoverTrigger asChild>
                             <Button
@@ -446,8 +451,10 @@ export default function DailyReportPage() {
                             </Command>
                         </PopoverContent>
                     </Popover>
-                </div>
-            )}
+                </CardContent>
+            </Card>
+        )}
+        <Card className="p-4 bg-muted/50">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2 p-4 border rounded-md">
                 <Label className="font-semibold">Filter by Month & Week</Label>
@@ -645,5 +652,3 @@ export default function DailyReportPage() {
     </Card>
   );
 }
-
-    
