@@ -55,6 +55,15 @@ const StatCard = ({ title, value, icon, color }: { title: string, value: number,
   </Card>
 );
 
+type ManualEntry = {
+    id: number;
+    projectName: string;
+    detail: string;
+    status: 'Not Started' | 'In Progress' | 'Completed';
+    startDate: string;
+    endDate: string;
+};
+
 function MyProjectsComponent() {
   const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
@@ -201,6 +210,12 @@ function MyProjectsComponent() {
         if (!isAdmin && !isOwnTask) {
              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
              return;
+        }
+        
+        // Employee can't approve their own task
+        if (newStatus === 'completed' && task.status === 'pending-approval' && !isAdmin) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only an admin can approve this submission.' });
+            return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
@@ -447,7 +462,49 @@ function MyProjectsComponent() {
                 </div>
             </CardContent>
             <CardFooter className="justify-end gap-2">
-                <Button onClick={handleDownloadSchedule}><Download className="h-4 w-4 mr-2" />Download PDF</Button>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                       <Button><Eye className="h-4 w-4 mr-2"/>View Report</Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                            <DialogTitle>Project Schedule Report</DialogTitle>
+                            <DialogDescription>A summary of all projects and tasks for {displayUser.name}.</DialogDescription>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-y-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Project</TableHead>
+                                        <TableHead>Task</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Start</TableHead>
+                                        <TableHead>End</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {allTasks.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{item.projectName}</TableCell>
+                                            <TableCell>{item.taskName}</TableCell>
+                                            <TableCell><StatusBadge status={item.status} /></TableCell>
+                                            <TableCell>{item.startDate || 'N/A'}</TableCell>
+                                            <TableCell>{item.endDate || 'N/A'}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <div className="mt-4">
+                                <h4 className="font-bold">Remarks:</h4>
+                                <p className="text-sm text-muted-foreground">{remarks || 'No remarks provided.'}</p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                             <Button onClick={handleDownloadSchedule} variant="outline"><Download className="h-4 w-4 mr-2"/>Download PDF</Button>
+                             <DialogClose asChild><Button>Close</Button></DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </CardFooter>
         </Card>
         
@@ -547,3 +604,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
