@@ -27,6 +27,7 @@ import {
   Trash2,
   Calendar as CalendarIcon,
   Eye,
+  User,
 } from 'lucide-react';
 import {
     Dialog,
@@ -60,6 +61,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { type Employee } from '@/lib/employees';
 
 type ReportEntry = {
   id: number;
@@ -76,7 +78,6 @@ type ReportEntry = {
 const calculateTotalUnits = (startTime: string, endTime: string): string => {
     if (!startTime || !endTime) return '0:00';
     
-    // Create dummy dates to parse times
     const start = new Date(`1970-01-01T${startTime}`);
     const end = new Date(`1970-01-01T${endTime}`);
 
@@ -92,8 +93,25 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
 
 export default function DailyReportPage() {
   const { toast } = useToast();
-  const { user: currentUser } = useCurrentUser();
+  const { user: currentUser, employees } = useCurrentUser();
   const { addRecord, records } = useRecords();
+
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(currentUser?.uid);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(currentUser);
+
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+
+  useEffect(() => {
+      setSelectedEmployeeId(currentUser?.uid);
+      setSelectedEmployee(currentUser);
+  }, [currentUser]);
+
+  const handleEmployeeChange = (employeeUid: string) => {
+      setSelectedEmployeeId(employeeUid);
+      const employee = employees.find(e => e.uid === employeeUid);
+      setSelectedEmployee(employee);
+  };
+
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState('all');
@@ -106,7 +124,13 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser?.uid);
+    const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
+    if (!targetEmployeeId) {
+        setEntries([]);
+        return;
+    }
+
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeId);
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
     dailyReportRecords.forEach(record => {
@@ -134,7 +158,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser]);
+  }, [records, currentUser, selectedEmployeeId, isAdmin]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -256,7 +280,7 @@ export default function DailyReportPage() {
         theme: 'plain',
         styles: { fontSize: 9 },
         body: [
-            [`EMPLOYEE NAME: ${currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${currentUser?.departments.join(', ') || 'N/A'}`],
+            [`EMPLOYEE NAME: ${selectedEmployee?.name || currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ') || 'N/A'}`],
             [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
              [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
         ],
@@ -345,7 +369,6 @@ export default function DailyReportPage() {
   const filterByDateRange = () => setIsCustomRange(true);
   const filterByMonthWeek = () => {
       setIsCustomRange(false);
-      // Reset custom range dates if we switch back
       setDateFrom(undefined);
       setDateTo(undefined);
   };
@@ -360,6 +383,21 @@ export default function DailyReportPage() {
       </CardHeader>
       <CardContent className="space-y-6">
         <Card className="p-4 bg-muted/50">
+            {isAdmin && (
+                <div className="mb-6">
+                    <Label htmlFor="employee-select" className="font-semibold text-lg flex items-center gap-2"><User /> View Report For:</Label>
+                    <Select value={selectedEmployeeId} onValueChange={handleEmployeeChange}>
+                        <SelectTrigger id="employee-select">
+                            <SelectValue placeholder="Select an employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {employees.map(emp => (
+                                <SelectItem key={emp.uid} value={emp.uid}>{emp.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2 p-4 border rounded-md">
                 <Label className="font-semibold">Filter by Month & Week</Label>
@@ -405,7 +443,7 @@ export default function DailyReportPage() {
                 <DialogHeader>
                     <DialogTitle>Weekly Work Report</DialogTitle>
                     <DialogDescription>
-                        Preview of your report.
+                        Preview of the report for {selectedEmployee?.name || currentUser?.name}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto p-1">
@@ -414,8 +452,8 @@ export default function DailyReportPage() {
                         <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
                     </div>
                      <div className="flex justify-between text-sm px-4 pb-2">
-                        <span><b>EMPLOYEE NAME:</b> {currentUser?.name}</span>
-                        <span><b>EMPLOYEE POSITION:</b> {currentUser?.departments.join(', ')}</span>
+                        <span><b>EMPLOYEE NAME:</b> {selectedEmployee?.name || currentUser?.name}</span>
+                        <span><b>EMPLOYEE POSITION:</b> {selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ')}</span>
                     </div>
                     <div className="flex justify-between text-sm px-4 pb-4">
                         <span><b>DATE FROM:</b> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</span>
