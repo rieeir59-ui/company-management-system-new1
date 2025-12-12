@@ -60,6 +60,7 @@ function MyProjectsComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore, firebaseApp } = useFirebase();
+  const { addRecord } = useRecords();
   const storage = firebaseApp ? getStorage(firebaseApp) : null;
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
@@ -157,6 +158,20 @@ function MyProjectsComponent() {
                         submissionFileName: submissionFile.name,
                     });
                     
+                    await addRecord({
+                        fileName: 'Task Submission',
+                        projectName: submittingTask.projectName,
+                        data: [{
+                            category: 'Task Submission Details',
+                            items: [
+                                { label: 'Task', value: submittingTask.taskName },
+                                { label: 'Submitted By', value: currentUser.name },
+                                { label: 'File Name', value: submissionFile.name },
+                                { label: 'File Link', value: downloadURL },
+                            ]
+                        }]
+                    } as any);
+
                     toast({
                         id: toastId,
                         title: 'Submission Sent for Approval',
@@ -532,5 +547,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
