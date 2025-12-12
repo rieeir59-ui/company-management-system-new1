@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from '../ui/badge';
 
 const bankTimelineCategories = [
     "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
@@ -356,6 +357,57 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
 const renderRecordContent = () => {
     if (!viewingRecord) return null;
+
+    if (viewingRecord.fileName === 'My Projects' && Array.isArray(viewingRecord.data)) {
+        const projectSection = viewingRecord.data.find(s => s.category === 'My Project Schedule');
+        if (!projectSection || !Array.isArray(projectSection.items)) {
+            return <p>No project schedule data found in this record.</p>;
+        }
+        
+        return (
+            <div className="space-y-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Project</TableHead>
+                            <TableHead>Detail</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {projectSection.items.map((item: any, index: number) => {
+                             const projectMatch = item.value.match(/Detail: (.*), Status: (.*), Start: (.*), End: (.*)/);
+                             if (!projectMatch) {
+                                return (
+                                    <TableRow key={index}><TableCell colSpan={5}>{item.label}: {item.value}</TableCell></TableRow>
+                                )
+                             }
+                             const [, detail, status, start, end] = projectMatch;
+                             const projectName = item.label.replace('Project: ', '');
+
+                             return (
+                                 <TableRow key={index}>
+                                     <TableCell className="font-medium">{projectName}</TableCell>
+                                     <TableCell>{detail}</TableCell>
+                                     <TableCell><StatusBadge status={status} /></TableCell>
+                                     <TableCell>{start}</TableCell>
+                                     <TableCell>{end}</TableCell>
+                                 </TableRow>
+                             )
+                        })}
+                    </TableBody>
+                </Table>
+                {projectSection.remarks && (
+                    <div className="pt-4 mt-4 border-t">
+                        <h4 className="font-bold">Remarks:</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{projectSection.remarks}</p>
+                    </div>
+                )}
+            </div>
+        )
+    }
 
     if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
         const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
