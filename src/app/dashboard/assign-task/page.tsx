@@ -142,13 +142,6 @@ export default function AssignTaskPage() {
           return;
         }
 
-        const canUpdate = isAdmin; // Only admin can change status from this dashboard
-
-        if (!canUpdate) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task from here.' });
-            return;
-        }
-
         const taskRef = doc(firestore, 'tasks', task.id);
         try {
             await updateDoc(taskRef, { status: newStatus });
@@ -231,7 +224,6 @@ export default function AssignTaskPage() {
                                         <Select
                                             value={task.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                            disabled={!isAdmin}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                                 <StatusBadge status={task.status} />
