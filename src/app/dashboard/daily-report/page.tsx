@@ -28,6 +28,8 @@ import {
   Calendar as CalendarIcon,
   Eye,
   User,
+  ChevronsUpDown,
+  Check
 } from 'lucide-react';
 import {
     Dialog,
@@ -58,6 +60,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -98,6 +101,7 @@ export default function DailyReportPage() {
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(currentUser?.uid);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(currentUser);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
@@ -112,6 +116,7 @@ export default function DailyReportPage() {
       setSelectedEmployeeId(employeeUid);
       const employee = employees.find(e => e.uid === employeeUid);
       setSelectedEmployee(employee);
+      setComboboxOpen(false);
   };
 
 
@@ -395,16 +400,46 @@ export default function DailyReportPage() {
             {isAdmin && (
                 <div className="mb-6">
                     <Label htmlFor="employee-select" className="font-semibold text-lg flex items-center gap-2"><User /> View Report For:</Label>
-                    <Select value={selectedEmployeeId} onValueChange={handleEmployeeChange}>
-                        <SelectTrigger id="employee-select">
-                            <SelectValue placeholder="Select an employee" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {employees.map(emp => (
-                                <SelectItem key={emp.uid} value={emp.uid}>{emp.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={comboboxOpen}
+                            className="w-full justify-between mt-2"
+                            >
+                            {selectedEmployeeId
+                                ? employees.find((employee) => employee.uid === selectedEmployeeId)?.name
+                                : "Select an employee"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput placeholder="Search employee..." />
+                                <CommandList>
+                                    <CommandEmpty>No employee found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {employees.map((employee) => (
+                                            <CommandItem
+                                            key={employee.uid}
+                                            value={employee.name}
+                                            onSelect={() => handleEmployeeChange(employee.uid)}
+                                            >
+                                            <Check
+                                                className={cn(
+                                                "mr-2 h-4 w-4",
+                                                selectedEmployeeId === employee.uid ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            {employee.name}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             )}
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -604,5 +639,3 @@ export default function DailyReportPage() {
     </Card>
   );
 }
-
-    
