@@ -112,6 +112,12 @@ export default function AssignTaskPage() {
     const { tasks } = useTasks();
     const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
+    const canUpdateStatus = useMemo(() => {
+        if (!currentUser) return false;
+        const allowedDepts = ['architects', 'draftpersons', 'finance', 'quantity-management', 'hr'];
+        return isAdmin || currentUser.departments.some(d => allowedDepts.includes(d));
+    }, [currentUser, isAdmin]);
+
     const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -140,6 +146,11 @@ export default function AssignTaskPage() {
         if (!firestore || !currentUser) {
           toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
           return;
+        }
+
+        if (!canUpdateStatus) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to update task statuses.' });
+            return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
@@ -224,6 +235,7 @@ export default function AssignTaskPage() {
                                         <Select
                                             value={task.status}
                                             onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
+                                            disabled={!canUpdateStatus}
                                         >
                                             <SelectTrigger className="w-[180px]">
                                                 <StatusBadge status={task.status} />

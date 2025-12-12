@@ -15,6 +15,11 @@ service cloud.firestore {
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
 
+    // Helper: Check if user is authorized to update task status
+    function canUpdateTaskStatus() {
+        return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['architects','draftpersons','finance','quantity-management','hr']);
+    }
+
     // USERS collection
     match /users/{uid} {
       allow read: if isLoggedIn();
@@ -35,8 +40,8 @@ service cloud.firestore {
       allow get: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
       // Only admins can create new tasks.
       allow create: if isAdmin();
-      // Any logged-in user can update any task.
-      allow update: if isLoggedIn();
+      // Admins or specific department members can update tasks
+      allow update: if isAdmin() || canUpdateTaskStatus();
       // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
