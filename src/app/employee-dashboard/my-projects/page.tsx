@@ -55,15 +55,6 @@ const StatCard = ({ title, value, icon, color }: { title: string, value: number,
   </Card>
 );
 
-type ManualEntry = {
-    id: number;
-    projectName: string;
-    detail: string;
-    status: 'Not Started' | 'In Progress' | 'Completed';
-    startDate: string;
-    endDate: string;
-};
-
 function MyProjectsComponent() {
   const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
@@ -91,15 +82,6 @@ function MyProjectsComponent() {
   
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
-
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newEntry, setNewEntry] = useState({ projectName: '', detail: '', startDate: '', endDate: ''});
-  
-  const [editingEntry, setEditingEntry] = useState<Task | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
-  const [deletingEntry, setDeletingEntry] = useState<Task | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const [remarks, setRemarks] = useState('');
  
@@ -239,104 +221,8 @@ function MyProjectsComponent() {
         setViewingTask(task);
         setIsViewDialogOpen(true);
     };
-
-    const openEditDialog = (task: Task) => {
-        setEditingEntry(task);
-        setIsEditDialogOpen(true);
-    };
     
-    const handleUpdateManualEntry = async () => {
-        if (!editingEntry || !firestore) return;
-        try {
-            const taskRef = doc(firestore, 'tasks', editingEntry.id);
-            await updateDoc(taskRef, {
-                projectName: editingEntry.projectName,
-                taskName: editingEntry.taskDescription,
-                taskDescription: editingEntry.taskDescription,
-                startDate: editingEntry.startDate,
-                endDate: editingEntry.endDate,
-                status: editingEntry.status
-            });
-            toast({title: 'Entry Updated', description: 'Manual project entry has been updated.'});
-        } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${editingEntry.id}`, operation: 'update' }));
-        } finally {
-            setIsEditDialogOpen(false);
-            setEditingEntry(null);
-        }
-    }
-
-    const openDeleteDialog = (task: Task) => {
-        setDeletingEntry(task);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const confirmDeleteManualEntry = async () => {
-        if (!deletingEntry || !firestore) return;
-        try {
-            await deleteDoc(doc(firestore, 'tasks', deletingEntry.id));
-            toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
-        } catch (error) {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${deletingEntry.id}`, operation: 'delete' }));
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setDeletingEntry(null);
-        }
-    };
-    
-    const handleAddManualEntry = async () => {
-        if (!firestore || !currentUser) return;
-        if (!newEntry.projectName || !newEntry.detail) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Project Name and Detail are required.' });
-            return;
-        }
-
-        try {
-            await addDoc(collection(firestore, 'tasks'), {
-                projectName: newEntry.projectName,
-                taskName: newEntry.detail,
-                taskDescription: newEntry.detail,
-                startDate: newEntry.startDate,
-                endDate: newEntry.endDate,
-                status: 'not-started',
-                assignedTo: currentUser.uid,
-                assignedBy: currentUser.name,
-                createdAt: serverTimestamp(),
-                isManual: true,
-            });
-            toast({ title: 'Project Added', description: 'Your new project entry has been added.' });
-        } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'tasks', operation: 'create' }));
-        } finally {
-            setIsAddDialogOpen(false);
-            setNewEntry({ projectName: '', detail: '', startDate: '', endDate: '' });
-        }
-    };
-
-    const handleDownloadSchedule = () => {
-      const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text('My Project Schedule', 14, 22);
-      doc.setFontSize(10);
-      doc.text(`Employee: ${displayUser?.name}`, 14, 30);
-
-      const body = allTasks.map(item => [item.projectName, item.taskName, item.status, item.startDate, item.endDate]);
-
-      (doc as any).autoTable({
-          startY: 42,
-          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
-          body: body,
-          headStyles: { fillColor: [22, 163, 74] },
-      });
-      
-      let finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.text('Remarks:', 14, finalY);
-      doc.text(remarks, 14, finalY + 5);
-
-      doc.save('my-project-schedule.pdf');
-    };
-
-  if (isUserLoading || !displayUser) {
+    if (isUserLoading || !displayUser) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -365,147 +251,70 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
-                <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>A list of all your assigned and manually added tasks.</CardDescription>
+                <CardTitle>My Projects and Tasks</CardTitle>
+                <CardDescription>A list of tasks assigned by the administration.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Project Name</TableHead>
-                            <TableHead>Detail</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Start Date</TableHead>
-                            <TableHead>End Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoadingTasks ? (
-                           <TableRow><TableCell colSpan={6} className="text-center h-24"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>
-                        ) : allTasks.length === 0 ? (
-                           <TableRow><TableCell colSpan={6} className="text-center h-24">No tasks or projects found.</TableCell></TableRow>
-                        ) : (
-                          allTasks.map(item => (
-                             <TableRow key={item.id}>
-                                <TableCell>{item.projectName}</TableCell>
-                                <TableCell>{item.taskName}</TableCell>
-                                <TableCell>
-                                  <Select
-                                    value={item.status}
-                                    onValueChange={(newStatus: Task['status']) => handleStatusChange(item, newStatus)}
-                                    disabled={!canEdit || item.status === 'pending-approval'}
-                                  >
-                                    <SelectTrigger className="w-[180px]">
-                                      <StatusBadge status={item.status} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="not-started">Not Started</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell>{item.startDate || 'N/A'}</TableCell>
-                                <TableCell>{item.endDate || 'N/A'}</TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => openViewDialog(item)}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
-                                        {!item.isManual && (
-                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item)} disabled={!canEdit}>
+                {isLoadingTasks ? (
+                    <div className="flex justify-center items-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="ml-4">Loading tasks...</p>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="font-semibold">Task</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {allTasks.length === 0 ? (
+                            <TableRow>
+                                    <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
+                            </TableRow>
+                            ) : allTasks.map((project) => (
+                                <TableRow key={project.id}>
+                                    <TableCell className="font-medium text-base">{project.taskName}</TableCell>
+                                    <TableCell className="text-base">{project.assignedBy}</TableCell>
+                                    <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell className="text-base">{project.endDate || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={project.status}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                              <StatusBadge status={project.status} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="not-started">Not Started</SelectItem>
+                                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex gap-1 justify-end">
+                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
                                                 <Upload className="h-4 w-4" />
                                             </Button>
-                                        )}
-                                        {item.isManual && canEdit && (
-                                            <>
-                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        )))}
-                    </TableBody>
-                </Table>
-                {canEdit && (
-                    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                      <DialogTrigger asChild>
-                         <Button className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Project</Button>
-                      </DialogTrigger>
-                       <DialogContent>
-                          <DialogHeader><DialogTitle>Add New Project Entry</DialogTitle></DialogHeader>
-                          <div className="grid gap-4 py-4">
-                              <Input placeholder="Project Name" value={newEntry.projectName} onChange={e => setNewEntry({...newEntry, projectName: e.target.value})} />
-                              <Textarea placeholder="Detail / Task Description" value={newEntry.detail} onChange={e => setNewEntry({...newEntry, detail: e.target.value})} />
-                              <div className="grid grid-cols-2 gap-4">
-                                  <div><Label>Start Date</Label><Input type="date" value={newEntry.startDate} onChange={e => setNewEntry({...newEntry, startDate: e.target.value})} /></div>
-                                  <div><Label>End Date</Label><Input type="date" value={newEntry.endDate} onChange={e => setNewEntry({...newEntry, endDate: e.target.value})} /></div>
-                              </div>
-                          </div>
-                          <DialogFooter>
-                              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                              <Button onClick={handleAddManualEntry}>Add Entry</Button>
-                          </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
-                <div className="mt-4">
-                    <Label htmlFor="remarks">Remarks:</Label>
-                    <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-                </div>
             </CardContent>
-            <CardFooter className="justify-end gap-2">
-                 <Dialog>
-                    <DialogTrigger asChild>
-                       <Button><Eye className="h-4 w-4 mr-2"/>View Report</Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                        <DialogHeader>
-                            <DialogTitle>Project Schedule Report</DialogTitle>
-                            <DialogDescription>A summary of all projects and tasks for {displayUser.name}.</DialogDescription>
-                        </DialogHeader>
-                        <div className="max-h-[60vh] overflow-y-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Project</TableHead>
-                                        <TableHead>Task</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Start</TableHead>
-                                        <TableHead>End</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {allTasks.map(item => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>{item.projectName}</TableCell>
-                                            <TableCell>{item.taskName}</TableCell>
-                                            <TableCell><StatusBadge status={item.status} /></TableCell>
-                                            <TableCell>{item.startDate || 'N/A'}</TableCell>
-                                            <TableCell>{item.endDate || 'N/A'}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <div className="mt-4">
-                                <h4 className="font-bold">Remarks:</h4>
-                                <p className="text-sm text-muted-foreground">{remarks || 'No remarks provided.'}</p>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                             <Button onClick={handleDownloadSchedule} variant="outline"><Download className="h-4 w-4 mr-2"/>Download PDF</Button>
-                             <DialogClose asChild><Button>Close</Button></DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </CardFooter>
         </Card>
         
         <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
@@ -530,32 +339,6 @@ function MyProjectsComponent() {
             </DialogContent>
         </Dialog>
         
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent>
-                <DialogHeader><DialogTitle>Edit Manual Entry</DialogTitle></DialogHeader>
-                {editingEntry && (
-                    <div className="grid gap-4 py-4">
-                        <Input placeholder="Project Name" value={editingEntry.projectName} onChange={e => setEditingEntry({...editingEntry, projectName: e.target.value})} />
-                        <Textarea placeholder="Detail" value={editingEntry.taskDescription} onChange={e => setEditingEntry({...editingEntry, taskDescription: e.target.value})} />
-                        <Select value={editingEntry.status} onValueChange={(val: Task['status']) => setEditingEntry({...editingEntry, status: val})}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="not-started">Not Started</SelectItem>
-                                <SelectItem value="in-progress">In Progress</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Input type="date" value={editingEntry.startDate} onChange={e => setEditingEntry({...editingEntry, startDate: e.target.value})} />
-                        <Input type="date" value={editingEntry.endDate} onChange={e => setEditingEntry({...editingEntry, endDate: e.target.value})} />
-                    </div>
-                )}
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleUpdateManualEntry}>Save Changes</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
@@ -574,22 +357,6 @@ function MyProjectsComponent() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-
-         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Are you sure?</DialogTitle>
-                    <DialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName}".
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={confirmDeleteManualEntry}>Delete</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
     </div>
   );
 }
@@ -604,5 +371,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
