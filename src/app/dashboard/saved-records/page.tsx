@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/badge';
 
 const bankTimelineCategories = [
     "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
@@ -49,6 +50,7 @@ const managementRecordTypes = [
 ];
 const managementCategoriesWithIcons = [
     { name: "Site Survey", icon: Compass },
+    { name: "Project Information", icon: FolderOpen },
     { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
     { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
     { name: "Change Order", icon: getIconForCategory("Change Order")},
@@ -260,6 +262,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return records;
     }, [records, employeeOnly, currentUser]);
 
+    const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
+
     const filteredRecords = useMemo(() => {
         let recordsToFilter = userRecords;
     
@@ -349,189 +353,250 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setSearchQuery('');
     }
 
-    const renderRecordContent = () => {
-        if (!viewingRecord) return null;
-    
-        if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
-            const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
-            const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
-            const remarksSection = viewingRecord.data.find(s => s.category === 'Remarks');
-            const queriesSection = viewingRecord.data.find(s => s.category === 'Queries');
-            
-            const headers = [
-                { key: 'srNo', label: 'Sr.No', rowSpan: 2 },
-                { key: 'projectName', label: 'Project Name', rowSpan: 2 },
-                { key: 'area', label: 'Area in Sft', rowSpan: 2 },
-                { key: 'projectHolder', label: 'Project Holder', rowSpan: 2 },
-                { key: 'allocationDate', label: 'Allocation Date / RFP', rowSpan: 2 },
-                { key: 'siteSurvey', label: 'Site Survey', colSpan: 2 },
-                { key: 'contact', label: 'Contact', colSpan: 2 },
-                { key: 'headCount', label: 'Head Count / Requirment', colSpan: 2 },
-                { key: 'proposal', label: 'Proposal / Design Development', colSpan: 2 },
-                { key: 'threed', label: "3D's", colSpan: 2 },
-                { key: 'tenderArch', label: 'Tender Package Architectural', colSpan: 2 },
-                { key: 'tenderMep', label: 'Tender Package MEP', colSpan: 2 },
-                { key: 'boq', label: 'BOQ', colSpan: 2 },
-                { key: 'tenderStatus', label: 'Tender Status', rowSpan: 2 },
-                { key: 'comparative', label: 'Comparative', rowSpan: 2 },
-                { key: 'workingDrawings', label: 'Working Drawings', rowSpan: 2 },
-                { key: 'siteVisit', label: 'Site Visit', rowSpan: 2 },
-                { key: 'finalBill', label: 'Final Bill', rowSpan: 2 },
-                { key: 'projectClosure', label: 'Project Closure', rowSpan: 2 },
-            ];
-            const subHeaders = [
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
-            ];
-            
-            return (
-                <div className="space-y-4">
-                    {projectSection && Array.isArray(projectSection.items) && projectSection.items.length > 0 && (
-                        <div>
-                            <h3 className="font-bold text-lg text-primary mb-2">Projects</h3>
-                            <div className="overflow-x-auto">
-                                <Table className="text-xs">
-                                    <TableHeader>
-                                        <TableRow>
-                                            {headers.map(h => <TableHead key={h.key} colSpan={h.colSpan} rowSpan={h.rowSpan} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{h.label}</TableHead>)}
-                                        </TableRow>
-                                        <TableRow>
-                                            {subHeaders.map((sh, i) => <TableHead key={i} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{sh}</TableHead>)}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {projectSection.items.map((item: any, index: number) => (
-                                            <TableRow key={index}>
-                                                <TableCell className="border p-1">{item.srNo}</TableCell>
-                                                <TableCell className="border p-1">{item.projectName}</TableCell>
-                                                <TableCell className="border p-1">{item.area}</TableCell>
-                                                <TableCell className="border p-1">{item.projectHolder}</TableCell>
-                                                <TableCell className="border p-1">{item.allocationDate}</TableCell>
-                                                <TableCell className="border p-1">{item.siteSurveyStart}</TableCell>
-                                                <TableCell className="border p-1">{item.siteSurveyEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.contactStart}</TableCell>
-                                                <TableCell className="border p-1">{item.contactEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.headCountStart}</TableCell>
-                                                <TableCell className="border p-1">{item.headCountEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.proposalStart}</TableCell>
-                                                <TableCell className="border p-1">{item.proposalEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.threedStart}</TableCell>
-                                                <TableCell className="border p-1">{item.threedEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.tenderArchStart}</TableCell>
-                                                <TableCell className="border p-1">{item.tenderArchEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.tenderMepStart}</TableCell>
-                                                <TableCell className="border p-1">{item.tenderMepEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.boqStart}</TableCell>
-                                                <TableCell className="border p-1">{item.boqEnd}</TableCell>
-                                                <TableCell className="border p-1">{item.tenderStatus}</TableCell>
-                                                <TableCell className="border p-1">{item.comparative}</TableCell>
-                                                <TableCell className="border p-1">{item.workingDrawings}</TableCell>
-                                                <TableCell className="border p-1">{item.siteVisit}</TableCell>
-                                                <TableCell className="border p-1">{item.finalBill}</TableCell>
-                                                <TableCell className="border p-1">{item.projectClosure}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    )}
-                    {statusSection && Array.isArray(statusSection.items) && (
-                        <div>
-                            <h3 className="font-bold text-lg text-primary mb-2">Overall Status</h3>
-                             <Table>
-                                 <TableBody>
-                                    {statusSection.items.map((item: any, index: number) => (
-                                        <TableRow key={index}><TableCell className="font-semibold">{item.title}</TableCell><TableCell>{item.status}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                     {remarksSection && Array.isArray(remarksSection.items) && (
-                        <div>
-                            <h3 className="font-bold text-lg text-primary mb-2">Remarks</h3>
-                             <Table>
-                                 <TableBody>
-                                    {remarksSection.items.map((item: any, index: number) => (
-                                        <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                     {queriesSection && Array.isArray(queriesSection.items) && (
-                        <div>
-                            <h3 className="font-bold text-lg text-primary mb-2">Queries</h3>
-                             <Table>
-                                 <TableBody>
-                                    {queriesSection.items.map((item: any, index: number) => (
-                                        <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </div>
-            );
-        }
+const renderRecordContent = () => {
+    if (!viewingRecord) return null;
 
-        if (viewingRecord.fileName === 'Site Survey Report' && Array.isArray(viewingRecord.data)) {
-            const data = viewingRecord.data.reduce((acc, section) => {
-                acc[section.category] = section.items;
-                return acc;
-            }, {} as Record<string, any[]>);
-
-            return (
-                <div className="space-y-4">
-                    {Object.entries(data).map(([category, items]) => (
-                        <div key={category}>
-                            <h3 className="font-bold text-lg text-primary mb-2">{category}</h3>
-                            <Table>
-                                <TableBody>
-                                    {items.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell className="font-semibold">{item.label}</TableCell>
-                                            <TableCell>{item.value}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-    
-        if (Array.isArray(viewingRecord.data)) {
-            return (
-                <Table>
-                    <TableBody>
-                        {viewingRecord.data.map((section: any, index: number) => (
-                            <React.Fragment key={index}>
-                                <TableRow className="bg-muted hover:bg-muted">
-                                    <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
-                                </TableRow>
-                                {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
-                                    if (typeof item === 'string') {
-                                        const parts = item.split(/:(.*)/s);
-                                        if (parts.length > 1) {
-                                            return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
-                                        }
-                                    }
-                                    if (item && typeof item === 'object' && item.label && item.value !== undefined) {
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
-                                    }
-                                    return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{JSON.stringify(item)}</TableCell></TableRow>;
-                                }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
-                            </React.Fragment>
-                        ))}
-                    </TableBody>
-                </Table>
-            );
+    if (viewingRecord.fileName === 'My Projects' && Array.isArray(viewingRecord.data)) {
+        const projectSection = viewingRecord.data.find(s => s.category === 'My Project Schedule');
+        if (!projectSection || !Array.isArray(projectSection.items)) {
+            return <p>No project schedule data found in this record.</p>;
         }
         
-        return <p>Could not render record data. Format is not recognized.</p>;
-    };
+        const parsedItems = projectSection.items.map((item: any) => {
+            const projectMatch = item.label.match(/Project: (.*)/);
+            const detailMatch = item.value.match(/Detail: (.*?),/);
+            const statusMatch = item.value.match(/Status: (.*?),/);
+            const startMatch = item.value.match(/Start: (.*?),/);
+            const endMatch = item.value.match(/End: (.*)/);
+            
+            return {
+                projectName: projectMatch ? projectMatch[1].trim() : 'N/A',
+                detail: detailMatch ? detailMatch[1].trim() : 'N/A',
+                status: statusMatch ? statusMatch[1].trim() : 'N/A',
+                startDate: startMatch ? startMatch[1].trim() : 'N/A',
+                endDate: endMatch ? endMatch[1].trim() : 'N/A',
+            };
+        });
+
+        return (
+             <div className="space-y-4">
+                {parsedItems.map((item: any, index: number) => (
+                    <Card key={index} className="p-4">
+                        <CardHeader className="p-2">
+                             <CardTitle className="text-base font-bold">{item.projectName}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-2">
+                            <div>
+                                <p className="text-sm font-semibold text-muted-foreground">Detail</p>
+                                <p>{item.detail}</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                                    <StatusBadge status={item.status as any} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">Start Date</p>
+                                    <p>{item.startDate}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">End Date</p>
+                                    <p>{item.endDate}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                {projectSection.remarks && (
+                    <div className="pt-4 mt-4 border-t">
+                        <h4 className="font-bold">Remarks:</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{projectSection.remarks}</p>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    
+    if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
+        const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
+        const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
+        const remarksSection = viewingRecord.data.find(s => s.category === 'Remarks');
+        const queriesSection = viewingRecord.data.find(s => s.category === 'Queries');
+        
+        const headers = [
+            { key: 'srNo', label: 'Sr.No', rowSpan: 2 },
+            { key: 'projectName', label: 'Project Name', rowSpan: 2 },
+            { key: 'area', label: 'Area in Sft', rowSpan: 2 },
+            { key: 'projectHolder', label: 'Project Holder', rowSpan: 2 },
+            { key: 'allocationDate', label: 'Allocation Date / RFP', rowSpan: 2 },
+            { key: 'siteSurvey', label: 'Site Survey', colSpan: 2 },
+            { key: 'contact', label: 'Contact', colSpan: 2 },
+            { key: 'headCount', label: 'Head Count / Requirment', colSpan: 2 },
+            { key: 'proposal', label: 'Proposal / Design Development', colSpan: 2 },
+            { key: 'threed', label: "3D's", colSpan: 2 },
+            { key: 'tenderArch', label: 'Tender Package Architectural', colSpan: 2 },
+            { key: 'tenderMep', label: 'Tender Package MEP', colSpan: 2 },
+            { key: 'boq', label: 'BOQ', colSpan: 2 },
+            { key: 'tenderStatus', label: 'Tender Status', rowSpan: 2 },
+            { key: 'comparative', label: 'Comparative', rowSpan: 2 },
+            { key: 'workingDrawings', label: 'Working Drawings', rowSpan: 2 },
+            { key: 'siteVisit', label: 'Site Visit', rowSpan: 2 },
+            { key: 'finalBill', label: 'Final Bill', rowSpan: 2 },
+            { key: 'projectClosure', label: 'Project Closure', rowSpan: 2 },
+        ];
+        const subHeaders = [
+            'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
+        ];
+        
+        return (
+            <div className="space-y-4">
+                {projectSection && Array.isArray(projectSection.items) && projectSection.items.length > 0 && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Projects</h3>
+                        <div className="overflow-x-auto">
+                            <Table className="text-xs">
+                                <TableHeader>
+                                    <TableRow>
+                                        {headers.map(h => <TableHead key={h.key} colSpan={h.colSpan} rowSpan={h.rowSpan} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{h.label}</TableHead>)}
+                                    </TableRow>
+                                    <TableRow>
+                                        {subHeaders.map((sh, i) => <TableHead key={i} className="border p-1 text-center font-bold bg-primary/10 whitespace-nowrap">{sh}</TableHead>)}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {projectSection.items.map((item: any, index: number) => (
+                                        <TableRow key={index}>
+                                            <TableCell className="border p-1">{item.srNo}</TableCell>
+                                            <TableCell className="border p-1">{item.projectName}</TableCell>
+                                            <TableCell className="border p-1">{item.area}</TableCell>
+                                            <TableCell className="border p-1">{item.projectHolder}</TableCell>
+                                            <TableCell className="border p-1">{item.allocationDate}</TableCell>
+                                            <TableCell className="border p-1">{item.siteSurveyStart}</TableCell>
+                                            <TableCell className="border p-1">{item.siteSurveyEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.contactStart}</TableCell>
+                                            <TableCell className="border p-1">{item.contactEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.headCountStart}</TableCell>
+                                            <TableCell className="border p-1">{item.headCountEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.proposalStart}</TableCell>
+                                            <TableCell className="border p-1">{item.proposalEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.threedStart}</TableCell>
+                                            <TableCell className="border p-1">{item.threedEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderArchStart}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderArchEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderMepStart}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderMepEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.boqStart}</TableCell>
+                                            <TableCell className="border p-1">{item.boqEnd}</TableCell>
+                                            <TableCell className="border p-1">{item.tenderStatus}</TableCell>
+                                            <TableCell className="border p-1">{item.comparative}</TableCell>
+                                            <TableCell className="border p-1">{item.workingDrawings}</TableCell>
+                                            <TableCell className="border p-1">{item.siteVisit}</TableCell>
+                                            <TableCell className="border p-1">{item.finalBill}</TableCell>
+                                            <TableCell className="border p-1">{item.projectClosure}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
+                {statusSection && Array.isArray(statusSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Overall Status</h3>
+                         <Table>
+                             <TableBody>
+                                {statusSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.title}</TableCell><TableCell>{item.status}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+                 {remarksSection && Array.isArray(remarksSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Remarks</h3>
+                         <Table>
+                             <TableBody>
+                                {remarksSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+                 {queriesSection && Array.isArray(queriesSection.items) && (
+                    <div>
+                        <h3 className="font-bold text-lg text-primary mb-2">Queries</h3>
+                         <Table>
+                             <TableBody>
+                                {queriesSection.items.map((item: any, index: number) => (
+                                    <TableRow key={index}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{item.value}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    if (viewingRecord.fileName === 'Site Survey Report' && Array.isArray(viewingRecord.data)) {
+        const data = viewingRecord.data.reduce((acc, section) => {
+            acc[section.category] = section.items;
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        return (
+            <div className="space-y-4">
+                {Object.entries(data).map(([category, items]) => (
+                    <div key={category}>
+                        <h3 className="font-bold text-lg text-primary mb-2">{category}</h3>
+                        <Table>
+                            <TableBody>
+                                {items.map((item, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell className="font-semibold">{item.label}</TableCell>
+                                        <TableCell>{item.value}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    
+    if (Array.isArray(viewingRecord.data)) {
+        return (
+            <Table>
+                <TableBody>
+                    {viewingRecord.data.map((section: any, index: number) => (
+                        <React.Fragment key={index}>
+                            <TableRow className="bg-muted hover:bg-muted">
+                                <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
+                            </TableRow>
+                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
+                                if (typeof item === 'string') {
+                                    const parts = item.split(/:(.*)/s);
+                                    if (parts.length > 1) {
+                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
+                                    }
+                                }
+                                if (item && typeof item === 'object' && item.label && item.value !== undefined) {
+                                    return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
+                                }
+                                return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{JSON.stringify(item)}</TableCell></TableRow>;
+                            }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
+                        </React.Fragment>
+                    ))}
+                </TableBody>
+            </Table>
+        );
+    }
+    
+    return <p>Could not render record data. Format is not recognized.</p>;
+  };
     
     const renderContent = () => {
         if (!activeCategory) {
@@ -704,3 +769,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
