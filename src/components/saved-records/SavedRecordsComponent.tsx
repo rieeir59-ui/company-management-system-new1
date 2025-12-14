@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -363,42 +364,51 @@ const renderRecordContent = () => {
             return <p>No project schedule data found in this record.</p>;
         }
         
-        return (
-            <div className="space-y-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Detail</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Start Date</TableHead>
-                            <TableHead>End Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {projectSection.items.map((item: any, index: number) => {
-                             // Updated Regex to be more flexible with spaces around commas and colons
-                             const projectMatch = item.value.match(/Detail:\s*(.*?), Status:\s*(.*?), Start:\s*(.*?), End:\s*(.*)/);
-                             if (!projectMatch) {
-                                return (
-                                    <TableRow key={index}><TableCell colSpan={5}>{item.label}: {item.value}</TableCell></TableRow>
-                                )
-                             }
-                             const [, detail, status, start, end] = projectMatch;
-                             const projectName = item.label.replace('Project: ', '');
+        const parsedItems = projectSection.items.map((item: any) => {
+            const projectMatch = item.label.match(/Project: (.*)/);
+            const detailMatch = item.value.match(/Detail: (.*?),/);
+            const statusMatch = item.value.match(/Status: (.*?),/);
+            const startMatch = item.value.match(/Start: (.*?),/);
+            const endMatch = item.value.match(/End: (.*)/);
+            
+            return {
+                projectName: projectMatch ? projectMatch[1].trim() : 'N/A',
+                detail: detailMatch ? detailMatch[1].trim() : 'N/A',
+                status: statusMatch ? statusMatch[1].trim() : 'N/A',
+                startDate: startMatch ? startMatch[1].trim() : 'N/A',
+                endDate: endMatch ? endMatch[1].trim() : 'N/A',
+            };
+        });
 
-                             return (
-                                 <TableRow key={index}>
-                                     <TableCell className="font-medium">{projectName}</TableCell>
-                                     <TableCell>{detail}</TableCell>
-                                     <TableCell><StatusBadge status={status as any} /></TableCell>
-                                     <TableCell>{start || 'N/A'}</TableCell>
-                                     <TableCell>{end || 'N/A'}</TableCell>
-                                 </TableRow>
-                             )
-                        })}
-                    </TableBody>
-                </Table>
+        return (
+             <div className="space-y-4">
+                {parsedItems.map((item: any, index: number) => (
+                    <Card key={index} className="p-4">
+                        <CardHeader className="p-2">
+                             <CardTitle className="text-base font-bold">{item.projectName}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-2">
+                            <div>
+                                <p className="text-sm font-semibold text-muted-foreground">Detail</p>
+                                <p>{item.detail}</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                                    <StatusBadge status={item.status as any} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">Start Date</p>
+                                    <p>{item.startDate}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-muted-foreground">End Date</p>
+                                    <p>{item.endDate}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
                 {projectSection.remarks && (
                     <div className="pt-4 mt-4 border-t">
                         <h4 className="font-bold">Remarks:</h4>
@@ -406,9 +416,9 @@ const renderRecordContent = () => {
                     </div>
                 )}
             </div>
-        )
+        );
     }
-
+    
     if (bankTimelineCategories.includes(viewingRecord.fileName) && Array.isArray(viewingRecord.data)) {
         const projectSection = viewingRecord.data.find(s => s.category === 'Projects');
         const statusSection = viewingRecord.data.find(s => s.category === 'Overall Status');
