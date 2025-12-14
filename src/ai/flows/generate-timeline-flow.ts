@@ -1,7 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@/ai/dev';
 import { GenerateTimelineOutputSchema } from '@/lib/schemas/timeline';
 import { z } from 'zod';
 
