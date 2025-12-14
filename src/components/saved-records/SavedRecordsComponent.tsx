@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -378,7 +377,8 @@ const renderRecordContent = () => {
                     </TableHeader>
                     <TableBody>
                         {projectSection.items.map((item: any, index: number) => {
-                             const projectMatch = item.value.match(/Detail: (.*), Status: (.*), Start: (.*), End: (.*)/);
+                             // Updated Regex to be more flexible with spaces around commas and colons
+                             const projectMatch = item.value.match(/Detail:\s*(.*?), Status:\s*(.*?), Start:\s*(.*?), End:\s*(.*)/);
                              if (!projectMatch) {
                                 return (
                                     <TableRow key={index}><TableCell colSpan={5}>{item.label}: {item.value}</TableCell></TableRow>
@@ -391,9 +391,9 @@ const renderRecordContent = () => {
                                  <TableRow key={index}>
                                      <TableCell className="font-medium">{projectName}</TableCell>
                                      <TableCell>{detail}</TableCell>
-                                     <TableCell><StatusBadge status={status} /></TableCell>
-                                     <TableCell>{start}</TableCell>
-                                     <TableCell>{end}</TableCell>
+                                     <TableCell><StatusBadge status={status as any} /></TableCell>
+                                     <TableCell>{start || 'N/A'}</TableCell>
+                                     <TableCell>{end || 'N/A'}</TableCell>
                                  </TableRow>
                              )
                         })}
