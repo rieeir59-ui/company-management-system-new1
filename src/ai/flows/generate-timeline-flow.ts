@@ -24,8 +24,8 @@ export async function generateTimeline(
 const generateTimelinePrompt = ai.definePrompt(
   {
     name: 'generateTimelinePrompt',
-    inputSchema: GenerateTimelineInputSchema,
-    outputSchema: GenerateTimelineOutputSchema,
+    input: {schema: GenerateTimelineInputSchema},
+    output: {schema: GenerateTimelineOutputSchema},
     prompt: `
       You are a project manager for an architectural firm.
       Generate a realistic timeline for the given project.
@@ -45,7 +45,7 @@ const generateTimelineFlow = ai.defineFlow(
   },
   async (input) => {
     const llmResponse = await generateTimelinePrompt(input);
-    const output = llmResponse.output();
+    const output = llmResponse.output;
     if (!output) {
       throw new Error('Failed to generate a structured timeline from the AI model.');
     }
