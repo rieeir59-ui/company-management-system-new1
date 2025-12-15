@@ -59,7 +59,7 @@ function AskariBankTimelineComponent() {
     
     const handleSave = () => {
         addRecord({
-            fileName: 'Askari Bank Timeline',
+            fileName: 'Askari Bank Project Chart',
             projectName: 'Askari Bank Projects',
             data: [
                 { category: 'Projects', items: projectRows },
@@ -72,7 +72,7 @@ function AskariBankTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("Askari Bank Timeline", 14, 15);
+        doc.text("Askari Bank Project Chart", 14, 15);
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
@@ -80,8 +80,7 @@ function AskariBankTimelineComponent() {
              'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
              'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 
-             'Working Drawings\nStart', 'Working Drawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project Closure']
+             'Working Drawings\nStart', 'Working Drawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
@@ -89,7 +88,9 @@ function AskariBankTimelineComponent() {
             p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
+            p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, 
+            p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -125,7 +126,7 @@ function AskariBankTimelineComponent() {
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">Askari Bank Timeline</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">Askari Bank Project Chart</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
