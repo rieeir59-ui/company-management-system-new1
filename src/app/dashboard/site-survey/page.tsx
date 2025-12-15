@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -197,7 +198,7 @@ export default function ProjectDataPage() {
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += 40;
+                xOffset += doc.getTextWidth(opt.label) + 15; // Dynamic spacing
             });
             yPos += 8;
         };
@@ -619,7 +620,7 @@ export default function ProjectDataPage() {
                              </Table>
                         </section>
 
-                        <div className="flex justify-end gap-4 mt-12">
+                        <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                             <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
