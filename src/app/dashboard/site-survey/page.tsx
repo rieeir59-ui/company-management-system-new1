@@ -147,10 +147,16 @@ export default function ProjectDataPage() {
             doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             options.forEach(opt => {
+                const labelWidth = doc.getTextWidth(opt.label) + 15;
+                if (margin + xOffset + labelWidth > pageWidth - margin) {
+                    yPos += 8;
+                    xOffset = 60;
+                    doc.rect(margin, yPos, pageWidth - margin * 2, 8);
+                }
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += doc.getTextWidth(opt.label) + 15; // Dynamic spacing
+                xOffset += labelWidth;
             });
             yPos += 8;
         };
@@ -252,7 +258,7 @@ export default function ProjectDataPage() {
         drawField('Other retainable', getInputValue('retainable_other_text'));
         drawField('Plot level from road', getInputValue('plot_level'));
         drawRadioField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
-
+        
         doc.addPage();
         yPos = 20;
 
@@ -304,8 +310,7 @@ export default function ProjectDataPage() {
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
                         <CardTitle className="text-3xl font-headline text-primary">IHA PROJECT MANAGEMENT</CardTitle>
-                        <p className="font-semibold mt-2">Premises Review</p>
-                        <p className="text-sm text-muted-foreground">For Residential Project</p>
+                        <p className="font-semibold mt-2">Premises Review for Residential Project</p>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                     </div>
                 </CardHeader>
@@ -512,5 +517,7 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
 
     
