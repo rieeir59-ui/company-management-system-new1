@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -226,13 +225,13 @@ export default function TimelinePage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-16">ID</TableHead>
-                            <TableHead>Task Name</TableHead>
-                            <TableHead>Duration</TableHead>
-                            <TableHead>Start</TableHead>
-                            <TableHead>Finish</TableHead>
-                            <TableHead>Predecessor</TableHead>
-                            <TableHead>Action</TableHead>
+                            <TableHead className="w-16 font-semibold text-foreground">ID</TableHead>
+                            <TableHead className="font-semibold text-foreground">Task Name</TableHead>
+                            <TableHead className="font-semibold text-foreground">Duration</TableHead>
+                            <TableHead className="font-semibold text-foreground">Start</TableHead>
+                            <TableHead className="font-semibold text-foreground">Finish</TableHead>
+                            <TableHead className="font-semibold text-foreground">Predecessor</TableHead>
+                            <TableHead className="font-semibold text-foreground">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -267,5 +266,3 @@ export default function TimelinePage() {
         </Card>
     );
 }
-
-    
