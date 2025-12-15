@@ -41,54 +41,6 @@ const FormRow = ({ label, children }: { label: string; children: React.ReactNode
     </TableRow>
 );
 
-
-const checklistItems = [
-    { no: 1, title: 'Existing Plan' },
-    { no: 2, title: 'Site Plan' },
-    { no: 3, title: 'Basement Plan' },
-    { no: 4, title: 'Ground Floor Plan' },
-    { no: 5, title: 'First Floor Plan' },
-    { no: 6, title: 'Second Floor Plan' },
-    { no: 7, title: 'Elevation 1 - Material Structure' },
-    { no: 8, title: 'Elevation 2 - Material Structure' },
-    { no: 9, title: 'Elevation 3 - Material Structure' },
-    { no: 10, title: 'Elevation 4 - Material Structure' },
-    { no: 11, title: 'Window Details Existing' },
-    { no: 12, title: 'Door Heights Existing' },
-    { no: 13, title: 'Interior Finishes' },
-    { no: 14, title: 'HVAC' },
-];
-
-const structureDrawingItems = [
-    { no: 1, title: 'Ground Floor Slab' },
-    { no: 2, title: 'First Floor Plan' },
-    { no: 3, title: 'Second floor Plan' },
-    { no: 4, title: 'Wall Elevation & Slab Sec' },
-    { no: 5, title: 'Wall Sections & Details' },
-    { no: 6, title: 'Staircase' },
-    { no: 7, title: 'Column Sizes / Locations' },
-    { no: 8, title: 'Beams sizes / Locations' },
-];
-
-const plumbingDrawingItems = [
-    { no: 1, title: 'Sewage System' },
-    { no: 2, title: 'Water Supply & Gas Systems' },
-    { no: 3, title: 'Location of underground water tank' },
-    { no: 4, title: 'Location of underground septic tank' },
-    { no: 5, title: 'Main Water Supply Source' },
-];
-
-const electrificationDrawingItems = [
-    { no: 1, title: 'Illumination Layout Plan' },
-    { no: 2, title: 'Power Layout Plan' },
-    { no: 3, title: 'Legend & General Notes' },
-    { no: 4, title: 'Camera Dvr' },
-    { no: 5, title: 'Smoke Detector / fire fighting' },
-    { no: 6, title: 'PTCL Junction Box' },
-    { no: 7, title: 'Main DB Location' },
-    { no: 8, title: 'Sub DBs Location' },
-];
-
 export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
@@ -319,36 +271,6 @@ export default function ProjectDataPage() {
         drawField('Landline', getInputValue('survey_conducted_by_landline'));
         drawField('Email', getInputValue('survey_conducted_by_email'));
         drawField('Date', getInputValue('survey_conducted_by_date'));
-
-        addSectionTitle('Survey Checklist');
-        drawField('Project', getInputValue('survey_project'));
-        drawField('Location', getInputValue('survey_location'));
-        drawField('Contract Date', getInputValue('survey_contract_date'));
-        drawField('Project Number', getInputValue('survey_project_number'));
-        drawField('Start Date', getInputValue('survey_start_date'));
-        drawField('Project Incharge', getInputValue('survey_project_incharge'));
-        
-        const generateChecklistTable = (title: string, items: {no: number, title: string}[], prefix: string) => {
-            if (yPos > 250) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(title, margin, yPos);
-            yPos += 8;
-            doc.setTextColor(0, 0, 0);
-            (doc as any).autoTable({
-                startY: yPos,
-                head: [['Sr.No', 'Drawing Title', 'Remarks']],
-                body: items.map(item => [item.no.toString(), item.title, getInputValue(`${prefix}_remarks_${item.no}`)]),
-                theme: 'grid',
-                headStyles: { fillColor: headingFillColor, textColor: 0 }
-            });
-            yPos = (doc as any).autoTable.previous.finalY + 10;
-        }
-
-        generateChecklistTable('Architectural Drawings', checklistItems, 'checklist');
-        generateChecklistTable('Structure Drawings', structureDrawingItems, 'structure');
-        generateChecklistTable('Plumbing Drawings', plumbingDrawingItems, 'plumbing');
-        generateChecklistTable('Electrification Drawings', electrificationDrawingItems, 'electrification');
         
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -579,46 +501,6 @@ export default function ProjectDataPage() {
                            <FormRow label="Email"><Input id="survey_conducted_by_email" name="survey_conducted_by_email" type="email" /></FormRow>
                            <FormRow label="Date"><Input id="survey_conducted_by_date" name="survey_conducted_by_date" type="date" /></FormRow>
                         </SectionTable>
-
-                        <section className="mb-8">
-                            <h2 className="text-xl font-bold text-primary mb-3 pb-2 border-b-2 border-primary">Survey Checklist</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-4 p-4 border rounded-lg">
-                               <Input id="survey_project" name="survey_project" placeholder="Project" />
-                               <Input id="survey_location" name="survey_location" placeholder="Location" />
-                               <Input id="survey_contract_date" name="survey_contract_date" type="date" placeholder="Contract Date" />
-                               <Input id="survey_project_number" name="survey_project_number" placeholder="Project Number" />
-                               <Input id="survey_start_date" name="survey_start_date" type="date" placeholder="Start Date" />
-                               <Input id="survey_project_incharge" name="survey_project_incharge" placeholder="Project Incharge" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Architectural Drawings</h3>
-                             <Table>
-                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {checklistItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`checklist_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
-                                </TableBody>
-                             </Table>
-                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Structure Drawings</h3>
-                             <Table>
-                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {structureDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`structure_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
-                                </TableBody>
-                             </Table>
-                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Plumbing Drawings</h3>
-                             <Table>
-                                <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {plumbingDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`plumbing_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
-                                </TableBody>
-                             </Table>
-                             <h3 className="text-lg font-semibold text-primary mt-6 mb-2">Electrification Drawings</h3>
-                             <Table>
-                                 <TableHeader><TableRow><TableHead className="w-16">Sr.No</TableHead><TableHead>Drawing Title</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {electrificationDrawingItems.map(item => (<TableRow key={item.no}><TableCell>{item.no}</TableCell><TableCell>{item.title}</TableCell><TableCell><Textarea name={`electrification_remarks_${item.no}`} rows={1} /></TableCell></TableRow>))}
-                                </TableBody>
-                             </Table>
-                        </section>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
