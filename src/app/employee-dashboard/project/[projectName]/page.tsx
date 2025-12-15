@@ -118,7 +118,7 @@ export default function ProjectDetailPage() {
 
     doc.autoTable({
         startY: yPos,
-        head: [['Phase', 'Start Date', 'End Date']],
+        head: [['Activity', 'Start Date', 'End Date']],
         body: timelineBody,
         theme: 'grid',
         headStyles: { fillColor: [45, 95, 51] },
@@ -191,7 +191,7 @@ export default function ProjectDetailPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Phase</TableHead>
+                        <TableHead>Activity</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead className="text-right">Duration</TableHead>

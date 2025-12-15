@@ -67,8 +67,6 @@ export default function ProjectDetailPage() {
   const singleMilestones = project ? [
     { label: 'Tender Status', value: project.tenderStatus },
     { label: 'Comparative', value: project.comparative },
-    { label: 'Working Drawings', value: project.workingDrawings },
-    { label: 'Site Visit', value: project.siteVisit },
     { label: 'Final Bill', value: project.finalBill },
     { label: 'Project Closure', value: project.projectClosure },
   ].filter(item => item.value) : [];
@@ -108,17 +106,19 @@ export default function ProjectDetailPage() {
     const timelineBody = [
         ["Site Survey", project.siteSurveyStart || 'N/A', project.siteSurveyEnd || 'N/A'],
         ["Contract", project.contract || 'N/A'],
-        ["Head Count / Requirement", project.headCountStart || 'N/A', project.headCountEnd || 'N/A'],
+        ["Head Count / Requirement", project.headCount || 'N/A'],
         ["Proposal / Design Development", project.proposalStart || 'N/A', project.proposalEnd || 'N/A'],
         ["3D's", project.threedStart || 'N/A', project.threedEnd || 'N/A'],
         ["Tender Package Architectural", project.tenderArchStart || 'N/A', project.tenderArchEnd || 'N/A'],
         ["Tender Package MEP", project.tenderMepStart || 'N/A', project.tenderMepEnd || 'N/A'],
         ["BOQ", project.boqStart || 'N/A', project.boqEnd || 'N/A'],
+        ["Working Drawings", project.workingDrawingsStart || 'N/A', project.workingDrawingsEnd || 'N/A'],
+        ["Site Visit", project.siteVisitStart || 'N/A', project.siteVisitEnd || 'N/A'],
     ];
 
     doc.autoTable({
         startY: yPos,
-        head: [['Phase', 'Start Date', 'End Date']],
+        head: [['Activity', 'Start Date', 'End Date']],
         body: timelineBody,
         theme: 'grid',
         headStyles: { fillColor: [45, 95, 51] },
@@ -191,7 +191,7 @@ export default function ProjectDetailPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Phase</TableHead>
+                        <TableHead>Activity</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead className="text-right">Duration</TableHead>
@@ -200,12 +200,14 @@ export default function ProjectDetailPage() {
                 <TableBody>
                     <TimelineRow label="Site Survey" start={project.siteSurveyStart} end={project.siteSurveyEnd} />
                     <TimelineRowSingle label="Contract" value={project.contract} />
-                    <TimelineRow label="Head Count / Requirement" start={project.headCountStart} end={project.headCountEnd} />
+                    <TimelineRowSingle label="Head Count / Requirement" value={project.headCount} />
                     <TimelineRow label="Proposal / Design Development" start={project.proposalStart} end={project.proposalEnd} />
                     <TimelineRow label="3D's" start={project.threedStart} end={project.threedEnd} />
                     <TimelineRow label="Tender Package Architectural" start={project.tenderArchStart} end={project.tenderArchEnd} />
                     <TimelineRow label="Tender Package MEP" start={project.tenderMepStart} end={project.tenderMepEnd} />
                     <TimelineRow label="BOQ" start={project.boqStart} end={project.boqEnd} />
+                    <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
+                    <TimelineRow label="Site Visit" start={project.siteVisitStart} end={project.siteVisitEnd} />
                 </TableBody>
             </Table>
         </CardContent>
