@@ -44,8 +44,11 @@ const generateTimelineFlow = ai.defineFlow(
     outputSchema: GenerateTimelineOutputSchema,
   },
   async (input) => {
-    const llmResponse = await generateTimelinePrompt(input);
-    const output = llmResponse.output;
+    const llmPrompt = await generateTimelinePrompt(input);
+    const { output } = await ai.generate({
+      model: 'googleai/gemini-1.5-flash-001',
+      prompt: llmPrompt,
+    });
     if (!output) {
       throw new Error('Failed to generate a structured timeline from the AI model.');
     }
