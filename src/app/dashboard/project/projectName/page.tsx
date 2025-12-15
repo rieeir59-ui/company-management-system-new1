@@ -149,7 +149,7 @@ export default function ProjectDetailPage() {
         <h1 className="text-2xl font-bold">Project Not Found</h1>
         <p className="text-muted-foreground">The project you are looking for does not exist.</p>
         <Button asChild className="mt-4">
-          <Link href="/employee-dashboard">Back to Dashboard</Link>
+          <Link href="/dashboard">Back to Dashboard</Link>
         </Button>
       </div>
     );
@@ -160,7 +160,7 @@ export default function ProjectDetailPage() {
        <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="icon">
-            <Link href="/employee-dashboard">
+            <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
