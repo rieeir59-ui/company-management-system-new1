@@ -289,5 +289,3 @@ function CommercialTimelineComponent() {
 export default function Page() {
   return <CommercialTimelineComponent />;
 }
-
-    

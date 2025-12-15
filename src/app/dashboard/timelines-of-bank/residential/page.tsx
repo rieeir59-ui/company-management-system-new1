@@ -10,7 +10,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useRecords } from '@/context/RecordContext';
+import { useRecords from '@/context/RecordContext';
 import { residentialProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
 function ResidentialTimelineComponent() {
