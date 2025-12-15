@@ -45,6 +45,14 @@ const TimelineRow = ({ label, start, end }: { label: string; start?: string | nu
     );
 };
 
+const TimelineRowSingle = ({ label, value }: { label: string; value?: string | null }) => (
+    <TableRow>
+        <TableCell className="font-medium">{label}</TableCell>
+        <TableCell colSpan={3}>{value || 'N/A'}</TableCell>
+    </TableRow>
+);
+
+
 export default function ProjectDetailPage() {
   const params = useParams();
   const { toast } = useToast();
@@ -99,7 +107,7 @@ export default function ProjectDetailPage() {
 
     const timelineBody = [
         ["Site Survey", project.siteSurveyStart || 'N/A', project.siteSurveyEnd || 'N/A'],
-        ["Contact", project.contactStart || 'N/A', project.contactEnd || 'N/A'],
+        ["Contract", project.contract || 'N/A'],
         ["Head Count / Requirement", project.headCountStart || 'N/A', project.headCountEnd || 'N/A'],
         ["Proposal / Design Development", project.proposalStart || 'N/A', project.proposalEnd || 'N/A'],
         ["3D's", project.threedStart || 'N/A', project.threedEnd || 'N/A'],
@@ -191,7 +199,7 @@ export default function ProjectDetailPage() {
                 </TableHeader>
                 <TableBody>
                     <TimelineRow label="Site Survey" start={project.siteSurveyStart} end={project.siteSurveyEnd} />
-                    <TimelineRow label="Contact" start={project.contactStart} end={project.contactEnd} />
+                    <TimelineRowSingle label="Contract" value={project.contract} />
                     <TimelineRow label="Head Count / Requirement" start={project.headCountStart} end={project.headCountEnd} />
                     <TimelineRow label="Proposal / Design Development" start={project.proposalStart} end={project.proposalEnd} />
                     <TimelineRow label="3D's" start={project.threedStart} end={project.threedEnd} />
