@@ -152,8 +152,8 @@ function AskariBankTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th colSpan={2} className="border p-1">Working Drawings</th>
-                                <th colSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -165,8 +165,8 @@ function AskariBankTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
