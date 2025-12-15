@@ -21,22 +21,6 @@ export async function generateTimeline(
   return generateTimelineFlow(input);
 }
 
-const prompt = ai.definePrompt(
-  {
-    name: 'generateTimelinePrompt',
-    input: { schema: GenerateTimelineInputSchema },
-    prompt: `
-        You are a project manager for an architectural firm.
-        Generate a realistic timeline for the given project.
-        The timeline should include key phases like Site Survey, Design, Tendering, and Construction.
-
-        Project Name: {{{projectName}}}
-        Area: {{{area}}} sft
-      `,
-  },
-);
-
-
 const generateTimelineFlow = ai.defineFlow(
   {
     name: 'generateTimelineFlow',
@@ -44,10 +28,16 @@ const generateTimelineFlow = ai.defineFlow(
     outputSchema: GenerateTimelineOutputSchema,
   },
   async (input) => {
-    const llmPrompt = await prompt(input);
     const { output } = await ai.generate({
       model: 'googleai/gemini-1.5-flash-001',
-      prompt: llmPrompt.prompt,
+      prompt: `
+        You are a project manager for an architectural firm.
+        Generate a realistic timeline for the given project.
+        The timeline should include key phases like Site Survey, Design, Tendering, and Construction.
+
+        Project Name: ${input.projectName}
+        Area: ${input.area} sft
+      `,
       output: {
         schema: GenerateTimelineOutputSchema,
       },
