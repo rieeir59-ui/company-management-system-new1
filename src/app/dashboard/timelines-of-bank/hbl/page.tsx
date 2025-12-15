@@ -42,7 +42,7 @@ function HBLTimelineComponent() {
     
     const handleSave = () => {
         addRecord({
-            fileName: 'HBL Timeline',
+            fileName: 'HBL Project Chart',
             projectName: 'HBL Projects',
             data: [
                 { category: 'Projects', items: projectRows },
@@ -54,7 +54,7 @@ function HBLTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("HBL Timeline", 14, 15);
+        doc.text("HBL Project Chart", 14, 15);
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
@@ -98,7 +98,7 @@ function HBLTimelineComponent() {
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">HBL Timeline</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">HBL Project Chart</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -124,8 +124,8 @@ function HBLTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th colSpan={2} className="border p-1">Working Drawings</th>
-                                <th colSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -192,3 +192,4 @@ function HBLTimelineComponent() {
 export default function Page() {
   return <HBLTimelineComponent />;
 }
+

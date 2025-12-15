@@ -32,7 +32,7 @@ function HBLTimelineComponent() {
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
         }]);
     };
     
@@ -42,7 +42,7 @@ function HBLTimelineComponent() {
     
     const handleSave = () => {
         addRecord({
-            fileName: 'HBL Timeline',
+            fileName: 'HBL Project Chart',
             projectName: 'HBL Projects',
             data: [
                 { category: 'Projects', items: projectRows },
@@ -54,14 +54,16 @@ function HBLTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("HBL Timeline", 14, 15);
+        doc.text("HBL Project Chart", 14, 15);
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
              'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count / Requirment',
              'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 
+             'Working Drawings\nStart', 'Working Drawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 
+             'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
@@ -69,7 +71,7 @@ function HBLTimelineComponent() {
             p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawings, p.siteVisit, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -96,7 +98,7 @@ function HBLTimelineComponent() {
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">HBL Timeline</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">HBL Project Chart</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -122,8 +124,8 @@ function HBLTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th rowSpan={2} className="border p-1">Working Drawings</th>
-                                <th rowSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -135,6 +137,8 @@ function HBLTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -161,8 +165,10 @@ function HBLTimelineComponent() {
                                     <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.workingDrawings} onChange={e => handleProjectChange(row.id, 'workingDrawings', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.siteVisit} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="w-24" /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Button variant="destructive" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4" /></Button></td>
@@ -186,4 +192,3 @@ function HBLTimelineComponent() {
 export default function Page() {
   return <HBLTimelineComponent />;
 }
-
