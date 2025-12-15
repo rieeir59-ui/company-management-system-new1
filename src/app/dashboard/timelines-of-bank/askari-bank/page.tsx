@@ -165,8 +165,8 @@ function AskariBankTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -234,3 +234,4 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
+
