@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen, Compass } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { getIconForCategory, getIconForFile } from '@/lib/icons';
+import { getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
@@ -34,50 +34,7 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '../ui/badge';
-
-const bankTimelineCategories = [
-    "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
-];
-
-const managementRecordTypes = [
-    "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
-    "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
-    "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
-    "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
-    "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
-    "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment",
-    "Project Information"
-];
-const managementCategoriesWithIcons = [
-    { name: "Site Survey", icon: Compass },
-    { name: "Project Information", icon: FolderOpen },
-    { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
-    { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
-    { name: "Change Order", icon: getIconForCategory("Change Order")},
-    { name: "Consent of Surety", icon: getIconForCategory("Consent of Surety")},
-    { name: "Construction Change Directive", icon: getIconForCategory("Construction Change Directive")},
-    { name: "Construction Activity Schedule", icon: getIconForCategory("Construction Activity Schedule")},
-    { name: "Continuation Sheet", icon: getIconForCategory("Continuation Sheet")},
-    { name: "Drawings List", icon: getIconForCategory("Drawings List")},
-    { name: "Instruction Sheet", icon: getIconForCategory("Instruction Sheet")},
-    { name: "List of Contractors", icon: getIconForCategory("List of Contractors")},
-    { name: "List of Sub-Consultants", icon: getIconForCategory("List of Sub-Consultants")},
-    { name: "Preliminary Project Budget", icon: getIconForCategory("Preliminary Project Budget")},
-    { name: "Project Agreement", icon: getIconForCategory("Project Agreement")},
-    { name: "Project Application Summary", icon: getIconForCategory("Project Application Summary")},
-    { name: "Project Checklist", icon: getIconForCategory("Project Checklist")},
-    { name: "Project Data", icon: getIconForCategory("Project Data")},
-    { name: "Proposal Request", icon: getIconForCategory("Proposal Request")},
-    { name: "Rate Analysis", icon: getIconForCategory("Rate Analysis")},
-    { name: "Shop Drawing and Sample Record", icon: getIconForCategory("Shop Drawing and Sample Record")},
-    { name: "Timeline Schedule", icon: getIconForCategory("Timeline Schedule")},
-    { name: "My Projects", icon: getIconForCategory("My Projects")},
-    { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
-    { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
-    { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
-]
-
+import { bankTimelineCategories } from '@/lib/projects-data';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -100,6 +57,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         yPos += 12;
 
         doc.setFontSize(9);
+        doc.text(`Record ID: ${record.id}`, 14, yPos);
         doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
         yPos += 10;
         doc.setLineWidth(0.5);
@@ -168,10 +126,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const addList = (items: { label: string, value: string }[]) => {
             items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
         };
-        const addSimpleList = (items: { value: string }[]) => {
-            items.forEach(item => addText(`• ${item.value}`, false, 5, 10, 5));
-        };
-
+        
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
         const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
         addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
@@ -224,32 +179,16 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         addFooter();
         doc.save('Project-Agreement.pdf');
-
     } else {
         generateGenericPdf();
     }
 };
 
-const SectionCard = ({ title, icon: Icon, onClick, className }: { title: string, icon: React.ElementType, onClick: () => void, className?: string }) => (
-    <Card
-        className={cn("p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all", className)}
-        onClick={onClick}
-    >
-        <Icon className="w-12 h-12 text-primary" />
-        <p className="font-semibold text-lg text-center">{title}</p>
-    </Card>
-);
-
-const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD", "Commercial", "Residential"];
-
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord } = useRecords();
-    const { user: currentUser } = useCurrentUser();
+    const { user: currentUser, employees } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState<string | null>(null);
-    const [selectedBank, setSelectedBank] = useState<string | null>(null);
-    const [selectedMgmtRecordType, setSelectedMgmtRecordType] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
@@ -261,42 +200,38 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
         return records;
     }, [records, employeeOnly, currentUser]);
-
-    const bankNameToCategory = (bankName: string) => `${bankName} Timeline`;
-
-    const filteredRecords = useMemo(() => {
-        let recordsToFilter = userRecords;
     
-        if (activeCategory === 'Banks') {
-            recordsToFilter = recordsToFilter.filter(r => bankTimelineCategories.includes(r.fileName));
-            if (selectedBank) {
-                const categoryName = bankNameToCategory(selectedBank);
-                recordsToFilter = recordsToFilter.filter(r => r.fileName === categoryName);
+    const recordsByEmployee = useMemo(() => {
+        const grouped = userRecords.reduce((acc, record) => {
+            const employeeId = record.employeeId;
+            if (!acc[employeeId]) {
+                const employeeDetails = employees.find(e => e.uid === employeeId);
+                acc[employeeId] = {
+                    employeeName: employeeDetails?.name || 'Unknown Employee',
+                    employeeDept: employeeDetails?.departments.join(', ') || 'N/A',
+                    records: [],
+                };
             }
-        } else if (activeCategory === 'Management Records') {
-            if (selectedMgmtRecordType) {
-                const typesToFilter = selectedMgmtRecordType === "Site Survey" 
-                    ? ["Site Survey Report", "Site Visit Proforma"]
-                    : [selectedMgmtRecordType];
-                recordsToFilter = recordsToFilter.filter(r => typesToFilter.includes(r.fileName));
-            } else {
-                recordsToFilter = recordsToFilter.filter(r => managementRecordTypes.includes(r.fileName));
+            acc[employeeId].records.push(record);
+            return acc;
+        }, {} as Record<string, { employeeName: string; employeeDept: string; records: SavedRecord[] }>);
+
+        if (!searchQuery) return grouped;
+
+        const filteredGrouped: typeof grouped = {};
+        for(const employeeId in grouped) {
+            const filtered = grouped[employeeId].records.filter(r => 
+                r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            if (filtered.length > 0) {
+                filteredGrouped[employeeId] = { ...grouped[employeeId], records: filtered };
             }
-        } else if (activeCategory === 'Assigned Tasks') {
-            recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
-        } else if (activeCategory) {
-            recordsToFilter = []; // If category is active but not one of the main ones, show nothing until a sub-cat is picked
         }
-    
-        if (!searchQuery) return recordsToFilter;
-    
-        return recordsToFilter.filter(record =>
-            (record.projectName && record.projectName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (record.fileName && record.fileName.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-    
-    }, [userRecords, activeCategory, selectedBank, selectedMgmtRecordType, searchQuery]);
-    
+        return filteredGrouped;
+
+    }, [userRecords, employees, searchQuery]);
+
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -324,38 +259,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
-    const handleCategorySelect = (category: string) => {
-        setActiveCategory(category);
-        setSelectedBank(null);
-        setSelectedMgmtRecordType(null);
-    };
-    
-    const handleBankSelect = (bank: string) => {
-        setSelectedBank(bank);
-    };
-
-    const handleMgmtRecordTypeSelect = (recordType: string) => {
-        setSelectedMgmtRecordType(recordType);
-    };
-    
-    const handleBackToCategories = () => {
-        setActiveCategory(null);
-        setSelectedBank(null);
-        setSelectedMgmtRecordType(null);
-        setSearchQuery('');
-    };
-    
-    const handleBackToBanks = () => {
-        setSelectedBank(null);
-        setSearchQuery('');
-    }
-    
-    const handleBackToMgmtCategories = () => {
-        setSelectedMgmtRecordType(null);
-        setSearchQuery('');
-    }
-
-const renderRecordContent = () => {
+    const renderRecordContent = () => {
     if (!viewingRecord) return null;
 
     if (viewingRecord.fileName === 'My Projects' && Array.isArray(viewingRecord.data)) {
@@ -599,110 +503,8 @@ const renderRecordContent = () => {
     
     return <p>Could not render record data. Format is not recognized.</p>;
   };
-    
-    const renderContent = () => {
-        if (!activeCategory) {
-             return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <SectionCard title="Banks" icon={Landmark} onClick={() => handleCategorySelect('Banks')} />
-                    <SectionCard title="Management Records" icon={Building2} onClick={() => handleCategorySelect('Management Records')} />
-                    <SectionCard title="Assigned Tasks" icon={ClipboardCheck} onClick={() => handleCategorySelect('Assigned Tasks')} />
-                </div>
-            );
-        }
-        
-        if (activeCategory === 'Banks' && !selectedBank) {
-            return (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {initialBanks.map(bank => (
-                        <SectionCard 
-                            key={bank} 
-                            title={bank} 
-                            icon={Landmark}
-                            onClick={() => handleBankSelect(bank)}
-                        />
-                    ))}
-                </div>
-            );
-        }
 
-        if (activeCategory === 'Management Records' && !selectedMgmtRecordType) {
-            return (
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {managementCategoriesWithIcons.map(cat => (
-                         <SectionCard 
-                            key={cat.name} 
-                            title={cat.name} 
-                            icon={cat.icon}
-                            onClick={() => handleMgmtRecordTypeSelect(cat.name)}
-                        />
-                    ))}
-                </div>
-            );
-        }
-        
-        return (
-             <Card>
-                 <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle>{selectedBank || selectedMgmtRecordType || activeCategory}</CardTitle>
-                         {selectedBank && <Button onClick={handleBackToBanks} variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Banks</Button>}
-                         {selectedMgmtRecordType && <Button onClick={handleBackToMgmtCategories} variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Management Categories</Button>}
-                    </div>
-                 </CardHeader>
-                 <CardContent>
-                    {filteredRecords.length > 0 ? (
-                         <Table>
-                             <TableHeader>
-                             <TableRow>
-                                 <TableHead>Project Name</TableHead>
-                                 <TableHead>File Name</TableHead>
-                                 {!employeeOnly && <TableHead>Created By</TableHead>}
-                                 <TableHead>Date</TableHead>
-                                 <TableHead className="text-right">Actions</TableHead>
-                             </TableRow>
-                             </TableHeader>
-                             <TableBody>
-                                 {filteredRecords.map(record => {
-                                     const Icon = getIconForFile(record.fileName);
-                                     return (
-                                         <TableRow key={record.id}>
-                                             <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
-                                             <TableCell>{record.fileName}</TableCell>
-                                             {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                             <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                             <TableCell className="text-right">
-                                                 <div className="flex gap-1 justify-end">
-                                                     <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)}><Eye className="h-4 w-4" /></Button>
-                                                     {canEditOrDelete(record) && (
-                                                         <>
-                                                             <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></Link>
-                                                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                         </>
-                                                     )}
-                                                 </div>
-                                             </TableCell>
-                                         </TableRow>
-                                     )
-                                 })}
-                             </TableBody>
-                         </Table>
-                    ) : (
-                         <div className="text-center py-10">
-                            <p className="text-muted-foreground">
-                                {searchQuery 
-                                    ? `No records found for "${searchQuery}".`
-                                    : `No records found for ${selectedBank || selectedMgmtRecordType || activeCategory}.`
-                                }
-                            </p>
-                        </div>
-                    )}
-                 </CardContent>
-               </Card>
-        );
-    }
-
-  return (
+    return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -712,29 +514,75 @@ const renderRecordContent = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {activeCategory && (
-                 <div>
-                    <Button onClick={handleBackToCategories} variant="outline" className="mb-4">
-                       <ArrowLeft className="mr-2 h-4 w-4"/> Back to Categories
-                    </Button>
-                    <div className="relative mb-4">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={`Search in ${selectedBank || selectedMgmtRecordType || activeCategory}...`}
-                            className="pl-8"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                </div>
-            )}
+            <div className="relative mb-4">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search records by project or file name..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
             
             {isLoading ? (
                 <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : error ? (
                 <div className="text-destructive text-center">{error}</div>
+            ) : Object.keys(recordsByEmployee).length > 0 ? (
+                <div className="space-y-6">
+                    {Object.entries(recordsByEmployee).map(([employeeId, { employeeName, employeeDept, records }]) => (
+                        <Card key={employeeId} className="border-primary/30">
+                            <CardHeader className="bg-muted/50 rounded-t-lg">
+                                <CardTitle className="flex items-center gap-3">
+                                    <UserIcon className="h-6 w-6 text-primary" />
+                                    <div>
+                                        {employeeName}
+                                        <p className="text-sm font-normal text-muted-foreground">{employeeDept}</p>
+                                    </div>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Project Name</TableHead>
+                                            <TableHead>File Name</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {records.map(record => {
+                                            const Icon = getIconForFile(record.fileName);
+                                            return (
+                                                <TableRow key={record.id}>
+                                                    <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
+                                                    <TableCell>{record.fileName}</TableCell>
+                                                    <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex gap-1 justify-end">
+                                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                            {canEditOrDelete(record) && (
+                                                                <>
+                                                                    <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             ) : (
-                renderContent()
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">No records found.</p>
+                </div>
             )}
         </CardContent>
       </Card>
@@ -771,3 +619,5 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
+    
