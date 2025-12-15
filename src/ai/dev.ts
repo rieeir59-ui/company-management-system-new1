@@ -8,14 +8,9 @@ if (process.env.GEMINI_API_KEY) {
   plugins.push(googleAI({ apiKey: process.env.GEMINI_API_KEY }));
 }
 
-genkit({
-  plugins,
-  logLevel: 'debug',
-  enableTracingAndMetrics: true,
-});
-
+// Correctly initialize Genkit once and export the ai object.
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins,
   logLevel: 'debug',
   enableTracingAndMetrics: true,
 });

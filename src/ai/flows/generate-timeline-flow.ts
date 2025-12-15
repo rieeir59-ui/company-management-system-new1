@@ -25,7 +25,6 @@ const prompt = ai.definePrompt(
   {
     name: 'generateTimelinePrompt',
     input: { schema: GenerateTimelineInputSchema },
-    output: { schema: GenerateTimelineOutputSchema },
     prompt: `
         You are a project manager for an architectural firm.
         Generate a realistic timeline for the given project.
@@ -34,7 +33,7 @@ const prompt = ai.definePrompt(
         Project Name: {{{projectName}}}
         Area: {{{area}}} sft
       `,
-  }
+  },
 );
 
 
@@ -45,9 +44,10 @@ const generateTimelineFlow = ai.defineFlow(
     outputSchema: GenerateTimelineOutputSchema,
   },
   async (input) => {
+    const llmPrompt = await prompt(input);
     const { output } = await ai.generate({
       model: 'googleai/gemini-1.5-flash-001',
-      prompt: (await prompt(input)).prompt,
+      prompt: llmPrompt.prompt,
       output: {
         schema: GenerateTimelineOutputSchema,
       },
