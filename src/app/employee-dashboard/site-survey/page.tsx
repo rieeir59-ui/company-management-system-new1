@@ -33,7 +33,7 @@ const SectionTable = ({ title, children }: { title: string; children: React.Reac
     </section>
 );
 
-const FormRow = ({ label, children }: { label: string; children: React.ReactNode; }) => (
+const FormRow = ({ label, children }: { label: React.ReactNode; children: React.ReactNode; }) => (
     <TableRow>
         <TableCell className="font-semibold w-1/3">{label}</TableCell>
         <TableCell>{children}</TableCell>
@@ -157,7 +157,7 @@ export default function ProjectDataPage() {
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += labelWidth;
+                xOffset += labelWidth + 10;
             });
             yPos += 8;
         };
@@ -241,6 +241,9 @@ export default function ProjectDataPage() {
         drawRadioField('Interior of Premises', 'interior_type', ['Single Hall', 'Rooms']);
         drawRadioField('Type of construction', 'construction_type', ['Beam-Column in RCC', 'Composite', 'Load Bearing']);
 
+        doc.addPage();
+        yPos = 20;
+
         addSectionTitle('Building Details');
         drawRadioField('Seepage', 'seepage', ['Yes', 'No']);
         drawField('Area of seepage', getInputValue('seepage_area'));
@@ -268,9 +271,6 @@ export default function ProjectDataPage() {
         drawField('Plot level from road', getInputValue('plot_level'));
         drawRadioField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
         
-        doc.addPage();
-        yPos = 20;
-
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
         drawField('Expected Rental /month', getInputValue('rental_expected_rent'));
@@ -377,7 +377,15 @@ export default function ProjectDataPage() {
                             </FormRow>
                             <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" id="area_total" name="area_total" /></FormRow>
                             <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" id="area_height" name="area_height" /></FormRow>
-                            <FormRow label="Building plot size of which premises is a part independent land"><Input placeholder="Building plot size of which premises is a part" id="area_plot_size" name="area_plot_size" /></FormRow>
+                            <FormRow label={
+                                <div>
+                                    Building plot size of which premises is a part 
+                                    <br />
+                                    independent land
+                                </div>
+                            }>
+                                <Input placeholder="Building plot size of which premises is a part" id="area_plot_size" name="area_plot_size" />
+                            </FormRow>
                             <FormRow label="Covered Area"><Input placeholder="Covered Area" id="area_covered" name="area_covered" /></FormRow>
                             <FormRow label="No. of Stories / floors"><Input placeholder="(mention mezzanine, basement, roof parapet wall etc.) If any." id="area_stories" name="area_stories" /></FormRow>
                         </SectionTable>
@@ -538,9 +546,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    
-
-    
-
-    
