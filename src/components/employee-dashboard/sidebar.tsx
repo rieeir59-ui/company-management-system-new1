@@ -152,6 +152,11 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <SidebarMenu>
@@ -170,31 +175,41 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
         </SidebarMenuItem>
       ))}
       <SidebarMenuItem>
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton
-              className="group-data-[collapsible=icon]:justify-center"
-              tooltip="Timelines of Bank"
-            >
-              <Landmark className="size-5" />
-              <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-          <CollapsibleContent asChild>
-            <SidebarMenuSub>
-              {bankTimelineItems.map((item) => (
-                <SidebarMenuSubItem key={item.href}>
-                  <Link href={item.href} passHref>
-                    <SidebarMenuSubButton isActive={pathname === item.href}>
-                      <item.icon className="size-4 mr-2" />
-                      {item.label}
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        </Collapsible>
+        {isClient ? (
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton
+                className="group-data-[collapsible=icon]:justify-center"
+                tooltip="Timelines of Bank"
+              >
+                <Landmark className="size-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent asChild>
+              <SidebarMenuSub>
+                {bankTimelineItems.map((item) => (
+                  <SidebarMenuSubItem key={item.href}>
+                    <Link href={item.href} passHref>
+                      <SidebarMenuSubButton isActive={pathname === item.href}>
+                        <item.icon className="size-4 mr-2" />
+                        {item.label}
+                      </SidebarMenuSubButton>
+                    </Link>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <SidebarMenuButton
+            className="group-data-[collapsible=icon]:justify-center"
+            tooltip="Timelines of Bank"
+          >
+            <Landmark className="size-5" />
+            <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+          </SidebarMenuButton>
+        )}
       </SidebarMenuItem>
     </SidebarMenu>
   );
@@ -330,3 +345,4 @@ export default function EmployeeDashboardSidebar() {
 }
 
     
+
