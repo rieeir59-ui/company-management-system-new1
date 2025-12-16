@@ -157,7 +157,7 @@ export default function ProjectDataPage() {
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) {
                   doc.setFillColor(0,0,0);
-                  doc.rect(margin + xOffset, yPos + 2, 4, 4, 'F');
+                  doc.rect(margin + xOffset + 0.5, yPos + 2.5, 3, 3, 'F');
                 }
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
                 xOffset += labelWidth + 10;
@@ -320,7 +320,9 @@ export default function ProjectDataPage() {
                 <CardHeader>
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
-                        <CardDescription className="font-semibold mt-2">Premises Review for all Projects</CardDescription>
+                        <CardDescription>
+                          <p className="font-semibold mt-2">Premises Review for all Projects</p>
+                        </CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">
                             <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
@@ -380,7 +382,7 @@ export default function ProjectDataPage() {
                             </FormRow>
                             <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" id="area_total" name="area_total" /></FormRow>
                             <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" id="area_height" name="area_height" /></FormRow>
-                            <FormRow label={
+                             <FormRow label={
                                 <div>
                                     Building plot size of which premises is a part
                                     <br />
@@ -549,4 +551,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
