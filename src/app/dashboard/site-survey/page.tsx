@@ -155,7 +155,7 @@ export default function ProjectDataPage() {
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += labelWidth + 5;
+                xOffset += labelWidth;
             });
             yPos += 8;
         };
@@ -261,7 +261,7 @@ export default function ProjectDataPage() {
         
         doc.addPage();
         yPos = 20;
-        
+
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
         drawField('Expected Rental /month', getInputValue('rental_expected_rent'));
@@ -316,7 +316,7 @@ export default function ProjectDataPage() {
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
-                         <div className="mb-8">
+                        <div className="mb-8">
                             <Label htmlFor="project_name_header" className="text-xl font-headline text-primary">Project Name</Label>
                            <Input id="project_name_header" name="project_name_header" className="text-xl" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                         </div>
@@ -453,7 +453,7 @@ export default function ProjectDataPage() {
                                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" /><Label htmlFor="util_residential">Fully residential</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial"/><Label htmlFor="util_commercial">Fully Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" /><Label htmlFor="util_industrial">Industrial</Label></div>
                                 </div>
                             </FormRow>
@@ -501,6 +501,16 @@ export default function ProjectDataPage() {
                             <FormRow label="Annual increase in rental"><Input id="rental_annual_increase" name="rental_annual_increase"/></FormRow>
                         </SectionTable>
 
+                        <SectionTable title="Survey Conducted By">
+                           <FormRow label="Name"><Input id="survey_conducted_by_name" name="survey_conducted_by_name" /></FormRow>
+                           <FormRow label="Designation"><Input id="survey_conducted_by_designation" name="survey_conducted_by_designation" /></FormRow>
+                           <FormRow label="Contact"><Input id="survey_conducted_by_contact" name="survey_conducted_by_contact" /></FormRow>
+                           <FormRow label="Cell"><Input id="survey_conducted_by_cell" name="survey_conducted_by_cell" /></FormRow>
+                           <FormRow label="Landline"><Input id="survey_conducted_by_landline" name="survey_conducted_by_landline" /></FormRow>
+                           <FormRow label="Email"><Input id="survey_conducted_by_email" name="survey_conducted_by_email" type="email" /></FormRow>
+                           <FormRow label="Date"><Input id="survey_conducted_by_date" name="survey_conducted_by_date" type="date" /></FormRow>
+                        </SectionTable>
+
                         <div className="flex justify-end gap-4 mt-12 no-print">
                             <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                             <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -511,7 +521,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    
 
     
