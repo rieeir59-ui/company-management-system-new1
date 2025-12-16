@@ -95,9 +95,6 @@ export default function ProjectDataPage() {
         doc.setFont('helvetica', 'bold');
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
-        doc.setFontSize(14);
-        doc.text('PROJECT NAME', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Premises Review for Residential Project', pageWidth / 2, yPos, { align: 'center' });

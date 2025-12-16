@@ -95,9 +95,6 @@ export default function ProjectDataPage() {
         doc.setFont('helvetica', 'bold');
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
-        doc.setFontSize(14);
-        doc.text('PROJECT NAME', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Premises Review for Residential Project', pageWidth / 2, yPos, { align: 'center' });
@@ -264,7 +261,7 @@ export default function ProjectDataPage() {
         
         doc.addPage();
         yPos = 20;
-
+        
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
         drawField('Expected Rental /month', getInputValue('rental_expected_rent'));
@@ -319,7 +316,7 @@ export default function ProjectDataPage() {
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
-                         <div className="mb-8">
+                        <div className="mb-8">
                             <Label htmlFor="project_name_header" className="text-xl font-headline text-primary">Project Name</Label>
                            <Input id="project_name_header" name="project_name_header" className="text-xl" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                         </div>
@@ -503,11 +500,6 @@ export default function ProjectDataPage() {
                             <FormRow label="Expected period of lease"><Input id="rental_lease_period" name="rental_lease_period"/></FormRow>
                             <FormRow label="Annual increase in rental"><Input id="rental_annual_increase" name="rental_annual_increase"/></FormRow>
                         </SectionTable>
-
-                        <div className="flex justify-end gap-4 mt-12 no-print">
-                            <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
-                        </div>
                     </form>
                 </CardContent>
             </Card>
