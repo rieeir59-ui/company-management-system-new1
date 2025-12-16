@@ -64,13 +64,6 @@ export default function ProjectDetailPage() {
     (p) => encodeURIComponent(p.projectName) === projectName
   );
   
-  const singleMilestones = project ? [
-    { label: 'Tender Status', value: project.tenderStatus },
-    { label: 'Comparative', value: project.comparative },
-    { label: 'Final Bill', value: project.finalBill },
-    { label: 'Project Closure', value: project.projectClosure },
-  ].filter(item => item.value) : [];
-  
   const handleDownload = () => {
     if (!project) return;
     
@@ -114,6 +107,10 @@ export default function ProjectDetailPage() {
         ["BOQ", project.boqStart || 'N/A', project.boqEnd || 'N/A'],
         ["Working Drawings", project.workingDrawingsStart || 'N/A', project.workingDrawingsEnd || 'N/A'],
         ["Site Visit", project.siteVisitStart || 'N/A', project.siteVisitEnd || 'N/A'],
+        ["Tender Status", project.tenderStatus || 'N/A'],
+        ["Comparative", project.comparative || 'N/A'],
+        ["Final Bill", project.finalBill || 'N/A'],
+        ["Project Closure", project.projectClosure || 'N/A'],
     ];
 
     doc.autoTable({
@@ -124,20 +121,6 @@ export default function ProjectDetailPage() {
         headStyles: { fillColor: [45, 95, 51] },
     });
     yPos = doc.autoTable.previous.finalY + 15;
-
-    if (singleMilestones.length > 0) {
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text("Other Milestones", 14, yPos);
-        yPos += 8;
-        doc.autoTable({
-            startY: yPos,
-            head: [['Milestone', 'Date/Status']],
-            body: singleMilestones.map(m => [m.label, m.value]),
-            theme: 'grid',
-            headStyles: { fillColor: [45, 95, 51] },
-        });
-    }
 
     doc.save(`${project.projectName.replace(/ /g, '_')}_Details.pdf`);
     toast({ title: 'Download Started', description: 'Your project details PDF is being generated.' });
@@ -208,24 +191,14 @@ export default function ProjectDetailPage() {
                     <TimelineRow label="BOQ" start={project.boqStart} end={project.boqEnd} />
                     <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
                     <TimelineRow label="Site Visit" start={project.siteVisitStart} end={project.siteVisitEnd} />
+                    <TimelineRowSingle label="Tender Status" value={project.tenderStatus} />
+                    <TimelineRowSingle label="Comparative" value={project.comparative} />
+                    <TimelineRowSingle label="Final Bill" value={project.finalBill} />
+                    <TimelineRowSingle label="Project Closure" value={project.projectClosure} />
                 </TableBody>
             </Table>
         </CardContent>
       </Card>
-
-      {singleMilestones.length > 0 && (
-        <Card>
-            <CardHeader>
-                 <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" /> Other Milestones</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {singleMilestones.map(item => (
-                     <DetailItem key={item.label} label={item.label} value={item.value} />
-                ))}
-            </CardContent>
-        </Card>
-      )}
-
     </div>
   );
 }
