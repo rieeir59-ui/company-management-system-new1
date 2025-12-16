@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -45,6 +44,7 @@ export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
     const { addRecord } = useRecords();
+    const [projectName, setProjectName] = useState('');
     
     const handleSave = () => {
         const form = document.getElementById('site-survey-form') as HTMLFormElement;
@@ -54,14 +54,16 @@ export default function ProjectDataPage() {
         }
 
         const formData = new FormData(form);
-        const data: { [key: string]: any } = {};
+        const data: { [key: string]: any } = {
+          projectName: projectName
+        };
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
         
         const recordData = {
             fileName: "Site Survey Report",
-            projectName: data['location_address'] || 'Untitled Site Survey',
+            projectName: projectName || 'Untitled Site Survey',
             data: [{
                 category: 'Site Survey Data',
                 items: Object.entries(data).map(([key, value]) => ({ label: key, value: String(value) }))
@@ -94,7 +96,7 @@ export default function ProjectDataPage() {
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
         doc.setFontSize(14);
-        doc.text('IHA PROJECT MANAGEMENT', pageWidth / 2, yPos, { align: 'center' });
+        doc.text(projectName || 'PROJECT NAME', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
@@ -147,10 +149,16 @@ export default function ProjectDataPage() {
             doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             options.forEach(opt => {
+                const labelWidth = doc.getTextWidth(opt.label) + 15;
+                if (margin + xOffset + labelWidth > pageWidth - margin) {
+                    yPos += 8;
+                    xOffset = 60;
+                    doc.rect(margin, yPos, pageWidth - margin * 2, 8);
+                }
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += doc.getTextWidth(opt.label) + 15; // Dynamic spacing
+                xOffset += labelWidth;
             });
             yPos += 8;
         };
@@ -244,7 +252,7 @@ export default function ProjectDataPage() {
         ]);
         drawRadioField('Approachable through Road', 'approachable', ['Yes', 'No']);
         drawField('Wall masonary material', getInputValue('wall_material'));
-        drawCheckboxField('Major retainable elements', [
+        drawCheckboxField('Major retainable building elements', [
             { id: 'retainable_water_tank', label: 'Water tank' },
             { id: 'retainable_subflooring', label: 'Subflooring' },
             { id: 'retainable_staircase', label: 'Staircase' },
@@ -252,7 +260,7 @@ export default function ProjectDataPage() {
         drawField('Other retainable', getInputValue('retainable_other_text'));
         drawField('Plot level from road', getInputValue('plot_level'));
         drawRadioField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
-
+        
         doc.addPage();
         yPos = 20;
 
@@ -303,9 +311,11 @@ export default function ProjectDataPage() {
                 <CardHeader>
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
-                        <CardTitle className="text-3xl font-headline text-primary">IHA PROJECT MANAGEMENT</CardTitle>
-                        <p className="font-semibold mt-2">Premises Review</p>
-                        <p className="text-sm text-muted-foreground">For Residential Project</p>
+                        <div className='flex items-center justify-center gap-2'>
+                           <Label htmlFor="project_name_header" className="text-3xl font-headline text-primary">Project Name</Label>
+                           <Input id="project_name_header" name="project_name_header" className="text-3xl font-headline text-primary text-center border-0 border-b-2 rounded-none" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+                        </div>
+                        <p className="font-semibold mt-2">Premises Review for Residential Project</p>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                     </div>
                 </CardHeader>
@@ -483,23 +493,13 @@ export default function ProjectDataPage() {
                                 </div>
                             </FormRow>
                         </SectionTable>
-
+                        
                         <SectionTable title="Rental Detail">
                             <FormRow label="Acquisition"><Input id="rental_acquisition" name="rental_acquisition" /></FormRow>
                             <FormRow label="Expected Rental /month"><Input id="rental_expected_rent" name="rental_expected_rent" /></FormRow>
                             <FormRow label="Expected Advance (# of months)"><Input id="rental_expected_advance" name="rental_expected_advance"/></FormRow>
                             <FormRow label="Expected period of lease"><Input id="rental_lease_period" name="rental_lease_period"/></FormRow>
                             <FormRow label="Annual increase in rental"><Input id="rental_annual_increase" name="rental_annual_increase"/></FormRow>
-                        </SectionTable>
-
-                        <SectionTable title="Survey Conducted By">
-                           <FormRow label="Name"><Input id="survey_conducted_by_name" name="survey_conducted_by_name" /></FormRow>
-                           <FormRow label="Designation"><Input id="survey_conducted_by_designation" name="survey_conducted_by_designation" /></FormRow>
-                           <FormRow label="Contact"><Input id="survey_conducted_by_contact" name="survey_conducted_by_contact" /></FormRow>
-                           <FormRow label="Cell"><Input id="survey_conducted_by_cell" name="survey_conducted_by_cell" /></FormRow>
-                           <FormRow label="Landline"><Input id="survey_conducted_by_landline" name="survey_conducted_by_landline" /></FormRow>
-                           <FormRow label="Email"><Input id="survey_conducted_by_email" name="survey_conducted_by_email" type="email" /></FormRow>
-                           <FormRow label="Date"><Input id="survey_conducted_by_date" name="survey_conducted_by_date" type="date" /></FormRow>
                         </SectionTable>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
