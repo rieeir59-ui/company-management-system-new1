@@ -184,8 +184,6 @@ export default function ProjectDataPage() {
         }
 
         // --- SECTIONS ---
-        addSectionTitle('Project Information');
-        drawField('Project Name', getInputValue('project_name_header'));
         
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
@@ -321,7 +319,7 @@ export default function ProjectDataPage() {
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
                         <CardDescription>
-                          <p className="font-semibold mt-2">Premises Review for all Projects</p>
+                            Premises Review for all Projects
                         </CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">
@@ -336,9 +334,9 @@ export default function ProjectDataPage() {
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
                        <SectionTable title="Project Information">
-                            <FormRow label="Project Name">
+                           <FormRow label="Project Name">
                                 <Input id="project_name_header" name="project_name_header" className="text-lg" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-                            </FormRow>
+                           </FormRow>
                         </SectionTable>
 
                         <SectionTable title="Location">
