@@ -109,7 +109,7 @@ export default function AssignTaskPage() {
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
     const { toast } = useToast();
-    const { tasks } = useTasks();
+    const { tasks } = useTasks(undefined, true); // Fetch all tasks for admin view
     const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
     const canUpdateStatus = useMemo(() => {

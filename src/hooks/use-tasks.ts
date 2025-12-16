@@ -25,7 +25,7 @@ export interface Project {
   isManual?: boolean;
 }
 
-export function useTasks(employeeUid?: string) {
+export function useTasks(employeeUid?: string, fetchAllForAdmin = false) {
   const [tasks, setTasks] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { firestore } = useFirebase();
@@ -51,9 +51,10 @@ export function useTasks(employeeUid?: string) {
     const tasksCollection = collection(firestore, 'tasks');
     
     let q;
-    if (isAdmin && !employeeUid) { // Admin on main assign-task page sees all tasks
+    
+    if (isAdmin && fetchAllForAdmin) {
         q = query(tasksCollection);
-    } else if (uidToFetch) { // Specific employee view (either by admin or employee themselves)
+    } else if (uidToFetch) {
         q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
     } else {
         setTasks([]);
@@ -100,9 +101,7 @@ export function useTasks(employeeUid?: string) {
     });
 
     return () => unsubscribe();
-  }, [firestore, uidToFetch, toast, currentUser, isUserLoading, isAdmin, employeeUid]);
+  }, [firestore, uidToFetch, toast, currentUser, isUserLoading, isAdmin, fetchAllForAdmin]);
 
   return { tasks, isLoading };
 }
-
-    
