@@ -90,6 +90,10 @@ export default function ProjectDataPage() {
         const primaryColor = [45, 95, 51];
         const headingFillColor = [240, 240, 240];
 
+        const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
+        const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
+        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
+
         // --- MAIN HEADING ---
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -111,10 +115,6 @@ export default function ProjectDataPage() {
         doc.setTextColor(0,0,0);
         doc.text(`Date: ${getInputValue('location_date')}`, pageWidth - margin, yPos, { align: 'right'});
         yPos += 7;
-
-        const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
-        const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
-        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
         
         const addSectionTitle = (title: string) => {
             if (yPos > 260) { doc.addPage(); yPos = 20; }
@@ -379,7 +379,7 @@ export default function ProjectDataPage() {
                             <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" id="area_height" name="area_height" /></FormRow>
                             <FormRow label={
                                 <div>
-                                    Building plot size of which premises is a part 
+                                    Building plot size of which premises is a part
                                     <br />
                                     independent land
                                 </div>
@@ -546,3 +546,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
