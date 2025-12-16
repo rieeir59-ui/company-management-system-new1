@@ -146,7 +146,7 @@ export default function ProjectDataPage() {
             doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             options.forEach(opt => {
-                const labelWidth = doc.getTextWidth(opt.label) + 15;
+                const labelWidth = doc.getTextWidth(opt.label) + 6; // Checkbox width + padding
                  if (margin + xOffset + labelWidth > pageWidth - margin) {
                     yPos += 8;
                     xOffset = 60;
@@ -179,9 +179,13 @@ export default function ProjectDataPage() {
         }
 
         // --- SECTIONS ---
-        drawField('Project Name', projectName);
+        
         addSectionTitle('Location');
-        drawField('Purpose', `House: ${getCheckboxValue('purpose_house') ? 'Yes' : 'No'}, Other: ${getInputValue('purpose_other_text')}`);
+        drawCheckboxField('Purpose', [
+          {id: 'purpose_house', label: 'House'},
+          {id: 'purpose_office', label: 'Office'},
+          {id: 'purpose_residential', label: 'Residential'},
+        ]);
         drawField('Date', getInputValue('location_date'));
         drawField('City', getInputValue('location_city'));
         drawField('Region', getInputValue('location_region'));
@@ -316,15 +320,15 @@ export default function ProjectDataPage() {
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
-                        <div className="mb-8">
-                            <Label htmlFor="project_name_header" className="text-xl font-headline text-primary">Project Name</Label>
-                           <Input id="project_name_header" name="project_name_header" className="text-xl" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-                        </div>
                         <SectionTable title="Location">
+                           <FormRow label="Project Name">
+                               <Input id="project_name_header" name="project_name_header" className="text-lg" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+                           </FormRow>
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
                                   <div className="flex items-center gap-2"><Checkbox id="purpose_house" name="purpose_house" /> <Label htmlFor="purpose_house">House</Label></div>
-                                  <div className="flex items-center gap-2"><Checkbox id="purpose_other_check" name="purpose_other_check" /> <Label htmlFor="purpose_other_check">Other:</Label> <Input id="purpose_other_text" name="purpose_other_text" /></div>
+                                  <div className="flex items-center gap-2"><Checkbox id="purpose_office" name="purpose_office" /> <Label htmlFor="purpose_office">Office</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox id="purpose_residential" name="purpose_residential" /> <Label htmlFor="purpose_residential">Residential</Label></div>
                                </div>
                             </FormRow>
                             <FormRow label="Date"><Input type="date" id="location_date" name="location_date" className="w-fit" /></FormRow>
@@ -521,5 +525,7 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
 
     
