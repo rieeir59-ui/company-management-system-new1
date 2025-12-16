@@ -114,9 +114,11 @@ body {
   .project-data-page .input,
   .project-data-page .textarea {
       border: none !important;
+      border-bottom: 1px solid #ccc !important;
       background-color: transparent !important;
-      padding-left: 0;
-      padding-right: 0;
+      padding-left: 2px;
+      padding-right: 2px;
+      border-radius: 0 !important;
       box-shadow: none !important;
       -webkit-print-color-adjust: exact; 
       color-adjust: exact;
