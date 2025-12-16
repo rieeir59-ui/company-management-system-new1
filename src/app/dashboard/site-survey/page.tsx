@@ -21,6 +21,7 @@ interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
 
+
 const SectionTable = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <section className="mb-8">
         <h2 className="text-xl font-bold text-primary mb-3 pb-2 border-b-2 border-primary">{title}</h2>
@@ -55,12 +56,12 @@ export default function ProjectDataPage() {
     
     const handleSave = () => {
         const dataToSave = {
-            fileName: "Site Survey Report",
-            projectName: formState['project_name_header'] || 'Untitled Site Survey',
-            data: [{
-                category: 'Site Survey Data',
-                items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
-            }]
+          fileName: "Site Survey Report",
+          projectName: formState['project_name_header'] || 'Untitled Site Survey',
+          data: [{
+              category: 'Site Survey Data',
+              items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
+          }]
         };
 
         addRecord(dataToSave as any);
@@ -157,11 +158,11 @@ export default function ProjectDataPage() {
         };
         
         // --- SECTIONS ---
-        addSectionTitle(`Project Information: ${getInputValue('project_name_header')}`);
+        addSectionTitle(`Project Information:`);
         
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
-          {id: 'purpose_house', label: 'House'},
+          {id: 'purpose_commercial', label: 'Commercial'},
           {id: 'purpose_office', label: 'Office'},
           {id: 'purpose_residential', label: 'Residential'},
           {id: 'purpose_others', label: 'Others'},
@@ -337,7 +338,7 @@ export default function ProjectDataPage() {
                         <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2"><Checkbox name="purpose_house" id="purpose_house" checked={!!formState['purpose_house']} onCheckedChange={(c) => handleCheckboxChange('purpose_house', !!c)} /> <Label htmlFor="purpose_house">House</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_commercial" id="purpose_commercial" checked={!!formState['purpose_commercial']} onCheckedChange={(c) => handleCheckboxChange('purpose_commercial', !!c)} /> <Label htmlFor="purpose_commercial">Commercial</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_office" id="purpose_office" checked={!!formState['purpose_office']} onCheckedChange={(c) => handleCheckboxChange('purpose_office', !!c)} /> <Label htmlFor="purpose_office">Office</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_residential" id="purpose_residential" checked={!!formState['purpose_residential']} onCheckedChange={(c) => handleCheckboxChange('purpose_residential', !!c)} /> <Label htmlFor="purpose_residential">Residential</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_others" id="purpose_others" checked={!!formState['purpose_others']} onCheckedChange={(c) => handleCheckboxChange('purpose_others', !!c)} /> <Label htmlFor="purpose_others">Others</Label></div>
@@ -555,3 +556,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
