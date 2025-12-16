@@ -184,6 +184,7 @@ export default function ProjectDataPage() {
         }
 
         // --- SECTIONS ---
+        addSectionTitle('Project Information');
         drawField('Project Name', getInputValue('project_name_header'));
         
         addSectionTitle('Location');
@@ -332,13 +333,12 @@ export default function ProjectDataPage() {
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
-                       <Table>
-                          <TableBody>
+                       <SectionTable title="Project Information">
                             <FormRow label="Project Name">
                                 <Input id="project_name_header" name="project_name_header" className="text-lg" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                             </FormRow>
-                          </TableBody>
-                       </Table>
+                        </SectionTable>
+
                         <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
@@ -549,4 +549,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
 
