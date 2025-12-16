@@ -97,7 +97,7 @@ export default function ProjectDataPage() {
         yPos += 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('Premises Review for Residential Project', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('Premises Review for all Projects', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
         doc.setFontSize(8);
         doc.text('This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired', pageWidth / 2, yPos, { align: 'center' });
@@ -106,9 +106,11 @@ export default function ProjectDataPage() {
         doc.setFontSize(16);
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
         doc.text('SITE SURVEY', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 15;
+        yPos += 8;
+        doc.setFontSize(10);
         doc.setTextColor(0,0,0);
-
+        doc.text(`Date: ${getInputValue('location_date')}`, pageWidth - margin, yPos, { align: 'right'});
+        yPos += 7;
 
         const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
         const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
@@ -180,13 +182,16 @@ export default function ProjectDataPage() {
 
         // --- SECTIONS ---
         
+        addSectionTitle('Project Name');
+        drawField('Project Name', getInputValue('project_name_header'));
+        
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
           {id: 'purpose_house', label: 'House'},
           {id: 'purpose_office', label: 'Office'},
           {id: 'purpose_residential', label: 'Residential'},
+          {id: 'purpose_others', label: 'Others'},
         ]);
-        drawField('Date', getInputValue('location_date'));
         drawField('City', getInputValue('location_city'));
         drawField('Region', getInputValue('location_region'));
         drawField('Address', getInputValue('location_address'));
@@ -201,7 +206,7 @@ export default function ProjectDataPage() {
         drawField('Maximum Depth:', getInputValue('area_depth'));
         drawField('Total Area in Sqft', getInputValue('area_total'));
         drawField('Minimum clear height (ft)', getInputValue('area_height'));
-        drawField('Building plot size', getInputValue('area_plot_size'));
+        drawField('Building plot size of which premises is a part independent land', getInputValue('area_plot_size'));
         drawField('Covered Area', getInputValue('area_covered'));
         drawField('No. of Stories / floors', getInputValue('area_stories'));
         
@@ -313,25 +318,33 @@ export default function ProjectDataPage() {
                 <CardHeader>
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
-                        <p className="font-semibold mt-2">Premises Review for Residential Project</p>
+                        <p className="font-semibold mt-2">Premises Review for all Projects</p>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
-                         <CardTitle className="font-headline text-4xl text-primary mt-4">SITE SURVEY</CardTitle>
+                         <div className="flex justify-between items-center mt-4">
+                            <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
+                             <div className="flex items-center gap-2">
+                                <Label htmlFor="location_date">Date</Label>
+                                <Input type="date" id="location_date" name="location_date" className="w-fit" />
+                            </div>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
-                        <SectionTable title="Location">
+                       <SectionTable title="Project Name">
                            <FormRow label="Project Name">
                                <Input id="project_name_header" name="project_name_header" className="text-lg" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
                            </FormRow>
+                       </SectionTable>
+                        <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
                                   <div className="flex items-center gap-2"><Checkbox id="purpose_house" name="purpose_house" /> <Label htmlFor="purpose_house">House</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox id="purpose_office" name="purpose_office" /> <Label htmlFor="purpose_office">Office</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox id="purpose_residential" name="purpose_residential" /> <Label htmlFor="purpose_residential">Residential</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox id="purpose_others" name="purpose_others" /> <Label htmlFor="purpose_others">Others</Label></div>
                                </div>
                             </FormRow>
-                            <FormRow label="Date"><Input type="date" id="location_date" name="location_date" className="w-fit" /></FormRow>
                             <FormRow label="City"><Input id="location_city" name="location_city" /></FormRow>
                             <FormRow label="Region"><Input id="location_region" name="location_region" /></FormRow>
                             <FormRow label="Address"><Input id="location_address" name="location_address" /></FormRow>
@@ -364,7 +377,7 @@ export default function ProjectDataPage() {
                             </FormRow>
                             <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" id="area_total" name="area_total" /></FormRow>
                             <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" id="area_height" name="area_height" /></FormRow>
-                            <FormRow label="Building plot size of which premises is a part"><Input placeholder="Building plot size of which premises is a part" id="area_plot_size" name="area_plot_size" /></FormRow>
+                            <FormRow label="Building plot size of which premises is a part independent land"><Input placeholder="Building plot size of which premises is a part" id="area_plot_size" name="area_plot_size" /></FormRow>
                             <FormRow label="Covered Area"><Input placeholder="Covered Area" id="area_covered" name="area_covered" /></FormRow>
                             <FormRow label="No. of Stories / floors"><Input placeholder="(mention mezzanine, basement, roof parapet wall etc.) If any." id="area_stories" name="area_stories" /></FormRow>
                         </SectionTable>
@@ -525,6 +538,8 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
 
     
 
