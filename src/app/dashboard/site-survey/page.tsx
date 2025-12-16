@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -155,7 +155,10 @@ export default function ProjectDataPage() {
                     doc.rect(margin, yPos, pageWidth - margin * 2, 8);
                 }
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
-                if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
+                if(getCheckboxValue(opt.id)) {
+                  doc.setFillColor(0,0,0);
+                  doc.rect(margin + xOffset, yPos + 2, 4, 4, 'F');
+                }
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
                 xOffset += labelWidth + 10;
             });
@@ -318,7 +321,7 @@ export default function ProjectDataPage() {
                 <CardHeader>
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
-                        <p className="font-semibold mt-2">Premises Review for all Projects</p>
+                        <CardDescription className="font-semibold mt-2">Premises Review for all Projects</CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">
                             <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
