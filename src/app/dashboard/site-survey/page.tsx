@@ -93,7 +93,7 @@ export default function ProjectDataPage() {
         const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
         const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
         const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
-
+        
         // --- MAIN HEADING ---
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -113,7 +113,7 @@ export default function ProjectDataPage() {
         yPos += 8;
         doc.setFontSize(10);
         doc.setTextColor(0,0,0);
-        doc.text(`Date: ${getInputValue('location_date')}`, pageWidth - margin, yPos, { align: 'right'});
+        doc.text(`Date: ${getInputValue('header_date')}`, pageWidth - margin, yPos, { align: 'right'});
         yPos += 7;
         
         const addSectionTitle = (title: string) => {
@@ -325,8 +325,8 @@ export default function ProjectDataPage() {
                          <div className="flex justify-between items-center mt-4">
                             <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
                              <div className="flex items-center gap-2">
-                                <Label htmlFor="location_date">Date</Label>
-                                <Input type="date" id="location_date" name="location_date" className="w-fit" />
+                                <Label htmlFor="header_date">Date</Label>
+                                <Input type="date" id="header_date" name="header_date" className="w-fit" />
                             </div>
                         </div>
                     </div>
@@ -549,5 +549,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
 
