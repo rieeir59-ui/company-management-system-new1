@@ -157,8 +157,7 @@ export default function ProjectDataPage() {
         };
         
         // --- SECTIONS ---
-        addSectionTitle('Project Information');
-        drawField('Project Name', getInputValue('project_name_header'));
+        addSectionTitle(`Project Information: ${getInputValue('project_name_header')}`);
         
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
@@ -556,7 +555,3 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
-    
-
-    
