@@ -52,7 +52,7 @@ export default function ProjectDataPage() {
     const handleCheckboxChange = (name: string, value: boolean) => {
         setFormState(prev => ({ ...prev, [name]: value }));
     };
-
+    
     const handleSave = () => {
         const dataToSave = {
             fileName: "Site Survey Report",
@@ -155,7 +155,7 @@ export default function ProjectDataPage() {
             });
             yPos += 8;
         };
-
+        
         // --- SECTIONS ---
         addSectionTitle('Project Information');
         drawField('Project Name', getInputValue('project_name_header'));
@@ -556,3 +556,7 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    
+
+    
