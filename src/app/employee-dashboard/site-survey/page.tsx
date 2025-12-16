@@ -321,7 +321,7 @@ export default function ProjectDataPage() {
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
                         <CardDescription>
-                            Premises Review for all Projects
+                            <div className="font-semibold mt-2">Premises Review for all Projects</div>
                         </CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">

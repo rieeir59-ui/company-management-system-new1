@@ -53,8 +53,8 @@ export default function TransmittalLetterPage() {
             doc.setLineWidth(0.2);
             doc.rect(x, y - 3, 3.5, 3.5);
             if (checked) {
-                doc.setFont('helvetica', 'bold');
-                doc.text('X', x + 0.8, y);
+                doc.setFillColor(0, 0, 0);
+                doc.rect(x + 0.5, y - 2.5, 2.5, 2.5, 'F');
             }
         };
 

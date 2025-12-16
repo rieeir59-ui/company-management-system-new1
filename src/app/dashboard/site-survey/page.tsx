@@ -94,7 +94,6 @@ export default function ProjectDataPage() {
         const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
         const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
         
-        // --- MAIN HEADING ---
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
@@ -113,7 +112,7 @@ export default function ProjectDataPage() {
         yPos += 8;
         doc.setFontSize(10);
         doc.setTextColor(0,0,0);
-        doc.text(`Date: ${getInputValue('header_date')}`, pageWidth - margin, yPos, { align: 'right'});
+        doc.text(`Date: ${getInputValue('location_date')}`, pageWidth - margin, yPos, { align: 'right'});
         yPos += 7;
         
         const addSectionTitle = (title: string) => {
@@ -184,6 +183,8 @@ export default function ProjectDataPage() {
         }
 
         // --- SECTIONS ---
+        addSectionTitle('Project Information');
+        drawField('Project Name', getInputValue('project_name_header'));
         
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
@@ -319,14 +320,14 @@ export default function ProjectDataPage() {
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
                         <CardDescription>
-                            Premises Review for all Projects
+                            <div className="font-semibold mt-2">Premises Review for all Projects</div>
                         </CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">
                             <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
                              <div className="flex items-center gap-2">
-                                <Label htmlFor="header_date">Date</Label>
-                                <Input type="date" id="header_date" name="header_date" className="w-fit" />
+                                <Label htmlFor="location_date">Date</Label>
+                                <Input type="date" id="location_date" name="location_date" className="w-fit" />
                             </div>
                         </div>
                     </div>

@@ -177,11 +177,11 @@ export default function ShopDrawingsRecordPage() {
             theme: 'grid',
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
-            didDrawCell: function (data) {
+            didDrawCell: function (data: any) {
                 const isChecked = data.cell.raw === '✓';
                 if (data.section === 'body' && isChecked) {
                     doc.setFillColor(0, 0, 0);
-                    const checkboxSize = 3;
+                    const checkboxSize = 2;
                     const cellCenterY = data.cell.y + data.cell.height / 2;
                     doc.rect(data.cell.x + (data.cell.width / 2) - (checkboxSize / 2), cellCenterY - (checkboxSize / 2), checkboxSize, checkboxSize, 'F');
                     data.cell.text = ''; // Clear the raw value
@@ -215,7 +215,7 @@ export default function ShopDrawingsRecordPage() {
                         </div>
                     </form>
 
-                     <div className="overflow-x-auto">
+                    <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -272,7 +272,6 @@ export default function ShopDrawingsRecordPage() {
                         </TableBody>
                       </Table>
                     </div>
-
 
                     <div className="flex justify-between items-center mt-6">
                         <Button onClick={addRow} variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
