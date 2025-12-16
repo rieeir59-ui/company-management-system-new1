@@ -35,9 +35,8 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Admins can read any task. Employees can only read tasks assigned to them.
-      allow list: if isAdmin() || (isLoggedIn() && request.query.where.assignedTo == request.auth.uid);
-      allow get: if isAdmin() || (isLoggedIn() && resource.data.assignedTo == request.auth.uid);
+      // Any logged-in user can read tasks to see team-wide assignments.
+      allow read: if isLoggedIn();
       // Only admins can create new tasks.
       allow create: if isAdmin();
       // Admins or specific department members can update tasks
