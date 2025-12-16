@@ -96,7 +96,7 @@ export default function ProjectDataPage() {
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
         doc.setFontSize(14);
-        doc.text(projectName || 'PROJECT NAME', pageWidth / 2, yPos, { align: 'center' });
+        doc.text('PROJECT NAME', pageWidth / 2, yPos, { align: 'center' });
         yPos += 5;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
@@ -150,7 +150,7 @@ export default function ProjectDataPage() {
             let xOffset = 60;
             options.forEach(opt => {
                 const labelWidth = doc.getTextWidth(opt.label) + 15;
-                if (margin + xOffset + labelWidth > pageWidth - margin) {
+                 if (margin + xOffset + labelWidth > pageWidth - margin) {
                     yPos += 8;
                     xOffset = 60;
                     doc.rect(margin, yPos, pageWidth - margin * 2, 8);
@@ -158,7 +158,7 @@ export default function ProjectDataPage() {
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) doc.text('X', margin + xOffset + 1, yPos + 5.5);
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
-                xOffset += labelWidth;
+                xOffset += labelWidth + 5;
             });
             yPos += 8;
         };
@@ -182,6 +182,7 @@ export default function ProjectDataPage() {
         }
 
         // --- SECTIONS ---
+        drawField('Project Name', projectName);
         addSectionTitle('Location');
         drawField('Purpose', `House: ${getCheckboxValue('purpose_house') ? 'Yes' : 'No'}, Other: ${getInputValue('purpose_other_text')}`);
         drawField('Date', getInputValue('location_date'));
@@ -263,7 +264,7 @@ export default function ProjectDataPage() {
         
         doc.addPage();
         yPos = 20;
-
+        
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
         drawField('Expected Rental /month', getInputValue('rental_expected_rent'));
@@ -311,16 +312,17 @@ export default function ProjectDataPage() {
                 <CardHeader>
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
-                        <div className='flex items-center justify-center gap-2'>
-                           <Label htmlFor="project_name_header" className="text-3xl font-headline text-primary">Project Name</Label>
-                           <Input id="project_name_header" name="project_name_header" className="text-3xl font-headline text-primary text-center border-0 border-b-2 rounded-none" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-                        </div>
                         <p className="font-semibold mt-2">Premises Review for Residential Project</p>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
+                         <CardTitle className="font-headline text-4xl text-primary mt-4">SITE SURVEY</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <form id="site-survey-form" className="space-y-8">
+                         <div className="mb-8">
+                            <Label htmlFor="project_name_header" className="text-xl font-headline text-primary">Project Name</Label>
+                           <Input id="project_name_header" name="project_name_header" className="text-xl" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+                        </div>
                         <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
