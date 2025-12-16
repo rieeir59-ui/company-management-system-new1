@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -89,11 +88,11 @@ export default function ProjectDataPage() {
         
         const primaryColor = [45, 95, 51];
         const headingFillColor = [240, 240, 240];
-
+        
         const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
         const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
         const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
-        
+
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
@@ -175,7 +174,10 @@ export default function ProjectDataPage() {
             const selectedValue = getRadioValue(name);
             options.forEach(opt => {
                 doc.circle(margin + xOffset + 2.5, yPos + 4, 2);
-                if (selectedValue === opt.toLowerCase()) doc.circle(margin + xOffset + 2.5, yPos + 4, 1.2, 'F');
+                if (selectedValue === opt.toLowerCase()) {
+                    doc.setFillColor(0,0,0);
+                    doc.circle(margin + xOffset + 2.5, yPos + 4, 1.2, 'F');
+                }
                 doc.text(opt, margin + xOffset + 6, yPos + 5.5);
                 xOffset += 40;
             });
