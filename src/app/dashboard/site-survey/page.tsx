@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
 import { useRecords } from '@/context/RecordContext';
 
@@ -45,41 +44,47 @@ export default function ProjectDataPage() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectName, setProjectName] = useState('');
-    
-    const handleSave = () => {
-        const form = document.getElementById('site-survey-form') as HTMLFormElement;
-        if (!form) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find form data to save.' });
-            return;
-        }
+    const [formState, setFormState] = useState<Record<string, any>>({});
 
-        const formData = new FormData(form);
-        const data: { [key: string]: any } = {
-          projectName: projectName
-        };
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-        
-        const recordData = {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormState(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleCheckboxChange = (name: string, value: boolean) => {
+        setFormState(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleRadioLikeCheckboxChange = (groupName: string, value: string) => {
+        setFormState(prev => {
+            const newState = { ...prev };
+            // For a radio-like group, we need to turn off other options
+            const groupOptions = (form.elements.namedItem(groupName) as any)?.elements;
+             if(groupOptions) {
+                for (const option of groupOptions) {
+                    if (option.id !== `${groupName}_${value}`) {
+                        newState[option.id] = false;
+                    }
+                }
+            }
+            newState[`${groupName}_${value}`] = true; // Turn on the selected one
+            return newState;
+        });
+    };
+
+    const handleSave = () => {
+        const dataToSave = {
             fileName: "Site Survey Report",
             projectName: projectName || 'Untitled Site Survey',
             data: [{
                 category: 'Site Survey Data',
-                items: Object.entries(data).map(([key, value]) => ({ label: key, value: String(value) }))
+                items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
             }]
         };
 
-        addRecord(recordData as any);
+        addRecord(dataToSave as any);
     }
 
     const handleDownloadPdf = () => {
-        const form = document.getElementById('site-survey-form') as HTMLFormElement;
-        if (!form) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find form data.' });
-            return;
-        }
-
         const doc = new jsPDF() as jsPDFWithAutoTable;
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
         const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
@@ -90,9 +95,8 @@ export default function ProjectDataPage() {
         const primaryColor = [45, 95, 51];
         const headingFillColor = [240, 240, 240];
         
-        const getInputValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.value || '';
-        const getRadioValue = (name: string) => (form.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || 'N/A';
-        const getCheckboxValue = (id: string) => (form.elements.namedItem(id) as HTMLInputElement)?.checked;
+        const getInputValue = (id: string) => formState[id] || '';
+        const getCheckboxValue = (id: string) => !!formState[id];
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -112,7 +116,7 @@ export default function ProjectDataPage() {
         yPos += 8;
         doc.setFontSize(10);
         doc.setTextColor(0,0,0);
-        doc.text(`Date: ${getInputValue('header_date')}`, pageWidth - margin, yPos, { align: 'right'});
+        doc.text(`Date: ${getInputValue('location_date')}`, pageWidth - margin, yPos, { align: 'right'});
         yPos += 7;
         
         const addSectionTitle = (title: string) => {
@@ -124,7 +128,7 @@ export default function ProjectDataPage() {
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
             doc.text(title, margin + 2, yPos + 5.5);
-            yPos += 10; // Increased space after title
+            yPos += 10;
         };
 
         const drawField = (label: string, value: string) => {
@@ -147,7 +151,7 @@ export default function ProjectDataPage() {
             doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
             options.forEach(opt => {
-                const labelWidth = doc.getTextWidth(opt.label) + 6; // Checkbox width + padding
+                const labelWidth = doc.getTextWidth(opt.label) + 6;
                  if (margin + xOffset + labelWidth > pageWidth - margin) {
                     yPos += 8;
                     xOffset = 60;
@@ -155,8 +159,9 @@ export default function ProjectDataPage() {
                 }
                 doc.rect(margin + xOffset, yPos + 2, 4, 4);
                 if(getCheckboxValue(opt.id)) {
-                  doc.setFillColor(0,0,0);
-                  doc.rect(margin + xOffset + 0.5, yPos + 2.5, 3, 3, 'F');
+                  doc.setFont('ZapfDingbats');
+                  doc.text('✓', margin + xOffset + 0.5, yPos + 5.5);
+                  doc.setFont('helvetica');
                 }
                 doc.text(opt.label, margin + xOffset + 6, yPos + 5.5);
                 xOffset += labelWidth + 10;
@@ -164,7 +169,7 @@ export default function ProjectDataPage() {
             yPos += 8;
         };
         
-        const drawRadioField = (label: string, name: string, options: string[]) => {
+        const drawRadioLikeCheckboxField = (label: string, name: string, options: string[]) => {
             if (yPos > 275) { doc.addPage(); yPos = 20; }
             doc.setLineWidth(0.2);
             doc.rect(margin, yPos, pageWidth - margin * 2, 8);
@@ -172,12 +177,13 @@ export default function ProjectDataPage() {
             doc.setFontSize(9);
             doc.text(label, margin + 2, yPos + 5.5);
             let xOffset = 60;
-            const selectedValue = getRadioValue(name);
             options.forEach(opt => {
-                doc.circle(margin + xOffset + 2.5, yPos + 4, 2);
-                if (selectedValue === opt.toLowerCase()) {
-                    doc.setFillColor(0,0,0);
-                    doc.circle(margin + xOffset + 2.5, yPos + 4, 1.2, 'F');
+                const isChecked = getCheckboxValue(`${name}_${opt.toLowerCase().replace(/ /g, '_')}`);
+                doc.rect(margin + xOffset, yPos + 2, 4, 4);
+                if (isChecked) {
+                    doc.setFont('ZapfDingbats');
+                    doc.text('✓', margin + xOffset + 0.5, yPos + 5.5);
+                    doc.setFont('helvetica');
                 }
                 doc.text(opt, margin + xOffset + 6, yPos + 5.5);
                 xOffset += 40;
@@ -202,8 +208,8 @@ export default function ProjectDataPage() {
 
         addSectionTitle('Legal File');
         drawField('Name of Owner', getInputValue('legal_owner_name'));
-        drawRadioField('Is Completion Certificate available', 'completion_cert', ['Yes', 'No']);
-        drawRadioField('Is the property leased', 'is_leased', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Is Completion Certificate available', 'completion_cert', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Is the property leased', 'is_leased', ['Yes', 'No']);
 
         addSectionTitle('Area');
         drawField('Maximum frontage:', getInputValue('area_frontage'));
@@ -225,31 +231,31 @@ export default function ProjectDataPage() {
 
         addSectionTitle('Utilities');
         drawField('Sanctioned electrical load', getInputValue('sanctioned_load_text'));
-        drawRadioField('Type of electrical load', 'electrical_load_type', ['Commercial', 'Industrial', 'Residential']);
+        drawRadioLikeCheckboxField('Type of electrical load', 'electrical_load_type', ['Commercial', 'Industrial', 'Residential']);
         drawField('Electrical Meter', getInputValue('electrical_meter'));
-        drawRadioField('Piped water available', 'piped_water', ['Yes', 'No']);
-        drawRadioField('Underground tank', 'underground_tank', ['Yes', 'No']);
-        drawRadioField('Overhead tank', 'overhead_tank', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Piped water available', 'piped_water', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Underground tank', 'underground_tank', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Overhead tank', 'overhead_tank', ['Yes', 'No']);
         drawField('Type of Overhead tank', getInputValue('overhead_tank_type'));
         drawField('Type of water', getInputValue('water_type'));
-        drawRadioField('Gas Connection', 'gas_connection', ['Yes', 'No']);
-        drawRadioField('Connected to Sewerage line', 'sewerage_connection', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Gas Connection', 'gas_connection', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Connected to Sewerage line', 'sewerage_connection', ['Yes', 'No']);
 
         addSectionTitle('Building overview');
-        drawRadioField('Independent premises', 'independent_premises', ['Yes', 'No']);
-        drawRadioField('Status', 'property_status', ['Commercial', 'Residential', 'Industrial']);
+        drawRadioLikeCheckboxField('Independent premises', 'independent_premises', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Status', 'property_status', ['Commercial', 'Residential', 'Industrial']);
         drawField('Other Status', getInputValue('status_other_text'));
-        drawRadioField('Type of Premises', 'premises_type', ['Residence', 'Offices', 'Godowns']);
+        drawRadioLikeCheckboxField('Type of Premises', 'premises_type', ['Residence', 'Offices', 'Godowns']);
         drawField('Other Premises Type', getInputValue('prem_other_text'));
-        drawRadioField('Age of Premises', 'building_age', ['0-5', '5-10', '>10 years']);
-        drawRadioField('Interior of Premises', 'interior_type', ['Single Hall', 'Rooms']);
-        drawRadioField('Type of construction', 'construction_type', ['Beam-Column in RCC', 'Composite', 'Load Bearing']);
+        drawRadioLikeCheckboxField('Age of Premises', 'building_age', ['0-5', '5-10', '>10 years']);
+        drawRadioLikeCheckboxField('Interior of Premises', 'interior_type', ['Single Hall', 'Rooms']);
+        drawRadioLikeCheckboxField('Type of construction', 'construction_type', ['Beam-Column in RCC', 'Composite', 'Load Bearing']);
 
         doc.addPage();
         yPos = 20;
 
         addSectionTitle('Building Details');
-        drawRadioField('Seepage', 'seepage', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Seepage', 'seepage', ['Yes', 'No']);
         drawField('Area of seepage', getInputValue('seepage_area'));
         drawField('Cause of Seepage', getInputValue('seepage_cause'));
         drawCheckboxField('Property Utilization', [
@@ -264,7 +270,7 @@ export default function ProjectDataPage() {
             { id: 'parking_main_road', label: 'On Main Road' },
             { id: 'parking_no', label: 'No' },
         ]);
-        drawRadioField('Approachable through Road', 'approachable', ['Yes', 'No']);
+        drawRadioLikeCheckboxField('Approachable through Road', 'approachable', ['Yes', 'No']);
         drawField('Wall masonary material', getInputValue('wall_material'));
         drawCheckboxField('Major retainable building elements', [
             { id: 'retainable_water_tank', label: 'Water tank' },
@@ -273,7 +279,7 @@ export default function ProjectDataPage() {
         ]);
         drawField('Other retainable', getInputValue('retainable_other_text'));
         drawField('Plot level from road', getInputValue('plot_level'));
-        drawRadioField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
+        drawRadioLikeCheckboxField('Building Control Violations', 'violations', ['Major', 'Minor', 'None']);
         
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
@@ -323,14 +329,14 @@ export default function ProjectDataPage() {
                     <div className="text-center">
                         <p className="text-sm font-bold text-muted-foreground">ISBAH HASSAN & ASSOCIATES</p>
                         <CardDescription>
-                            <div className="font-semibold mt-2">Premises Review for all Projects</div>
+                            Premises Review for all Projects
                         </CardDescription>
                         <p className="text-xs mt-2 max-w-2xl mx-auto">This questionnaire form provides preliminary information for determining the suitability of premises or property to be acquired</p>
                          <div className="flex justify-between items-center mt-4">
                             <CardTitle className="font-headline text-4xl text-primary">SITE SURVEY</CardTitle>
                              <div className="flex items-center gap-2">
-                                <Label htmlFor="header_date">Date</Label>
-                                <Input type="date" id="header_date" name="header_date" className="w-fit" />
+                                <Label htmlFor="location_date">Date</Label>
+                                <Input type="date" id="location_date" name="location_date" className="w-fit" />
                             </div>
                         </div>
                     </div>
@@ -346,44 +352,44 @@ export default function ProjectDataPage() {
                         <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2"><Checkbox id="purpose_house" name="purpose_house" /> <Label htmlFor="purpose_house">House</Label></div>
-                                  <div className="flex items-center gap-2"><Checkbox id="purpose_office" name="purpose_office" /> <Label htmlFor="purpose_office">Office</Label></div>
-                                  <div className="flex items-center gap-2"><Checkbox id="purpose_residential" name="purpose_residential" /> <Label htmlFor="purpose_residential">Residential</Label></div>
-                                  <div className="flex items-center gap-2"><Checkbox id="purpose_others" name="purpose_others" /> <Label htmlFor="purpose_others">Others</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_house" id="purpose_house" /> <Label htmlFor="purpose_house">House</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_office" id="purpose_office" /> <Label htmlFor="purpose_office">Office</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_residential" id="purpose_residential" /> <Label htmlFor="purpose_residential">Residential</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_others" id="purpose_others" /> <Label htmlFor="purpose_others">Others</Label></div>
                                </div>
                             </FormRow>
-                            <FormRow label="City"><Input id="location_city" name="location_city" /></FormRow>
-                            <FormRow label="Region"><Input id="location_region" name="location_region" /></FormRow>
-                            <FormRow label="Address"><Input id="location_address" name="location_address" /></FormRow>
+                            <FormRow label="City"><Input name="location_city" /></FormRow>
+                            <FormRow label="Region"><Input name="location_region" /></FormRow>
+                            <FormRow label="Address"><Input name="location_address" /></FormRow>
                         </SectionTable>
 
                         <SectionTable title="Legal File">
-                            <FormRow label="Name of Owner"><Input id="legal_owner_name" name="legal_owner_name" /></FormRow>
+                            <FormRow label="Name of Owner"><Input name="legal_owner_name" /></FormRow>
                             <FormRow label="Is Completion Certificate available">
-                                <RadioGroup name="completion_cert" className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="cc_yes" /><Label htmlFor="cc_yes">Yes</Label></div>
-                                    <Label>As informed by Owner Representative</Label>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="cc_no" /><Label htmlFor="cc_no">No</Label></div>
-                                </RadioGroup>
+                               <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2"><Checkbox id="completion_cert_yes" name="completion_cert_yes"/><Label htmlFor="completion_cert_yes">Yes</Label></div>
+                                  <Label>As informed by Owner Representative</Label>
+                                  <div className="flex items-center gap-2"><Checkbox id="completion_cert_no" name="completion_cert_no"/><Label htmlFor="completion_cert_no">No</Label></div>
+                               </div>
                             </FormRow>
                             <FormRow label="Is the property leased">
-                                <RadioGroup name="is_leased" className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="leased_yes" /><Label htmlFor="leased_yes">Yes</Label></div>
-                                    <Label>As informed by Owner Representative</Label>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="leased_no" /><Label htmlFor="leased_no">No</Label></div>
-                                </RadioGroup>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2"><Checkbox id="is_leased_yes" name="is_leased_yes" /><Label htmlFor="is_leased_yes">Yes</Label></div>
+                                  <Label>As informed by Owner Representative</Label>
+                                  <div className="flex items-center gap-2"><Checkbox id="is_leased_no" name="is_leased_no" /><Label htmlFor="is_leased_no">No</Label></div>
+                                </div>
                             </FormRow>
                         </SectionTable>
                         
                          <SectionTable title="Area">
                             <FormRow label="Dimension">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                               <Input placeholder="Maximum frontage:" id="area_frontage" name="area_frontage" />
-                               <Input placeholder="Maximum Depth:" id="area_depth" name="area_depth" />
+                               <Input placeholder="Maximum frontage:" name="area_frontage" />
+                               <Input placeholder="Maximum Depth:" name="area_depth" />
                                 </div>
                             </FormRow>
-                            <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" id="area_total" name="area_total" /></FormRow>
-                            <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" id="area_height" name="area_height" /></FormRow>
+                            <FormRow label="Total Area in Sqft"><Input placeholder="Total Area in Sqft" name="area_total" /></FormRow>
+                            <FormRow label="Minimum clear height (Floor to Roof) in ft"><Input placeholder="Minimum clear height (Floor to Roof) in ft" name="area_height" /></FormRow>
                              <FormRow label={
                                 <div>
                                     Building plot size of which premises is a part
@@ -391,96 +397,96 @@ export default function ProjectDataPage() {
                                     independent land
                                 </div>
                             }>
-                                <Input placeholder="Building plot size of which premises is a part" id="area_plot_size" name="area_plot_size" />
+                                <Input placeholder="Building plot size of which premises is a part" name="area_plot_size" />
                             </FormRow>
-                            <FormRow label="Covered Area"><Input placeholder="Covered Area" id="area_covered" name="area_covered" /></FormRow>
-                            <FormRow label="No. of Stories / floors"><Input placeholder="(mention mezzanine, basement, roof parapet wall etc.) If any." id="area_stories" name="area_stories" /></FormRow>
+                            <FormRow label="Covered Area"><Input placeholder="Covered Area" name="area_covered" /></FormRow>
+                            <FormRow label="No. of Stories / floors"><Input placeholder="(mention mezzanine, basement, roof parapet wall etc.) If any." name="area_stories" /></FormRow>
                         </SectionTable>
 
                         <SectionTable title="Bounded As">
-                            <FormRow label="Front"><Input id="bounded_front" name="bounded_front"/></FormRow>
-                            <FormRow label="Back"><Input id="bounded_back" name="bounded_back"/></FormRow>
-                            <FormRow label="Right"><Input id="bounded_right" name="bounded_right" /></FormRow>
-                            <FormRow label="Left"><Input id="bounded_left" name="bounded_left" /></FormRow>
+                            <FormRow label="Front"><Input name="bounded_front"/></FormRow>
+                            <FormRow label="Back"><Input name="bounded_back"/></FormRow>
+                            <FormRow label="Right"><Input name="bounded_right" /></FormRow>
+                            <FormRow label="Left"><Input name="bounded_left" /></FormRow>
                         </SectionTable>
                         
                         <SectionTable title="Utilities">
                             <FormRow label="Sanctioned electrical load">
                                 <div className="flex items-center justify-between">
-                                    <Input id="sanctioned_load_text" name="sanctioned_load_text" />
-                                    <div className="flex items-center space-x-2"><Checkbox id="sanctioned_load_na" name="sanctioned_load_na" /><Label htmlFor="sanctioned_load_na">N/A</Label></div>
+                                    <Input name="sanctioned_load_text" />
+                                    <div className="flex items-center space-x-2"><Checkbox name="sanctioned_load_na" /><Label>N/A</Label></div>
                                 </div>
                             </FormRow>
                             <FormRow label="Type of electrical load">
-                                <RadioGroup name="electrical_load_type" className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="commercial" id="elec_commercial" /><Label htmlFor="elec_commercial">Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="industrial" id="elec_industrial" /><Label htmlFor="elec_industrial">Industrial</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="residential" id="elec_residential" /><Label htmlFor="elec_residential">Residential</Label></div>
-                                </RadioGroup>
+                               <div className="flex flex-wrap gap-4">
+                                  <div className="flex items-center gap-2"><Checkbox id="elec_commercial" name="elec_commercial" /><Label htmlFor="elec_commercial">Commercial</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox id="elec_industrial" name="elec_industrial" /><Label htmlFor="elec_industrial">Industrial</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox id="elec_residential" name="elec_residential" /><Label htmlFor="elec_residential">Residential</Label></div>
+                               </div>
                             </FormRow>
-                            <FormRow label="Electrical Meter (single phase / 3 phase)"><Input id="electrical_meter" name="electrical_meter" /></FormRow>
+                            <FormRow label="Electrical Meter (single phase / 3 phase)"><Input name="electrical_meter" /></FormRow>
                             <FormRow label="Piped water available">
-                                <RadioGroup name="piped_water" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="water_yes" /><Label htmlFor="water_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="water_no" /><Label htmlFor="water_no">No</Label></div></RadioGroup>
+                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="water_yes" name="water_yes" /><Label htmlFor="water_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="water_no" name="water_no" /><Label htmlFor="water_no">No</Label></div></div>
                             </FormRow>
                             <FormRow label="Underground tank">
-                                <RadioGroup name="underground_tank" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="ug_tank_yes" /><Label htmlFor="ug_tank_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="ug_tank_no" /><Label htmlFor="ug_tank_no">No</Label></div></RadioGroup>
+                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="ug_tank_yes" name="ug_tank_yes" /><Label htmlFor="ug_tank_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="ug_tank_no" name="ug_tank_no" /><Label htmlFor="ug_tank_no">No</Label></div></div>
                             </FormRow>
                             <FormRow label="Overhead tank">
-                                <RadioGroup name="overhead_tank" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="oh_tank_yes" /><Label htmlFor="oh_tank_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="oh_tank_no" /><Label htmlFor="oh_tank_no">No</Label></div></RadioGroup>
+                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="oh_tank_yes" name="oh_tank_yes" /><Label htmlFor="oh_tank_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="oh_tank_no" name="oh_tank_no" /><Label htmlFor="oh_tank_no">No</Label></div></div>
                             </FormRow>
-                            <FormRow label="Type of Overhead tank (RCC, Fiber etc.)"><Input id="overhead_tank_type" name="overhead_tank_type"/></FormRow>
-                            <FormRow label="Type of water (boring or Line water)"><Input id="water_type" name="water_type" /></FormRow>
+                            <FormRow label="Type of Overhead tank (RCC, Fiber etc.)"><Input name="overhead_tank_type"/></FormRow>
+                            <FormRow label="Type of water (boring or Line water)"><Input name="water_type" /></FormRow>
                             <FormRow label="Gas Connection">
-                                <RadioGroup name="gas_connection" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="gas_yes" /><Label htmlFor="gas_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="gas_no" /><Label htmlFor="gas_no">No</Label></div></RadioGroup>
+                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="gas_yes" name="gas_yes" /><Label htmlFor="gas_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="gas_no" name="gas_no" /><Label htmlFor="gas_no">No</Label></div></div>
                             </FormRow>
                              <FormRow label="Connected to Sewerage line">
-                                <RadioGroup name="sewerage_connection" className="flex items-center space-x-8"><div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="sewer_yes" /><Label htmlFor="sewer_yes">Yes</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="no" id="sewer_no" /><Label htmlFor="sewer_no">No</Label></div></RadioGroup>
+                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="sewer_yes" name="sewer_yes" /><Label htmlFor="sewer_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="sewer_no" name="sewer_no" /><Label htmlFor="sewer_no">No</Label></div></div>
                             </FormRow>
                         </SectionTable>
 
                         <SectionTable title="Building overview">
                             <FormRow label="Independent premises">
-                                 <RadioGroup name="independent_premises" className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="ind_yes" /><Label htmlFor="ind_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="ind_no" /><Label htmlFor="ind_no">No. a part of building</Label></div>
-                                </RadioGroup>
+                                 <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2"><Checkbox id="ind_yes" name="ind_yes" /><Label htmlFor="ind_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="ind_no" name="ind_no" /><Label htmlFor="ind_no">No. a part of building</Label></div>
+                                </div>
                             </FormRow>
                              <FormRow label="Status">
-                                 <RadioGroup name="property_status" className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="commercial" id="status_comm" /><Label htmlFor="status_comm">Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="residential" id="status_res" /><Label htmlFor="status_res">Residential</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="industrial" id="status_ind" /><Label htmlFor="status_ind">Industrial</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="other" id="status_other" /><Label htmlFor="status_other">Other:</Label> <Input name="status_other_text" className="h-7" /></div>
-                                </RadioGroup>
+                                 <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center space-x-2"><Checkbox id="status_comm" name="status_comm" /><Label htmlFor="status_comm">Commercial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="status_res" name="status_res" /><Label htmlFor="status_res">Residential</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="status_ind" name="status_ind" /><Label htmlFor="status_ind">Industrial</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="status_other" name="status_other" /><Label htmlFor="status_other">Other:</Label> <Input name="status_other_text" className="h-7" /></div>
+                                </div>
                             </FormRow>
                              <FormRow label="Type of Premises">
-                                 <RadioGroup name="premises_type" className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="residence" id="prem_res" /><Label htmlFor="prem_res">Residence</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="offices" id="prem_off" /><Label htmlFor="prem_off">Offices</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="godowns" id="prem_god" /><Label htmlFor="prem_god">Godowns</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="other" id="prem_other" /><Label htmlFor="prem_other">Other:</Label> <Input name="prem_other_text" className="h-7" /></div>
-                                </RadioGroup>
+                                 <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center space-x-2"><Checkbox id="prem_res" name="prem_res" /><Label htmlFor="prem_res">Residence</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="prem_off" name="prem_off" /><Label htmlFor="prem_off">Offices</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="prem_god" name="prem_god" /><Label htmlFor="prem_god">Godowns</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="prem_other" name="prem_other" /><Label htmlFor="prem_other">Other:</Label> <Input name="prem_other_text" className="h-7" /></div>
+                                </div>
                             </FormRow>
                             <FormRow label="Age of Premises if any">
-                                <RadioGroup name="building_age" className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><RadioGroupItem value="0-5" id="age_0_5" /><Label htmlFor="age_0_5">0-5</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="5-10" id="age_5_10" /><Label htmlFor="age_5_10">5-10</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value=">10" id="age_gt_10" /><Label htmlFor="age_gt_10">More than 10 years</Label></div></RadioGroup>
+                                <div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="age_0_5" name="age_0_5" /><Label htmlFor="age_0_5">0-5</Label></div><div className="flex items-center space-x-2"><Checkbox id="age_5_10" name="age_5_10" /><Label htmlFor="age_5_10">5-10</Label></div><div className="flex items-center space-x-2"><Checkbox id="age_gt_10" name="age_gt_10" /><Label htmlFor="age_gt_10">More than 10 years</Label></div></div>
                             </FormRow>
                              <FormRow label="Interior of Premises if any">
-                                <RadioGroup name="interior_type" className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><RadioGroupItem value="single_hall" id="it_single_hall" /><Label htmlFor="it_single_hall">Single Hall</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="rooms" id="it_rooms" /><Label htmlFor="it_rooms">Rooms</Label></div></RadioGroup>
+                                <div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="it_single_hall" name="it_single_hall" /><Label htmlFor="it_single_hall">Single Hall</Label></div><div className="flex items-center space-x-2"><Checkbox id="it_rooms" name="it_rooms" /><Label htmlFor="it_rooms">Rooms</Label></div></div>
                             </FormRow>
                              <FormRow label="Type of construction">
-                                <RadioGroup name="construction_type" className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><RadioGroupItem value="rcc" id="ct_rcc" /><Label htmlFor="ct_rcc">Beam-Column in RCC</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="composite" id="ct_composite" /><Label htmlFor="ct_composite">Composit Structure</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="load_bearing" id="ct_load_bearing" /><Label htmlFor="ct_load_bearing">Load Bearing in walls</Label></div></RadioGroup>
+                                <div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="ct_rcc" name="ct_rcc" /><Label htmlFor="ct_rcc">Beam-Column in RCC</Label></div><div className="flex items-center space-x-2"><Checkbox id="ct_composite" name="ct_composite" /><Label htmlFor="ct_composite">Composit Structure</Label></div><div className="flex items-center space-x-2"><Checkbox id="ct_load_bearing" name="ct_load_bearing" /><Label htmlFor="ct_load_bearing">Load Bearing in walls</Label></div></div>
                             </FormRow>
                         </SectionTable>
 
                          <SectionTable title="Building Details">
                             <FormRow label="Seepage">
-                                 <RadioGroup name="seepage" className="flex items-center space-x-8">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="seepage_yes" /><Label htmlFor="seepage_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="seepage_no" /><Label htmlFor="seepage_no">No</Label></div>
-                                </RadioGroup>
+                                 <div className="flex items-center space-x-8">
+                                    <div className="flex items-center space-x-2"><Checkbox id="seepage_yes" name="seepage_yes" /><Label htmlFor="seepage_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="seepage_no" name="seepage_no" /><Label htmlFor="seepage_no">No</Label></div>
+                                </div>
                             </FormRow>
-                            <FormRow label="Area of seepage (Walls, slab etc.)"><Input id="seepage_area" name="seepage_area"/></FormRow>
-                            <FormRow label="Cause of Seepage"><Input id="seepage_cause" name="seepage_cause" /></FormRow>
+                            <FormRow label="Area of seepage (Walls, slab etc.)"><Input name="seepage_area"/></FormRow>
+                            <FormRow label="Cause of Seepage"><Input name="seepage_cause" /></FormRow>
                             <FormRow label="Property Utilization">
                                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                                     <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" /><Label htmlFor="util_residential">Fully residential</Label></div>
@@ -489,7 +495,7 @@ export default function ProjectDataPage() {
                                     <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" /><Label htmlFor="util_industrial">Industrial</Label></div>
                                 </div>
                             </FormRow>
-                             <FormRow label="Condition of roof waterproofing (if applicable)"><Input id="roof_waterproofing" name="roof_waterproofing" /></FormRow>
+                             <FormRow label="Condition of roof waterproofing (if applicable)"><Input name="roof_waterproofing" /></FormRow>
                             <FormRow label="Parking available">
                                  <div className="flex flex-wrap gap-4">
                                     <div className="flex items-center space-x-2"><Checkbox id="parking_yes" name="parking_yes" /><Label htmlFor="parking_yes">Yes</Label></div>
@@ -498,49 +504,49 @@ export default function ProjectDataPage() {
                                 </div>
                             </FormRow>
                             <FormRow label="Approachable through Road">
-                                 <RadioGroup name="approachable" className="flex items-center space-x-8">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="yes" id="approachable_yes" /><Label htmlFor="approachable_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="approachable_no" /><Label htmlFor="approachable_no">No</Label></div>
-                                </RadioGroup>
+                                 <div className="flex items-center space-x-8">
+                                    <div className="flex items-center space-x-2"><Checkbox id="approachable_yes" name="approachable_yes" /><Label htmlFor="approachable_yes">Yes</Label></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="approachable_no" name="approachable_no" /><Label htmlFor="approachable_no">No</Label></div>
+                                </div>
                             </FormRow>
-                             <FormRow label="Wall masonary material as per region"><Input id="wall_material" name="wall_material" /></FormRow>
+                             <FormRow label="Wall masonary material as per region"><Input name="wall_material" /></FormRow>
                             <FormRow label="Major retainable building elements">
                                 <div className="flex flex-wrap gap-4">
                                     <div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" /><Label htmlFor="retainable_water_tank">Water tank</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" /><Label htmlFor="retainable_subflooring">Subflooring</Label></div>
                                     <div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" /><Label htmlFor="retainable_staircase">staircase</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_other_check" name="retainable_other_check" /><Label htmlFor="retainable_other_check">Others</Label><Input id="retainable_other_text" name="retainable_other_text" className="h-7" /></div>
+                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_other_check" name="retainable_other_check" /><Label htmlFor="retainable_other_check">Others</Label><Input name="retainable_other_text" className="h-7" /></div>
                                 </div>
                             </FormRow>
-                            <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input id="plot_level" name="plot_level" /></FormRow>
+                            <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input name="plot_level" /></FormRow>
                             <FormRow label="Building Control Violations">
                                  <div className="flex flex-wrap items-center gap-4">
-                                     <RadioGroup name="violations" className="flex flex-wrap gap-4">
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="major" id="violation_major" /><Label htmlFor="violation_major">Major</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="minor" id="violation_minor" /><Label htmlFor="violation_minor">Minor</Label></div>
-                                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="violation_none" /><Label htmlFor="violation_none">No Deviation</Label></div>
-                                    </RadioGroup>
+                                     <div className="flex flex-wrap gap-4">
+                                        <div className="flex items-center space-x-2"><Checkbox id="violation_major" name="violation_major" /><Label htmlFor="violation_major">Major</Label></div>
+                                        <div className="flex items-center space-x-2"><Checkbox id="violation_minor" name="violation_minor" /><Label htmlFor="violation_minor">Minor</Label></div>
+                                        <div className="flex items-center space-x-2"><Checkbox id="violation_none" name="violation_none" /><Label htmlFor="violation_none">No Deviation</Label></div>
+                                    </div>
                                      <div className="flex items-center space-x-2"><Checkbox id="violation_informed" name="violation_informed" /><Label htmlFor="violation_informed">As Informed by Owner Representative</Label></div>
                                 </div>
                             </FormRow>
                         </SectionTable>
                         
                         <SectionTable title="Rental Detail">
-                            <FormRow label="Acquisition"><Input id="rental_acquisition" name="rental_acquisition" /></FormRow>
-                            <FormRow label="Expected Rental /month"><Input id="rental_expected_rent" name="rental_expected_rent" /></FormRow>
-                            <FormRow label="Expected Advance (# of months)"><Input id="rental_expected_advance" name="rental_expected_advance"/></FormRow>
-                            <FormRow label="Expected period of lease"><Input id="rental_lease_period" name="rental_lease_period"/></FormRow>
-                            <FormRow label="Annual increase in rental"><Input id="rental_annual_increase" name="rental_annual_increase"/></FormRow>
+                            <FormRow label="Acquisition"><Input name="rental_acquisition" /></FormRow>
+                            <FormRow label="Expected Rental /month"><Input name="rental_expected_rent" /></FormRow>
+                            <FormRow label="Expected Advance (# of months)"><Input name="rental_expected_advance"/></FormRow>
+                            <FormRow label="Expected period of lease"><Input name="rental_lease_period"/></FormRow>
+                            <FormRow label="Annual increase in rental"><Input name="rental_annual_increase"/></FormRow>
                         </SectionTable>
 
                         <SectionTable title="Survey Conducted By">
-                           <FormRow label="Name"><Input id="survey_conducted_by_name" name="survey_conducted_by_name" /></FormRow>
-                           <FormRow label="Designation"><Input id="survey_conducted_by_designation" name="survey_conducted_by_designation" /></FormRow>
-                           <FormRow label="Contact"><Input id="survey_conducted_by_contact" name="survey_conducted_by_contact" /></FormRow>
-                           <FormRow label="Cell"><Input id="survey_conducted_by_cell" name="survey_conducted_by_cell" /></FormRow>
-                           <FormRow label="Landline"><Input id="survey_conducted_by_landline" name="survey_conducted_by_landline" /></FormRow>
-                           <FormRow label="Email"><Input id="survey_conducted_by_email" name="survey_conducted_by_email" type="email" /></FormRow>
-                           <FormRow label="Date"><Input id="survey_conducted_by_date" name="survey_conducted_by_date" type="date" /></FormRow>
+                           <FormRow label="Name"><Input name="survey_conducted_by_name" /></FormRow>
+                           <FormRow label="Designation"><Input name="survey_conducted_by_designation" /></FormRow>
+                           <FormRow label="Contact"><Input name="survey_conducted_by_contact" /></FormRow>
+                           <FormRow label="Cell"><Input name="survey_conducted_by_cell" /></FormRow>
+                           <FormRow label="Landline"><Input name="survey_conducted_by_landline" /></FormRow>
+                           <FormRow label="Email"><Input name="survey_conducted_by_email" type="email" /></FormRow>
+                           <FormRow label="Date"><Input name="survey_conducted_by_date" type="date" /></FormRow>
                         </SectionTable>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
