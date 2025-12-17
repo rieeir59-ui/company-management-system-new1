@@ -1,12 +1,7 @@
-'use client'
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { UserProvider } from '@/context/UserContext';
-import { FileProvider } from '@/context/FileContext';
-import { RecordProvider } from '@/context/RecordContext';
-import { FirebaseProvider } from '@/firebase/provider';
+import { Providers } from '@/context/providers';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
 
 export default function RootLayout({
   children,
@@ -21,17 +16,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <FirebaseProvider>
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <UserProvider>
-                <FileProvider>
-                  <RecordProvider>
-                    {children}
-                  </RecordProvider>
-                </FileProvider>
-            </UserProvider>
-          </React.Suspense>
-        </FirebaseProvider>
+        <Providers>
+          {children}
+        </Providers>
         <Toaster />
       </body>
     </html>
