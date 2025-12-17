@@ -4,11 +4,11 @@ import React, { type ReactNode } from 'react';
 import { UserProvider } from '@/context/UserContext';
 import { FileProvider } from '@/context/FileContext';
 import { RecordProvider } from '@/context/RecordContext';
-import { FirebaseProvider } from '@/firebase/provider';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <FirebaseProvider>
+    <FirebaseClientProvider>
       <UserProvider>
         <FileProvider>
           <RecordProvider>
@@ -16,6 +16,6 @@ export function Providers({ children }: { children: ReactNode }) {
           </RecordProvider>
         </FileProvider>
       </UserProvider>
-    </FirebaseProvider>
+    </FirebaseClientProvider>
   );
 }
