@@ -42,17 +42,21 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.475.0",
-    "next": "16.0.10",
-    "react": "19.2.1",
-    "react-dom": "19.2.1",
-    "react-day-picker": "^9.0.0",
+    "next": "15.0.7",
+    "react": "19.0.0-rc-f994737d14-20240522",
+    "react-dom": "19.0.0-rc-f994737d14-20240522",
+    "react-day-picker": "^9.0.8",
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "genkit": "1.0.0",
+    "@genkit-ai/next": "1.0.0",
+    "@genkit-ai/google-genai": "^0.2.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^18.3.1",
+    "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.1",
     "firebase-tools": "^14.26.0",
     "postcss": "^8",
@@ -60,6 +64,6 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   }
 }
