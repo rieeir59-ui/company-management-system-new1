@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen, Compass } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, Landmark, Building2, Home as HomeIcon, ClipboardCheck, ArrowLeft, FolderOpen, Compass, UserCog } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,49 +34,7 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/badge';
-
-const bankTimelineCategories = [
-    "Askari Bank Timeline", "Bank Alfalah Timeline", "Bank Al Habib Timeline", "CBD Timeline", "DIB Timeline", "FBL Timeline", "HBL Timeline", "MCB Timeline", "UBL Timeline", "Commercial Timeline", "Residential Timeline"
-];
-
-const managementRecordTypes = [
-    "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
-    "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
-    "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
-    "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
-    "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
-    "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
-    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
-];
-const managementCategoriesWithIcons = [
-    { name: "Site Survey", icon: Compass },
-    { name: "Project Information", icon: FolderOpen },
-    { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
-    { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
-    { name: "Change Order", icon: getIconForCategory("Change Order")},
-    { name: "Consent of Surety", icon: getIconForCategory("Consent of Surety")},
-    { name: "Construction Change Directive", icon: getIconForCategory("Construction Change Directive")},
-    { name: "Construction Activity Schedule", icon: getIconForCategory("Construction Activity Schedule")},
-    { name: "Continuation Sheet", icon: getIconForCategory("Continuation Sheet")},
-    { name: "Drawings List", icon: getIconForCategory("Drawings List")},
-    { name: "Instruction Sheet", icon: getIconForCategory("Instruction Sheet")},
-    { name: "List of Contractors", icon: getIconForCategory("List of Contractors")},
-    { name: "List of Sub-Consultants", icon: getIconForCategory("List of Sub-Consultants")},
-    { name: "Preliminary Project Budget", icon: getIconForCategory("Preliminary Project Budget")},
-    { name: "Project Agreement", icon: getIconForCategory("Project Agreement")},
-    { name: "Project Application Summary", icon: getIconForCategory("Project Application Summary")},
-    { name: "Project Checklist", icon: getIconForCategory("Project Checklist")},
-    { name: "Project Data", icon: getIconForCategory("Project Data")},
-    { name: "Proposal Request", icon: getIconForCategory("Proposal Request")},
-    { name: "Rate Analysis", icon: getIconForCategory("Rate Analysis")},
-    { name: "Shop Drawing and Sample Record", icon: getIconForCategory("Shop Drawing and Sample Record")},
-    { name: "Timeline Schedule", icon: getIconForCategory("Timeline Schedule")},
-    { name: "My Projects", icon: getIconForCategory("My Projects")},
-    { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
-    { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
-    { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
-]
-
+import { bankTimelineCategories } from '@/lib/projects-data';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -168,10 +126,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const addList = (items: { label: string, value: string }[]) => {
             items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
         };
-        const addSimpleList = (items: { value: string }[]) => {
-            items.forEach(item => addText(`• ${item.value}`, false, 5, 10, 5));
-        };
-
+        
         addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
         const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
         addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
@@ -224,7 +179,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         addFooter();
         doc.save('Project-Agreement.pdf');
-
     } else {
         generateGenericPdf();
     }
@@ -239,6 +193,45 @@ const SectionCard = ({ title, icon: Icon, onClick, className }: { title: string,
         <p className="font-semibold text-lg text-center">{title}</p>
     </Card>
 );
+
+const managementRecordTypes = [
+    "Architect's Supplemental Instructions", "Bill of Quantity", "Change Order",
+    "Consent of Surety (Retainage)", "Consent of Surety (Final Payment)", "Construction Change Directive",
+    "Construction Activity Schedule", "Continuation Sheet", "Drawings List", "Instruction Sheet",
+    "List of Contractors", "List of Sub-Consultants", "Preliminary Project Budget", "Project Agreement",
+    "Project Application Summary", "Project Checklist", "Project Data", "Proposal Request",
+    "Rate Analysis", "Shop Drawing and Sample Record", "Timeline Schedule",
+    "My Projects", "Site Visit Proforma", "Site Survey Report", "Uploaded File", "Task Assignment"
+];
+const managementCategoriesWithIcons = [
+    { name: "Site Survey", icon: Compass },
+    { name: "Project Information", icon: FolderOpen },
+    { name: "Architect's Supplemental Instructions", icon: getIconForCategory("Architect's Supplemental Instructions")},
+    { name: "Bill of Quantity", icon: getIconForCategory("Bill of Quantity")},
+    { name: "Change Order", icon: getIconForCategory("Change Order")},
+    { name: "Consent of Surety", icon: getIconForCategory("Consent of Surety")},
+    { name: "Construction Change Directive", icon: getIconForCategory("Construction Change Directive")},
+    { name: "Construction Activity Schedule", icon: getIconForCategory("Construction Activity Schedule")},
+    { name: "Continuation Sheet", icon: getIconForCategory("Continuation Sheet")},
+    { name: "Drawings List", icon: getIconForCategory("Drawings List")},
+    { name: "Instruction Sheet", icon: getIconForCategory("Instruction Sheet")},
+    { name: "List of Contractors", icon: getIconForCategory("List of Contractors")},
+    { name: "List of Sub-Consultants", icon: getIconForCategory("List of Sub-Consultants")},
+    { name: "Preliminary Project Budget", icon: getIconForCategory("Preliminary Project Budget")},
+    { name: "Project Agreement", icon: getIconForCategory("Project Agreement")},
+    { name: "Project Application Summary", icon: getIconForCategory("Project Application Summary")},
+    { name: "Project Checklist", icon: getIconForCategory("Project Checklist")},
+    { name: "Project Data", icon: getIconForCategory("Project Data")},
+    { name: "Proposal Request", icon: getIconForCategory("Proposal Request")},
+    { name: "Rate Analysis", icon: getIconForCategory("Rate Analysis")},
+    { name: "Shop Drawing and Sample Record", icon: getIconForCategory("Shop Drawing and Sample Record")},
+    { name: "Timeline Schedule", icon: getIconForCategory("Timeline Schedule")},
+    { name: "My Projects", icon: getIconForCategory("My Projects")},
+    { name: "Site Visit Proforma", icon: getIconForCategory("Site Visit Proforma")},
+    { name: "Uploaded File", icon: getIconForCategory("Uploaded File")},
+    { name: "Task Assignment", icon: getIconForCategory("Task Assignment")},
+]
+
 
 const initialBanks = ["MCB", "DIB", "FBL", "UBL", "HBL", "Askari Bank", "Bank Alfalah", "Bank Al Habib", "CBD", "Commercial", "Residential"];
 
@@ -282,6 +275,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             }
         } else if (activeCategory === 'Assigned Tasks') {
             recordsToFilter = recordsToFilter.filter(r => r.fileName === 'Task Assignment');
+        } else if (activeCategory === 'Employee Records') {
+             recordsToFilter = recordsToFilter.filter(r => r.employeeId);
         } else if (activeCategory) {
             recordsToFilter = []; // If category is active but not one of the main ones, show nothing until a sub-cat is picked
         }
@@ -601,10 +596,11 @@ const renderRecordContent = () => {
     const renderContent = () => {
         if (!activeCategory) {
              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <SectionCard title="Banks" icon={Landmark} onClick={() => handleCategorySelect('Banks')} />
                     <SectionCard title="Management Records" icon={Building2} onClick={() => handleCategorySelect('Management Records')} />
                     <SectionCard title="Assigned Tasks" icon={ClipboardCheck} onClick={() => handleCategorySelect('Assigned Tasks')} />
+                     <SectionCard title="Employee Records" icon={UserCog} onClick={() => handleCategorySelect('Employee Records')} />
                 </div>
             );
         }
@@ -613,7 +609,7 @@ const renderRecordContent = () => {
             return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {initialBanks.map(bank => (
-                        <SectionCard 
+                         <SectionCard 
                             key={bank} 
                             title={bank} 
                             icon={Landmark}
