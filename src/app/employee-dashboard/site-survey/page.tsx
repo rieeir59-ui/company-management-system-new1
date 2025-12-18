@@ -55,12 +55,12 @@ export default function ProjectDataPage() {
     
     const handleSave = () => {
         const dataToSave = {
-          fileName: "Site Survey Report",
-          projectName: formState['project_name_header'] || 'Untitled Site Survey',
-          data: [{
-              category: 'Site Survey Data',
-              items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
-          }]
+            fileName: "Site Survey Report",
+            projectName: formState['project_name_header'] || 'Untitled Site Survey',
+            data: [{
+                category: 'Site Survey Data',
+                items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
+            }]
         };
 
         addRecord(dataToSave as any);
@@ -157,11 +157,12 @@ export default function ProjectDataPage() {
         };
         
         // --- SECTIONS ---
-        addSectionTitle(`Project Information:`);
+        addSectionTitle('Project Information');
+        drawField('Project Name', getInputValue('project_name_header'));
         
         addSectionTitle('Location');
         drawCheckboxField('Purpose', [
-          {id: 'purpose_commercial', label: 'Commercial'},
+          {id: 'purpose_house', label: 'House'},
           {id: 'purpose_office', label: 'Office'},
           {id: 'purpose_residential', label: 'Residential'},
           {id: 'purpose_others', label: 'Others'},
@@ -210,64 +211,46 @@ export default function ProjectDataPage() {
         drawCheckboxField('Connected to Sewerage line', [{id: 'sewerage_connection_yes', label: 'Yes'}, {id: 'sewerage_connection_no', label: 'No'}]);
 
         addSectionTitle('Building overview');
-        drawCheckboxField('Independent premises', [{id: 'independent_premises_yes', label: 'Yes'}, {id: 'independent_premises_no', label: 'No'}]);
-        drawCheckboxField('Status', [
-            {id: 'property_status_commercial', label: 'Commercial'}, 
-            {id: 'property_status_residential', label: 'Residential'}, 
-            {id: 'property_status_industrial', label: 'Industrial'},
-            {id: 'property_status_other', label: 'Other'},
+        drawField('Condition of Premises with reference to structural stability', getInputValue('structural_stability'));
+        drawCheckboxField('Is entrance independence', [{id: 'entrance_independence_yes', label: 'Yes'}, {id: 'entrance_independence_no', label: 'No'}]);
+        drawCheckboxField('Staircase for staff use available with its assessment', [{id: 'staff_staircase_yes', label: 'Yes'}, {id: 'staff_staircase_no', label: 'No'}, {id: 'staff_staircase_na', label: 'N/A'}]);
+        drawCheckboxField('Emergency Exit available', [{id: 'emergency_exit_yes', label: 'Yes'}, {id: 'emergency_exit_no', label: 'No'}]);
+        drawCheckboxField('Emergency Exit if not available can be provided or not', [{id: 'emergency_exit_provision_yes', label: 'Yes'}, {id: 'emergency_exit_provision_no', label: 'No'}]);
+        drawCheckboxField('Ramp available', [{id: 'ramp_available_yes', label: 'Yes'}, {id: 'ramp_available_no', label: 'No'}]);
+        drawCheckboxField('Ramp if not available can be provided or not', [{id: 'ramp_provision_yes', label: 'Yes'}, {id: 'ramp_provision_no', label: 'No'}]);
+        drawCheckboxField('Seepage', [{id: 'seepage_yes', label: 'Yes'}, {id: 'seepage_no', label: 'No'}]);
+        drawField('Area of seepage (Walls, slab etc.)', getInputValue('seepage_area'));
+        drawField('Cause of Seepage', getInputValue('seepage_cause'));
+        drawCheckboxField('Generator installation space', [{id: 'generator_space_yes', label: 'Yes at back or left side'}, {id: 'generator_space_no', label: 'No'}]);
+        drawCheckboxField('Property Utilization', [
+          {id: 'util_residential', label: 'Fully residential'}, 
+          {id: 'util_commercial', label: 'Fully Commercial'}, 
+          {id: 'util_dual', label: 'Dual use residential & commercial'}, 
+          {id: 'util_industrial', label: 'Industrial'}
         ]);
-        drawField('Other Status', getInputValue('status_other_text'));
-        drawCheckboxField('Type of Premises', [
-            {id: 'premises_type_residence', label: 'Residence'}, 
-            {id: 'premises_type_offices', label: 'Offices'}, 
-            {id: 'premises_type_godowns', label: 'Godowns'},
-            {id: 'premises_type_other', label: 'Other'},
+        drawField('Building plinth level from the road', getInputValue('plinth_level'));
+        drawCheckboxField('Is area susceptible to flooding during rain fall', [{id: 'flooding_yes', label: 'Yes'}, {id: 'flooding_no', label: 'No'}]);
+        drawCheckboxField('Disable access available or can be provided', [{id: 'disable_access_yes', label: 'Yes'}, {id: 'disable_access_no', label: 'No'}]);
+        drawField('Condition of roof waterproofing (if applicable)', getInputValue('roof_waterproofing'));
+        drawCheckboxField('Parking available', [{id: 'parking_yes', label: 'Yes'}, {id: 'parking_no', label: 'No'}]);
+        drawField('Set Back Available at front', getInputValue('set_back_front'));
+        drawCheckboxField('Approachable through Road', [{id: 'approachable_yes', label: 'Yes'}, {id: 'approachable_no', label: 'No'}]);
+        drawCheckboxField('Any hazard like Petrol Pump / CNG Station / in vicinity available', [{id: 'hazard_yes', label: 'Yes'}, {id: 'hazard_no', label: 'No'}]);
+        drawField('Wall masonary material as per region', getInputValue('wall_material'));
+        drawCheckboxField('Space for Signage available', [{id: 'signage_space_yes', label: 'Yes'}, {id: 'signage_space_no', label: 'No'}]);
+        drawCheckboxField('Major retainable building elements', [
+          {id: 'retainable_water_tank', label: 'Water tank'},
+          {id: 'retainable_vault', label: 'Vault'},
+          {id: 'retainable_subflooring', label: 'Subflooring'},
+          {id: 'retainable_staircase', label: 'Staircase'},
+          {id: 'retainable_others', label: 'Others'},
         ]);
-        drawField('Other Premises Type', getInputValue('prem_other_text'));
-        drawCheckboxField('Age of Premises', [{id: 'building_age_0-5', label: '0-5'}, {id: 'building_age_5-10', label: '5-10'}, {id: 'building_age_>10_years', label: '>10 years'}]);
-        drawCheckboxField('Interior of Premises', [{id: 'interior_type_single_hall', label: 'Single Hall'}, {id: 'interior_type_rooms', label: 'Rooms'}]);
-        drawCheckboxField('Type of construction', [
-            {id: 'construction_type_beam-column_in_rcc', label: 'Beam-Column in RCC'}, 
-            {id: 'construction_type_composite', label: 'Composite'}, 
-            {id: 'construction_type_load_bearing', label: 'Load Bearing'}
-        ]);
-
+        drawField('Incase of Plot provide existing level from road & surrounding buildings', getInputValue('plot_level_surroundings'));
+        drawCheckboxField('Building Control Violations', [{id: 'violations_major', label: 'Major'}, {id: 'violations_minor', label: 'Minor'}, {id: 'violations_none', label: 'No Deviation'}]);
+        
         doc.addPage();
         yPos = 20;
 
-        addSectionTitle('Building Details');
-        drawCheckboxField('Seepage', [{id: 'seepage_yes', label: 'Yes'}, {id: 'seepage_no', label: 'No'}]);
-        drawField('Area of seepage', getInputValue('seepage_area'));
-        drawField('Cause of Seepage', getInputValue('seepage_cause'));
-        drawCheckboxField('Property Utilization', [
-            { id: 'util_residential', label: 'Residential' },
-            { id: 'util_commercial', label: 'Commercial' },
-            { id: 'util_dual', label: 'Dual use' },
-            { id: 'util_industrial', label: 'Industrial' },
-        ]);
-        drawField('Condition of roof waterproofing', getInputValue('roof_waterproofing'));
-        drawCheckboxField('Parking available', [
-            { id: 'parking_yes', label: 'Yes' },
-            { id: 'parking_main_road', label: 'On Main Road' },
-            { id: 'parking_no', label: 'No' },
-        ]);
-        drawCheckboxField('Approachable through Road', [{id: 'approachable_yes', label: 'Yes'}, {id: 'approachable_no', label: 'No'}]);
-        drawField('Wall masonary material', getInputValue('wall_material'));
-        drawCheckboxField('Major retainable building elements', [
-            { id: 'retainable_water_tank', label: 'Water tank' },
-            { id: 'retainable_subflooring', label: 'Subflooring' },
-            { id: 'retainable_staircase', label: 'Staircase' },
-            { id: 'retainable_other_check', label: 'Other' },
-        ]);
-        drawField('Other retainable', getInputValue('retainable_other_text'));
-        drawField('Plot level from road', getInputValue('plot_level'));
-        drawCheckboxField('Building Control Violations', [
-            {id: 'violations_major', label: 'Major'},
-            {id: 'violations_minor', label: 'Minor'},
-            {id: 'violations_none', label: 'None'},
-        ]);
-        
         addSectionTitle('Rental Detail');
         drawField('Acquisition', getInputValue('rental_acquisition'));
         drawField('Expected Rental /month', getInputValue('rental_expected_rent'));
@@ -337,7 +320,7 @@ export default function ProjectDataPage() {
                         <SectionTable title="Location">
                            <FormRow label="Purpose">
                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2"><Checkbox name="purpose_commercial" id="purpose_commercial" checked={!!formState['purpose_commercial']} onCheckedChange={(c) => handleCheckboxChange('purpose_commercial', !!c)} /> <Label htmlFor="purpose_commercial">Commercial</Label></div>
+                                  <div className="flex items-center gap-2"><Checkbox name="purpose_house" id="purpose_house" checked={!!formState['purpose_house']} onCheckedChange={(c) => handleCheckboxChange('purpose_house', !!c)} /> <Label htmlFor="purpose_house">House</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_office" id="purpose_office" checked={!!formState['purpose_office']} onCheckedChange={(c) => handleCheckboxChange('purpose_office', !!c)} /> <Label htmlFor="purpose_office">Office</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_residential" id="purpose_residential" checked={!!formState['purpose_residential']} onCheckedChange={(c) => handleCheckboxChange('purpose_residential', !!c)} /> <Label htmlFor="purpose_residential">Residential</Label></div>
                                   <div className="flex items-center gap-2"><Checkbox name="purpose_others" id="purpose_others" checked={!!formState['purpose_others']} onCheckedChange={(c) => handleCheckboxChange('purpose_others', !!c)} /> <Label htmlFor="purpose_others">Others</Label></div>
@@ -430,103 +413,33 @@ export default function ProjectDataPage() {
                         </SectionTable>
 
                         <SectionTable title="Building overview">
-                            <FormRow label="Independent premises">
-                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2"><Checkbox id="independent_premises_yes" name="independent_premises_yes" checked={!!formState['independent_premises_yes']} onCheckedChange={(c) => handleCheckboxChange('independent_premises_yes', !!c)} /><Label htmlFor="ind_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="independent_premises_no" name="independent_premises_no" checked={!!formState['independent_premises_no']} onCheckedChange={(c) => handleCheckboxChange('independent_premises_no', !!c)} /><Label htmlFor="ind_no">No. a part of building</Label></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Status">
-                                 <div className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="property_status_commercial" name="property_status_commercial" checked={!!formState['property_status_commercial']} onCheckedChange={(c) => handleCheckboxChange('property_status_commercial', !!c)} /><Label htmlFor="status_comm">Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="property_status_residential" name="property_status_residential" checked={!!formState['property_status_residential']} onCheckedChange={(c) => handleCheckboxChange('property_status_residential', !!c)} /><Label htmlFor="status_res">Residential</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="property_status_industrial" name="property_status_industrial" checked={!!formState['property_status_industrial']} onCheckedChange={(c) => handleCheckboxChange('property_status_industrial', !!c)} /><Label htmlFor="status_ind">Industrial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="property_status_other" name="property_status_other" checked={!!formState['property_status_other']} onCheckedChange={(c) => handleCheckboxChange('property_status_other', !!c)} /><Label htmlFor="status_other">Other:</Label> <Input name="status_other_text" value={formState['status_other_text'] || ''} onChange={handleFormChange} className="h-7" /></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Type of Premises">
-                                 <div className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="premises_type_residence" name="premises_type_residence" checked={!!formState['premises_type_residence']} onCheckedChange={(c) => handleCheckboxChange('premises_type_residence', !!c)} /><Label htmlFor="prem_res">Residence</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="premises_type_offices" name="premises_type_offices" checked={!!formState['premises_type_offices']} onCheckedChange={(c) => handleCheckboxChange('premises_type_offices', !!c)} /><Label htmlFor="prem_off">Offices</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="premises_type_godowns" name="premises_type_godowns" checked={!!formState['premises_type_godowns']} onCheckedChange={(c) => handleCheckboxChange('premises_type_godowns', !!c)} /><Label htmlFor="prem_god">Godowns</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="premises_type_other" name="premises_type_other" checked={!!formState['premises_type_other']} onCheckedChange={(c) => handleCheckboxChange('premises_type_other', !!c)} /><Label htmlFor="prem_other">Other:</Label> <Input name="prem_other_text" value={formState['prem_other_text'] || ''} onChange={handleFormChange} className="h-7" /></div>
-                                </div>
-                            </FormRow>
-                            <FormRow label="Age of Premises if any">
-                                <div className="flex flex-wrap gap-4">
-                                  <div className="flex items-center space-x-2"><Checkbox id="building_age_0-5" name="building_age_0-5" checked={!!formState['building_age_0-5']} onCheckedChange={(c) => handleCheckboxChange('building_age_0-5', !!c)} /><Label htmlFor="age_0_5">0-5</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="building_age_5-10" name="building_age_5-10" checked={!!formState['building_age_5-10']} onCheckedChange={(c) => handleCheckboxChange('building_age_5-10', !!c)} /><Label htmlFor="age_5_10">5-10</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="building_age_>10_years" name="building_age_>10_years" checked={!!formState['building_age_>10_years']} onCheckedChange={(c) => handleCheckboxChange('building_age_>10_years', !!c)} /><Label htmlFor="age_gt_10">More than 10 years</Label></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Interior of Premises if any">
-                                <div className="flex flex-wrap gap-4">
-                                  <div className="flex items-center space-x-2"><Checkbox id="interior_type_single_hall" name="interior_type_single_hall" checked={!!formState['interior_type_single_hall']} onCheckedChange={(c) => handleCheckboxChange('interior_type_single_hall', !!c)} /><Label htmlFor="it_single_hall">Single Hall</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="interior_type_rooms" name="interior_type_rooms" checked={!!formState['interior_type_rooms']} onCheckedChange={(c) => handleCheckboxChange('interior_type_rooms', !!c)} /><Label htmlFor="it_rooms">Rooms</Label></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Type of construction">
-                                <div className="flex flex-wrap gap-4">
-                                  <div className="flex items-center space-x-2"><Checkbox id="construction_type_beam-column_in_rcc" name="construction_type_beam-column_in_rcc" checked={!!formState['construction_type_beam-column_in_rcc']} onCheckedChange={(c) => handleCheckboxChange('construction_type_beam-column_in_rcc', !!c)} /><Label htmlFor="ct_rcc">Beam-Column in RCC</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="construction_type_composite" name="construction_type_composite" checked={!!formState['construction_type_composite']} onCheckedChange={(c) => handleCheckboxChange('construction_type_composite', !!c)} /><Label htmlFor="ct_composite">Composite Structure</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="construction_type_load_bearing" name="construction_type_load_bearing" checked={!!formState['construction_type_load_bearing']} onCheckedChange={(c) => handleCheckboxChange('construction_type_load_bearing', !!c)} /><Label htmlFor="ct_load_bearing">Load Bearing in walls</Label></div>
-                                </div>
-                            </FormRow>
+                           <FormRow label="Condition of Premises with reference to structural stability"><Input name="structural_stability" value={formState['structural_stability'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Is entrance independence"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="entrance_independence_yes" name="entrance_independence_yes" checked={!!formState['entrance_independence_yes']} onCheckedChange={(c) => handleCheckboxChange('entrance_independence_yes', !!c)} /><Label htmlFor="entrance_independence_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="entrance_independence_no" name="entrance_independence_no" checked={!!formState['entrance_independence_no']} onCheckedChange={(c) => handleCheckboxChange('entrance_independence_no', !!c)} /><Label htmlFor="entrance_independence_no">No</Label></div></div></FormRow>
+                           <FormRow label="Staircase for staff use available with its assessment"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="staff_staircase_yes" name="staff_staircase_yes" checked={!!formState['staff_staircase_yes']} onCheckedChange={(c) => handleCheckboxChange('staff_staircase_yes', !!c)} /><Label htmlFor="staff_staircase_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="staff_staircase_no" name="staff_staircase_no" checked={!!formState['staff_staircase_no']} onCheckedChange={(c) => handleCheckboxChange('staff_staircase_no', !!c)} /><Label htmlFor="staff_staircase_no">No</Label></div><div className="flex items-center space-x-2"><Checkbox id="staff_staircase_na" name="staff_staircase_na" checked={!!formState['staff_staircase_na']} onCheckedChange={(c) => handleCheckboxChange('staff_staircase_na', !!c)} /><Label htmlFor="staff_staircase_na">N/A</Label></div></div></FormRow>
+                           <FormRow label="Emergency Exit available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="emergency_exit_yes" name="emergency_exit_yes" checked={!!formState['emergency_exit_yes']} onCheckedChange={(c) => handleCheckboxChange('emergency_exit_yes', !!c)} /><Label htmlFor="emergency_exit_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="emergency_exit_no" name="emergency_exit_no" checked={!!formState['emergency_exit_no']} onCheckedChange={(c) => handleCheckboxChange('emergency_exit_no', !!c)} /><Label htmlFor="emergency_exit_no">No</Label></div></div></FormRow>
+                           <FormRow label="Emergency Exit if not available can be provided or not"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="emergency_exit_provision_yes" name="emergency_exit_provision_yes" checked={!!formState['emergency_exit_provision_yes']} onCheckedChange={(c) => handleCheckboxChange('emergency_exit_provision_yes', !!c)} /><Label htmlFor="emergency_exit_provision_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="emergency_exit_provision_no" name="emergency_exit_provision_no" checked={!!formState['emergency_exit_provision_no']} onCheckedChange={(c) => handleCheckboxChange('emergency_exit_provision_no', !!c)} /><Label htmlFor="emergency_exit_provision_no">No</Label></div></div></FormRow>
+                           <FormRow label="Ramp available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="ramp_available_yes" name="ramp_available_yes" checked={!!formState['ramp_available_yes']} onCheckedChange={(c) => handleCheckboxChange('ramp_available_yes', !!c)} /><Label htmlFor="ramp_available_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="ramp_available_no" name="ramp_available_no" checked={!!formState['ramp_available_no']} onCheckedChange={(c) => handleCheckboxChange('ramp_available_no', !!c)} /><Label htmlFor="ramp_available_no">No</Label></div></div></FormRow>
+                           <FormRow label="Ramp if not available can be provided or not"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="ramp_provision_yes" name="ramp_provision_yes" checked={!!formState['ramp_provision_yes']} onCheckedChange={(c) => handleCheckboxChange('ramp_provision_yes', !!c)} /><Label htmlFor="ramp_provision_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="ramp_provision_no" name="ramp_provision_no" checked={!!formState['ramp_provision_no']} onCheckedChange={(c) => handleCheckboxChange('ramp_provision_no', !!c)} /><Label htmlFor="ramp_provision_no">No</Label></div></div></FormRow>
+                           <FormRow label="Seepage"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="seepage_yes" name="seepage_yes" checked={!!formState['seepage_yes']} onCheckedChange={(c) => handleCheckboxChange('seepage_yes', !!c)} /><Label htmlFor="seepage_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="seepage_no" name="seepage_no" checked={!!formState['seepage_no']} onCheckedChange={(c) => handleCheckboxChange('seepage_no', !!c)} /><Label htmlFor="seepage_no">No</Label></div></div></FormRow>
+                           <FormRow label="Area of seepage (Walls, slab etc.)"><Input name="seepage_area" value={formState['seepage_area'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Cause of Seepage"><Input name="seepage_cause" value={formState['seepage_cause'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Generator installation space"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="generator_space_yes" name="generator_space_yes" checked={!!formState['generator_space_yes']} onCheckedChange={(c) => handleCheckboxChange('generator_space_yes', !!c)} /><Label htmlFor="generator_space_yes">Yes at back or left side</Label></div><div className="flex items-center space-x-2"><Checkbox id="generator_space_no" name="generator_space_no" checked={!!formState['generator_space_no']} onCheckedChange={(c) => handleCheckboxChange('generator_space_no', !!c)} /><Label htmlFor="generator_space_no">No</Label></div></div></FormRow>
+                           <FormRow label="Property Utilization"><div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" checked={!!formState['util_residential']} onCheckedChange={(c) => handleCheckboxChange('util_residential', !!c)} /><Label htmlFor="util_residential">Fully residential</Label></div><div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial" checked={!!formState['util_commercial']} onCheckedChange={(c) => handleCheckboxChange('util_commercial', !!c)} /><Label htmlFor="util_commercial">Fully Commercial</Label></div><div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" checked={!!formState['util_dual']} onCheckedChange={(c) => handleCheckboxChange('util_dual', !!c)} /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div><div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" checked={!!formState['util_industrial']} onCheckedChange={(c) => handleCheckboxChange('util_industrial', !!c)} /><Label htmlFor="util_industrial">Industrial</Label></div></div></FormRow>
+                           <FormRow label="Building plinth level from the road"><Input name="plinth_level" value={formState['plinth_level'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Is area susceptible to flooding during rain fall"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="flooding_yes" name="flooding_yes" checked={!!formState['flooding_yes']} onCheckedChange={(c) => handleCheckboxChange('flooding_yes', !!c)} /><Label htmlFor="flooding_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="flooding_no" name="flooding_no" checked={!!formState['flooding_no']} onCheckedChange={(c) => handleCheckboxChange('flooding_no', !!c)} /><Label htmlFor="flooding_no">No</Label></div></div></FormRow>
+                           <FormRow label="Disable access available or can be provided"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="disable_access_yes" name="disable_access_yes" checked={!!formState['disable_access_yes']} onCheckedChange={(c) => handleCheckboxChange('disable_access_yes', !!c)} /><Label htmlFor="disable_access_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="disable_access_no" name="disable_access_no" checked={!!formState['disable_access_no']} onCheckedChange={(c) => handleCheckboxChange('disable_access_no', !!c)} /><Label htmlFor="disable_access_no">No</Label></div></div></FormRow>
+                           <FormRow label="Condition of roof waterproofing (if applicable)"><Input name="roof_waterproofing" value={formState['roof_waterproofing'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Parking available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="parking_yes" name="parking_yes" checked={!!formState['parking_yes']} onCheckedChange={(c) => handleCheckboxChange('parking_yes', !!c)} /><Label htmlFor="parking_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="parking_no" name="parking_no" checked={!!formState['parking_no']} onCheckedChange={(c) => handleCheckboxChange('parking_no', !!c)} /><Label htmlFor="parking_no">No</Label></div></div></FormRow>
+                           <FormRow label="Set Back Available at front"><Input name="set_back_front" value={formState['set_back_front'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Approachable through Road"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="approachable_yes" name="approachable_yes" checked={!!formState['approachable_yes']} onCheckedChange={(c) => handleCheckboxChange('approachable_yes', !!c)} /><Label htmlFor="approachable_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="approachable_no" name="approachable_no" checked={!!formState['approachable_no']} onCheckedChange={(c) => handleCheckboxChange('approachable_no', !!c)} /><Label htmlFor="approachable_no">No</Label></div></div></FormRow>
+                           <FormRow label="Any hazard like Petrol Pump / CNG Station / in vicinity available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="hazard_yes" name="hazard_yes" checked={!!formState['hazard_yes']} onCheckedChange={(c) => handleCheckboxChange('hazard_yes', !!c)} /><Label htmlFor="hazard_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="hazard_no" name="hazard_no" checked={!!formState['hazard_no']} onCheckedChange={(c) => handleCheckboxChange('hazard_no', !!c)} /><Label htmlFor="hazard_no">No</Label></div></div></FormRow>
+                           <FormRow label="Wall masonary material as per region"><Input name="wall_material" value={formState['wall_material'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Space for Signage available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="signage_space_yes" name="signage_space_yes" checked={!!formState['signage_space_yes']} onCheckedChange={(c) => handleCheckboxChange('signage_space_yes', !!c)} /><Label htmlFor="signage_space_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="signage_space_no" name="signage_space_no" checked={!!formState['signage_space_no']} onCheckedChange={(c) => handleCheckboxChange('signage_space_no', !!c)} /><Label htmlFor="signage_space_no">No</Label></div></div></FormRow>
+                           <FormRow label="Major retainable building elements"><div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" checked={!!formState['retainable_water_tank']} onCheckedChange={(c) => handleCheckboxChange('retainable_water_tank', !!c)} /><Label htmlFor="retainable_water_tank">Water tank</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_vault" name="retainable_vault" checked={!!formState['retainable_vault']} onCheckedChange={(c) => handleCheckboxChange('retainable_vault', !!c)} /><Label htmlFor="retainable_vault">Vault</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" checked={!!formState['retainable_subflooring']} onCheckedChange={(c) => handleCheckboxChange('retainable_subflooring', !!c)} /><Label htmlFor="retainable_subflooring">Subflooring</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" checked={!!formState['retainable_staircase']} onCheckedChange={(c) => handleCheckboxChange('retainable_staircase', !!c)} /><Label htmlFor="retainable_staircase">Staircase</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_others" name="retainable_others" checked={!!formState['retainable_others']} onCheckedChange={(c) => handleCheckboxChange('retainable_others', !!c)} /><Label htmlFor="retainable_others">Others</Label></div></div></FormRow>
+                           <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input name="plot_level_surroundings" value={formState['plot_level_surroundings'] || ''} onChange={handleFormChange} /></FormRow>
+                           <FormRow label="Building Control Violations"><div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="violations_major" name="violations_major" checked={!!formState['violations_major']} onCheckedChange={(c) => handleCheckboxChange('violations_major', !!c)} /><Label htmlFor="violations_major">Major</Label></div><div className="flex items-center space-x-2"><Checkbox id="violations_minor" name="violations_minor" checked={!!formState['violations_minor']} onCheckedChange={(c) => handleCheckboxChange('violations_minor', !!c)} /><Label htmlFor="violations_minor">Minor</Label></div><div className="flex items-center space-x-2"><Checkbox id="violations_none" name="violations_none" checked={!!formState['violations_none']} onCheckedChange={(c) => handleCheckboxChange('violations_none', !!c)} /><Label htmlFor="violations_none">No Deviation</Label></div></div></FormRow>
                         </SectionTable>
 
-                         <SectionTable title="Building Details">
-                            <FormRow label="Seepage">
-                                 <div className="flex items-center space-x-8">
-                                    <div className="flex items-center space-x-2"><Checkbox id="seepage_yes" name="seepage_yes" checked={!!formState['seepage_yes']} onCheckedChange={(c) => handleCheckboxChange('seepage_yes', !!c)} /><Label htmlFor="seepage_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="seepage_no" name="seepage_no" checked={!!formState['seepage_no']} onCheckedChange={(c) => handleCheckboxChange('seepage_no', !!c)} /><Label htmlFor="seepage_no">No</Label></div>
-                                </div>
-                            </FormRow>
-                            <FormRow label="Area of seepage (Walls, slab etc.)"><Input name="seepage_area" value={formState['seepage_area'] || ''} onChange={handleFormChange}/></FormRow>
-                            <FormRow label="Cause of Seepage"><Input name="seepage_cause" value={formState['seepage_cause'] || ''} onChange={handleFormChange} /></FormRow>
-                            <FormRow label="Property Utilization">
-                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_residential" name="util_residential" checked={!!formState['util_residential']} onCheckedChange={(c) => handleCheckboxChange('util_residential', !!c)} /><Label htmlFor="util_residential">Fully residential</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_commercial" name="util_commercial" checked={!!formState['util_commercial']} onCheckedChange={(c) => handleCheckboxChange('util_commercial', !!c)} /><Label htmlFor="util_commercial">Fully Commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_dual" name="util_dual" checked={!!formState['util_dual']} onCheckedChange={(c) => handleCheckboxChange('util_dual', !!c)} /><Label htmlFor="util_dual">Dual use residential & commercial</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="util_industrial" name="util_industrial" checked={!!formState['util_industrial']} onCheckedChange={(c) => handleCheckboxChange('util_industrial', !!c)} /><Label htmlFor="util_industrial">Industrial</Label></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Condition of roof waterproofing (if applicable)"><Input name="roof_waterproofing" value={formState['roof_waterproofing'] || ''} onChange={handleFormChange} /></FormRow>
-                            <FormRow label="Parking available">
-                                 <div className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="parking_yes" name="parking_yes" checked={!!formState['parking_yes']} onCheckedChange={(c) => handleCheckboxChange('parking_yes', !!c)} /><Label htmlFor="parking_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="parking_main_road" name="parking_main_road" checked={!!formState['parking_main_road']} onCheckedChange={(c) => handleCheckboxChange('parking_main_road', !!c)} /><Label htmlFor="parking_main_road">On Main Road</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="parking_no" name="parking_no" checked={!!formState['parking_no']} onCheckedChange={(c) => handleCheckboxChange('parking_no', !!c)} /><Label htmlFor="parking_no">No</Label></div>
-                                </div>
-                            </FormRow>
-                            <FormRow label="Approachable through Road">
-                                 <div className="flex items-center space-x-8">
-                                    <div className="flex items-center space-x-2"><Checkbox id="approachable_yes" name="approachable_yes" checked={!!formState['approachable_yes']} onCheckedChange={(c) => handleCheckboxChange('approachable_yes', !!c)} /><Label htmlFor="approachable_yes">Yes</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="approachable_no" name="approachable_no" checked={!!formState['approachable_no']} onCheckedChange={(c) => handleCheckboxChange('approachable_no', !!c)} /><Label htmlFor="approachable_no">No</Label></div>
-                                </div>
-                            </FormRow>
-                             <FormRow label="Wall masonary material as per region"><Input name="wall_material" value={formState['wall_material'] || ''} onChange={handleFormChange} /></FormRow>
-                            <FormRow label="Major retainable building elements">
-                                <div className="flex flex-wrap gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" checked={!!formState['retainable_water_tank']} onCheckedChange={(c) => handleCheckboxChange('retainable_water_tank', !!c)} /><Label htmlFor="retainable_water_tank">Water tank</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" checked={!!formState['retainable_subflooring']} onCheckedChange={(c) => handleCheckboxChange('retainable_subflooring', !!c)} /><Label htmlFor="retainable_subflooring">Subflooring</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" checked={!!formState['retainable_staircase']} onCheckedChange={(c) => handleCheckboxChange('retainable_staircase', !!c)} /><Label htmlFor="retainable_staircase">staircase</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="retainable_other_check" name="retainable_other_check" checked={!!formState['retainable_other_check']} onCheckedChange={(c) => handleCheckboxChange('retainable_other_check', !!c)} /><Label htmlFor="retainable_other_check">Others</Label><Input name="retainable_other_text" value={formState['retainable_other_text'] || ''} onChange={handleFormChange} className="h-7" /></div>
-                                </div>
-                            </FormRow>
-                            <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input name="plot_level" value={formState['plot_level'] || ''} onChange={handleFormChange} /></FormRow>
-                            <FormRow label="Building Control Violations">
-                                 <div className="flex flex-wrap items-center gap-4">
-                                     <div className="flex flex-wrap gap-4">
-                                        <div className="flex items-center space-x-2"><Checkbox id="violations_major" name="violations_major" checked={!!formState['violations_major']} onCheckedChange={(c) => handleCheckboxChange('violations_major', !!c)} /><Label htmlFor="violation_major">Major</Label></div>
-                                        <div className="flex items-center space-x-2"><Checkbox id="violations_minor" name="violations_minor" checked={!!formState['violations_minor']} onCheckedChange={(c) => handleCheckboxChange('violations_minor', !!c)} /><Label htmlFor="violation_minor">Minor</Label></div>
-                                        <div className="flex items-center space-x-2"><Checkbox id="violations_none" name="violations_none" checked={!!formState['violations_none']} onCheckedChange={(c) => handleCheckboxChange('violations_none', !!c)} /><Label htmlFor="violation_none">No Deviation</Label></div>
-                                    </div>
-                                     <div className="flex items-center space-x-2"><Checkbox id="violation_informed" name="violation_informed" checked={!!formState['violation_informed']} onCheckedChange={(c) => handleCheckboxChange('violation_informed', !!c)} /><Label htmlFor="violation_informed">As Informed by Owner Representative</Label></div>
-                                </div>
-                            </FormRow>
-                        </SectionTable>
-                        
                         <SectionTable title="Rental Detail">
                             <FormRow label="Acquisition"><Input name="rental_acquisition" value={formState['rental_acquisition'] || ''} onChange={handleFormChange} /></FormRow>
                             <FormRow label="Expected Rental /month"><Input name="rental_expected_rent" value={formState['rental_expected_rent'] || ''} onChange={handleFormChange} /></FormRow>
