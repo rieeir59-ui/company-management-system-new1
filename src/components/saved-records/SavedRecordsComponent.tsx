@@ -619,5 +619,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
-    
