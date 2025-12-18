@@ -1,23 +1,8 @@
 'use server';
 import 'server-only';
 
-// import { genkit } from 'genkit';
-// import { googleAI } from '@genkit-ai/google-genai';
+// This file is intentionally left empty.
+// Genkit setup and AI model initialization have been moved to a central location.
 
-const plugins: any[] = [];
-// if (process.env.GEMINI_API_KEY) {
-//   plugins.push(googleAI({ apiKey: process.env.GEMINI_API_KEY }));
-// }
-
-// Correctly initialize Genkit once and export the ai object.
-// export const ai = genkit({
-//   plugins,
-//   logLevel: 'debug',
-//   enableTracingAndMetrics: true,
-// });
-
-// Dummy export to avoid breaking imports
-export const ai = {
-    definePrompt: (config: any) => async (input: any) => ({ output: null }),
-    defineFlow: (config: any, fn: any) => fn,
-};
+// Dummy export to prevent breaking changes in other files that might still import from here.
+export const ai = {};
