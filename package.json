@@ -1,11 +1,11 @@
 {
   "name": "nextn",
   "version": "0.1.0",
-  "private": false,
+  "private": true,
   "scripts": {
     "dev": "next dev -p 9003",
     "build": "next build",
-    "start": "next start -p 9003",
+    "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
@@ -59,6 +59,6 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": "18.x"
+    "node": "18"
   }
 }
