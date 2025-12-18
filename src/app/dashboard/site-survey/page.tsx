@@ -43,7 +43,9 @@ export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
     const { addRecord } = useRecords();
-    const [formState, setFormState] = useState<Record<string, any>>({});
+    const [formState, setFormState] = useState<Record<string, any>>({
+        'survey_conducted_by_email': 'Admin@isbahhassan.com'
+    });
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormState(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -471,7 +473,7 @@ export default function ProjectDataPage() {
                                <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="signage_space_yes" name="signage_space_yes" checked={!!formState['signage_space_yes']} onCheckedChange={(c) => handleCheckboxChange('signage_space_yes', !!c)} /><Label htmlFor="signage_space_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="signage_space_no" name="signage_space_no" checked={!!formState['signage_space_no']} onCheckedChange={(c) => handleCheckboxChange('signage_space_no', !!c)} /><Label htmlFor="signage_space_no">No</Label></div></div>
                             </FormRow>
                             <FormRow label="Major retainable building elements">
-                                <div className="flex flex-wrap gap-x-4">
+                                <div className="flex flex-wrap gap-4">
                                   <div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" checked={!!formState['retainable_water_tank']} onCheckedChange={(c) => handleCheckboxChange('retainable_water_tank', !!c)} /><Label htmlFor="retainable_water_tank">Water tank</Label></div>
                                   <div className="flex items-center space-x-2"><Checkbox id="retainable_vault" name="retainable_vault" checked={!!formState['retainable_vault']} onCheckedChange={(c) => handleCheckboxChange('retainable_vault', !!c)} /><Label htmlFor="retainable_vault">Vault</Label></div>
                                   <div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" checked={!!formState['retainable_subflooring']} onCheckedChange={(c) => handleCheckboxChange('retainable_subflooring', !!c)} /><Label htmlFor="retainable_subflooring">Subflooring</Label></div>
