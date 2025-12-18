@@ -2,7 +2,6 @@
   "name": "nextn",
   "version": "0.1.0",
   "private": false,
-  "main": "src/app/page.tsx",
   "scripts": {
     "dev": "next dev -p 9003",
     "build": "next build",
