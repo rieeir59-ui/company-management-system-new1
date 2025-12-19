@@ -43,6 +43,26 @@ import {
   Search as SearchIcon,
   Compass,
   BookCopy,
+  Folder,
+  FileSignature,
+  FileKey,
+  Scroll,
+  BarChart2,
+  Calendar,
+  Wallet,
+  CheckSquare,
+  FileX,
+  FilePen,
+  File as FileIcon,
+  CircleDollarSign,
+  Clipboard,
+  Presentation,
+  Package,
+  Palette,
+  Clock,
+  UserCog,
+  BookUser,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -358,3 +378,5 @@ export default function DashboardSidebar() {
       </Sidebar>
   );
 }
+
+    
