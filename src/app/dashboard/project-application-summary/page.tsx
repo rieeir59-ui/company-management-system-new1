@@ -12,9 +12,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -41,8 +39,7 @@ const SummaryRow = ({ label, id, value, onChange, placeholder, isCalculated = fa
 export default function Page() {
     const image = PlaceHolderImages.find(p => p.id === 'project-application-summary');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [formState, setFormState] = useState({
         applicationNumber: '',
@@ -102,32 +99,22 @@ export default function Page() {
     }, [formState]);
     
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            category: 'Project Application Summary',
-            items: [
-                ...Object.entries(formState).map(([key, value]) => `${key}: ${value}`),
-                ...Object.entries(calculated).map(([key, value]) => `${key}: ${value}`),
-            ],
+            fileName: 'Project Application Summary',
+            projectName: formState.contractorName || 'Untitled Summary',
+            data: [{
+                category: 'Project Application Summary',
+                items: [
+                    ...Object.entries(formState).map(([key, value]) => `${key}: ${value}`),
+                    ...Object.entries(calculated).map(([key, value]) => `${key}: ${value}`),
+                ],
+            }],
         };
 
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Project Application Summary',
-                projectName: formState.contractorName || 'Untitled Summary',
-                data: [dataToSave],
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The application summary has been saved.' });
+            await addRecord(dataToSave as any);
         } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+            // This will be handled by the context's error emitter
         }
     };
     
