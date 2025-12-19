@@ -15,9 +15,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface InstructionRow {
   id: number;
@@ -29,8 +27,7 @@ interface InstructionRow {
 export default function InstructionSheetPage() {
   const image = PlaceHolderImages.find(p => p.id === 'instruction-sheet');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user: currentUser } = useCurrentUser();
+  const { addRecord } = useRecords();
   
   const [rows, setRows] = useState<InstructionRow[]>(
     Array.from({ length: 23 }, (_, i) => ({ id: i + 1, what: '', how: '', why: '' }))
@@ -62,36 +59,26 @@ export default function InstructionSheetPage() {
   };
 
   const handleSave = async () => {
-    if (!firestore || !currentUser) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-        return;
-    }
-
     const dataToSave = {
-        category: 'Instruction Sheet',
-        items: [
-            `Project: ${header.project}`,
-            `Field Report No: ${header.fieldReportNo}`,
-            `Contract: ${header.contract}`,
-            `Architects Project No: ${header.architectsProjectNo}`,
-            `To: ${header.to.join(', ')}`,
-            ...rows.map(r => `Row ${r.id}: What - ${r.what}, How - ${r.how}, Why - ${r.why}`)
-        ],
+        fileName: 'Instruction Sheet',
+        projectName: header.project || 'Untitled Instruction Sheet',
+        data: [{
+            category: 'Instruction Sheet',
+            items: [
+                `Project: ${header.project}`,
+                `Field Report No: ${header.fieldReportNo}`,
+                `Contract: ${header.contract}`,
+                `Architects Project No: ${header.architectsProjectNo}`,
+                `To: ${header.to.join(', ')}`,
+                ...rows.map(r => `Row ${r.id}: What - ${r.what}, How - ${r.how}, Why - ${r.why}`)
+            ],
+        }]
     };
-
+    
     try {
-        await addDoc(collection(firestore, 'savedRecords'), {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
-            fileName: 'Instruction Sheet',
-            projectName: header.project || 'Untitled Instruction Sheet',
-            data: [dataToSave],
-            createdAt: serverTimestamp(),
-        });
-        toast({ title: 'Record Saved', description: 'The instruction sheet has been saved.' });
+        await addRecord(dataToSave as any);
     } catch (error) {
-        console.error("Error saving document: ", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+        // This will be handled by the context's error emitter
     }
   };
 
