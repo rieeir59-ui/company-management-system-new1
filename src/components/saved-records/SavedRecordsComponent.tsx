@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, Users, Folder, BookCopy } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Landmark } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Badge } from '@/components/ui/badge';
 import { getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import Link from 'next/link';
@@ -38,7 +40,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { bankTimelineCategories, ProjectRow } from '@/lib/projects-data';
-import { ClipboardCheck, Landmark } from 'lucide-react';
+
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -190,10 +192,11 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
 const recordCategories = {
     'Timelines of Bank': bankTimelineCategories,
-    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)),
+    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
     'Task Assignments': ['Task Assignment'],
-    'Uploaded Files': ['Uploaded File']
+    'Uploaded Files': ['Uploaded File', 'Daily Work Report']
 };
+
 
 const mainCategories = [
     { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
@@ -437,4 +440,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
   );
 }
 
-    
