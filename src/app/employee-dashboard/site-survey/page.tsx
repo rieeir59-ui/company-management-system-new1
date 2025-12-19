@@ -16,12 +16,6 @@ import 'jspdf-autotable';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
 import { useRecords } from '@/context/RecordContext';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { useFirebase } from '@/firebase/provider';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -49,11 +43,8 @@ export default function ProjectDataPage() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
     const { addRecord } = useRecords();
-    const { user: currentUser } = useCurrentUser();
-    const { firestore } = useFirebase();
-
     const [formState, setFormState] = useState<Record<string, any>>({
-        'survey_conducted_by_email': currentUser?.email || 'Admin@isbahhassan.com'
+        'survey_conducted_by_email': 'Admin@isbahhassan.com'
     });
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -65,11 +56,6 @@ export default function ProjectDataPage() {
     };
     
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
        const dataToSave = {
           fileName: "Site Survey Report",
           projectName: formState['project_name_header'] || 'Untitled Site Survey',
@@ -82,7 +68,8 @@ export default function ProjectDataPage() {
         try {
             await addRecord(dataToSave as any);
         } catch (error) {
-            // error is handled by context
+             // Error is handled by context's toast
+             console.error("Save failed in component:", error);
         }
     }
 
@@ -488,3 +475,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
