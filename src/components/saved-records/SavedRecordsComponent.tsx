@@ -149,8 +149,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     const recordCategories = useMemo(() => ({
-        'Timelines of Bank': bankTimelineCategories,
-        'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
+        'Timelines of Bank': bankTimelineCategories || [],
+        'Project Manual': allFileNames.filter(name => !([...(bankTimelineCategories || []), 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name))),
         'Task Assignments': ['Task Assignment'],
         'Uploaded Files': ['Uploaded File', 'Daily Work Report']
     }), [bankTimelineCategories]);
@@ -172,7 +172,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         let categoryFiles: string[];
     
         if (activeCategory === 'Banks') {
-            const allBankTimelineFileNames = bankTimelineCategories.map(b => `${b} Timeline`);
+            const allBankTimelineFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
              return userRecords.filter(r => allBankTimelineFileNames.includes(r.fileName) && (
                 r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                 r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -237,7 +237,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
                     let firstItem = section.items[0];
                     // If items are strings, try to parse the first one to determine structure
-                    if (typeof item === 'string') {
+                    if (typeof firstItem === 'string') {
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
@@ -437,4 +437,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
