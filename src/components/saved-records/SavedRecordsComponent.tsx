@@ -365,6 +365,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Project Name</TableHead>
+                                                            <TableHead>File Name</TableHead>
                                                             {!employeeOnly && <TableHead>Created By</TableHead>}
                                                             <TableHead>Date</TableHead>
                                                             <TableHead className="text-right">Actions</TableHead>
@@ -374,6 +375,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                         {records.map(record => (
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                <TableCell>{record.fileName}</TableCell>
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                                 <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                                 <TableCell className="text-right">
@@ -440,3 +442,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
   );
 }
 
+    
