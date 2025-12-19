@@ -23,6 +23,9 @@ import {
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
+import { allFileNames } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
+import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 
 export type SavedRecord = {
   id: string;
@@ -41,7 +44,12 @@ type RecordContextType = {
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
   updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
-  isLoading: boolean;
+  projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
+  bankTimelineItems: { href: string; label: string; icon: React.ElementType; }[];
+  addBank: (bankName: string) => void;
+  updateBank: (oldName: string, newName: string) => void;
+  deleteBank: (bankName: string) => void;
+  getBankProjects: (bankName: string) => ProjectRow[];
   error: string | null;
 };
 
@@ -53,8 +61,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const [records, setRecords] = useState<SavedRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bankTimelineCategories, setBankTimelineCategories] = useState<string[]>([]);
+
 
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
@@ -62,11 +71,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isUserLoading || !currentUser || !firestore) {
       setRecords([]);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     const recordsCollection = collection(firestore, 'savedRecords');
     let q;
 
@@ -89,14 +96,23 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
           } as SavedRecord;
         });
         setRecords(fetched);
+        
+        const banks = new Set(fetched
+            .filter(r => r.fileName.endsWith('Timeline'))
+            .map(r => r.fileName.replace(' Timeline', ''))
+            .filter(name => !['Commercial', 'Residential'].includes(name))
+        );
+        const uniqueBanks = Array.from(banks);
+        if(uniqueBanks.length !== bankTimelineCategories.length || uniqueBanks.some(b => !bankTimelineCategories.includes(b))) {
+           setBankTimelineCategories(uniqueBanks);
+        }
+
         setError(null);
-        setIsLoading(false);
       },
       (err: FirestoreError) => {
         console.error('Error fetching records:', err);
         setError('Failed to fetch records. You may not have permission.');
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'list' }));
-        setIsLoading(false);
       }
     );
 
@@ -175,6 +191,30 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast, currentUser, isAdmin, records]
   );
 
+  const getBankProjects = useCallback((bankName: string) => {
+    return bankProjectsMap[bankName.toLowerCase()] || [];
+  }, []);
+  
+  const addBank = (bankName: string) => {
+    if (!bankTimelineCategories.includes(bankName)) {
+      setBankTimelineCategories(prev => [...prev, bankName]);
+    }
+  };
+
+  const updateBank = (oldName: string, newName: string) => {
+    setBankTimelineCategories(prev => prev.map(b => (b === oldName ? newName : b)));
+    // Here you would also update any records in Firestore
+    // For now, we just update the local state
+    toast({ title: 'Bank Updated', description: `Renamed '${oldName}' to '${newName}'.` });
+  };
+  
+  const deleteBank = (bankName: string) => {
+    setBankTimelineCategories(prev => prev.filter(b => b !== bankName));
+    // Here you would also delete records in Firestore
+    toast({ title: 'Bank Deleted', description: `Timeline for '${bankName}' has been removed.` });
+  };
+
+
   // Update task status (admin or assigned employee)
   const updateTaskStatus = useCallback(
     async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
@@ -200,9 +240,30 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
+  
+  const projectManualItems = allFileNames
+    .filter(name => !name.includes('Timeline') && name !== 'Task Assignment' && name !== 'My Projects')
+    .map(name => {
+      const url = `/${currentUser?.role === 'admin' ? 'dashboard' : 'employee-dashboard'}/${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+      return {
+        href: `/dashboard/${name.toLowerCase().replace(/\s/g, '-').replace(/\(|\)/g, '')}`,
+        label: name,
+        icon: getIconForFile(name),
+      };
+    });
+
+  const bankTimelineItems = [
+    { href: '/dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
+    { href: '/dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
+    ...bankTimelineCategories.map(bank => ({
+      href: `/dashboard/timelines-of-bank/${encodeURIComponent(bank)}`,
+      label: bank,
+      icon: Landmark,
+    }))
+  ];
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, isLoading, error }}>
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects }}>
       {children}
     </RecordContext.Provider>
   );

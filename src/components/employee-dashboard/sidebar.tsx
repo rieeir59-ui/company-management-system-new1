@@ -404,8 +404,8 @@ export default function EmployeeDashboardSidebar() {
           ) : (
             <MemoizedSidebarMenu 
                 menuItems={topLevelItems} 
-                projectManualItems={projectManualItems}
-                bankTimelineItems={bankTimelineItems}
+                projectManualItems={projectManualItems || []}
+                bankTimelineItems={bankTimelineItems || []}
             />
           )}
         </SidebarContent>

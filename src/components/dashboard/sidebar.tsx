@@ -324,7 +324,11 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu visibleTopLevelItems={visibleTopLevelItems} projectManualItems={projectManualItems} bankTimelineItems={bankTimelineItems} />
+            <MemoizedSidebarMenu 
+                visibleTopLevelItems={visibleTopLevelItems} 
+                projectManualItems={projectManualItems || []} 
+                bankTimelineItems={bankTimelineItems || []} 
+            />
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">
