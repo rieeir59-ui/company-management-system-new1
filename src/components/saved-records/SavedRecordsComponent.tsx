@@ -79,115 +79,61 @@ const generatePdfForRecord = (record: SavedRecord) => {
         }
     };
     
-    // Generic PDF generation
-    const generateGenericPdf = () => {
-        addDefaultHeader();
+    addDefaultHeader();
 
-        if (Array.isArray(record.data)) {
-            record.data.forEach((section: any) => {
-                if (typeof section === 'object' && section !== null && section.category) {
-                    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(11);
-                    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-                    doc.text(section.category, 14, yPos);
-                    yPos += 8;
-                    doc.setTextColor(0,0,0);
+    if (Array.isArray(record.data)) {
+        record.data.forEach((section: any) => {
+            if (typeof section === 'object' && section !== null && section.category) {
+                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                doc.text(section.category, 14, yPos);
+                yPos += 8;
+                doc.setTextColor(0,0,0);
 
-                    const body = (Array.isArray(section.items) ? section.items : [section.items]).map((item: any) => {
-                         if (typeof item === 'string') {
-                            const parts = item.split(/:(.*)/s);
-                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                         } else if (item && item.label && item.value !== undefined) {
-                            return [item.label, String(item.value)];
-                         }
-                         return [JSON.stringify(item), ''];
-                    });
+                if (Array.isArray(section.items)) {
+                    let firstItem = section.items[0];
+                    if (typeof firstItem === 'string') {
+                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+                    }
+                    
+                    if (typeof firstItem === 'object' && firstItem !== null) {
+                        const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                        const body = section.items.map((item: any) => {
+                             let parsedItem = item;
+                             if (typeof item === 'string') {
+                                try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => item); }
+                             }
+                             return headers.map(header => parsedItem[header] !== undefined ? String(parsedItem[header]) : '');
+                        });
 
-                    (doc as any).autoTable({
-                        startY: yPos,
-                        body: body,
-                        theme: 'striped',
-                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                        headStyles: { fontStyle: 'bold' },
-                        columnStyles: { 0: { fontStyle: 'bold' } }
-                    });
-                     yPos = (doc as any).autoTable.previous.finalY + 10;
+                        (doc as any).autoTable({
+                            startY: yPos,
+                            head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                            body: body,
+                            theme: 'striped',
+                            styles: { fontSize: 8, cellPadding: 2 },
+                        });
+
+                    } else { // Fallback for simple arrays or other formats
+                        const body = section.items.map((item: any) => {
+                            if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                            if (typeof item === 'string') {
+                                const parts = item.split(/:(.*)/s);
+                                return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                            }
+                            return [JSON.stringify(item), ''];
+                        });
+                        (doc as any).autoTable({ startY: yPos, body: body, theme: 'plain' });
+                    }
                 }
-            });
-        }
-        addFooter();
-        doc.save(`${record.projectName}_${record.fileName}.pdf`);
-    };
-
-    if (record.fileName === 'Project Agreement') {
-        const addText = (text: string, isBold = false, indent = 0, size = 10, spaceAfter = 7) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-            doc.setFontSize(size);
-            const splitText = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - 28 - indent);
-            doc.text(splitText, 14 + indent, yPos);
-            yPos += (splitText.length * 4) + spaceAfter;
-        };
-        const addList = (items: { label: string, value: string }[]) => {
-            items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
-        };
-        
-        addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
-        const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
-        addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
-        addText(`Between the Owner: ${details.find((d:any)=>d.label.includes('Owner'))?.value || '________________'}`);
-        addText(`For the Design of: ${details.find((d:any)=>d.label.includes('Design'))?.value || '________________'}`);
-        addText(`Address: ${details.find((d:any)=>d.label.includes('Address'))?.value || '________________'}`);
-        
-        const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
-        (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-        
-        addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
-        const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
-        (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-
-        addText('Project Management', true, 0, 12, 8);
-        addText('Top Supervision:', true, 2, 10, 5);
-        addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
-
-        addText('Detailed Supervision:', true, 2, 10, 5);
-        addText(record.data.find(d => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
-
-        addText('Please Note:', true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Notes')?.items || []);
-        addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
-        
-        doc.addPage(); yPos = 20;
-
-        addText("Architect's Responsibilities", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === "Architect's Responsibilities")?.items || []);
-
-        addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Not Responsible For')?.items || []);
-
-        addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Termination')?.items || []);
-
-        doc.addPage(); yPos = 20;
-
-        addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Compensation')?.items || []);
-
-        yPos += 10;
-        if (yPos > 270) { doc.addPage(); yPos = 20; }
-        addText('____________________', false, 0, 10, 2);
-        addText('Architect', false, 0, 10, 15);
-        addText('____________________', false, 0, 10, 2);
-        addText('Client', false, 0, 10, 5);
-
-        addFooter();
-        doc.save('Project-Agreement.pdf');
-    } else {
-        generateGenericPdf();
+                 yPos = (doc as any).autoTable.previous.finalY + 10;
+            }
+        });
     }
+    addFooter();
+    doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
 const recordCategories = {
@@ -273,30 +219,70 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
+    
         return (
-            <Table>
-                <TableBody>
-                    {viewingRecord.data.map((section: any, index: number) => (
-                        <React.Fragment key={index}>
-                            <TableRow className="bg-muted hover:bg-muted">
-                                <TableCell colSpan={2} className="font-bold text-primary">{section.category}</TableCell>
-                            </TableRow>
-                            {Array.isArray(section.items) ? section.items.map((item: any, i: number) => {
-                                if (typeof item === 'string') {
-                                    const parts = item.split(/:(.*)/s);
-                                    if (parts.length > 1) {
-                                        return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
+            <div className="space-y-4">
+                {viewingRecord.data.map((section: any, index: number) => {
+                    if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
+
+                    let firstItem = section.items[0];
+                    // If items are strings, try to parse the first one to determine structure
+                    if (typeof firstItem === 'string') {
+                        try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
+                    }
+
+                    // Render as a table if items are objects with properties
+                    if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
+                        const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                        return (
+                            <div key={index}>
+                                <h3 className="font-bold text-primary mb-2">{section.category}</h3>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            {headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {section.items.map((item: any, i: number) => {
+                                            let parsedItem = item;
+                                            if (typeof item === 'string') {
+                                                try { parsedItem = JSON.parse(item); } catch (e) { return <TableRow key={i}><TableCell colSpan={headers.length}>{item}</TableCell></TableRow>; }
+                                            }
+                                            return (
+                                                <TableRow key={i}>
+                                                    {headers.map(header => <TableCell key={header}>{String(parsedItem[header] ?? '')}</TableCell>)}
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        );
+                    }
+                    
+                    // Fallback to simple key-value display
+                    return (
+                        <div key={index}>
+                            <h3 className="font-bold text-primary mb-2">{section.category}</h3>
+                             <Table>
+                                <TableBody>
+                                {section.items.map((item: any, i: number) => {
+                                    if (typeof item === 'string') {
+                                        const parts = item.split(/:(.*)/s);
+                                        return <TableRow key={i}><TableCell className="font-semibold">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
                                     }
-                                }
-                                if (item && typeof item === 'object' && item.label && item.value !== undefined) {
-                                    return <TableRow key={`${index}-${i}`}><TableCell className="font-medium pl-8">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
-                                }
-                                return <TableRow key={`${index}-${i}`}><TableCell colSpan={2} className="pl-8">{JSON.stringify(item)}</TableCell></TableRow>;
-                            }) : <TableRow><TableCell colSpan={2}>{String(section.items)}</TableCell></TableRow>}
-                        </React.Fragment>
-                    ))}
-                </TableBody>
-            </Table>
+                                    if(item.label) {
+                                         return <TableRow key={i}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
+                                    }
+                                     return <TableRow key={i}><TableCell colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
+                                })}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    );
+                })}
+            </div>
         );
     };
 
@@ -442,4 +428,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
   );
 }
 
-    
