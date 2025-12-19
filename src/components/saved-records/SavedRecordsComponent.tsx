@@ -39,7 +39,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
-import { bankTimelineCategories, ProjectRow } from '@/lib/projects-data';
+import { ProjectRow } from '@/lib/projects-data';
 
 
 const generatePdfForRecord = (record: SavedRecord) => {
@@ -94,11 +94,12 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
                 if (Array.isArray(section.items)) {
                     let firstItem = section.items[0];
+                    // If items are strings, try to parse the first one to determine structure
                     if (typeof firstItem === 'string') {
-                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+                        try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
                     }
                     
-                    if (typeof firstItem === 'object' && firstItem !== null) {
+                    if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
                         const headers = Object.keys(firstItem).filter(key => key !== 'id');
                         const body = section.items.map((item: any) => {
                              let parsedItem = item;
@@ -136,23 +137,8 @@ const generatePdfForRecord = (record: SavedRecord) => {
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
-const recordCategories = {
-    'Timelines of Bank': bankTimelineCategories,
-    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
-    'Task Assignments': ['Task Assignment'],
-    'Uploaded Files': ['Uploaded File', 'Daily Work Report']
-};
-
-
-const mainCategories = [
-    { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
-    { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
-    { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
-    { name: 'Employee Records', icon: Users, files: recordCategories['Uploaded Files'] }
-];
-
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
-    const { records, isLoading, error, deleteRecord } = useRecords();
+    const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
     const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
@@ -162,14 +148,38 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+    const recordCategories = useMemo(() => ({
+        'Timelines of Bank': bankTimelineCategories,
+        'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
+        'Task Assignments': ['Task Assignment'],
+        'Uploaded Files': ['Uploaded File', 'Daily Work Report']
+    }), [bankTimelineCategories]);
+    
+    const mainCategories = useMemo(() => [
+        { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
+        { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
+        { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
+        { name: 'Employee Records', icon: Users, files: recordCategories['Uploaded Files'] }
+    ], [recordCategories]);
+
     const filteredRecords = useMemo(() => {
         let userRecords = records;
         if (employeeOnly && currentUser) {
             userRecords = records.filter(r => r.employeeId === currentUser.uid);
         }
         if (!activeCategory) return [];
-
-        const categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
+    
+        let categoryFiles: string[];
+    
+        if (activeCategory === 'Banks') {
+            const allBankTimelineFileNames = bankTimelineCategories.map(b => `${b} Timeline`);
+             return userRecords.filter(r => allBankTimelineFileNames.includes(r.fileName) && (
+                r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+            ));
+        }
+    
+        categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
         
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
         
@@ -179,7 +189,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery, activeCategory]);
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
 
     const recordsByFileName = useMemo(() => {
         return filteredRecords.reduce((acc, record) => {
@@ -227,10 +237,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
                     let firstItem = section.items[0];
                     // If items are strings, try to parse the first one to determine structure
-                    if (typeof firstItem === 'string') {
+                    if (typeof item === 'string') {
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
-
+                    
                     // Render as a table if items are objects with properties
                     if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
                         const headers = Object.keys(firstItem).filter(key => key !== 'id');

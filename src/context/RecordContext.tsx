@@ -52,6 +52,7 @@ type RecordContextType = {
   deleteBank: (bankName: string) => void;
   getBankProjects: (bankName: string) => ProjectRow[];
   error: string | null;
+  bankTimelineCategories: string[];
 };
 
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
@@ -264,7 +265,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects }}>
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects, bankTimelineCategories }}>
       {children}
     </RecordContext.Provider>
   );
