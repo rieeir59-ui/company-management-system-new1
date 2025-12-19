@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -205,6 +204,16 @@ export default function SiteSurveyReportPage() {
         const recLines = doc.splitTextToSize(recommendations, pageWidth - (margin * 2));
         doc.text(recLines, margin, yPos);
         yPos += recLines.length * 5 + 10;
+        
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        doc.text('Signatures:', margin, yPos);
+        yPos += 15;
+        doc.text('____________________', margin, yPos);
+        doc.text('____________________', margin + 80, yPos);
+        yPos += 5;
+        doc.text('Architect', margin + 15, yPos);
+        doc.text('KS & Associates', margin + 90, yPos);
+
 
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -282,6 +291,20 @@ export default function SiteSurveyReportPage() {
                 <div className="space-y-2">
                     <Label className="font-bold text-lg">RECOMMENDATION:</Label>
                     <Textarea value={recommendations} onChange={e => setRecommendations(e.target.value)} rows={5} />
+                </div>
+
+                <div className="pt-8">
+                    <Label className="font-bold text-lg">Signatures:</Label>
+                    <div className="flex justify-around items-center mt-12">
+                        <div className="text-center">
+                            <div className="border-b-2 border-foreground w-48"></div>
+                            <p className="mt-2">Architect</p>
+                        </div>
+                         <div className="text-center">
+                            <div className="border-b-2 border-foreground w-48"></div>
+                            <p className="mt-2">KS & Associates</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-4 pt-8">
