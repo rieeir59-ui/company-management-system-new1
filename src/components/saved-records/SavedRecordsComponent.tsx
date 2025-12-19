@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Search } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Search, Eye } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -103,14 +103,25 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 }
                 
                 const isBankTimeline = record.fileName.includes('Timeline');
+                
                 if (isBankTimeline && section.category === 'Remarks') {
-                    section.items.map((remark: { label: string, value: string }, i: number) => (
-                        yPos += 5,
-                        doc.text(`${remark.label}: ${remark.value}`, 14, yPos)
-                    ))
-                    return
+                   const remarksContent = section.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
+                   const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
+                   doc.text(remarksLines, 14, yPos);
+                   yPos += remarksLines.length * 5;
+                   return; // Continue to next section
                 }
 
+                const bankTimelineHeaders = [
+                    'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
+                    'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
+                    'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
+                    'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
+                    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
+                    'workingDrawingsStart', 'workingDrawingsEnd', 
+                    'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
+                ];
+                
                 const headers = isBankTimeline
                     ? bankTimelineHeaders
                     : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
@@ -131,7 +142,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
                         head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
                         body: body,
                         theme: 'striped',
-                        styles: { fontSize: 8, cellPadding: 2 },
+                        styles: { fontSize: isBankTimeline ? 4 : 8, cellPadding: 2 },
                     });
 
                 } else { // Fallback for simple key-value display
@@ -153,15 +164,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
-const bankTimelineHeaders = [
-    'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
-    'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
-    'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
-    'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
-    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 
-    'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
-];
-
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
     const { user: currentUser } = useCurrentUser();
@@ -173,22 +175,17 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-    const recordCategories = useMemo(() => {
+    const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        return {
-            'Banks': allBankFileNames,
-            'Project Manual': allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name)),
-            'Task Assignments': ['Task Assignment', 'My Projects'],
-            'Employee Records': ['Uploaded File', 'Daily Work Report']
-        }
+        const projectManualFiles = allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
+
+        return [
+            { name: 'Banks', icon: Landmark, files: allBankFileNames },
+            { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
+            { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
+            { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
+        ];
     }, [bankTimelineCategories]);
-    
-    const mainCategories = useMemo(() => [
-        { name: 'Banks', icon: Landmark, files: recordCategories['Banks'] },
-        { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
-        { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
-        { name: 'Employee Records', icon: Users, files: recordCategories['Employee Records'] }
-    ], [recordCategories]);
 
     const filteredRecords = useMemo(() => {
         let userRecords = records;
@@ -260,7 +257,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     
                     const isBankTimeline = viewingRecord.fileName.includes('Timeline');
                     if (isBankTimeline && section.category === 'Remarks') {
-                        return (
+                       return (
                             <div key={index}>
                                 <h3 className="font-bold text-primary mb-2 mt-4">{section.category}</h3>
                                 {section.items.map((remark: { label: string, value: string }, i: number) => (
@@ -269,6 +266,16 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             </div>
                         )
                     }
+
+                    const bankTimelineHeaders = [
+                        'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
+                        'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
+                        'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
+                        'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
+                        'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
+                        'workingDrawingsStart', 'workingDrawingsEnd', 
+                        'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
+                    ];
 
                     const headers = isBankTimeline
                         ? bankTimelineHeaders
