@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { ai } from '@/ai/genkit';
+import { genkit as ai } from 'genkit';
 import { GenerateTimelineOutputSchema } from '@/lib/schemas/timeline';
 
 export const GenerateTimelineInputSchema = z.object({
