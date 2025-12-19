@@ -13,19 +13,32 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  User,
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from '@/components/ui/collapsible';
+import {
   LogOut,
-  KeyRound,
+  User,
   FileText,
   Database,
-  FileUp,
+  Users,
+  LayoutDashboard,
   Briefcase,
+  BookCopy,
+  FileUp,
+  Landmark,
   Search as SearchIcon,
+  Settings,
+  KeyRound,
+  PlusCircle,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -34,20 +47,41 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { useRecords } from '@/context/RecordContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
+    { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
     { href: '/dashboard/services', label: 'Services', icon: FileText },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
-    { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
-
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -59,8 +93,47 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelItems: typeof topLevelItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, projectManualItems, bankTimelineItems }: { visibleTopLevelItems: typeof topLevelItems, projectManualItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+  const { user: currentUser } = useCurrentUser();
+  const { addBank, updateBank, deleteBank } = useRecords();
+  const [newBankName, setNewBankName] = useState('');
+  const [isAddBankOpen, setIsAddBankOpen] = useState(false);
+  const [bankToEdit, setBankToEdit] = useState<string | null>(null);
+  const [bankToDelete, setBankToDelete] = useState<string | null>(null);
+
+  const canManageBanks = useMemo(() => {
+    return currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  }, [currentUser]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleAddBank = () => {
+    if (newBankName) {
+      addBank(newBankName);
+      setIsAddBankOpen(false);
+      setNewBankName('');
+    }
+  };
+
+  const handleUpdateBank = () => {
+    if (bankToEdit && newBankName) {
+      updateBank(bankToEdit, newBankName);
+      setBankToEdit(null);
+      setNewBankName('');
+    }
+  };
+
+  const confirmDeleteBank = () => {
+    if (bankToDelete) {
+      deleteBank(bankToDelete);
+      setBankToDelete(null);
+    }
+  };
+
 
   return (
     <SidebarMenu>
@@ -78,6 +151,38 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelIte
           </Link>
         </SidebarMenuItem>
       ))}
+       {isClient && (
+        <>
+            <SidebarMenuItem>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Project Manual"
+                  >
+                    <BookCopy className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                  <SidebarMenuSub>
+                    {projectManualItems.map((item) => (
+                      <SidebarMenuSubItem key={item.href}>
+                        <Link href={item.href} passHref>
+                          <SidebarMenuSubButton isActive={pathname === item.href}>
+                            <item.icon className="size-4 mr-2" />
+                            {item.label}
+                          </SidebarMenuSubButton>
+                        </Link>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenuItem>
+            
+        </>
+      )}
     </SidebarMenu>
   );
 });
@@ -85,9 +190,15 @@ MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
 
 export default function DashboardSidebar() {
   const { user: currentUser, logout } = useCurrentUser();
+  const { bankTimelineItems, projectManualItems, addBank, updateBank, deleteBank, isLoading: isRecordsLoading } = useRecords();
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [bankToDelete, setBankToDelete] = useState<string | null>(null);
+  const [bankToEdit, setBankToEdit] = useState<string | null>(null);
+  const [newBankName, setNewBankName] = useState('');
+  const [isAddBankOpen, setIsAddBankOpen] = useState(false);
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -104,34 +215,50 @@ export default function DashboardSidebar() {
       return currentUser && item.roles.some(role => currentUser.departments.includes(role));
     });
   }, [currentUser]);
+
+  const canManageBanks = useMemo(() => {
+    return currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  }, [currentUser]);
   
   const searchResults = useMemo(() => {
     if (!searchQuery) return { menuResults: [], projectResults: [] };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
-    const menuResults = visibleTopLevelItems.filter(item =>
+    const allMenuItems = [...visibleTopLevelItems, ...projectManualItems, ...bankTimelineItems];
+    const menuResults = allMenuItems.filter(item =>
       item.label.toLowerCase().includes(lowerCaseQuery)
     );
 
-    let projectResults: ProjectRow[] = [];
-
-    const matchingBank = Object.keys(bankProjectsMap).find(bankKey =>
-        bankKey.toLowerCase().includes(lowerCaseQuery)
+    const projectResults = allProjects.filter(project =>
+      project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
     
-    if (matchingBank) {
-      projectResults = bankProjectsMap[matchingBank];
-    } else {
-      projectResults = allProjects.filter(project =>
-        project.projectName.toLowerCase().includes(lowerCaseQuery)
-      );
-    }
-    
-    const uniqueProjectResults = Array.from(new Map(projectResults.map(p => [p.id, p])).values());
+    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()) };
+  }, [searchQuery, visibleTopLevelItems, projectManualItems, bankTimelineItems]);
 
-    return { menuResults, projectResults: uniqueProjectResults };
-  }, [searchQuery, visibleTopLevelItems]);
+  const handleAddBank = () => {
+    if (newBankName) {
+      addBank(newBankName);
+      setIsAddBankOpen(false);
+      setNewBankName('');
+    }
+  };
+
+  const handleUpdateBank = () => {
+    if (bankToEdit && newBankName) {
+      updateBank(bankToEdit, newBankName);
+      setBankToEdit(null);
+      setNewBankName('');
+    }
+  };
+
+  const confirmDeleteBank = () => {
+    if (bankToDelete) {
+      deleteBank(bankToDelete);
+      setBankToDelete(null);
+    }
+  };
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -197,7 +324,7 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu visibleTopLevelItems={visibleTopLevelItems} />
+            <MemoizedSidebarMenu visibleTopLevelItems={visibleTopLevelItems} projectManualItems={projectManualItems} bankTimelineItems={bankTimelineItems} />
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">

@@ -34,7 +34,6 @@ import {
   Book,
   File,
   ClipboardCheck,
-  UserCheck,
   Building,
   FilePlus,
   Compass,
@@ -70,6 +69,9 @@ import {
   Settings,
   KeyRound,
   ClipboardList,
+  Edit,
+  Trash2,
+  PlusCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -78,7 +80,28 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { useRecords } from '@/context/RecordContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const topLevelItems = [
     { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
@@ -94,57 +117,6 @@ const topLevelItems = [
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
 
-const projectManualItems = [
-    { href: '/employee-dashboard/project-checklist', label: 'Project Checklist', icon: ListChecks },
-    { href: '/employee-dashboard/project-information', label: 'Project Information', icon: Folder },
-    { href: '/employee-dashboard/predesign-assessment', label: 'Predesign Assessment', icon: FileSearch },
-    { href: '/employee-dashboard/project-data', label: 'Project Data', icon: Database },
-    { href: '/employee-dashboard/project-agreement', label: 'Project Agreement', icon: FileSignature },
-    { href: '/employee-dashboard/list-of-services', label: 'List of Services', icon: Clipboard },
-    { href: '/employee-dashboard/project-bylaws', label: 'Project Bylaws', icon: FileKey },
-    { href: '/employee-dashboard/proposal-request', label: 'Proposal Request', icon: Briefcase },
-    { href: '/employee-dashboard/drawings', label: 'Drawings', icon: Palette },
-    { href: '/employee-dashboard/shop-drawings-record', label: 'Shop Drawings Record', icon: FileIcon },
-    { href: '/employee-dashboard/project-chart-studio', label: 'Project Chart (Studio)', icon: BarChart2 },
-    { href: '/employee-dashboard/list-of-sub-consultants', label: 'List Of Sub-consultants', icon: BookUser },
-    { href: '/employee-dashboard/list-of-contractors', label: 'List of Contractors', icon: Building },
-    { href: '/employee-dashboard/list-of-approved-vendors', label: 'List of Approved Vendors', icon: UserCheck },
-    { href: '/employee-dashboard/time-line-schedule', label: 'Time line Schedule', icon: Clock },
-    { href: '/employee-dashboard/project-application-summary', label: 'Project Application Summary', icon: CheckSquare },
-    { href: '/employee-dashboard/continuation-sheet', label: 'Continuation Sheet', icon: FileX },
-    { href: '/employee-dashboard/construction-schedule', label: 'Construction Schedule', icon: Calendar },
-    { href: '/employee-dashboard/preliminary-project-budget', label: 'Preliminary Project Budget', icon: Scroll },
-    { href: '/employee-dashboard/bill-of-quantity', label: 'Bill Of Quantity', icon: Wallet },
-    { href: '/employee-dashboard/rate-analysis', label: 'Rate Analysis', icon: BarChart2 },
-    { href: '/employee-dashboard/change-order', label: 'Change Order', icon: Book },
-    { href: '/employee-dashboard/payment-certificates', label: 'Payment Certificates', icon: CircleDollarSign },
-    { href: '/employee-dashboard/instruction-sheet', label: 'Instruction Sheet', icon: FileUp },
-    { href: '/employee-dashboard/other-provisions', label: 'Other Provisions', icon: BookCopy },
-    { href: '/employee-dashboard/consent-of-surety', label: 'Consent of Surety', icon: FilePen },
-    { href: '/employee-dashboard/substantial-summary', label: 'Substantial Summary', icon: Clipboard },
-    { href: '/employee-dashboard/total-project-package', label: 'Total Project Package', icon: Package },
-    { href: '/employee-dashboard/architects-instructions', label: 'Architects Instructions', icon: User },
-    { href: '/employee-dashboard/construction-change-director', label: 'Construction Change Director', icon: Users },
-    { href: '/employee-dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
-    { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
-    { href: '/employee-dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
-];
-
-
-const bankTimelineItems = [
-    { href: '/employee-dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
-    { href: '/employee-dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
-    { href: '/employee-dashboard/timelines-of-bank/askari-bank', label: 'Askari Bank', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/bank-alfalah', label: 'Bank Alfalah', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/bank-al-habib', label: 'Bank Al Habib', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/cbd', label: 'CBD', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/dib', label: 'DIB', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/fbl', label: 'FBL', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/hbl', label: 'HBL', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/mcb', label: 'MCB', icon: Landmark },
-    { href: '/employee-dashboard/timelines-of-bank/ubl', label: 'UBL', icon: Landmark },
-];
-
 const getInitials = (name: string) => {
     if (!name) return '';
     const nameParts = name.split(' ');
@@ -155,13 +127,47 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems: any[], bankTimelineItems: any[] }) => {
+const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineItems }: { menuItems: any[], projectManualItems: any[], bankTimelineItems: any[] }) => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const { user: currentUser } = useCurrentUser();
+  const { addBank, updateBank, deleteBank } = useRecords();
+  const [newBankName, setNewBankName] = useState('');
+  const [isAddBankOpen, setIsAddBankOpen] = useState(false);
+  const [bankToEdit, setBankToEdit] = useState<string | null>(null);
+  const [bankToDelete, setBankToDelete] = useState<string | null>(null);
+
+  const canManageBanks = useMemo(() => {
+    return currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  }, [currentUser]);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleAddBank = () => {
+    if (newBankName) {
+      addBank(newBankName);
+      setIsAddBankOpen(false);
+      setNewBankName('');
+    }
+  };
+
+  const handleUpdateBank = () => {
+    if (bankToEdit && newBankName) {
+      updateBank(bankToEdit, newBankName);
+      setBankToEdit(null);
+      setNewBankName('');
+    }
+  };
+
+  const confirmDeleteBank = () => {
+    if (bankToDelete) {
+      deleteBank(bankToDelete);
+      setBankToDelete(null);
+    }
+  };
+
 
   return (
     <SidebarMenu>
@@ -210,7 +216,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
               </Collapsible>
             </SidebarMenuItem>
 
-            <SidebarMenuItem>
+             <SidebarMenuItem>
               <Collapsible>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
@@ -222,17 +228,71 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
-                  <SidebarMenuSub>
+                   <SidebarMenuSub>
                     {bankTimelineItems.map((item) => (
-                      <SidebarMenuSubItem key={item.href}>
-                        <Link href={item.href} passHref>
+                      <SidebarMenuSubItem key={item.href} className="group/sub-item">
+                        <Link href={item.href} passHref className="flex-grow">
                           <SidebarMenuSubButton isActive={pathname === item.href}>
                             <item.icon className="size-4 mr-2" />
                             {item.label}
                           </SidebarMenuSubButton>
                         </Link>
+                         {canManageBanks && (
+                          <div className="flex items-center opacity-0 group-hover/sub-item:opacity-100 transition-opacity">
+                            <Dialog onOpenChange={(open) => { if(!open) setBankToEdit(null)}}>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {setBankToEdit(item.label); setNewBankName(item.label);}}><Edit className="h-3 w-3"/></Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Edit Bank Name</DialogTitle>
+                                        <DialogDescription>Rename '{bankToEdit}'.</DialogDescription>
+                                    </DialogHeader>
+                                    <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} />
+                                    <DialogFooter>
+                                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                        <Button onClick={handleUpdateBank}>Save</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                             <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setBankToDelete(item.label)}><Trash2 className="h-3 w-3 text-destructive"/></Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>This will delete the '{bankToDelete}' timeline and all its records. This action cannot be undone.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={() => setBankToDelete(null)}>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={confirmDeleteBank} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
                       </SidebarMenuSubItem>
                     ))}
+                     {canManageBanks && (
+                        <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" className="w-full justify-start h-8 mt-1 text-xs">
+                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Bank
+                                </Button>
+                            </DialogTrigger>
+                             <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add New Bank</DialogTitle>
+                                </DialogHeader>
+                                <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} placeholder="Enter bank name" />
+                                <DialogFooter>
+                                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                    <Button onClick={handleAddBank}>Save</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                     )}
                   </SidebarMenuSub>
                 </CollapsibleContent>
               </Collapsible>
@@ -248,6 +308,7 @@ export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
+  const { bankTimelineItems, projectManualItems, isLoading } = useRecords();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = React.useCallback(() => {
@@ -270,24 +331,12 @@ export default function EmployeeDashboardSidebar() {
       item.label.toLowerCase().includes(lowerCaseQuery)
     );
 
-    let projectResults: ProjectRow[] = [];
-
-    const matchingBank = Object.keys(bankProjectsMap).find(bankKey =>
-        bankKey.toLowerCase().includes(lowerCaseQuery)
+    const projectResults = allProjects.filter(project =>
+      project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
-
-    if (matchingBank) {
-      projectResults = bankProjectsMap[matchingBank];
-    } else {
-      projectResults = allProjects.filter(project =>
-        project.projectName.toLowerCase().includes(lowerCaseQuery)
-      );
-    }
     
-    const uniqueProjectResults = Array.from(new Map(projectResults.map(p => [p.id, p])).values());
-
-    return { menuResults, projectResults: uniqueProjectResults };
-  }, [searchQuery]);
+    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()) };
+  }, [searchQuery, projectManualItems, bankTimelineItems]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -355,6 +404,7 @@ export default function EmployeeDashboardSidebar() {
           ) : (
             <MemoizedSidebarMenu 
                 menuItems={topLevelItems} 
+                projectManualItems={projectManualItems}
                 bankTimelineItems={bankTimelineItems}
             />
           )}

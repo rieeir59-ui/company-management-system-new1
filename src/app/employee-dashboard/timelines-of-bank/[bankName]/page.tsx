@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,26 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
-import { bankAlfalahProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
+import { type ProjectRow } from '@/lib/projects-data';
+import { useParams } from 'next/navigation';
 
-function BankAlfalahTimelineComponent() {
+function DynamicBankTimelineComponent() {
     const { toast } = useToast();
-    const { addRecord } = useRecords();
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
+    const { addRecord, getBankProjects } = useRecords();
+    const params = useParams();
+    const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
+
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
+
+    useEffect(() => {
+        if(bankName) {
+            const decodedBankName = decodeURIComponent(bankName);
+            const projects = getBankProjects(decodedBankName);
+            setProjectRows(projects);
+        }
+    }, [bankName, getBankProjects]);
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
@@ -29,7 +41,7 @@ function BankAlfalahTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
@@ -42,8 +54,8 @@ function BankAlfalahTimelineComponent() {
     
     const handleSave = () => {
         addRecord({
-            fileName: 'Bank Alfalah Timeline',
-            projectName: 'Bank Alfalah Projects',
+            fileName: `${bankName} Timeline`,
+            projectName: `${bankName} Projects`,
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
@@ -54,22 +66,28 @@ function BankAlfalahTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("Bank Alfalah Timeline", 14, 15);
+        doc.text(`${bankName} Project Chart`, 14, 15);
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contact\nStart', 'Contact\nEnd', 'Head Count / Requirment\nStart', 'Head Count / Requirment\nEnd',
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count / Requirment',
              'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 
+             'Working Drawings\nStart', 'Working Drawings\nEnd', 
+             'Site Visit\nStart', 'Site Visit\nEnd', 
+             'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawings, p.siteVisit, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
+            p.workingDrawingsStart, p.workingDrawingsEnd, 
+            p.siteVisitStart, p.siteVisitEnd, 
+            p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -89,14 +107,14 @@ function BankAlfalahTimelineComponent() {
 
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
-        doc.save('bank_alfalah_timeline.pdf');
+        doc.save(`${bankName}_timeline.pdf`);
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">Bank Alfalah Timeline</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">{decodeURIComponent(bankName)} Project Chart</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -105,7 +123,7 @@ function BankAlfalahTimelineComponent() {
             <CardContent>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
-                        <thead>
+                         <thead>
                             <tr className="bg-primary/20">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
                                 <th rowSpan={2} className="border p-1">Project Name</th>
@@ -113,8 +131,8 @@ function BankAlfalahTimelineComponent() {
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
-                                <th colSpan={2} className="border p-1">Contact</th>
-                                <th colSpan={2} className="border p-1">Head Count / Requirment</th>
+                                <th rowSpan={2} className="border p-1">Contract</th>
+                                <th rowSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
                                 <th colSpan={2} className="border p-1">Tender Package Architectural</th>
@@ -122,8 +140,8 @@ function BankAlfalahTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th rowSpan={2} className="border p-1">Working Drawings</th>
-                                <th rowSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -135,8 +153,8 @@ function BankAlfalahTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -149,10 +167,8 @@ function BankAlfalahTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} className="w-28" /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.contactStart} onChange={e => handleProjectChange(row.id, 'contactStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.contactEnd} onChange={e => handleProjectChange(row.id, 'contactEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.headCountStart} onChange={e => handleProjectChange(row.id, 'headCountStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.headCountEnd} onChange={e => handleProjectChange(row.id, 'headCountEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-28"/></td>
+                                    <td className="border"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalStart} onChange={e => handleProjectChange(row.id, 'proposalStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
@@ -165,8 +181,10 @@ function BankAlfalahTimelineComponent() {
                                     <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.workingDrawings} onChange={e => handleProjectChange(row.id, 'workingDrawings', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.siteVisit} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="w-24" /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Button variant="destructive" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4" /></Button></td>
@@ -188,5 +206,5 @@ function BankAlfalahTimelineComponent() {
 }
 
 export default function Page() {
-  return <BankAlfalahTimelineComponent />;
+  return <DynamicBankTimelineComponent />;
 }
