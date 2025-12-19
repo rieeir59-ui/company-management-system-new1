@@ -26,6 +26,7 @@ import { useCurrentUser } from './UserContext';
 import { allFileNames } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+import { Building2, Home, Landmark } from 'lucide-react';
 
 export type SavedRecord = {
   id: string;
