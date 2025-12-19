@@ -211,7 +211,7 @@ export default function Page() {
                 {rows.map(row => (
                   <TableRow key={row.id}>
                     <TableCell><Input value={row.code} onChange={e => handleRowChange(row.id, 'code', e.target.value)} /></TableCell>
-                    <TableCell><Textarea value={row.task} onChange={e => handleRowChange(row.id, 'task', e.target.value)} rows={1}/></TableCell>
+                    <TableCell><Textarea value={row.task} onChange={e => handleRowChange(row.id, 'task', e.target.value)} rows={1} className="min-w-[250px]" /></TableCell>
                     <TableCell><Input value={row.duration} onChange={e => handleRowChange(row.id, 'duration', e.target.value)} /></TableCell>
                     <TableCell><Input type="date" value={row.planStart} onChange={e => handleRowChange(row.id, 'planStart', e.target.value)} /></TableCell>
                     <TableCell><Input type="date" value={row.planFinish} onChange={e => handleRowChange(row.id, 'planFinish', e.target.value)} /></TableCell>
