@@ -66,31 +66,32 @@ const UploadForm = ({ category }: { category: string }) => {
         };
         
         try {
-            await addFileRecord(fileRecordData, upload.file, (progress) => {
+            const savedDocId = await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
-            
-            // Also save a record to the general saved records collection
-            await addRecord({
-              fileName: 'Uploaded File',
-              projectName: upload.customName,
-              data: [{
-                category: 'File Upload Details',
-                items: [
-                  { label: 'Category', value: category },
-                  ...(category === 'Banks' ? [{ label: 'Bank', value: upload.bankName }] : []),
-                  { label: 'Custom Name', value: upload.customName },
-                  { label: 'Original Name', value: upload.file.name },
-                  { label: 'File Type', value: upload.file.type },
-                  { label: 'Size (Bytes)', value: upload.file.size.toString() },
-                ]
-              }]
-            } as any);
+
+            if (savedDocId) {
+                await addRecord({
+                  fileName: 'Uploaded File',
+                  projectName: upload.customName,
+                  data: [{
+                    category: 'File Upload Details',
+                    items: [
+                      { label: 'File ID', value: savedDocId },
+                      { label: 'Category', value: category },
+                      ...(category === 'Banks' ? [{ label: 'Bank', value: upload.bankName }] : []),
+                      { label: 'Custom Name', value: upload.customName },
+                      { label: 'Original Name', value: upload.file.name },
+                      { label: 'File Type', value: upload.file.type },
+                      { label: 'Size (Bytes)', value: upload.file.size.toString() },
+                    ]
+                  }]
+                } as any);
+            }
 
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
             toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded and recorded.` });
 
-            // Automatically remove the completed upload row after a short delay
             setTimeout(() => {
                 setUploads(prev => {
                     const remaining = prev.filter(up => up.id !== upload.id);
