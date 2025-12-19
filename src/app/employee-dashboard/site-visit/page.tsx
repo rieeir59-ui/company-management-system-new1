@@ -366,7 +366,7 @@ export default function SiteVisitPage() {
                                     <Input id={`pic-upload-${pic.id}`} type="file" accept="image/jpeg, image/png" className="hidden" onChange={e => handlePictureFileChange(pic.id, e)} />
                                 </Label>
                                 {pic.isUploading && <Progress value={pic.progress} />}
-                                {pic.error && <p className="text-destructive text-sm">{pic.error}</p>}
+                                {pic.error && <p className="text-destructive text-sm mt-1">{pic.error}</p>}
                                 <div className="flex items-center gap-2">
                                     <Textarea placeholder="Comment" value={pic.comment} onChange={e => handlePictureCommentChange(pic.id, e.target.value)} rows={1}/>
                                     <Button variant="destructive" size="icon" onClick={() => removePictureRow(pic.id)}><Trash2 className="h-4 w-4" /></Button>
