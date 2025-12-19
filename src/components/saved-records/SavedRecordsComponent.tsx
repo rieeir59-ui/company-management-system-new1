@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -25,7 +26,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName } from '@/lib/utils';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import Link from 'next/link';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
@@ -33,7 +34,7 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '../ui/badge';
-import { bankTimelineCategories, allFileNames } from '@/lib/projects-data';
+import { bankTimelineCategories } from '@/lib/projects-data';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -334,6 +335,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         <div className="space-y-6">
                             {Object.entries(recordsByFileName).map(([fileName, records]) => {
                                 if (records.length === 0) return null;
+                                const Icon = getIconForFile(fileName)
                                 return (
                                     <Card key={fileName} className="border-primary/30">
                                         <CardHeader className="bg-muted/50 rounded-t-lg">
@@ -417,3 +419,5 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
+    
