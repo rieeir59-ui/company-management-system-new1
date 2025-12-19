@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Search, Eye } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Eye, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -31,8 +30,8 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
+import { getIconForFile, allFileNames } from '@/lib/icons';
+import { getFormUrlFromFileName } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -44,9 +43,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { ProjectRow } from '@/lib/projects-data';
 
-
 const generatePdfForRecord = (record: SavedRecord) => {
-    const doc = new jsPDF({ orientation: 'portrait' });
+    const doc = new jsPDF({ orientation: 'portrait' }) as any;
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
@@ -74,7 +72,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
     };
 
     const addFooter = () => {
-        const pageCount = (doc as any).internal.getNumberOfPages();
+        const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
@@ -86,7 +84,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
     if (Array.isArray(record.data)) {
         record.data.forEach((section: any) => {
-            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
+            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
 
             if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
             doc.setFont('helvetica', 'bold');
@@ -96,23 +94,15 @@ const generatePdfForRecord = (record: SavedRecord) => {
             yPos += 8;
             doc.setTextColor(0,0,0);
 
-            if (Array.isArray(section.items)) {
-                let firstItem = section.items[0];
-                if (typeof firstItem === 'string') {
-                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
-                }
-                
-                const isBankTimeline = record.fileName.includes('Timeline');
-                
-                if (isBankTimeline && section.category === 'Remarks') {
-                   const remarksContent = section.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
-                   const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
-                   doc.text(remarksLines, 14, yPos);
-                   yPos += remarksLines.length * 5;
-                   return; // Continue to next section
-                }
+            let firstItem = section.items[0];
+            if (typeof firstItem === 'string') {
+                try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+            }
 
-                const bankTimelineHeaders = [
+            const isBankTimeline = record.fileName.endsWith('Timeline');
+            
+            if (isBankTimeline && section.category === 'Projects') {
+                 const bankTimelineHeaders = [
                     'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
                     'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
                     'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
@@ -121,43 +111,32 @@ const generatePdfForRecord = (record: SavedRecord) => {
                     'workingDrawingsStart', 'workingDrawingsEnd', 
                     'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
                 ];
-                
-                const headers = isBankTimeline
-                    ? bankTimelineHeaders
-                    : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
-                        ? Object.keys(firstItem).filter(key => key !== 'id')
-                        : null;
-
-                if (headers) {
-                    const body = section.items.map((item: any) => {
-                         let parsedItem = item;
-                         if (typeof item === 'string') {
-                            try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => item); }
-                         }
-                         return headers.map(header => parsedItem[header] !== undefined ? String(parsedItem[header]) : '');
-                    });
-
-                    (doc as any).autoTable({
-                        startY: yPos,
-                        head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                        body: body,
-                        theme: 'striped',
-                        styles: { fontSize: isBankTimeline ? 4 : 8, cellPadding: 2 },
-                    });
-
-                } else { // Fallback for simple key-value display
-                    const body = section.items.map((item: any) => {
-                        if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
-                        if (typeof item === 'string') {
-                            const parts = item.split(/:(.*)/s);
-                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                        }
-                        return [JSON.stringify(item), ''];
-                    });
-                    (doc as any).autoTable({ startY: yPos, body: body, theme: 'plain' });
-                }
+                const body = section.items.map((item: ProjectRow) => bankTimelineHeaders.map(h => item[h as keyof ProjectRow]));
+                 doc.autoTable({
+                    startY: yPos,
+                    head: [bankTimelineHeaders.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                    body: body,
+                    theme: 'grid',
+                    styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
+                    headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+                });
+            } else if (isBankTimeline && section.category === 'Remarks') {
+                const remarksContent = section.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
+                const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
+                doc.text(remarksLines, 14, yPos);
+                yPos += remarksLines.length * 5;
+            } else {
+                 const body = section.items.map((item: any) => {
+                    if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                    if (typeof item === 'string') {
+                        const parts = item.split(/:(.*)/s);
+                        return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                    }
+                    return [JSON.stringify(item), ''];
+                });
+                doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 } });
             }
-             yPos = (doc as any).autoTable.previous.finalY + 10;
+             yPos = doc.autoTable.previous.finalY + 10;
         });
     }
     addFooter();
@@ -194,8 +173,13 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
         if (!activeCategory) return [];
     
-        const categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
-        
+        const categoryInfo = mainCategories.find(c => c.name === activeCategory);
+        let categoryFiles = categoryInfo?.files || [];
+
+        if (activeCategory === 'Banks') {
+            categoryFiles = (bankTimelineCategories || []).map(b => `${b} Timeline`);
+        }
+
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
         
         if (!searchQuery) return categoryRecords;
@@ -204,7 +188,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
 
     const recordsByFileName = useMemo(() => {
         return filteredRecords.reduce((acc, record) => {
@@ -245,9 +229,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
     
+        const isBankTimeline = viewingRecord.fileName.includes('Timeline');
+        let remarksSection: any = null;
+        let mainDataSections = viewingRecord.data;
+
+        if (isBankTimeline) {
+            remarksSection = viewingRecord.data.find((s: any) => s.category === 'Remarks');
+            mainDataSections = viewingRecord.data.filter((s: any) => s.category !== 'Remarks');
+        }
+
         return (
             <div className="space-y-4">
-                {viewingRecord.data.map((section: any, index: number) => {
+                {mainDataSections.map((section: any, index: number) => {
                     if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
 
                     let firstItem = section.items[0];
@@ -255,30 +248,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    const isBankTimeline = viewingRecord.fileName.includes('Timeline');
-                    if (isBankTimeline && section.category === 'Remarks') {
-                       return (
-                            <div key={index}>
-                                <h3 className="font-bold text-primary mb-2 mt-4">{section.category}</h3>
-                                {section.items.map((remark: { label: string, value: string }, i: number) => (
-                                    <p key={i}><strong>{remark.label}:</strong> {remark.value}</p>
-                                ))}
-                            </div>
-                        )
-                    }
-
-                    const bankTimelineHeaders = [
-                        'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
-                        'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
-                        'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
-                        'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
-                        'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
-                        'workingDrawingsStart', 'workingDrawingsEnd', 
-                        'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
-                    ];
-
                     const headers = isBankTimeline
-                        ? bankTimelineHeaders
+                        ? Object.keys(firstItem).filter(key => key !== 'id')
                         : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
                             ? Object.keys(firstItem).filter(key => key !== 'id')
                             : null;
@@ -313,7 +284,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         );
                     }
                     
-                    // Fallback for simple key-value display
                     return (
                         <div key={index}>
                             <h3 className="font-bold text-primary mb-2">{section.category}</h3>
@@ -334,6 +304,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         </div>
                     );
                 })}
+                {remarksSection && (
+                    <div className="mt-4 pt-4 border-t">
+                        <h3 className="font-bold text-primary mb-2">{remarksSection.category}</h3>
+                        {remarksSection.items.map((remark: {label: string, value: string}, i: number) => (
+                           <p key={i}><strong>{remark.label}:</strong> {remark.value}</p>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     };
