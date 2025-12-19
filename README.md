@@ -10,7 +10,7 @@ git init
 ### 2. Connect to Your GitHub Repository
 Replace `YOUR_REPO_URL` with the URL of your repository from GitHub.
 ```bash
-git remote add origin YOUR_REPO_URL
+git remote add origin https://github.com/rieeir59-ui/company-management-system-new1.git
 ```
 
 To check if it was added correctly:
