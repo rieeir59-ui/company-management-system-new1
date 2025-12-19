@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -42,10 +42,9 @@ import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
-import { Eye } from 'lucide-react';
 
 const generatePdfForRecord = (record: SavedRecord) => {
-    const doc = new jsPDF({ orientation: 'portrait' }) as any;
+    const doc = new jsPDF({ orientation: 'landscape' }) as any;
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
@@ -94,19 +93,24 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const remarksSection = record.data.find((s:any) => s.category === 'Remarks');
 
         const head = [
-            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
-             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
-             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
-             'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project\nClosure']
+            [
+                { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 }, { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count / Requirment', colSpan: 2 },
+                { content: 'Proposal / Design Development', colSpan: 2 }, { content: '3D\'s', colSpan: 2 },
+                { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
+                { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
+                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
+                { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+            ],
+            [
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
+            ]
         ];
         
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
@@ -299,7 +303,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
+                    const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contactStart', 'contactEnd', 'headCountStart', 'headCountEnd', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
                     const isTimelineProject = isBankTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
