@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon, Landmark, Building, ClipboardCheck, Users, Folder } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +33,7 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '../ui/badge';
-import { bankTimelineCategories } from '@/lib/projects-data';
-import { allFileNames } from '@/lib/utils';
+import { bankTimelineCategories, allFileNames } from '@/lib/projects-data';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -185,12 +183,12 @@ const generatePdfForRecord = (record: SavedRecord) => {
     }
 };
 
-const recordCategories = {
-    'Timelines of Bank': bankTimelineCategories,
-    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)),
-    'Task Assignments': ['Task Assignment'],
-    'Uploaded Files': ['Uploaded File']
-};
+const mainCategories = [
+    { name: 'Banks', icon: Landmark, files: bankTimelineCategories },
+    { name: 'Management Records', icon: Building, files: allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)) },
+    { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment'] },
+    { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
+];
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord } = useRecords();
@@ -201,28 +199,35 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     const filteredRecords = useMemo(() => {
         let userRecords = records;
         if (employeeOnly && currentUser) {
             userRecords = records.filter(r => r.employeeId === currentUser.uid);
         }
-        if (!searchQuery) return userRecords;
+        if (!activeCategory) return [];
+
+        const categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
         
-        return userRecords.filter(r => 
+        const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
+        
+        if (!searchQuery) return categoryRecords;
+        
+        return categoryRecords.filter(r => 
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery]);
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory]);
 
-    const recordsByCategory = useMemo(() => {
-        const grouped: Record<string, SavedRecord[]> = {};
-        for (const category in recordCategories) {
-            grouped[category] = filteredRecords.filter(record => 
-                recordCategories[category as keyof typeof recordCategories].includes(record.fileName)
-            );
-        }
-        return grouped;
+    const recordsByFileName = useMemo(() => {
+        return filteredRecords.reduce((acc, record) => {
+            if (!acc[record.fileName]) {
+                acc[record.fileName] = [];
+            }
+            acc[record.fileName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
     }, [filteredRecords]);
 
     const openDeleteDialog = (record: SavedRecord) => {
@@ -253,7 +258,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
-        // This is a simplified viewer. More complex renderers can be added here based on fileName.
         return (
             <Table>
                 <TableBody>
@@ -291,73 +295,91 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="relative mb-4">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search records by project or file name..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
-            
-            {isLoading ? (
-                <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            ) : error ? (
-                <div className="text-destructive text-center">{error}</div>
-            ) : filteredRecords.length > 0 ? (
-                <div className="space-y-6">
-                    {Object.entries(recordsByCategory).map(([category, records]) => {
-                        if (records.length === 0) return null;
-                        return (
-                            <Card key={category} className="border-primary/30">
-                                <CardHeader className="bg-muted/50 rounded-t-lg">
-                                    <CardTitle>{category}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Project Name</TableHead>
-                                                <TableHead>File Name</TableHead>
-                                                {!employeeOnly && <TableHead>Created By</TableHead>}
-                                                <TableHead>Date</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {records.map(record => {
-                                                const Icon = getIconForFile(record.fileName);
-                                                return (
-                                                    <TableRow key={record.id}>
-                                                        <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
-                                                        <TableCell>{record.fileName}</TableCell>
-                                                        {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                                        <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <div className="flex gap-1 justify-end">
-                                                                <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
-                                                                {canEditOrDelete(record) && (
-                                                                    <>
-                                                                        <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
-                                                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
+            {!activeCategory ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {mainCategories.map(({ name, icon: Icon }) => (
+                         <Card
+                            key={name}
+                            className="p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all"
+                            onClick={() => setActiveCategory(name)}
+                        >
+                            <Icon className="w-12 h-12 text-primary" />
+                            <p className="font-semibold text-lg text-center">{name}</p>
+                        </Card>
+                    ))}
                 </div>
             ) : (
-                <div className="text-center py-10">
-                    <p className="text-muted-foreground">No records found.</p>
+                <div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <Button variant="outline" size="icon" onClick={() => setActiveCategory(null)}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <h2 className="text-2xl font-bold">{activeCategory}</h2>
+                    </div>
+                    <div className="relative mb-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search records by project or file name..."
+                            className="pl-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : error ? (
+                        <div className="text-destructive text-center">{error}</div>
+                    ) : filteredRecords.length > 0 ? (
+                        <div className="space-y-6">
+                            {Object.entries(recordsByFileName).map(([fileName, records]) => {
+                                if (records.length === 0) return null;
+                                return (
+                                    <Card key={fileName} className="border-primary/30">
+                                        <CardHeader className="bg-muted/50 rounded-t-lg">
+                                            <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {fileName}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Project Name</TableHead>
+                                                        {!employeeOnly && <TableHead>Created By</TableHead>}
+                                                        <TableHead>Date</TableHead>
+                                                        <TableHead className="text-right">Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {records.map(record => (
+                                                        <TableRow key={record.id}>
+                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                            {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                            <TableCell className="text-right">
+                                                                <div className="flex gap-1 justify-end">
+                                                                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                    {canEditOrDelete(record) && (
+                                                                        <>
+                                                                            <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10">
+                            <p className="text-muted-foreground">No records found for this category.</p>
+                        </div>
+                    )}
                 </div>
             )}
         </CardContent>

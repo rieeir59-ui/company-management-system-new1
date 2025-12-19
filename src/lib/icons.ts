@@ -88,14 +88,14 @@ export const getIconForFile = (fileName: string): LucideIcon => {
     return fileNameToIconMap[fileName] || FileText;
 };
 
-
+// This can be expanded to include other logical groupings
 export const categoryToIconMap: Record<string, LucideIcon> = {
     "Banks": Landmark,
     "Management Records": Building2,
     ...fileNameToIconMap, // Keep individual file icons as well
 };
 
-
+// Fallback to a generic folder icon if no specific icon is found
 export const getIconForCategory = (categoryName: string): LucideIcon => {
     return categoryToIconMap[categoryName] || Folder;
 };
