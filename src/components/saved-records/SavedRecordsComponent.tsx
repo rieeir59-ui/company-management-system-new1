@@ -137,6 +137,15 @@ const generatePdfForRecord = (record: SavedRecord) => {
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
 
+const bankTimelineHeaders = [
+    'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
+    'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
+    'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
+    'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
+    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawings', 
+    'siteVisit', 'finalBill', 'projectClosure'
+];
+
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
     const { user: currentUser } = useCurrentUser();
@@ -148,12 +157,15 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-    const recordCategories = useMemo(() => ({
-        'Timelines of Bank': bankTimelineCategories || [],
-        'Project Manual': allFileNames.filter(name => !([...(bankTimelineCategories || []), 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name))),
-        'Task Assignments': ['Task Assignment'],
-        'Uploaded Files': ['Uploaded File', 'Daily Work Report']
-    }), [bankTimelineCategories]);
+    const recordCategories = useMemo(() => {
+        const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
+        return {
+            'Timelines of Bank': allBankFileNames,
+            'Project Manual': allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
+            'Task Assignments': ['Task Assignment'],
+            'Uploaded Files': ['Uploaded File', 'Daily Work Report']
+        }
+    }, [bankTimelineCategories]);
     
     const mainCategories = useMemo(() => [
         { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
@@ -169,17 +181,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }
         if (!activeCategory) return [];
     
-        let categoryFiles: string[];
-    
-        if (activeCategory === 'Banks') {
-            const allBankTimelineFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-             return userRecords.filter(r => allBankTimelineFileNames.includes(r.fileName) && (
-                r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
-            ));
-        }
-    
-        categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
+        const categoryFiles = mainCategories.find(c => c.name === activeCategory)?.files || [];
         
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
         
@@ -189,7 +191,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
 
     const recordsByFileName = useMemo(() => {
         return filteredRecords.reduce((acc, record) => {
@@ -236,14 +238,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
 
                     let firstItem = section.items[0];
-                    // If items are strings, try to parse the first one to determine structure
                     if (typeof firstItem === 'string') {
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    // Render as a table if items are objects with properties
-                    if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
-                        const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                    const isBankTimeline = viewingRecord.fileName.includes('Timeline');
+                    const headers = isBankTimeline
+                        ? bankTimelineHeaders
+                        : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
+                            ? Object.keys(firstItem).filter(key => key !== 'id')
+                            : null;
+
+                    if (headers) {
                         return (
                             <div key={index}>
                                 <h3 className="font-bold text-primary mb-2">{section.category}</h3>
@@ -271,7 +277,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         );
                     }
                     
-                    // Fallback to simple key-value display
+                    // Fallback for simple key-value display
                     return (
                         <div key={index}>
                             <h3 className="font-bold text-primary mb-2">{section.category}</h3>
