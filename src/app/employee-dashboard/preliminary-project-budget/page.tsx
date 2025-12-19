@@ -12,9 +12,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface BudgetItem {
     id: number;
@@ -64,8 +62,7 @@ const initialItems: Omit<BudgetItem, 'grossArea'>[] = [
 export default function Page() {
     const image = PlaceHolderImages.find(p => p.id === 'preliminary-project-budget');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [header, setHeader] = useState({ project: '', projectNo: '', date: '', job: '', revNo: '', jobDate: '', location: '', preparedBy: '', grossArea: 0, rentalArea: 0 });
     const [items, setItems] = useState<BudgetItem[]>(() => initialItems.map(item => ({ ...item, grossArea: header.grossArea })));
@@ -83,7 +80,7 @@ export default function Page() {
         }
         setHeader(newHeader);
     }
-    
+
     const handleItemChange = (id: number, field: keyof BudgetItem, value: number) => {
         setItems(prev => prev.map(item => item.id === id ? {...item, [field]: value} : item));
     }
@@ -107,33 +104,23 @@ export default function Page() {
 
 
     const handleSave = async () => {
-         if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            category: 'Preliminary Project Budget',
-            items: [
-                JSON.stringify(header),
-                ...items.map(item => JSON.stringify(item)),
-                JSON.stringify(totals)
-            ],
+            fileName: 'Preliminary Project Budget',
+            projectName: header.project || 'Untitled Budget',
+            data: [{
+                category: 'Preliminary Project Budget',
+                items: [
+                    JSON.stringify(header),
+                    ...items.map(item => JSON.stringify(item)),
+                    JSON.stringify(totals)
+                ],
+            }],
         };
         
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Preliminary Project Budget',
-                projectName: header.project || 'Untitled Budget',
-                data: [dataToSave],
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The project budget has been saved.' });
+            await addRecord(dataToSave as any);
         } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+           // This will be handled by the context's error emitter
         }
     };
 
@@ -156,7 +143,7 @@ export default function Page() {
                 [`Gross Area: ${header.grossArea}`, `Rental Area: ${header.rentalArea}`, `Efficiency: ${efficiency}%`],
             ]
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).autoTable.previous.finalY + 10;
 
         const basicItems = items.filter(i => !i.isUnusual && !i.isAdditional && !i.isOwnerBudget);
         (doc as any).autoTable({
@@ -172,7 +159,7 @@ export default function Page() {
             foot: [['Basic Building Costs', '', '', totals.basicBuildingCosts.toFixed(2)]],
             footStyles: { fontStyle: 'bold' }
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).autoTable.previous.finalY + 10;
         
         const unusualItems = items.filter(i => i.isUnusual);
         (doc as any).autoTable({
@@ -183,7 +170,7 @@ export default function Page() {
             foot: [['Total Unusual Costs', totals.unusualBuildingCosts.toFixed(2)]],
             footStyles: { fontStyle: 'bold' }
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).autoTable.previous.finalY + 10;
 
         const additionalItems = items.filter(i => i.isAdditional);
         (doc as any).autoTable({
@@ -194,7 +181,7 @@ export default function Page() {
             foot: [['Total Additional Items', totals.additionalBudgetItems.toFixed(2)]],
             footStyles: { fontStyle: 'bold' }
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).autoTable.previous.finalY + 10;
 
         doc.setFont('helvetica', 'bold');
         doc.text(`Sub-Total Rs. ${totals.subTotal.toFixed(2)}`, 14, y);
@@ -209,7 +196,7 @@ export default function Page() {
             foot: [["Total Owner's Items", totals.ownerBudgetItems.toFixed(2)]],
             footStyles: { fontStyle: 'bold' }
         });
-        y = (doc as any).lastAutoTable.finalY + 10;
+        y = (doc as any).autoTable.previous.finalY + 10;
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
