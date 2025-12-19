@@ -55,26 +55,12 @@ function CommercialTimelineComponent() {
                             area: genArea,
                             siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
                             siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
-                            contactStart: taskMap['contact']?.start || row.contactStart,
-                            contactEnd: taskMap['contact']?.end || row.contactEnd,
-                            headCountStart: taskMap['headcountrequirment']?.start || row.headCountStart,
-                            headCountEnd: taskMap['headcountrequirment']?.end || row.headCountEnd,
                             proposalStart: taskMap['proposaldesigndevelopment']?.start || row.proposalStart,
                             proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
                             threedStart: taskMap['3ds']?.start || row.threedStart,
                             threedEnd: taskMap['3ds']?.end || row.threedEnd,
                             tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
                             tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
-                            tenderMepStart: taskMap['tenderpackagemep']?.start || row.tenderMepStart,
-                            tenderMepEnd: taskMap['tenderpackagemep']?.end || row.tenderMepEnd,
-                            boqStart: taskMap['boq']?.start || row.boqStart,
-                            boqEnd: taskMap['boq']?.end || row.boqEnd,
-                            tenderStatus: taskMap['tenderstatus']?.start || row.tenderStatus,
-                            comparative: taskMap['comparative']?.start || row.comparative,
-                            workingDrawings: taskMap['workingdrawings']?.start || row.workingDrawings,
-                            siteVisit: taskMap['sitevisit']?.start || row.siteVisit,
-                            finalBill: taskMap['finalbill']?.start || row.finalBill,
-                            projectClosure: taskMap['projectclosure']?.start || row.projectClosure,
                         };
                     }
                     return row;
@@ -87,10 +73,8 @@ function CommercialTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contact']?.start || '',
-                    contactEnd: taskMap['contact']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
+                    contract: taskMap['contract']?.start || '',
+                    headCount: taskMap['headcountrequirment']?.start || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -135,7 +119,7 @@ function CommercialTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
@@ -183,8 +167,8 @@ function CommercialTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1 },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
@@ -309,3 +293,5 @@ function CommercialTimelineComponent() {
 export default function Page() {
   return <CommercialTimelineComponent />;
 }
+
+    

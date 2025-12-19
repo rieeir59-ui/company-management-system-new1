@@ -167,8 +167,8 @@ function CommercialTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1 },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
@@ -289,3 +289,5 @@ function CommercialTimelineComponent() {
 export default function Page() {
   return <CommercialTimelineComponent />;
 }
+
+    

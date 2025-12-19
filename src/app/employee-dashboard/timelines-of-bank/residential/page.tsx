@@ -32,7 +32,7 @@ function ResidentialTimelineComponent() {
             siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
         }]);
     };
     
@@ -61,7 +61,7 @@ function ResidentialTimelineComponent() {
              'Site Survey\nStart', 'Site Survey\nEnd', 'Contact\nStart', 'Contact\nEnd', 'Head Count / Requirment\nStart', 'Head Count / Requirment\nEnd',
              'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 'Working Drawings\nStart', 'Working Drawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
@@ -69,7 +69,7 @@ function ResidentialTimelineComponent() {
             p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawings, p.siteVisit, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -77,8 +77,8 @@ function ResidentialTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1 },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
@@ -122,13 +122,15 @@ function ResidentialTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th rowSpan={2} className="border p-1">Working Drawings</th>
-                                <th rowSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1">Working Drawings</th>
+                                <th colSpan={2} className="border p-1">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
                             </tr>
                             <tr className="bg-primary/10">
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
@@ -165,8 +167,10 @@ function ResidentialTimelineComponent() {
                                     <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.workingDrawings} onChange={e => handleProjectChange(row.id, 'workingDrawings', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.siteVisit} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="w-24" /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Button variant="destructive" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4" /></Button></td>
@@ -190,3 +194,5 @@ function ResidentialTimelineComponent() {
 export default function Page() {
   return <ResidentialTimelineComponent />;
 }
+
+    

@@ -44,7 +44,7 @@ function DynamicBankTimelineComponent() {
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
         }]);
     };
     
@@ -66,7 +66,7 @@ function DynamicBankTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text(`${bankName} Project Chart`, 14, 15);
+        doc.text(`${decodeURIComponent(bankName)} Project Chart`, 14, 15);
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
@@ -95,8 +95,8 @@ function DynamicBankTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1 },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
@@ -208,3 +208,5 @@ function DynamicBankTimelineComponent() {
 export default function Page() {
   return <DynamicBankTimelineComponent />;
 }
+
+    
