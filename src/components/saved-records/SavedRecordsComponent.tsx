@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -30,8 +31,8 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getIconForFile, allFileNames } from '@/lib/icons';
-import { getFormUrlFromFileName } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -41,7 +42,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { ProjectRow } from '@/lib/projects-data';
+import { type ProjectRow } from '@/lib/projects-data';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' }) as any;
@@ -83,7 +84,16 @@ const generatePdfForRecord = (record: SavedRecord) => {
     addDefaultHeader();
 
     if (Array.isArray(record.data)) {
-        record.data.forEach((section: any) => {
+        let remarksSection: any = null;
+        let mainDataSections = record.data;
+
+        const isBankTimeline = record.fileName.endsWith('Timeline');
+        if (isBankTimeline) {
+            remarksSection = record.data.find((s: any) => s.category === 'Remarks');
+            mainDataSections = record.data.filter((s: any) => s.category !== 'Remarks');
+        }
+
+        mainDataSections.forEach((section: any) => {
             if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
 
             if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
@@ -98,33 +108,37 @@ const generatePdfForRecord = (record: SavedRecord) => {
             if (typeof firstItem === 'string') {
                 try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
             }
-
-            const isBankTimeline = record.fileName.endsWith('Timeline');
             
             if (isBankTimeline && section.category === 'Projects') {
-                 const bankTimelineHeaders = [
-                    'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
-                    'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
-                    'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
-                    'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
-                    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
-                    'workingDrawingsStart', 'workingDrawingsEnd', 
-                    'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
-                ];
-                const body = section.items.map((item: ProjectRow) => bankTimelineHeaders.map(h => item[h as keyof ProjectRow]));
+                 const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
+                 const body = section.items.map((item: ProjectRow) => bankTimelineHeaders.map(h => item[h as keyof ProjectRow] || ''));
+
                  doc.autoTable({
                     startY: yPos,
                     head: [bankTimelineHeaders.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
                     body: body,
                     theme: 'grid',
                     styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
+                    headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 5 },
+                });
+            } else if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
+                const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                const body = section.items.map((item: any) => {
+                    let parsedItem = item;
+                    if (typeof item === 'string') {
+                        try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
+                    }
+                    return headers.map(header => String(parsedItem[header] ?? ''));
+                });
+                 doc.autoTable({
+                    startY: yPos,
+                    head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                    body: body,
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
                     headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
                 });
-            } else if (isBankTimeline && section.category === 'Remarks') {
-                const remarksContent = section.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
-                const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
-                doc.text(remarksLines, 14, yPos);
-                yPos += remarksLines.length * 5;
+
             } else {
                  const body = section.items.map((item: any) => {
                     if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
@@ -138,6 +152,21 @@ const generatePdfForRecord = (record: SavedRecord) => {
             }
              yPos = doc.autoTable.previous.finalY + 10;
         });
+
+        if(remarksSection) {
+            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text('Remarks', 14, yPos);
+            yPos += 8;
+            doc.setTextColor(0,0,0);
+            
+            const remarksContent = remarksSection.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
+            const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
+            doc.text(remarksLines, 14, yPos);
+            yPos += remarksLines.length * 5;
+        }
     }
     addFooter();
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
@@ -177,7 +206,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         let categoryFiles = categoryInfo?.files || [];
 
         if (activeCategory === 'Banks') {
-            categoryFiles = (bankTimelineCategories || []).map(b => `${b} Timeline`);
+            const currentBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
+            categoryFiles = [...new Set([...categoryFiles, ...currentBankFileNames])];
         }
 
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
@@ -248,8 +278,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    const headers = isBankTimeline
-                        ? Object.keys(firstItem).filter(key => key !== 'id')
+                    const isTimelineProject = isBankTimeline && section.category === 'Projects';
+
+                    const headers = isTimelineProject
+                        ? ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure']
                         : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
                             ? Object.keys(firstItem).filter(key => key !== 'id')
                             : null;
