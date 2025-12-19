@@ -99,10 +99,33 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
         toast({ variant: 'destructive', title: 'Error', description: errMessage });
         throw new Error(errMessage);
     }
-
+  
     const storage = getStorage(firebaseApp);
     const filePath = `${record.category}/${Date.now()}_${file.name}`;
     const storageRef = ref(storage, filePath);
+    
+    // Create Firestore document first
+    let docRef;
+    try {
+        const dataToSave = {
+            ...record,
+            fileUrl: '', // Placeholder
+            employeeId: currentUser.uid, 
+            employeeName: currentUser.name,
+            createdAt: serverTimestamp(),
+        };
+        docRef = await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
+    } catch(firestoreError) {
+        console.error("Error creating initial Firestore document:", firestoreError);
+        const permissionError = new FirestorePermissionError({
+            path: 'uploadedFiles',
+            operation: 'create',
+            requestResourceData: record,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw firestoreError; // Stop the process
+    }
+
     const uploadTask = uploadBytesResumable(storageRef, file);
 
     return new Promise((resolve, reject) => {
@@ -114,33 +137,23 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
             (storageError) => {
                 console.error("Upload to storage failed:", storageError);
                 toast({ variant: 'destructive', title: 'Storage Upload Failed', description: storageError.message || 'Could not upload file to storage. Check storage rules.' });
-                // We reject here to stop the process. The calling component will catch this.
+                // If storage fails, we should ideally delete the placeholder document
+                if (docRef) {
+                    deleteDoc(docRef);
+                }
                 reject(storageError);
             },
             async () => {
                 try {
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    const dataToSave = {
-                        ...record,
-                        fileUrl: downloadURL,
-                        employeeId: currentUser.uid, 
-                        employeeName: currentUser.name,
-                        createdAt: serverTimestamp(),
-                    };
-                    
-                    const docRef = await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
+                    if (docRef) {
+                        await updateDoc(docRef, { fileUrl: downloadURL });
+                    }
                     resolve(docRef.id);
 
-                } catch (firestoreError) {
-                    console.error("Error writing to Firestore:", firestoreError);
-                    // This error is likely a permission error for Firestore itself.
-                    const permissionError = new FirestorePermissionError({
-                        path: 'uploadedFiles',
-                        operation: 'create',
-                        requestResourceData: record,
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                    reject(firestoreError); // Reject the promise to signal failure.
+                } catch (updateError) {
+                    console.error("Error updating Firestore document with URL:", updateError);
+                    reject(updateError);
                 }
             }
         );
@@ -226,3 +239,4 @@ export const useFileRecords = () => {
   }
   return context;
 };
+
