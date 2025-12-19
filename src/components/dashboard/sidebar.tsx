@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -42,6 +41,7 @@ import {
   Home,
   Search as SearchIcon,
   Compass,
+  BookCopy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -60,6 +60,7 @@ const menuItems = [
     { href: '/dashboard/team', label: 'Our Team', icon: User },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
     { href: '/dashboard/services', label: 'Services', icon: FileText },
+    { href: '/dashboard/project-manual', label: 'Project Manual', icon: BookCopy },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/files-record', label: 'Files Record', icon: FileText },
     { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
@@ -290,7 +291,3 @@ export default function DashboardSidebar() {
       </Sidebar>
   );
 }
-
-    
-
-    
