@@ -34,7 +34,8 @@ import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '../ui/badge';
-import { allFileNames, bankTimelineCategories } from '@/lib/projects-data';
+import { bankTimelineCategories } from '@/lib/projects-data';
+import { allFileNames } from '@/lib/utils';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -142,7 +143,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
         (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
         yPos = (doc as any).autoTable.previous.finalY + 10;
-        
+
         addText('Project Management', true, 0, 12, 8);
         addText('Top Supervision:', true, 2, 10, 5);
         addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
@@ -394,5 +395,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
-    
