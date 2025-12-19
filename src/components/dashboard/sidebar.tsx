@@ -13,15 +13,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@/components/ui/collapsible';
 import {
   LayoutDashboard,
   Users,
@@ -33,39 +25,7 @@ import {
   Database,
   FileUp,
   Briefcase,
-  Archive,
-  Eye,
-  FileSearch,
-  ListChecks,
-  Landmark,
-  Building2,
-  Home,
   Search as SearchIcon,
-  Compass,
-  BookCopy,
-  Folder,
-  FileSignature,
-  FileKey,
-  Scroll,
-  BarChart2,
-  Calendar,
-  Wallet,
-  CheckSquare,
-  FileX,
-  FilePen,
-  File as FileIcon,
-  CircleDollarSign,
-  Clipboard,
-  Presentation,
-  Package,
-  Palette,
-  Clock,
-  UserCog,
-  BookUser,
-  ClipboardList,
-  Building,
-  UserCheck,
-  Book,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -75,74 +35,19 @@ import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
-import { Skeleton } from '../ui/skeleton';
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
     { href: '/dashboard/services', label: 'Services', icon: FileText },
-    { href: '/dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
-    { href: '/dashboard/site-visit', label: 'Site Visit', icon: Eye },
-    { href: '/dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
-    { href: '/dashboard/site-survey', label: 'Site Survey', icon: Compass },
-    { href: '/dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
     { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
-];
-
-const projectManualItems = [
-    { href: '/dashboard/project-checklist', label: 'Project Checklist', icon: ListChecks },
-    { href: '/dashboard/project-information', label: 'Project Information', icon: Folder },
-    { href: '/dashboard/predesign-assessment', label: 'Predesign Assessment', icon: FileSearch },
-    { href: '/dashboard/project-data', label: 'Project Data', icon: Database },
-    { href: '/dashboard/project-agreement', label: 'Project Agreement', icon: FileSignature },
-    { href: '/dashboard/list-of-services', label: 'List of Services', icon: Clipboard },
-    { href: '/dashboard/project-bylaws', label: 'Project Bylaws', icon: FileKey },
-    { href: '/dashboard/proposal-request', label: 'Proposal Request', icon: Briefcase },
-    { href: '/dashboard/drawings', label: 'Drawings', icon: Palette },
-    { href: '/dashboard/shop-drawings-record', label: 'Shop Drawings Record', icon: FileIcon },
-    { href: '/dashboard/project-chart-studio', label: 'Project Chart (Studio)', icon: BarChart2 },
-    { href: '/dashboard/list-of-sub-consultants', label: 'List Of Sub-consultants', icon: BookUser },
-    { href: '/dashboard/list-of-contractors', label: 'List of Contractors', icon: Building },
-    { href: '/dashboard/list-of-approved-vendors', label: 'List of Approved Vendors', icon: UserCheck },
-    { href: '/dashboard/time-line-schedule', label: 'Time line Schedule', icon: Clock },
-    { href: '/dashboard/project-application-summary', label: 'Project Application Summary', icon: CheckSquare },
-    { href: '/dashboard/continuation-sheet', label: 'Continuation Sheet', icon: FileX },
-    { href: '/dashboard/construction-schedule', label: 'Construction Schedule', icon: Calendar },
-    { href: '/dashboard/preliminary-project-budget', label: 'Preliminary Project Budget', icon: Scroll },
-    { href: '/dashboard/bill-of-quantity', label: 'Bill Of Quantity', icon: Wallet },
-    { href: '/dashboard/rate-analysis', label: 'Rate Analysis', icon: BarChart2 },
-    { href: '/dashboard/change-order', label: 'Change Order', icon: Book },
-    { href: '/dashboard/payment-certificates', label: 'Payment Certificates', icon: CircleDollarSign },
-    { href: '/dashboard/instruction-sheet', label: 'Instruction Sheet', icon: FileUp },
-    { href: '/dashboard/other-provisions', label: 'Other Provisions', icon: BookCopy },
-    { href: '/dashboard/consent-of-surety', label: 'Consent of Surety', icon: FilePen },
-    { href: '/dashboard/substantial-summary', label: 'Substantial Summary', icon: Clipboard },
-    { href: '/dashboard/total-project-package', label: 'Total Project Package', icon: Package },
-    { href: '/dashboard/architects-instructions', label: 'Architects Instructions', icon: User },
-    { href: '/dashboard/construction-change-director', label: 'Construction Change Director', icon: Users },
-    { href: '/dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
-    { href: '/dashboard/employee-record', label: 'Employee Record', icon: UserCog },
-    { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
-    { href: '/dashboard/employee', label: 'Employees', icon: Users },
+    { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
 ];
 
-const bankTimelineItems = [
-    { href: '/dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
-    { href: '/dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
-    { href: '/dashboard/timelines-of-bank/askari-bank', label: 'Askari Bank', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/bank-alfalah', label: 'Bank Alfalah', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/bank-al-habib', label: 'Bank Al Habib', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/cbd', label: 'CBD', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/dib', label: 'DIB', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/fbl', label: 'FBL', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/hbl', label: 'HBL', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/mcb', label: 'MCB', icon: Landmark },
-    { href: '/dashboard/timelines-of-bank/ubl', label: 'UBL', icon: Landmark },
-];
 
 const getInitials = (name: string) => {
     if (!name) return '';
@@ -154,13 +59,8 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, visibleManualItems }: { visibleTopLevelItems: typeof topLevelItems, visibleManualItems: typeof projectManualItems }) => {
+const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelItems: typeof topLevelItems }) => {
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
     <SidebarMenu>
@@ -178,66 +78,6 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, visibleManualItems }: 
           </Link>
         </SidebarMenuItem>
       ))}
-
-      {isClient && (
-        <>
-          <SidebarMenuItem>
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton
-                  className="group-data-[collapsible=icon]:justify-center"
-                  tooltip="Project Manual"
-                >
-                  <BookCopy className="size-5" />
-                  <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent asChild>
-                <SidebarMenuSub>
-                  {visibleManualItems.map((item) => (
-                    <SidebarMenuSubItem key={item.href}>
-                      <Link href={item.href} passHref>
-                        <SidebarMenuSubButton isActive={pathname === item.href}>
-                          <item.icon className="size-4 mr-2" />
-                          {item.label}
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarMenuItem>
-        
-          <SidebarMenuItem>
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton
-                  className="group-data-[collapsible=icon]:justify-center"
-                  tooltip="Timelines of Bank"
-                >
-                  <Landmark className="size-5" />
-                  <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent asChild>
-                <SidebarMenuSub>
-                  {bankTimelineItems.map((item) => (
-                    <SidebarMenuSubItem key={item.href}>
-                      <Link href={item.href} passHref>
-                        <SidebarMenuSubButton isActive={pathname === item.href}>
-                          <item.icon className="size-4 mr-2" />
-                          {item.label}
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </Collapsible>
-          </SidebarMenuItem>
-        </>
-      )}
     </SidebarMenu>
   );
 });
@@ -258,16 +98,11 @@ export default function DashboardSidebar() {
     router.push('/login');
   }, [logout, router, toast]);
 
-  const { visibleTopLevelItems, visibleManualItems } = useMemo(() => {
-    const filterItems = (items: any[]) => items.filter(item => {
+  const visibleTopLevelItems = useMemo(() => {
+    return topLevelItems.filter(item => {
       if (!item.roles) return true;
       return currentUser && item.roles.some(role => currentUser.departments.includes(role));
     });
-    
-    return {
-      visibleTopLevelItems: filterItems(topLevelItems),
-      visibleManualItems: filterItems(projectManualItems),
-    };
   }, [currentUser]);
   
   const searchResults = useMemo(() => {
@@ -275,9 +110,7 @@ export default function DashboardSidebar() {
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
-    const allMenuItems = [...visibleTopLevelItems, ...visibleManualItems, ...bankTimelineItems];
-
-    const menuResults = allMenuItems.filter(item =>
+    const menuResults = visibleTopLevelItems.filter(item =>
       item.label.toLowerCase().includes(lowerCaseQuery)
     );
 
@@ -298,7 +131,7 @@ export default function DashboardSidebar() {
     const uniqueProjectResults = Array.from(new Map(projectResults.map(p => [p.id, p])).values());
 
     return { menuResults, projectResults: uniqueProjectResults };
-  }, [searchQuery, visibleTopLevelItems, visibleManualItems]);
+  }, [searchQuery, visibleTopLevelItems]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -364,7 +197,7 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu visibleTopLevelItems={visibleTopLevelItems} visibleManualItems={visibleManualItems} />
+            <MemoizedSidebarMenu visibleTopLevelItems={visibleTopLevelItems} />
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">

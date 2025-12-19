@@ -81,7 +81,7 @@ import { Input } from '@/components/ui/input';
 import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 
 const topLevelItems = [
-    { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
@@ -91,7 +91,7 @@ const topLevelItems = [
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
     { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
-    { href: '/employee-dashboard/saved-records', label: 'Saved Records', icon: Database },
+    { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
 
 const projectManualItems = [
@@ -127,6 +127,7 @@ const projectManualItems = [
     { href: '/employee-dashboard/construction-change-director', label: 'Construction Change Director', icon: Users },
     { href: '/employee-dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
     { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
+    { href: '/employee-dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
 ];
 
 
