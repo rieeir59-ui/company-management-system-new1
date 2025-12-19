@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -12,11 +13,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 interface MaterialRow {
     id: number;
@@ -33,8 +30,7 @@ interface LabourRow {
 export default function RateAnalysisPage() {
     const image = PlaceHolderImages.find(p => p.id === 'rate-analysis');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [description, setDescription] = useState('');
     const [itemNo, setItemNo] = useState('');
@@ -84,14 +80,7 @@ export default function RateAnalysisPage() {
     const compositeRatePerQty = useMemo(() => qty > 0 ? (materialTotal + labourTotal) / qty : 0, [materialTotal, labourTotal, qty]);
     
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Rate Analysis',
             projectName: description || 'Untitled Analysis',
             data: [{
@@ -118,21 +107,14 @@ export default function RateAnalysisPage() {
                     `Composite Rate per ${qty}: ${compositeRatePerQty}`,
                 ],
             }],
-            createdAt: serverTimestamp(),
         };
 
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({ title: 'Record Saved', description: 'The rate analysis has been saved.' });
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: `savedRecords`,
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+        try {
+            await addRecord(dataToSave as any);
+        } catch (error) {
+            // Error is handled by the context's toast
+            console.error("Save failed in component:", error);
+        }
     };
 
     const handleDownloadPdf = () => {
@@ -144,7 +126,7 @@ export default function RateAnalysisPage() {
         y += 10;
         
         doc.setFontSize(10);
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: y,
             theme: 'plain',
             body: [
@@ -159,7 +141,7 @@ export default function RateAnalysisPage() {
         materialBody.push([`Contractor's Profit, & Overheads @ ${materialProfitPercent}%`, materialProfit.toFixed(2)]);
         materialBody.push([`Tax @ ${materialTaxPercent}%`, materialTax.toFixed(2)]);
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['MATERIAL', 'Amount (Rs.)']],
             body: materialBody,
             foot: [['Total', materialTotal.toFixed(2)]],
@@ -172,7 +154,7 @@ export default function RateAnalysisPage() {
         labourBody.push([`Contractor's Profit' & Overheads @ ${labourProfitPercent}%`, labourProfit.toFixed(2)]);
         labourBody.push([`Income Tax @ ${labourTaxPercent}%`, labourTax.toFixed(2)]);
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['LABOUR', 'Amount (Rs.)']],
             body: labourBody,
             foot: [['Total', labourTotal.toFixed(2)]],
@@ -181,7 +163,7 @@ export default function RateAnalysisPage() {
         });
         y = (doc as any).autoTable.previous.finalY + 10;
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['ITEM RATES', '']],
             body: [
                 [`Labour rate per ${qty} Cft / Sft`, `Rs. ${labourTotal.toFixed(2)} Say ${Math.round(labourTotal)}`],
