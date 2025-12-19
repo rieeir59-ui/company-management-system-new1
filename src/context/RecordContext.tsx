@@ -142,7 +142,13 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return docRef;
       } catch (err) {
         console.error(err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
+        const permissionError = new FirestorePermissionError({
+            path: 'savedRecords',
+            operation: 'create',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
         throw err;
       }
     },
