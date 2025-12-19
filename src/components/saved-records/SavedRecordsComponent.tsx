@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Eye, Search } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -43,6 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
+import { Eye } from 'lucide-react';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' }) as any;
@@ -53,15 +53,15 @@ const generatePdfForRecord = (record: SavedRecord) => {
     const primaryColor = [45, 95, 51];
     const margin = 14;
 
-    const addDefaultHeader = () => {
+    const addDefaultHeader = (title: string, subtitle: string) => {
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
+        doc.text(title, pageWidth / 2, yPos, { align: 'center' });
         yPos += 8;
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0);
-        doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
+        doc.text(subtitle, pageWidth / 2, yPos, { align: 'center' });
         yPos += 12;
 
         doc.setFontSize(9);
@@ -81,93 +81,114 @@ const generatePdfForRecord = (record: SavedRecord) => {
         }
     };
     
-    addDefaultHeader();
+    const isTimeline = record.fileName.endsWith('Timeline');
 
-    if (Array.isArray(record.data)) {
-        let remarksSection: any = null;
-        let mainDataSections = record.data;
+    if (isTimeline) {
+        doc.setProperties({
+            title: `${record.projectName} Timeline`
+        });
+        doc.setFontSize(10);
+        doc.text(record.projectName, 14, 15);
 
-        const isBankTimeline = record.fileName.endsWith('Timeline');
-        if (isBankTimeline) {
-            remarksSection = record.data.find((s: any) => s.category === 'Remarks');
-            mainDataSections = record.data.filter((s: any) => s.category !== 'Remarks');
-        }
+        const projects: ProjectRow[] = record.data.find((s:any) => s.category === 'Projects')?.items || [];
+        const remarksSection = record.data.find((s:any) => s.category === 'Remarks');
 
-        mainDataSections.forEach((section: any) => {
-            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
+        const head = [
+            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
+             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
+             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
+             'Site Visit\nStart', 'Site Visit\nEnd', 
+             'Final Bill', 'Project\nClosure']
+        ];
+        
+        const body = projects.map(p => [
+            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
+            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
+            p.workingDrawingsStart, p.workingDrawingsEnd, 
+            p.siteVisitStart, p.siteVisitEnd, 
+            p.finalBill, p.projectClosure
+        ]);
 
-            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(section.category, 14, yPos);
-            yPos += 8;
-            doc.setTextColor(0,0,0);
-
-            let firstItem = section.items[0];
-            if (typeof firstItem === 'string') {
-                try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
-            }
-            
-            if (isBankTimeline && section.category === 'Projects') {
-                 const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
-                 const body = section.items.map((item: ProjectRow) => bankTimelineHeaders.map(h => item[h as keyof ProjectRow] || ''));
-
-                 doc.autoTable({
-                    startY: yPos,
-                    head: [bankTimelineHeaders.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                    body: body,
-                    theme: 'grid',
-                    styles: { fontSize: 4, cellPadding: 1, overflow: 'linebreak' },
-                    headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 5 },
-                });
-            } else if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
-                const headers = Object.keys(firstItem).filter(key => key !== 'id');
-                const body = section.items.map((item: any) => {
-                    let parsedItem = item;
-                    if (typeof item === 'string') {
-                        try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
-                    }
-                    return headers.map(header => String(parsedItem[header] ?? ''));
-                });
-                 doc.autoTable({
-                    startY: yPos,
-                    head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                    body: body,
-                    theme: 'grid',
-                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                    headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
-                });
-
-            } else {
-                 const body = section.items.map((item: any) => {
-                    if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
-                    if (typeof item === 'string') {
-                        const parts = item.split(/:(.*)/s);
-                        return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                    }
-                    return [JSON.stringify(item), ''];
-                });
-                doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 } });
-            }
-             yPos = doc.autoTable.previous.finalY + 10;
+        (doc as any).autoTable({
+            head: head,
+            body: body,
+            startY: 20,
+            theme: 'grid',
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
 
-        if(remarksSection) {
-            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text('Remarks', 14, yPos);
-            yPos += 8;
-            doc.setTextColor(0,0,0);
-            
-            const remarksContent = remarksSection.items.map((remark: { label: string, value: string }) => `${remark.label}: ${remark.value}`).join('\n');
-            const remarksLines = doc.splitTextToSize(remarksContent, pageWidth - margin * 2);
-            doc.text(remarksLines, 14, yPos);
-            yPos += remarksLines.length * 5;
+        if (remarksSection) {
+            let lastY = (doc as any).autoTable.previous.finalY + 10;
+            const remarksText = remarksSection.items.find((item: any) => item.label === "Maam Isbah Remarks & Order")?.value || "";
+            const dateText = remarksSection.items.find((item: any) => item.label === "Date")?.value || "";
+            doc.text("Maam Isbah Remarks & Order", 14, lastY);
+            lastY += 7;
+            doc.text(remarksText, 14, lastY);
+            lastY += 10;
+            doc.text(`Date: ${dateText}`, 14, lastY);
+        }
+
+    } else {
+        addDefaultHeader(record.fileName, record.projectName);
+        
+        if (Array.isArray(record.data)) {
+            record.data.forEach((section: any) => {
+                if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
+
+                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                doc.text(section.category, 14, yPos);
+                yPos += 8;
+                doc.setTextColor(0,0,0);
+
+                let firstItem = section.items[0];
+                if (typeof firstItem === 'string') {
+                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+                }
+
+                if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
+                    const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                    const body = section.items.map((item: any) => {
+                        let parsedItem = item;
+                        if (typeof item === 'string') {
+                            try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
+                        }
+                        return headers.map(header => String(parsedItem[header] ?? ''));
+                    });
+                     doc.autoTable({
+                        startY: yPos,
+                        head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                        body: body,
+                        theme: 'grid',
+                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+                        headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+                    });
+
+                } else {
+                     const body = section.items.map((item: any) => {
+                        if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                        if (typeof item === 'string') {
+                            const parts = item.split(/:(.*)/s);
+                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                        }
+                        return [JSON.stringify(item), ''];
+                    });
+                    doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: 'bold' } } });
+                }
+                 yPos = doc.autoTable.previous.finalY + 10;
+            });
         }
     }
+
     addFooter();
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
@@ -185,7 +206,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
+        const projectManualFiles = (allFileNames || []).filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
 
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
@@ -278,10 +299,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
+                    const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
                     const isTimelineProject = isBankTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
-                        ? ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure']
+                        ? bankTimelineHeaders
                         : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
                             ? Object.keys(firstItem).filter(key => key !== 'id')
                             : null;
