@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon, Landmark, Building, ClipboardCheck, Users, Folder } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon, Landmark, Building, ClipboardCheck, Users, Folder, BookCopy } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,7 +153,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         addText('Please Note:', true, 0, 12, 8);
         addList(record.data.find(d => d.category === 'Notes')?.items || []);
         addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
-
+        
         doc.addPage(); yPos = 20;
 
         addText("Architect's Responsibilities", true, 0, 12, 8);
@@ -186,7 +186,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
 const mainCategories = [
     { name: 'Banks', icon: Landmark, files: bankTimelineCategories },
-    { name: 'Management Records', icon: Building, files: allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)) },
+    { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)) },
     { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment'] },
     { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
 ];
