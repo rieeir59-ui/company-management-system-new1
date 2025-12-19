@@ -191,12 +191,18 @@ export default function DrawingsPage() {
         });
     };
 
-    const handleSampleListChange = (index: number, field: 'no' | 'desc', value: string) => {
+    const handleSampleListChange = (index: number, field: 'no' | 'desc' | 'group', value: string) => {
         setSampleList(prev => {
             const newItems = [...prev];
             newItems[index] = { ...newItems[index], [field]: value };
             return newItems;
         });
+    };
+
+    const handleGroupTitleChange = (oldGroupTitle: string, newGroupTitle: string) => {
+        setSampleList(prev => 
+            prev.map(item => item.group === oldGroupTitle ? { ...item, group: newGroupTitle } : item)
+        );
     };
     
     const groupedSampleList = sampleList.reduce((acc, item) => {
@@ -253,7 +259,7 @@ export default function DrawingsPage() {
              if (groupData.items.length > 0) data.push(groupData);
         }
 
-        await addRecord({
+       await addRecord({
             fileName: 'Drawings List',
             projectName: projectName || 'Untitled Drawings List',
             data: data,
@@ -440,7 +446,11 @@ export default function DrawingsPage() {
                         <div className="space-y-8">
                            {Object.entries(groupedSampleList).map(([groupTitle, items], groupIndex) => (
                                <div key={groupTitle}>
-                                    <h3 className="text-lg font-bold mb-2">{groupTitle}</h3>
+                                    <Input
+                                        value={groupTitle}
+                                        onChange={(e) => handleGroupTitleChange(groupTitle, e.target.value)}
+                                        className="text-lg font-bold mb-2"
+                                    />
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -480,3 +490,4 @@ export default function DrawingsPage() {
         </Card>
     );
 }
+
