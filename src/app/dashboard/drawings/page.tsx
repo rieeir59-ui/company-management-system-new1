@@ -12,9 +12,7 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -171,8 +169,7 @@ const initialSampleList = [
 
 export default function DrawingsPage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     const [drawingSections, setDrawingSections] = useState(initialDrawingSections);
     const [sampleList, setSampleList] = useState(initialSampleList);
 
@@ -212,11 +209,6 @@ export default function DrawingsPage() {
     }, {} as Record<string, typeof sampleList>);
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const form = document.getElementById('drawings-form') as HTMLFormElement;
         const formData = new FormData(form);
         const data: { category: string, items: string[] }[] = [];
@@ -261,20 +253,11 @@ export default function DrawingsPage() {
              if (groupData.items.length > 0) data.push(groupData);
         }
 
-        try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Drawings List',
-                projectName: projectName || 'Untitled Drawings List',
-                data: data,
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The drawings list has been saved.' });
-        } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
-        }
+        await addRecord({
+            fileName: 'Drawings List',
+            projectName: projectName || 'Untitled Drawings List',
+            data: data,
+        } as any);
     };
 
     const handleDownloadPdf = () => {
