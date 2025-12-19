@@ -24,7 +24,6 @@ type RemarksState = Record<string, string>;
 
 const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, remarksState, onRemarkChange }: { title: string, items: string[], checklistState: Record<string, boolean>, onCheckboxChange: (item: string, checked: boolean) => void, remarksState: RemarksState, onRemarkChange: (item: string, value: string) => void }) => (
     <div className="mb-6">
-<<<<<<< HEAD
         <h3 className="font-semibold text-lg mb-4 text-primary border-b pb-2">{title}</h3>
         <div className="space-y-4">
             {items.map((item) => (
@@ -45,29 +44,6 @@ const ChecklistSection = ({ title, items, checklistState, onCheckboxChange, rema
                       onChange={(e) => onRemarkChange(item, e.target.value)}
                       className="h-10 text-sm"
                       rows={1}
-=======
-        <h3 className="font-semibold text-lg mb-2">{title}</h3>
-        <div className="space-y-4">
-            {items.map((item) => (
-                <div key={item} className="space-y-2">
-                    <div className="flex items-start gap-2">
-                        <Checkbox
-                          id={item.replace(/\s+/g, '-')}
-                          checked={checklistState[item] || false}
-                          onCheckedChange={(checked) => onCheckboxChange(item, !!checked)}
-                          className="mt-1"
-                        />
-                        <Label htmlFor={item.replace(/\s+/g, '-')} className="font-normal flex-1">
-                            {item}
-                        </Label>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Remarks..."
-                      value={remarksState[item] || ''}
-                      onChange={(e) => onRemarkChange(item, e.target.value)}
-                      className="h-8 text-xs ml-6 w-[calc(100%-1.5rem)]"
->>>>>>> e087b8d (ye box text k oper arha hy aysa na ho wazy form main nzr ayyn)
                     />
                 </div>
             ))}
@@ -263,27 +239,6 @@ export default function SiteVisitPage() {
                 1: { cellWidth: 20 },
                 2: { cellWidth: 'auto' }
               },
-<<<<<<< HEAD
-=======
-              didDrawCell: (data: any) => {
-                if(data.column.index === 0 && data.section === 'body') {
-                    const itemText = items[data.row.index];
-                    const isChecked = checklistState[itemText] || false;
-                    doc.setLineWidth(0.2);
-                    
-                    if(data.cell && data.cell.textPos) {
-                        data.cell.textPos.x = data.cell.x + 8;
-                    }
-
-                    doc.rect(data.cell.x + 2, data.cell.y + data.cell.height / 2 - 2, 4, 4);
-                    if(isChecked) {
-                        doc.setFont('ZapfDingbats');
-                        doc.text('✓', data.cell.x + 3, data.cell.y + data.cell.height / 2 + 1.5);
-                        doc.setFont('helvetica');
-                    }
-                }
-              }
->>>>>>> e087b8d (ye box text k oper arha hy aysa na ho wazy form main nzr ayyn)
             });
             yPos = doc.autoTable.previous.finalY + 5;
         });
@@ -389,12 +344,8 @@ export default function SiteVisitPage() {
                 <div className="space-y-4">
                     <div><Label className="font-semibold text-lg">8. Observations</Label><Textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={4} /></div>
                     <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Textarea value={issues} onChange={(e) => setIssues(e.target.value)} rows={4} /></div>
-<<<<<<< HEAD
                     <div><Label className="font-semibold text-lg">10. Solutions</Label><Textarea value={solutions} onChange={(e) => setSolutions(e.target.value)} rows={4} /></div>
                     <div><Label className="font-semibold text-lg">11. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
-=======
-                    <div><Label className="font-semibold text-lg">10. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
->>>>>>> e087b8d (ye box text k oper arha hy aysa na ho wazy form main nzr ayyn)
                 </div>
 
                 <div>
