@@ -73,7 +73,7 @@ export default function ListOfSubConsultantsPage() {
         }
 
         const dataToSave = {
-            employeeId: currentUser.record,
+            employeeId: currentUser.uid,
             employeeName: currentUser.name,
             fileName: 'List of Sub-Consultants',
             projectName: recordName || 'Untitled Sub-Consultant List',
@@ -143,7 +143,7 @@ export default function ListOfSubConsultantsPage() {
             theme: 'grid',
             headStyles: { fillColor: [45, 95, 51] },
         });
-        
+
         // Add footer to all pages
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {

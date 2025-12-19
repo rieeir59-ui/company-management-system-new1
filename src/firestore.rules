@@ -8,13 +8,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: Check if user is an admin
+    // Helper: Check if user is admin
     function isAdmin() {
-      // Use exists for performance and safety over get.
+      // Use `exists` for performance and safety over `get`.
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
 
+    // Helper: Check if user is authorized to update task status
+    function canUpdateTaskStatus() {
+        return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['architects','draftpersons','finance','quantity-management','hr']);
+    }
+    
     // Helper: Check if the user is the one the task is assigned to
     function isAssignee() {
       return request.auth != null &&
@@ -29,7 +34,7 @@ service cloud.firestore {
 
     // SAVED RECORDS collection
     match /savedRecords/{recordId} {
-      allow get, list: if isLoggedIn();
+      allow read: if isLoggedIn(); 
       allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
       allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
     }
@@ -38,7 +43,7 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read: if isAdmin() || isAssignee();
       allow create: if isAdmin();
-      allow update: if isAdmin() || isAssignee();
+      allow update: if isAdmin() || canUpdateTaskStatus();
       allow delete: if isAdmin();
     }
 
