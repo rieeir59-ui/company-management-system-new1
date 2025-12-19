@@ -125,7 +125,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contractStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
@@ -303,14 +303,68 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
     
-        const isBankTimeline = viewingRecord.fileName.includes('Timeline');
+        const isTimeline = viewingRecord.fileName.endsWith('Timeline');
         
+        if (viewingRecord.fileName === 'Shop Drawing and Sample Record' && viewingRecord.data?.header) {
+            const { header, items } = viewingRecord.data;
+            const parsedItems = items.map((item: string) => {
+                try {
+                    return JSON.parse(item);
+                } catch {
+                    return {};
+                }
+            });
+            return (
+                <div className="space-y-4">
+                    <h3 className="font-bold text-primary mb-2">Header Information</h3>
+                     <Table>
+                        <TableBody>
+                            <TableRow><TableCell className="font-semibold">Project Name</TableCell><TableCell>{header.projectName}</TableCell></TableRow>
+                            <TableRow><TableCell className="font-semibold">Architect's Project No</TableCell><TableCell>{header.architectsProjectNo}</TableCell></TableRow>
+                            <TableRow><TableCell className="font-semibold">Contractor</TableCell><TableCell>{header.contractor}</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                    <h3 className="font-bold text-primary mb-2 mt-4">Items</h3>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Record #</TableHead>
+                                    <TableHead>Spec Section</TableHead>
+                                    <TableHead>Drawing No</TableHead>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Trade</TableHead>
+                                    <TableHead>Action</TableHead>
+                                    <TableHead>Copies To</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {parsedItems.map((item: any) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{item.date}</TableCell>
+                                        <TableCell>{item.recordNo}</TableCell>
+                                        <TableCell>{item.specSectionNo}</TableCell>
+                                        <TableCell>{item.drawingNo}</TableCell>
+                                        <TableCell>{item.title}</TableCell>
+                                        <TableCell>{item.contractorSubcontractorTrade}</TableCell>
+                                        <TableCell>{item.action?.join(', ')}</TableCell>
+                                        <TableCell>{item.copiesTo?.join(', ')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            );
+        }
+
         const dataAsArray = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
         
         let remarksSection: any = null;
         let mainDataSections = dataAsArray;
 
-        if (isBankTimeline) {
+        if (isTimeline) {
             remarksSection = dataAsArray.find((s: any) => s.category === 'Remarks');
             mainDataSections = dataAsArray.filter((s: any) => s.category !== 'Remarks');
         }
@@ -335,7 +389,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         'siteVisitStart', 'siteVisitEnd', 
                         'finalBill', 'projectClosure'
                     ];
-                    const isTimelineProject = isBankTimeline && section.category === 'Projects';
+                    const isTimelineProject = isTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
                         ? bankTimelineHeaders
