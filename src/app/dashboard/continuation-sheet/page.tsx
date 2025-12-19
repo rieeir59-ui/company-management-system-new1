@@ -12,9 +12,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
@@ -53,8 +51,7 @@ const initialRow: Omit<Row, 'id'> = {
 export default function ContinuationSheetPage() {
     const image = PlaceHolderImages.find(p => p.id === 'continuation-sheet');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const [rows, setRows] = useState<Row[]>([{ id: 1, ...initialRow }]);
     const [applicationNumber, setApplicationNumber] = useState('');
@@ -93,30 +90,21 @@ export default function ContinuationSheetPage() {
     }, [rows]);
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            category: 'Continuation Sheet',
-            items: rows.map(row => JSON.stringify(row))
+            fileName: 'Continuation Sheet',
+            projectName: projectName || 'Untitled Continuation Sheet',
+            data: [{
+                category: 'Continuation Sheet',
+                items: rows.map(row => JSON.stringify(row))
+            }]
         };
-        
+
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Continuation Sheet',
-                projectName: projectName,
-                data: [dataToSave],
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The continuation sheet has been saved.' });
+            await addRecord(dataToSave as any);
             setIsSaveOpen(false);
         } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+            // Error is handled by context's toast
+            console.error("Save failed in component:", error);
         }
     };
 
@@ -237,10 +225,10 @@ export default function ContinuationSheetPage() {
                                         <TableRow key={row.id}>
                                             <TableCell><Input value={row.itemNo} onChange={e => handleRowChange(row.id, 'itemNo', e.target.value)} /></TableCell>
                                             <TableCell><Input value={row.description} onChange={e => handleRowChange(row.id, 'description', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.scheduledValue} onChange={e => handleRowChange(row.id, 'scheduledValue', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.fromPrevious} onChange={e => handleRowChange(row.id, 'fromPrevious', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.thisPeriod} onChange={e => handleRowChange(row.id, 'thisPeriod', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.materialsStored} onChange={e => handleRowChange(row.id, 'materialsStored', e.target.value)} /></TableCell>
+                                            <TableCell><Input type="number" value={row.scheduledValue} onChange={e => handleRowChange(row.id, 'scheduledValue', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.fromPrevious} onChange={e => handleRowChange(row.id, 'fromPrevious', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.thisPeriod} onChange={e => handleRowChange(row.id, 'thisPeriod', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.materialsStored} onChange={e => handleRowChange(row.id, 'materialsStored', Number(e.target.value))} /></TableCell>
                                             <TableCell>{G.toFixed(2)}</TableCell>
                                             <TableCell>{H}</TableCell>
                                             <TableCell>{I.toFixed(2)}</TableCell>
