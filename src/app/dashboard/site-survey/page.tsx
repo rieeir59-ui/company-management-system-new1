@@ -56,15 +56,15 @@ export default function ProjectDataPage() {
     };
     
     const handleSave = () => {
-        const dataToSave = {
-            fileName: "Site Survey Report",
-            projectName: formState['project_name_header'] || 'Untitled Site Survey',
-            data: [{
+       const dataToSave = {
+          fileName: "Site Survey Report",
+          projectName: formState['project_name_header'] || 'Untitled Site Survey',
+          data: [{
                 category: 'Site Survey Data',
                 items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
             }]
         };
-
+        
         addRecord(dataToSave as any);
     }
 
@@ -469,26 +469,10 @@ export default function ProjectDataPage() {
                                 <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="hazard_yes" name="hazard_yes" checked={!!formState['hazard_yes']} onCheckedChange={(c) => handleCheckboxChange('hazard_yes', !!c)} /><Label htmlFor="hazard_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="hazard_no" name="hazard_no" checked={!!formState['hazard_no']} onCheckedChange={(c) => handleCheckboxChange('hazard_no', !!c)} /><Label htmlFor="hazard_no">No</Label></div></div>
                             </FormRow>
                              <FormRow label="Wall masonary material as per region"><Input name="wall_material" value={formState['wall_material'] || ''} onChange={handleFormChange} /></FormRow>
-                            <FormRow label="Space for Signage available">
-                               <div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="signage_space_yes" name="signage_space_yes" checked={!!formState['signage_space_yes']} onCheckedChange={(c) => handleCheckboxChange('signage_space_yes', !!c)} /><Label htmlFor="signage_space_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="signage_space_no" name="signage_space_no" checked={!!formState['signage_space_no']} onCheckedChange={(c) => handleCheckboxChange('signage_space_no', !!c)} /><Label htmlFor="signage_space_no">No</Label></div></div>
-                            </FormRow>
-                            <FormRow label="Major retainable building elements">
-                                <div className="flex flex-wrap gap-4">
-                                  <div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" checked={!!formState['retainable_water_tank']} onCheckedChange={(c) => handleCheckboxChange('retainable_water_tank', !!c)} /><Label htmlFor="retainable_water_tank">Water tank</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="retainable_vault" name="retainable_vault" checked={!!formState['retainable_vault']} onCheckedChange={(c) => handleCheckboxChange('retainable_vault', !!c)} /><Label htmlFor="retainable_vault">Vault</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" checked={!!formState['retainable_subflooring']} onCheckedChange={(c) => handleCheckboxChange('retainable_subflooring', !!c)} /><Label htmlFor="retainable_subflooring">Subflooring</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" checked={!!formState['retainable_staircase']} onCheckedChange={(c) => handleCheckboxChange('retainable_staircase', !!c)} /><Label htmlFor="retainable_staircase">Staircase</Label></div>
-                                  <div className="flex items-center space-x-2"><Checkbox id="retainable_others" name="retainable_others" checked={!!formState['retainable_others']} onCheckedChange={(c) => handleCheckboxChange('retainable_others', !!c)} /><Label htmlFor="retainable_others">Others</Label></div>
-                                </div>
-                            </FormRow>
+                            <FormRow label="Space for Signage available"><div className="flex items-center space-x-8"><div className="flex items-center space-x-2"><Checkbox id="signage_space_yes" name="signage_space_yes" checked={!!formState['signage_space_yes']} onCheckedChange={(c) => handleCheckboxChange('signage_space_yes', !!c)} /><Label htmlFor="signage_space_yes">Yes</Label></div><div className="flex items-center space-x-2"><Checkbox id="signage_space_no" name="signage_space_no" checked={!!formState['signage_space_no']} onCheckedChange={(c) => handleCheckboxChange('signage_space_no', !!c)} /><Label htmlFor="signage_space_no">No</Label></div></div></FormRow>
+                            <FormRow label="Major retainable building elements"><div className="flex flex-wrap gap-4"><div className="flex items-center space-x-2"><Checkbox id="retainable_water_tank" name="retainable_water_tank" checked={!!formState['retainable_water_tank']} onCheckedChange={(c) => handleCheckboxChange('retainable_water_tank', !!c)} /><Label htmlFor="retainable_water_tank">Water tank</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_vault" name="retainable_vault" checked={!!formState['retainable_vault']} onCheckedChange={(c) => handleCheckboxChange('retainable_vault', !!c)} /><Label htmlFor="retainable_vault">Vault</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_subflooring" name="retainable_subflooring" checked={!!formState['retainable_subflooring']} onCheckedChange={(c) => handleCheckboxChange('retainable_subflooring', !!c)} /><Label htmlFor="retainable_subflooring">Subflooring</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_staircase" name="retainable_staircase" checked={!!formState['retainable_staircase']} onCheckedChange={(c) => handleCheckboxChange('retainable_staircase', !!c)} /><Label htmlFor="retainable_staircase">Staircase</Label></div><div className="flex items-center space-x-2"><Checkbox id="retainable_others" name="retainable_others" checked={!!formState['retainable_others']} onCheckedChange={(c) => handleCheckboxChange('retainable_others', !!c)} /><Label htmlFor="retainable_others">Others</Label></div></div></FormRow>
                             <FormRow label="Incase of Plot provide existing level from road & surrounding buildings"><Input name="plot_level_surroundings" value={formState['plot_level_surroundings'] || ''} onChange={handleFormChange} /></FormRow>
-                             <FormRow label="Building Control Violations">
-                                <div className="flex flex-wrap items-center gap-4">
-                                    <div className="flex items-center space-x-2"><Checkbox id="violations_major" name="violations_major" checked={!!formState['violations_major']} onCheckedChange={(c) => handleCheckboxChange('violations_major', !!c)} /><Label htmlFor="violations_major">Major</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="violations_minor" name="violations_minor" checked={!!formState['violations_minor']} onCheckedChange={(c) => handleCheckboxChange('violations_minor', !!c)} /><Label htmlFor="violations_minor">Minor</Label></div>
-                                    <div className="flex items-center space-x-2"><Checkbox id="violations_none" name="violations_none" checked={!!formState['violations_none']} onCheckedChange={(c) => handleCheckboxChange('violations_none', !!c)} /><Label htmlFor="violations_none">No Deviation</Label></div>
-                                </div>
-                            </FormRow>
+                             <FormRow label="Building Control Violations"><div className="flex flex-wrap items-center gap-4"><div className="flex items-center space-x-2"><Checkbox id="violations_major" name="violations_major" checked={!!formState['violations_major']} onCheckedChange={(c) => handleCheckboxChange('violations_major', !!c)} /><Label htmlFor="violations_major">Major</Label></div><div className="flex items-center space-x-2"><Checkbox id="violations_minor" name="violations_minor" checked={!!formState['violations_minor']} onCheckedChange={(c) => handleCheckboxChange('violations_minor', !!c)} /><Label htmlFor="violations_minor">Minor</Label></div><div className="flex items-center space-x-2"><Checkbox id="violations_none" name="violations_none" checked={!!formState['violations_none']} onCheckedChange={(c) => handleCheckboxChange('violations_none', !!c)} /><Label htmlFor="violations_none">No Deviation</Label></div></div></FormRow>
                         </SectionTable>
 
                         <SectionTable title="Rental Detail">
@@ -518,6 +502,5 @@ export default function ProjectDataPage() {
             </Card>
         </div>
     );
-}
 
     
