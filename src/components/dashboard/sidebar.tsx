@@ -63,6 +63,9 @@ import {
   UserCog,
   BookUser,
   ClipboardList,
+  Building,
+  UserCheck,
+  Book,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -378,5 +381,3 @@ export default function DashboardSidebar() {
       </Sidebar>
   );
 }
-
-    
