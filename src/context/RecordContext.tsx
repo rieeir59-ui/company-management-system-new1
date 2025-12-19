@@ -23,7 +23,7 @@ import {
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
-import { allFileNames } from '@/lib/utils';
+import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 import { Building2, Home, Landmark } from 'lucide-react';
@@ -148,8 +148,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             requestResourceData: dataToSave,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
-        throw err;
+        throw err; // Re-throw so calling components can handle it
       }
     },
     [firestore, currentUser, toast]
@@ -249,26 +248,31 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
-  const projectManualItems = allFileNames
-    .filter(name => !name.includes('Timeline') && name !== 'Task Assignment' && name !== 'My Projects')
-    .map(name => {
-      const url = `/${currentUser?.role === 'admin' ? 'dashboard' : 'employee-dashboard'}/${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-      return {
-        href: `/dashboard/${name.toLowerCase().replace(/\s/g, '-').replace(/\(|\)/g, '')}`,
+  const projectManualItems = useMemo(() => {
+    if (!currentUser) return [];
+    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
+    return allFileNames
+      .filter(name => !name.includes('Timeline') && name !== 'Task Assignment' && name !== 'My Projects')
+      .map(name => ({
+        href: getFormUrlFromFileName(name, dashboardPrefix) || `/${dashboardPrefix}`,
         label: name,
         icon: getIconForFile(name),
-      };
-    });
+      }));
+  }, [currentUser, isAdmin]);
 
-  const bankTimelineItems = [
-    { href: '/dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
-    { href: '/dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
-    ...bankTimelineCategories.map(bank => ({
-      href: `/dashboard/timelines-of-bank/${encodeURIComponent(bank)}`,
-      label: bank,
-      icon: Landmark,
-    }))
-  ];
+  const bankTimelineItems = useMemo(() => {
+    if (!currentUser) return [];
+    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
+    return [
+      { href: `/${dashboardPrefix}/timelines-of-bank/commercial`, label: 'Commercial', icon: Building2 },
+      { href: `/${dashboardPrefix}/timelines-of-bank/residential`, label: 'Residential', icon: Home },
+      ...bankTimelineCategories.map(bank => ({
+        href: `/${dashboardPrefix}/timelines-of-bank/${encodeURIComponent(bank)}`,
+        label: bank,
+        icon: Landmark,
+      }))
+    ];
+  }, [currentUser, isAdmin, bankTimelineCategories]);
 
   return (
     <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects, bankTimelineCategories }}>
