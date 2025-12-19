@@ -11,9 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import Image from 'next/image';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
+
 
 interface Personnel {
   id: number;
@@ -35,8 +34,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 export default function SiteSurveyReportPage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [bankName, setBankName] = useState('HABIB BANK LIMITED');
     const [branchName, setBranchName] = useState('EXPO CENTER BRANCH, LAHORE');
@@ -83,14 +81,7 @@ export default function SiteSurveyReportPage() {
 
 
     const handleSave = async () => {
-        if (!currentUser || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Site Survey Report',
             projectName: branchName || `Survey Report ${reportDate}`,
             data: [
@@ -100,15 +91,12 @@ export default function SiteSurveyReportPage() {
                 { category: 'Recommendations', items: [recommendations] },
                 { category: 'Pictures', items: pictures.map(p => `Image: ${p.previewUrl}, Description: ${p.description}`) }
             ],
-            createdAt: serverTimestamp(),
         };
-
+        
         try {
-            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
-            toast({ title: "Record Saved", description: "The site survey report has been saved." });
+            await addRecord(dataToSave as any);
         } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
+            // error is handled by the context's toast
         }
     };
 
