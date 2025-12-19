@@ -257,7 +257,7 @@ export default function Page() {
                                     <Input value={item.srNo} onChange={e => handleItemChange(item.id, 'srNo', e.target.value)} className={item.isHeader ? 'font-bold' : ''} />
                                 </TableCell>
                                 <TableCell>
-                                    <Textarea value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} rows={item.isHeader ? 1 : 4} className={item.isHeader ? 'font-bold' : ''}/>
+                                    <Textarea value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} rows={item.isHeader ? 2 : 5} className={item.isHeader ? 'font-bold' : ''}/>
                                 </TableCell>
                                 <TableCell><Input value={item.unit} onChange={e => handleItemChange(item.id, 'unit', e.target.value)} /></TableCell>
                                 <TableCell><Input type="number" value={item.qty} onChange={e => handleItemChange(item.id, 'qty', parseFloat(e.target.value) || 0)} /></TableCell>
