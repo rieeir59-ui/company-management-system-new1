@@ -54,7 +54,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const { firestore, firebaseApp } = useFirebase();
   const { user: currentUser, isUserLoading } = useCurrentUser();
   const { toast } = useToast();
-  const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
+  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
   useEffect(() => {
     if (isUserLoading || !currentUser || !firestore) {
@@ -111,10 +111,11 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                 onProgress(progress);
             },
-            (error) => {
-                console.error("Upload failed:", error);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload file to storage. Check storage rules.' });
-                reject(error);
+            (storageError) => {
+                console.error("Upload to storage failed:", storageError);
+                toast({ variant: 'destructive', title: 'Storage Upload Failed', description: storageError.message || 'Could not upload file to storage. Check storage rules.' });
+                // We reject here to stop the process. The calling component will catch this.
+                reject(storageError);
             },
             async () => {
                 try {
@@ -126,17 +127,20 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                         employeeName: currentUser.name,
                         createdAt: serverTimestamp(),
                     };
+                    
                     const docRef = await addDoc(collection(firestore, 'uploadedFiles'), dataToSave);
                     resolve(docRef.id);
-                } catch (serverError) {
-                    console.error("Error adding file record to Firestore:", serverError);
+
+                } catch (firestoreError) {
+                    console.error("Error writing to Firestore:", firestoreError);
+                    // This error is likely a permission error for Firestore itself.
                     const permissionError = new FirestorePermissionError({
-                        path: `uploadedFiles`,
+                        path: 'uploadedFiles',
                         operation: 'create',
                         requestResourceData: record,
                     });
                     errorEmitter.emit('permission-error', permissionError);
-                    reject(serverError);
+                    reject(firestoreError); // Reject the promise to signal failure.
                 }
             }
         );
