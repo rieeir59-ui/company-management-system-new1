@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, User as UserIcon, Landmark, Building, ClipboardCheck, Users, Folder, BookCopy } from 'lucide-react';
+import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, Users, Folder, BookCopy } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +24,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import Link from 'next/link';
@@ -32,9 +37,8 @@ import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
-import { StatusBadge } from '../ui/badge';
-import { bankTimelineCategories } from '@/lib/projects-data';
+import { bankTimelineCategories, ProjectRow } from '@/lib/projects-data';
+import { ClipboardCheck, Landmark } from 'lucide-react';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'portrait' });
@@ -184,11 +188,18 @@ const generatePdfForRecord = (record: SavedRecord) => {
     }
 };
 
+const recordCategories = {
+    'Timelines of Bank': bankTimelineCategories,
+    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)),
+    'Task Assignments': ['Task Assignment'],
+    'Uploaded Files': ['Uploaded File']
+};
+
 const mainCategories = [
-    { name: 'Banks', icon: Landmark, files: bankTimelineCategories },
-    { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File'].includes(name)) },
-    { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment'] },
-    { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
+    { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
+    { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
+    { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
+    { name: 'Employee Records', icon: Users, files: recordCategories['Uploaded Files'] }
 ];
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
@@ -320,7 +331,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     <div className="relative mb-4">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search records by project or file name..."
+                            placeholder={`Search in ${activeCategory}...`}
                             className="pl-8"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -332,51 +343,57 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     ) : error ? (
                         <div className="text-destructive text-center">{error}</div>
                     ) : filteredRecords.length > 0 ? (
-                        <div className="space-y-6">
-                            {Object.entries(recordsByFileName).map(([fileName, records]) => {
+                        <Accordion type="multiple" className="w-full space-y-2">
+                             {Object.entries(recordsByFileName).map(([fileName, records]) => {
                                 if (records.length === 0) return null;
-                                const Icon = getIconForFile(fileName)
+                                const Icon = getIconForFile(fileName);
                                 return (
-                                    <Card key={fileName} className="border-primary/30">
-                                        <CardHeader className="bg-muted/50 rounded-t-lg">
-                                            <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {fileName}</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-0">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Project Name</TableHead>
-                                                        {!employeeOnly && <TableHead>Created By</TableHead>}
-                                                        <TableHead>Date</TableHead>
-                                                        <TableHead className="text-right">Actions</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {records.map(record => (
-                                                        <TableRow key={record.id}>
-                                                            <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                            {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                                            <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                            <TableCell className="text-right">
-                                                                <div className="flex gap-1 justify-end">
-                                                                    <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
-                                                                    {canEditOrDelete(record) && (
-                                                                        <>
-                                                                            <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
-                                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            </TableCell>
+                                    <AccordionItem value={fileName} key={fileName}>
+                                        <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                            <div className="flex items-center gap-3">
+                                                <Icon className="h-5 w-5 text-primary" />
+                                                <span>{fileName}</span>
+                                                <Badge variant="secondary">{records.length}</Badge>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2">
+                                            <div className="border rounded-b-lg">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Project Name</TableHead>
+                                                            {!employeeOnly && <TableHead>Created By</TableHead>}
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead className="text-right">Actions</TableHead>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </CardContent>
-                                    </Card>
-                                )
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {records.map(record => (
+                                                            <TableRow key={record.id}>
+                                                                <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex gap-1 justify-end">
+                                                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                        {canEditOrDelete(record) && (
+                                                                            <>
+                                                                                <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                );
                             })}
-                        </div>
+                        </Accordion>
                     ) : (
                         <div className="text-center py-10">
                             <p className="text-muted-foreground">No records found for this category.</p>
