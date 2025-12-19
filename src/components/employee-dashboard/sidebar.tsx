@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -79,28 +80,32 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { allProjects, bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 
-const menuItems = [
+const topLevelItems = [
     { href: '/employee-dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
-    { href: '/employee-dashboard/project-manual', label: 'Project Manual', icon: BookCopy },
     { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
+    { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
+    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
+    { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
+    { href: '/employee-dashboard/saved-records', label: 'Saved Records', icon: Database },
+];
+
+const projectManualItems = [
     { href: '/employee-dashboard/project-checklist', label: 'Project Checklist', icon: ListChecks },
     { href: '/employee-dashboard/project-information', label: 'Project Information', icon: Folder },
     { href: '/employee-dashboard/predesign-assessment', label: 'Predesign Assessment', icon: FileSearch },
     { href: '/employee-dashboard/project-data', label: 'Project Data', icon: Database },
     { href: '/employee-dashboard/project-agreement', label: 'Project Agreement', icon: FileSignature },
     { href: '/employee-dashboard/list-of-services', label: 'List of Services', icon: Clipboard },
-    { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
     { href: '/employee-dashboard/project-bylaws', label: 'Project Bylaws', icon: FileKey },
     { href: '/employee-dashboard/proposal-request', label: 'Proposal Request', icon: Briefcase },
     { href: '/employee-dashboard/drawings', label: 'Drawings', icon: Palette },
     { href: '/employee-dashboard/shop-drawings-record', label: 'Shop Drawings Record', icon: FileIcon },
     { href: '/employee-dashboard/project-chart-studio', label: 'Project Chart (Studio)', icon: BarChart2 },
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
     { href: '/employee-dashboard/list-of-sub-consultants', label: 'List Of Sub-consultants', icon: BookUser },
     { href: '/employee-dashboard/list-of-contractors', label: 'List of Contractors', icon: Building },
     { href: '/employee-dashboard/list-of-approved-vendors', label: 'List of Approved Vendors', icon: UserCheck },
@@ -121,10 +126,9 @@ const menuItems = [
     { href: '/employee-dashboard/architects-instructions', label: 'Architects Instructions', icon: User },
     { href: '/employee-dashboard/construction-change-director', label: 'Construction Change Director', icon: Users },
     { href: '/employee-dashboard/document-summarizer', label: 'Document Summarizer', icon: FileText },
-    { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/employee-record', label: 'Employee Record', icon: UserCog },
-    { href: '/employee-dashboard/saved-records', label: 'Saved Records', icon: Database },
 ];
+
 
 const bankTimelineItems = [
     { href: '/employee-dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
@@ -174,43 +178,66 @@ const MemoizedSidebarMenu = memo(({ menuItems, bankTimelineItems }: { menuItems:
           </Link>
         </SidebarMenuItem>
       ))}
-      <SidebarMenuItem>
-        {isClient ? (
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton
-                className="group-data-[collapsible=icon]:justify-center"
-                tooltip="Timelines of Bank"
-              >
-                <Landmark className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent asChild>
-              <SidebarMenuSub>
-                {bankTimelineItems.map((item) => (
-                  <SidebarMenuSubItem key={item.href}>
-                    <Link href={item.href} passHref>
-                      <SidebarMenuSubButton isActive={pathname === item.href}>
-                        <item.icon className="size-4 mr-2" />
-                        {item.label}
-                      </SidebarMenuSubButton>
-                    </Link>
-                  </SidebarMenuSubItem>
-                ))}
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </Collapsible>
-        ) : (
-          <SidebarMenuButton
-            className="group-data-[collapsible=icon]:justify-center"
-            tooltip="Timelines of Bank"
-          >
-            <Landmark className="size-5" />
-            <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-          </SidebarMenuButton>
-        )}
-      </SidebarMenuItem>
+
+      {isClient && (
+        <>
+            <SidebarMenuItem>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Project Manual"
+                  >
+                    <BookCopy className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                  <SidebarMenuSub>
+                    {projectManualItems.map((item) => (
+                      <SidebarMenuSubItem key={item.href}>
+                        <Link href={item.href} passHref>
+                          <SidebarMenuSubButton isActive={pathname === item.href}>
+                            <item.icon className="size-4 mr-2" />
+                            {item.label}
+                          </SidebarMenuSubButton>
+                        </Link>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Timelines of Bank"
+                  >
+                    <Landmark className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                  <SidebarMenuSub>
+                    {bankTimelineItems.map((item) => (
+                      <SidebarMenuSubItem key={item.href}>
+                        <Link href={item.href} passHref>
+                          <SidebarMenuSubButton isActive={pathname === item.href}>
+                            <item.icon className="size-4 mr-2" />
+                            {item.label}
+                          </SidebarMenuSubButton>
+                        </Link>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenuItem>
+        </>
+      )}
     </SidebarMenu>
   );
 });
@@ -235,8 +262,10 @@ export default function EmployeeDashboardSidebar() {
     if (!searchQuery) return { menuResults: [], projectResults: [] };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
+    
+    const allMenuItems = [...topLevelItems, ...projectManualItems, ...bankTimelineItems];
 
-    const menuResults = menuItems.filter(item =>
+    const menuResults = allMenuItems.filter(item =>
       item.label.toLowerCase().includes(lowerCaseQuery)
     );
 
@@ -324,7 +353,7 @@ export default function EmployeeDashboardSidebar() {
              </SidebarMenu>
           ) : (
             <MemoizedSidebarMenu 
-                menuItems={menuItems} 
+                menuItems={topLevelItems} 
                 bankTimelineItems={bankTimelineItems}
             />
           )}
