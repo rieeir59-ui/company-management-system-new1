@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -305,6 +304,48 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
         const isTimeline = viewingRecord.fileName.endsWith('Timeline');
         
+        const isContractorOrSubList = viewingRecord.fileName.startsWith('List of');
+        if (isContractorOrSubList && viewingRecord.data?.header && viewingRecord.data?.items) {
+            const { header, items } = viewingRecord.data;
+             return (
+                <div className="space-y-4">
+                    <h3 className="font-bold text-primary mb-2">Header Information</h3>
+                     <Table>
+                        <TableBody>
+                            <TableRow><TableCell className="font-semibold">Project Name</TableCell><TableCell>{header.projectName}</TableCell></TableRow>
+                            <TableRow><TableCell className="font-semibold">Architect</TableCell><TableCell>{header.architect}</TableCell></TableRow>
+                            <TableRow><TableCell className="font-semibold">Date</TableCell><TableCell>{header.date}</TableCell></TableRow>
+                        </TableBody>
+                    </Table>
+                    <h3 className="font-bold text-primary mb-2 mt-4">Items</h3>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Work</TableHead>
+                                    <TableHead>Firm</TableHead>
+                                    <TableHead>Address</TableHead>
+                                    <TableHead>Phone</TableHead>
+                                    <TableHead>Representative</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {items.map((item: any, index:number) => (
+                                    <TableRow key={item.id || index}>
+                                        <TableCell>{item.work}</TableCell>
+                                        <TableCell>{item.firm}</TableCell>
+                                        <TableCell>{item.address}</TableCell>
+                                        <TableCell>{item.phone}</TableCell>
+                                        <TableCell>{item.representative}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            );
+        }
+
         if (viewingRecord.fileName === 'Shop Drawing and Sample Record' && viewingRecord.data?.header) {
             const { header, items } = viewingRecord.data;
             const parsedItems = items.map((item: string) => {
