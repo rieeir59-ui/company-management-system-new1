@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -91,21 +92,35 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         const projects: ProjectRow[] = record.data.find((s:any) => s.category === 'Projects')?.items || [];
         const remarksSection = record.data.find((s:any) => s.category === 'Remarks');
-
+        
         const head = [
             [
-                { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 }, { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count / Requirment', colSpan: 2 },
-                { content: 'Proposal / Design Development', colSpan: 2 }, { content: '3D\'s', colSpan: 2 },
-                { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
-                { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
-                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
-                { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+                { content: 'Sr.No', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Project Name', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Area in Sft', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Project Holder', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Allocation Date / RFP', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Site Survey', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Contract', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Head Count / Requirment', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Proposal / Design Development', colSpan: 2, styles: { halign: 'center' } },
+                { content: '3D\'s', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Tender Package Architectural', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Tender Package MEP', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'BOQ', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Tender Status', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Comparative', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Working Drawings', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Site Visit', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Final Bill', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Project Closure', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
             ],
             [
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
-            ]
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
+                'Start Date', 'End Date'
+            ].map(h => ({ content: h, styles: { halign: 'center' } }))
         ];
         
         const body = projects.map(p => [
@@ -119,78 +134,82 @@ const generatePdfForRecord = (record: SavedRecord) => {
             p.finalBill, p.projectClosure
         ]);
 
-        (doc as any).autoTable({
+        doc.autoTable({
             head: head,
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
-            headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
+            styles: { fontSize: 4.5, cellPadding: 1, valign: 'middle', halign: 'center', lineWidth: 0.1 },
+            headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 4, valign: 'middle', halign: 'center', lineWidth: 0.1 },
         });
 
         if (remarksSection) {
-            let lastY = (doc as any).autoTable.previous.finalY + 10;
+            let lastY = doc.autoTable.previous.finalY + 10;
             const remarksText = remarksSection.items.find((item: any) => item.label === "Maam Isbah Remarks & Order")?.value || "";
             const dateText = remarksSection.items.find((item: any) => item.label === "Date")?.value || "";
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
             doc.text("Maam Isbah Remarks & Order", 14, lastY);
             lastY += 7;
-            doc.text(remarksText, 14, lastY);
-            lastY += 10;
+            doc.setFont('helvetica', 'normal');
+            doc.text(remarksText, 14, lastY, { maxWidth: pageWidth - 28 });
+            lastY += doc.getTextDimensions(remarksText, { maxWidth: pageWidth - 28 }).h + 10;
+
             doc.text(`Date: ${dateText}`, 14, lastY);
         }
 
     } else {
         addDefaultHeader(record.fileName, record.projectName);
         
-        if (Array.isArray(record.data)) {
-            record.data.forEach((section: any) => {
-                if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
+        const dataSections = Array.isArray(record.data) ? record.data : [record.data];
 
-                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-                doc.text(section.category, 14, yPos);
-                yPos += 8;
-                doc.setTextColor(0,0,0);
+        dataSections.forEach((section: any) => {
+            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
 
-                let firstItem = section.items[0];
-                if (typeof firstItem === 'string') {
-                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
-                }
+            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text(section.category, 14, yPos);
+            yPos += 8;
+            doc.setTextColor(0,0,0);
 
-                if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
-                    const headers = Object.keys(firstItem).filter(key => key !== 'id');
-                    const body = section.items.map((item: any) => {
-                        let parsedItem = item;
-                        if (typeof item === 'string') {
-                            try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
-                        }
-                        return headers.map(header => String(parsedItem[header] ?? ''));
-                    });
-                     doc.autoTable({
-                        startY: yPos,
-                        head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                        body: body,
-                        theme: 'grid',
-                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                        headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
-                    });
+            let firstItem = section.items[0];
+            if (typeof firstItem === 'string') {
+                try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+            }
 
-                } else {
-                     const body = section.items.map((item: any) => {
-                        if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
-                        if (typeof item === 'string') {
-                            const parts = item.split(/:(.*)/s);
-                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                        }
-                        return [JSON.stringify(item), ''];
-                    });
-                    doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: 'bold' } } });
-                }
-                 yPos = doc.autoTable.previous.finalY + 10;
-            });
-        }
+            if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
+                const headers = Object.keys(firstItem).filter(key => key !== 'id');
+                const body = section.items.map((item: any) => {
+                    let parsedItem = item;
+                    if (typeof item === 'string') {
+                        try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
+                    }
+                    return headers.map(header => String(parsedItem[header] ?? ''));
+                });
+                 doc.autoTable({
+                    startY: yPos,
+                    head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                    body: body,
+                    theme: 'grid',
+                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+                    headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+                });
+
+            } else {
+                 const body = section.items.map((item: any) => {
+                    if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                    if (typeof item === 'string') {
+                        const parts = item.split(/:(.*)/s);
+                        return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                    }
+                    return [JSON.stringify(item), ''];
+                });
+                doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: 'bold' } } });
+            }
+             yPos = doc.autoTable.previous.finalY + 10;
+        });
     }
 
     addFooter();
@@ -285,12 +304,15 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (!viewingRecord) return null;
     
         const isBankTimeline = viewingRecord.fileName.includes('Timeline');
+        
+        const dataAsArray = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
+        
         let remarksSection: any = null;
-        let mainDataSections = viewingRecord.data;
+        let mainDataSections = dataAsArray;
 
         if (isBankTimeline) {
-            remarksSection = viewingRecord.data.find((s: any) => s.category === 'Remarks');
-            mainDataSections = viewingRecord.data.filter((s: any) => s.category !== 'Remarks');
+            remarksSection = dataAsArray.find((s: any) => s.category === 'Remarks');
+            mainDataSections = dataAsArray.filter((s: any) => s.category !== 'Remarks');
         }
 
         return (
@@ -303,7 +325,16 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    const bankTimelineHeaders = ['srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 'siteSurveyStart', 'siteSurveyEnd', 'contactStart', 'contactEnd', 'headCountStart', 'headCountEnd', 'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'];
+                    const bankTimelineHeaders = [
+                        'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
+                        'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount',
+                        'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
+                        'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 
+                        'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
+                        'workingDrawingsStart', 'workingDrawingsEnd', 
+                        'siteVisitStart', 'siteVisitEnd', 
+                        'finalBill', 'projectClosure'
+                    ];
                     const isTimelineProject = isBankTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
