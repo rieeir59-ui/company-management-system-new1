@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRecords } from '@/context/RecordContext';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface TaskRow {
   id: number;
