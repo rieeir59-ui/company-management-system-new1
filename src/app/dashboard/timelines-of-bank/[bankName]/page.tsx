@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -69,14 +68,14 @@ function DynamicBankTimelineComponent() {
         doc.text(`${decodeURIComponent(bankName)} Project Chart`, 14, 15);
         
         const head = [
-            ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count / Requirment',
-             'Proposal / Design Development\nStart', 'Proposal / Design Development\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender Package Architectural\nStart', 'Tender Package Architectural\nEnd', 'Tender Package MEP\nStart', 'Tender Package MEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender Status', 'Comparative', 
-             'Working Drawings\nStart', 'Working Drawings\nEnd', 
+            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
+             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
+             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
              'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project Closure']
+             'Final Bill', 'Project\nClosure']
         ];
         
         const body = projectRows.map(p => [
@@ -208,5 +207,3 @@ function DynamicBankTimelineComponent() {
 export default function Page() {
   return <DynamicBankTimelineComponent />;
 }
-
-    
