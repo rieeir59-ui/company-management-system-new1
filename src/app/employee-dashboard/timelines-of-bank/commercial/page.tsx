@@ -72,8 +72,10 @@ function CommercialTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contract: taskMap['contract']?.start || '',
-                    headCount: taskMap['headcountrequirment']?.start || '',
+                    contactStart: taskMap['contract']?.start || '',
+                    contactEnd: taskMap['contract']?.end || '',
+                    headCountStart: taskMap['headcountrequirment']?.start || '',
+                    headCountEnd: taskMap['headcountrequirment']?.end || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -86,8 +88,10 @@ function CommercialTimelineComponent() {
                     boqEnd: taskMap['boq']?.end || '',
                     tenderStatus: taskMap['tenderstatus']?.start || '',
                     comparative: taskMap['comparative']?.start || '',
-                    workingDrawings: taskMap['workingdrawings']?.start || '',
-                    siteVisit: taskMap['sitevisit']?.start || '',
+                    workingDrawingsStart: taskMap['workingdrawings']?.start || '',
+                    workingDrawingsEnd: taskMap['workingdrawings']?.end || '',
+                    siteVisitStart: taskMap['sitevisit']?.start || '',
+                    siteVisitEnd: taskMap['sitevisit']?.end || '',
                     finalBill: taskMap['finalbill']?.start || '',
                     projectClosure: taskMap['projectclosure']?.start || '',
                 };
@@ -118,10 +122,10 @@ function CommercialTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawings: '', siteVisit: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
         }]);
     };
     
@@ -147,18 +151,18 @@ function CommercialTimelineComponent() {
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract\nStart', 'Contract\nEnd', 'Head Count\n/ Requirment\nStart', 'Head Count\n/ Requirment\nEnd',
              'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 'Working\nDrawings', 'Site\nVisit', 'Final\nBill', 'Project\nClosure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawings, p.siteVisit, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -215,7 +219,7 @@ function CommercialTimelineComponent() {
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
-                                <th colSpan={2} className="border p-1">Contact</th>
+                                <th colSpan={2} className="border p-1">Contract</th>
                                 <th colSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
@@ -224,8 +228,8 @@ function CommercialTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th rowSpan={2} className="border p-1">Working Drawings</th>
-                                <th rowSpan={2} className="border p-1">Site Visit</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
+                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -239,6 +243,8 @@ function CommercialTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -267,8 +273,10 @@ function CommercialTimelineComponent() {
                                     <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.workingDrawings} onChange={e => handleProjectChange(row.id, 'workingDrawings', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="text" value={row.siteVisit} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="w-24" /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Button variant="destructive" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4" /></Button></td>

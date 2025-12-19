@@ -28,7 +28,7 @@ function ResidentialTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
@@ -57,7 +57,7 @@ function ResidentialTimelineComponent() {
         
         const head = [
             ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract\nStart', 'Contract\nEnd', 'Head Count\n/ Requirment\nStart', 'Head Count\n/ Requirment\nEnd',
              'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
              'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 'Final Bill', 'Project Closure']
@@ -65,7 +65,7 @@ function ResidentialTimelineComponent() {
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
@@ -112,7 +112,7 @@ function ResidentialTimelineComponent() {
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
-                                <th colSpan={2} className="border p-1">Contact</th>
+                                <th colSpan={2} className="border p-1">Contract</th>
                                 <th colSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
