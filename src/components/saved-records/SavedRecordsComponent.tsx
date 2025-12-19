@@ -189,6 +189,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const { user: currentUser, employees } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [selectedBank, setSelectedBank] = useState<string | null>(null);
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
@@ -547,6 +549,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                         <TableRow>
                                             <TableHead>Project Name</TableHead>
                                             <TableHead>File Name</TableHead>
+                                            {!employeeOnly && <TableHead>Created By</TableHead>}
                                             <TableHead>Date</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
@@ -558,6 +561,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                 <TableRow key={record.id}>
                                                     <TableCell className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground"/> {record.projectName}</TableCell>
                                                     <TableCell>{record.fileName}</TableCell>
+                                                    {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                     <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex gap-1 justify-end">
