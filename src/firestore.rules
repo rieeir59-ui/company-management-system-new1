@@ -50,7 +50,7 @@ service cloud.firestore {
     // UPLOADED FILES collection
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
-      allow write: if isLoggedIn(); // Allow any logged-in user to upload
+      allow write: if isLoggedIn();
     }
   }
 }

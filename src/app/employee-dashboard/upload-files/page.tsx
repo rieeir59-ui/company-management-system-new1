@@ -14,6 +14,8 @@ import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { useFileRecords } from "@/context/FileContext";
+import { useRecords } from "@/context/RecordContext";
+import { useCurrentUser } from "@/context/UserContext";
 
 type FileUpload = {
   id: number;
@@ -39,9 +41,11 @@ const UploadForm = ({ category }: { category: string }) => {
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
     const { addFileRecord } = useFileRecords();
+    const { addRecord } = useRecords();
+    const { user: currentUser } = useCurrentUser();
 
     const handleUpload = useCallback(async (upload: FileUpload) => {
-        if (!upload.file || !upload.customName) {
+        if (!upload.file || !upload.customName || !currentUser) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a custom name and choose a file.' });
             return;
         }
@@ -52,7 +56,7 @@ const UploadForm = ({ category }: { category: string }) => {
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
 
-        const recordData = {
+        const fileRecordData = {
             category: category,
             bankName: upload.bankName,
             customName: upload.customName,
@@ -62,12 +66,29 @@ const UploadForm = ({ category }: { category: string }) => {
         };
         
         try {
-            await addFileRecord(recordData, upload.file, (progress) => {
+            await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
             
+             // Also save a record to the general saved records collection
+            await addRecord({
+              fileName: 'Uploaded File',
+              projectName: upload.customName,
+              data: [{
+                category: 'File Upload Details',
+                items: [
+                  { label: 'Category', value: category },
+                  ...(category === 'Banks' ? [{ label: 'Bank', value: upload.bankName }] : []),
+                  { label: 'Custom Name', value: upload.customName },
+                  { label: 'Original Name', value: upload.file.name },
+                  { label: 'File Type', value: upload.file.type },
+                  { label: 'Size (Bytes)', value: upload.file.size.toString() },
+                ]
+              }]
+            } as any);
+
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
-            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
+            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded and recorded.` });
 
             // Automatically remove the completed upload row after a short delay
             setTimeout(() => {
@@ -79,13 +100,13 @@ const UploadForm = ({ category }: { category: string }) => {
         } catch (error) {
              setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed. Check console & permissions.' } : up));
         }
-    }, [category, addFileRecord, toast]);
+    }, [category, addFileRecord, addRecord, toast, currentUser]);
 
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
-            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name, error: undefined } : up));
+            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name.split('.').slice(0, -1).join('.'), error: undefined } : up));
         }
     };
 
