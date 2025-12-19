@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -102,7 +102,18 @@ const generatePdfForRecord = (record: SavedRecord) => {
                     try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
                 }
                 
-                const headers = (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
+                const isBankTimeline = record.fileName.includes('Timeline');
+                if (isBankTimeline && section.category === 'Remarks') {
+                    section.items.map((remark: { label: string, value: string }, i: number) => (
+                        yPos += 5,
+                        doc.text(`${remark.label}: ${remark.value}`, 14, yPos)
+                    ))
+                    return
+                }
+
+                const headers = isBankTimeline
+                    ? bankTimelineHeaders
+                    : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
                         ? Object.keys(firstItem).filter(key => key !== 'id')
                         : null;
 
@@ -123,7 +134,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
                         styles: { fontSize: 8, cellPadding: 2 },
                     });
 
-                } else { // Fallback for simple arrays or other formats
+                } else { // Fallback for simple key-value display
                     const body = section.items.map((item: any) => {
                         if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
                         if (typeof item === 'string') {
