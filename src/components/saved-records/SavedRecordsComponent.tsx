@@ -4,9 +4,10 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Landmark } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/context/UserContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getIconForFile } from '@/lib/icons';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -32,13 +40,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
-import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
-import Link from 'next/link';
-import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
 import { ProjectRow } from '@/lib/projects-data';
 
 
@@ -83,54 +86,56 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
     if (Array.isArray(record.data)) {
         record.data.forEach((section: any) => {
-            if (typeof section === 'object' && section !== null && section.category) {
-                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-                doc.text(section.category, 14, yPos);
-                yPos += 8;
-                doc.setTextColor(0,0,0);
+            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
 
-                if (Array.isArray(section.items)) {
-                    let firstItem = section.items[0];
-                    // If items are strings, try to parse the first one to determine structure
-                    if (typeof firstItem === 'string') {
-                        try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
-                    }
-                    
-                    if (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label) {
-                        const headers = Object.keys(firstItem).filter(key => key !== 'id');
-                        const body = section.items.map((item: any) => {
-                             let parsedItem = item;
-                             if (typeof item === 'string') {
-                                try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => item); }
-                             }
-                             return headers.map(header => parsedItem[header] !== undefined ? String(parsedItem[header]) : '');
-                        });
+            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text(section.category, 14, yPos);
+            yPos += 8;
+            doc.setTextColor(0,0,0);
 
-                        (doc as any).autoTable({
-                            startY: yPos,
-                            head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                            body: body,
-                            theme: 'striped',
-                            styles: { fontSize: 8, cellPadding: 2 },
-                        });
-
-                    } else { // Fallback for simple arrays or other formats
-                        const body = section.items.map((item: any) => {
-                            if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
-                            if (typeof item === 'string') {
-                                const parts = item.split(/:(.*)/s);
-                                return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                            }
-                            return [JSON.stringify(item), ''];
-                        });
-                        (doc as any).autoTable({ startY: yPos, body: body, theme: 'plain' });
-                    }
+            if (Array.isArray(section.items)) {
+                let firstItem = section.items[0];
+                if (typeof firstItem === 'string') {
+                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
                 }
-                 yPos = (doc as any).autoTable.previous.finalY + 10;
+                
+                const headers = (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
+                        ? Object.keys(firstItem).filter(key => key !== 'id')
+                        : null;
+
+                if (headers) {
+                    const body = section.items.map((item: any) => {
+                         let parsedItem = item;
+                         if (typeof item === 'string') {
+                            try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => item); }
+                         }
+                         return headers.map(header => parsedItem[header] !== undefined ? String(parsedItem[header]) : '');
+                    });
+
+                    (doc as any).autoTable({
+                        startY: yPos,
+                        head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                        body: body,
+                        theme: 'striped',
+                        styles: { fontSize: 8, cellPadding: 2 },
+                    });
+
+                } else { // Fallback for simple arrays or other formats
+                    const body = section.items.map((item: any) => {
+                        if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                        if (typeof item === 'string') {
+                            const parts = item.split(/:(.*)/s);
+                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                        }
+                        return [JSON.stringify(item), ''];
+                    });
+                    (doc as any).autoTable({ startY: yPos, body: body, theme: 'plain' });
+                }
             }
+             yPos = (doc as any).autoTable.previous.finalY + 10;
         });
     }
     addFooter();
@@ -142,8 +147,8 @@ const bankTimelineHeaders = [
     'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount', 
     'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
     'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd',
-    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawings', 
-    'siteVisit', 'finalBill', 'projectClosure'
+    'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 'workingDrawingsStart', 'workingDrawingsEnd', 
+    'siteVisitStart', 'siteVisitEnd', 'finalBill', 'projectClosure'
 ];
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
@@ -160,18 +165,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const recordCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
         return {
-            'Timelines of Bank': allBankFileNames,
-            'Project Manual': allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
-            'Task Assignments': ['Task Assignment'],
-            'Uploaded Files': ['Uploaded File', 'Daily Work Report']
+            'Banks': allBankFileNames,
+            'Project Manual': allFileNames.filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name)),
+            'Task Assignments': ['Task Assignment', 'My Projects'],
+            'Employee Records': ['Uploaded File', 'Daily Work Report']
         }
     }, [bankTimelineCategories]);
     
     const mainCategories = useMemo(() => [
-        { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
+        { name: 'Banks', icon: Landmark, files: recordCategories['Banks'] },
         { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
         { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
-        { name: 'Employee Records', icon: Users, files: recordCategories['Uploaded Files'] }
+        { name: 'Employee Records', icon: Users, files: recordCategories['Employee Records'] }
     ], [recordCategories]);
 
     const filteredRecords = useMemo(() => {
@@ -243,6 +248,17 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     }
                     
                     const isBankTimeline = viewingRecord.fileName.includes('Timeline');
+                    if (isBankTimeline && section.category === 'Remarks') {
+                        return (
+                            <div key={index}>
+                                <h3 className="font-bold text-primary mb-2 mt-4">{section.category}</h3>
+                                {section.items.map((remark: { label: string, value: string }, i: number) => (
+                                    <p key={i}><strong>{remark.label}:</strong> {remark.value}</p>
+                                ))}
+                            </div>
+                        )
+                    }
+
                     const headers = isBankTimeline
                         ? bankTimelineHeaders
                         : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
@@ -253,26 +269,28 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         return (
                             <div key={index}>
                                 <h3 className="font-bold text-primary mb-2">{section.category}</h3>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            {headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {section.items.map((item: any, i: number) => {
-                                            let parsedItem = item;
-                                            if (typeof item === 'string') {
-                                                try { parsedItem = JSON.parse(item); } catch (e) { return <TableRow key={i}><TableCell colSpan={headers.length}>{item}</TableCell></TableRow>; }
-                                            }
-                                            return (
-                                                <TableRow key={i}>
-                                                    {headers.map(header => <TableCell key={header}>{String(parsedItem[header] ?? '')}</TableCell>)}
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                {headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {section.items.map((item: any, i: number) => {
+                                                let parsedItem = item;
+                                                if (typeof item === 'string') {
+                                                    try { parsedItem = JSON.parse(item); } catch (e) { return <TableRow key={i}><TableCell colSpan={headers.length}>{item}</TableCell></TableRow>; }
+                                                }
+                                                return (
+                                                    <TableRow key={i}>
+                                                        {headers.map(header => <TableCell key={header}>{String(parsedItem[header] ?? '')}</TableCell>)}
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </div>
                         );
                     }
