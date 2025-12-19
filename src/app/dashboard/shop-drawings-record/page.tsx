@@ -94,7 +94,7 @@ export default function ShopDrawingsRecordPage() {
         }
 
         const dataToSave = {
-            employeeId: currentUser.record,
+            employeeId: currentUser.uid,
             employeeName: currentUser.name,
             fileName: 'Shop Drawing and Sample Record',
             projectName: projectName || 'Untitled Record',
@@ -177,7 +177,7 @@ export default function ShopDrawingsRecordPage() {
             theme: 'grid',
             headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
-            didDrawCell: function (data) {
+            didDrawCell: function (data: any) {
                 const isChecked = data.cell.raw === '✓';
                 if (data.section === 'body' && isChecked) {
                     doc.setFillColor(0, 0, 0);
