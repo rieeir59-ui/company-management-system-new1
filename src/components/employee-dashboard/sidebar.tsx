@@ -91,6 +91,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Dialog,
@@ -201,7 +202,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineI
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                   <SidebarMenuSub>
-                    {projectManualItems.map((item) => (
+                    {(projectManualItems || []).map((item) => (
                       <SidebarMenuSubItem key={item.href}>
                         <Link href={item.href} passHref>
                           <SidebarMenuSubButton isActive={pathname === item.href}>
@@ -229,7 +230,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineI
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                    <SidebarMenuSub>
-                    {bankTimelineItems.map((item) => (
+                    {(bankTimelineItems || []).map((item) => (
                       <SidebarMenuSubItem key={item.href} className="group/sub-item">
                         <Link href={item.href} passHref className="flex-grow">
                           <SidebarMenuSubButton isActive={pathname === item.href}>
@@ -308,7 +309,7 @@ export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
-  const { bankTimelineItems, projectManualItems, isLoading } = useRecords();
+  const { bankTimelineItems, projectManualItems } = useRecords();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = React.useCallback(() => {
