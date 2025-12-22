@@ -49,7 +49,6 @@ import {
   FileX,
   FilePen,
   File as FileIcon,
-  FileUp,
   CircleDollarSign,
   Clipboard,
   Presentation,
@@ -114,7 +113,6 @@ const topLevelItems = [
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
     { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
-    { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
 

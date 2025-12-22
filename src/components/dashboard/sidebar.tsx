@@ -31,7 +31,6 @@ import {
   LayoutDashboard,
   Briefcase,
   BookCopy,
-  FileUp,
   Landmark,
   Search as SearchIcon,
   Settings,
@@ -79,7 +78,6 @@ const topLevelItems = [
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
     { href: '/dashboard/services', label: 'Services', icon: FileText },
-    { href: '/dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/dashboard/saved-records', label: 'Saved Records', icon: Database },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings, roles: ['software-engineer', 'admin'] },
     { href: '/dashboard/credentials', label: 'Credentials', icon: KeyRound, roles: ['software-engineer', 'admin', 'ceo'] },
@@ -153,118 +151,6 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, projectManualItems, ba
           </Link>
         </SidebarMenuItem>
       ))}
-       {isClient && (
-        <>
-            <SidebarMenuItem>
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Project Manual"
-                  >
-                    <BookCopy className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                  <SidebarMenuSub>
-                    {projectManualItems.map((item) => (
-                      <SidebarMenuSubItem key={item.href}>
-                        <Link href={item.href} passHref>
-                          <SidebarMenuSubButton isActive={pathname === item.href}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                          </SidebarMenuSubButton>
-                        </Link>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Timelines of Bank"
-                  >
-                    <Landmark className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                   <SidebarMenuSub>
-                    {bankTimelineItems.map((item) => (
-                      <SidebarMenuSubItem key={item.href} className="group/sub-item">
-                        <Link href={item.href} passHref className="flex-grow">
-                          <SidebarMenuSubButton isActive={pathname === item.href}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                          </SidebarMenuSubButton>
-                        </Link>
-                         {canManageBanks && (
-                          <div className="flex items-center opacity-0 group-hover/sub-item:opacity-100 transition-opacity">
-                            <Dialog onOpenChange={(open) => { if(!open) setBankToEdit(null)}}>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {setBankToEdit(item.label); setNewBankName(item.label);}}><Edit className="h-3 w-3"/></Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Bank Name</DialogTitle>
-                                        <DialogDescription>Rename '{bankToEdit}'.</DialogDescription>
-                                    </DialogHeader>
-                                    <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} />
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                        <Button onClick={handleUpdateBank}>Save</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                             <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setBankToDelete(item.label)}><Trash2 className="h-3 w-3 text-destructive"/></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>This will delete the '{bankToDelete}' timeline and all its records. This action cannot be undone.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={() => setBankToDelete(null)}>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={confirmDeleteBank} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </SidebarMenuSubItem>
-                    ))}
-                     {canManageBanks && (
-                        <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="ghost" className="w-full justify-start h-8 mt-1 text-xs">
-                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Bank
-                                </Button>
-                            </DialogTrigger>
-                             <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Bank</DialogTitle>
-                                </DialogHeader>
-                                <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} placeholder="Enter bank name" />
-                                <DialogFooter>
-                                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                    <Button onClick={handleAddBank}>Save</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                     )}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-        </>
-      )}
     </SidebarMenu>
   );
 });
@@ -433,4 +319,3 @@ export default function DashboardSidebar() {
       </Sidebar>
   );
 }
-
