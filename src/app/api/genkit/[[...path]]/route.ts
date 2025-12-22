@@ -1,27 +1,20 @@
-import { genkit } from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai'
-import { defineDotprompt, dotprompt } from '@genkit-ai/dotprompt';
+import { genkit,  configureGenkit, defineSchema } from '@genkit-ai/core';
+import { googleAI } from '@genkit-ai/googleai';
+import { dotprompt, defineDotprompt } from '@genkit-ai/dotprompt';
 import { z } from 'zod';
-import {NextRequest} from 'next/server';
-import {v1} from '@google-cloud/aiplatform';
+import { NextRequest } from 'next/server';
+import { v1 } from '@google-cloud/aiplatform';
+import { handleAuth } from '@genkit-ai/next/plugin';
 
-import { handleAuth, init } from '@genkit-ai/next/plugin';
-
-const ankitTool = new v1.PredictionServiceClient({
-  apiEndpoint: "us-central1-aiplatform.googleapis.com"
-});
-
-genkit({
+// Do not move this line.
+configureGenkit({
   plugins: [googleAI(), dotprompt()],
   logLevel: 'debug',
   enableTracing: true,
 });
 
-export const POST = async (req: NextRequest) => {
-  const json = await req.json();
-  return handleAuth(req, async (auth) => {
-    if (!auth) {
-      throw new Error('Auth required.');
-    }
-  });
-};
+export const POST = handleAuth(async (req: NextRequest, auth) => {
+  if (!auth) {
+    throw new Error('Auth required.');
+  }
+});

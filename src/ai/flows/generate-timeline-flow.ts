@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { genkit as ai } from 'genkit';
+import { defineFlow, definePrompt } from '@genkit-ai/core';
 import { GenerateTimelineOutputSchema } from '@/lib/schemas/timeline';
 
 export const GenerateTimelineInputSchema = z.object({
@@ -21,12 +21,13 @@ export async function generateTimeline(
   return generateTimelineFlow(input);
 }
 
-const prompt = ai.definePrompt(
+const generateTimelinePrompt = definePrompt(
   {
     name: 'generateTimelinePrompt',
-    input: { schema: GenerateTimelineInputSchema },
-    output: { schema: GenerateTimelineOutputSchema },
-    prompt: `
+    inputSchema: GenerateTimelineInputSchema,
+    outputSchema: GenerateTimelineOutputSchema,
+  },
+  `
         You are a project manager for an architectural firm.
         Generate a realistic timeline for the given project based on its area in square feet.
         The timeline should include key phases like Site Survey, Design, Tendering, and Construction.
@@ -34,19 +35,21 @@ const prompt = ai.definePrompt(
 
         Project Name: {{{projectName}}}
         Area: {{{area}}} sft
-      `,
-  }
+      `
 );
 
-
-const generateTimelineFlow = ai.defineFlow(
+const generateTimelineFlow = defineFlow(
   {
     name: 'generateTimelineFlow',
     inputSchema: GenerateTimelineInputSchema,
     outputSchema: GenerateTimelineOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const llmResponse = await generateTimelinePrompt.generate({
+      input: input,
+    });
+    
+    const output = llmResponse.output();
     if (!output) {
       throw new Error('Failed to generate a structured timeline from the AI model.');
     }
