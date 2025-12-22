@@ -322,31 +322,102 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (filteredRecordsByEmployee.length === 0) return;
         const employeeName = filteredRecordsByEmployee[0].employeeName;
         const doc = new jsPDF() as any;
+        doc.setProperties({
+            title: `Consolidated Report for ${employeeName}`
+        });
+
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+        let yPos = 20;
 
         doc.setFontSize(18);
-        doc.text(`Consolidated Report for ${employeeName}`, 14, 20);
-
-        let yPos = 30;
+        doc.text(`Consolidated Report for ${employeeName}`, 14, yPos);
+        yPos += 15;
 
         Object.entries(recordsByFileName).forEach(([fileName, recordsList]) => {
-            if (yPos > 250) { doc.addPage(); yPos = 20; }
+            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
             doc.setFontSize(14);
             doc.text(fileName, 14, yPos);
             yPos += 10;
             
-            const head = [['Project Name', 'Created Date']];
-            const body = recordsList.map(r => [r.projectName, r.createdAt.toLocaleDateString()]);
-            
-            doc.autoTable({
-                startY: yPos,
-                head: head,
-                body: body,
-                theme: 'grid',
-                headStyles: { fillColor: [45, 95, 51] },
-            });
-            yPos = doc.autoTable.previous.finalY + 15;
-        });
+            const isMyProjects = fileName === 'My Projects';
+            const isDailyReport = fileName === 'Daily Work Report';
 
+            if (isMyProjects) {
+                 recordsList.forEach(record => {
+                    const projectSchedule = record.data.find((d: any) => d.category === 'My Project Schedule');
+                    if (projectSchedule?.items) {
+                        const projectItems = projectSchedule.items.map((item: { label: string, value: string }) => {
+                            const details = item.value.split(', ').reduce((acc: any, part: string) => {
+                                const [key, ...val] = part.split(': ');
+                                acc[key.trim().toLowerCase()] = val.join(': ').trim();
+                                return acc;
+                            }, {});
+                            details.project = item.label.replace('Project: ', '');
+                            return details;
+                        });
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+                            body: projectItems.map((p: any) => [p.project, p.detail, p.status, p.start, p.end]),
+                            theme: 'grid',
+                            headStyles: { fillColor: [45, 95, 51] },
+                        });
+                        yPos = doc.autoTable.previous.finalY + 5;
+                        if(projectSchedule.remarks) {
+                            doc.setFontSize(10);
+                            doc.text(`Remarks: ${projectSchedule.remarks}`, 14, yPos);
+                            yPos += 10;
+                        }
+                    }
+                 });
+
+            } else if (isDailyReport) {
+                recordsList.forEach(record => {
+                    const workEntries = record.data.find((d: any) => d.category === 'Work Entries');
+                    if(workEntries?.items) {
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Date', 'Time', 'Job', 'Project', 'Design', 'Description']],
+                            body: workEntries.items.map((item: any) => [
+                                item.date,
+                                `${item.startTime} - ${item.endTime}`,
+                                item.customerJobNumber,
+                                item.projectName,
+                                `${item.designType} / ${item.projectType}`,
+                                item.description
+                            ]),
+                             theme: 'grid',
+                            headStyles: { fillColor: [45, 95, 51] },
+                        });
+                        yPos = doc.autoTable.previous.finalY + 10;
+                    }
+                });
+            } else {
+                 doc.autoTable({
+                    startY: yPos,
+                    head: [['Project Name', 'Created Date']],
+                    body: recordsList.map(r => [r.projectName, r.createdAt.toLocaleDateString()]),
+                    theme: 'grid',
+                    headStyles: { fillColor: [45, 95, 51] },
+                });
+                yPos = doc.autoTable.previous.finalY + 10;
+            }
+            yPos += 5; // Space between sections
+        });
+        
+        addFooter();
+
+        function addFooter() {
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            }
+        }
+        
         doc.save(`${employeeName}_Consolidated_Report.pdf`);
     };
 
@@ -583,11 +654,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                  <div className="mt-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold">Records for "{employeeSearchQuery}"</h2>
-                        {filteredRecordsByEmployee.length > 0 && (
-                            <Button onClick={handleViewFullReport}>
-                                <Eye className="mr-2 h-4 w-4" /> View Full Report
-                            </Button>
-                        )}
+                        <Button onClick={handleViewFullReport} disabled={filteredRecordsByEmployee.length === 0}>
+                            <Eye className="mr-2 h-4 w-4" /> View Full Report
+                        </Button>
                     </div>
                      {Object.entries(recordsByFileName).length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
@@ -747,3 +816,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
