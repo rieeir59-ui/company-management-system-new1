@@ -433,7 +433,58 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (!viewingRecord) return null;
     
         const isTimeline = viewingRecord.fileName.endsWith('Timeline');
+        const isMyProjects = viewingRecord.fileName === 'My Projects';
+        const isTaskAssignment = viewingRecord.fileName === 'Task Assignment';
         
+        if (isMyProjects || isTaskAssignment) {
+            const scheduleData = viewingRecord.data.find((d: any) => d.category === 'My Project Schedule' || d.category === 'Task Assignment');
+            if (scheduleData?.items) {
+                const projectItems = scheduleData.items.map((item: { label: string, value: string }) => {
+                    const details: Record<string, string> = item.value.split(', ').reduce((acc: any, part: string) => {
+                        const [key, ...val] = part.split(': ');
+                        acc[key.trim().toLowerCase().replace(/\s/g, '')] = val.join(': ').trim();
+                        return acc;
+                    }, {});
+                    details.project = item.label.replace('Project: ', '');
+                    return details;
+                });
+
+                return (
+                    <div>
+                        <h3 className="font-bold text-primary mb-2">{scheduleData.category}</h3>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Project</TableHead>
+                                    <TableHead>Detail</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Start Date</TableHead>
+                                    <TableHead>End Date</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {projectItems.map((p, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell>{p.project}</TableCell>
+                                        <TableCell>{p.detail}</TableCell>
+                                        <TableCell>{p.status}</TableCell>
+                                        <TableCell>{p.start}</TableCell>
+                                        <TableCell>{p.end}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                         {scheduleData.remarks && (
+                            <div className="mt-4 pt-4 border-t">
+                                <h4 className="font-bold">Remarks:</h4>
+                                <p className="text-sm text-muted-foreground">{scheduleData.remarks}</p>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+        }
+    
         const isContractorOrSubList = viewingRecord.fileName.startsWith('List of');
         if (isContractorOrSubList && viewingRecord.data?.header && viewingRecord.data?.items) {
             const { header, items } = viewingRecord.data;
@@ -816,4 +867,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
