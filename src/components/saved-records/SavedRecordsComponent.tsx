@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -124,7 +125,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contractStart, p.contactEnd, p.headCountStart, p.headCountEnd,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
@@ -220,6 +221,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
+    const [employeeSearchQuery, setEmployeeSearchQuery] = useState('');
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
@@ -237,12 +239,15 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
         ];
     }, [bankTimelineCategories]);
-
-    const filteredRecords = useMemo(() => {
-        let userRecords = records;
+    
+    const userRecords = useMemo(() => {
         if (employeeOnly && currentUser) {
-            userRecords = records.filter(r => r.employeeId === currentUser.uid);
+            return records.filter(r => r.employeeId === currentUser.uid);
         }
+        return records;
+    }, [records, employeeOnly, currentUser]);
+
+    const filteredRecordsByCategory = useMemo(() => {
         if (!activeCategory) return [];
     
         const categoryInfo = mainCategories.find(c => c.name === activeCategory);
@@ -261,17 +266,25 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
+    }, [userRecords, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
+
+     const filteredRecordsByEmployee = useMemo(() => {
+        if (!employeeSearchQuery) return [];
+        return userRecords.filter(r => 
+            r.employeeName.toLowerCase().includes(employeeSearchQuery.toLowerCase())
+        );
+    }, [userRecords, employeeSearchQuery]);
 
     const recordsByFileName = useMemo(() => {
-        return filteredRecords.reduce((acc, record) => {
+        const recordsToGroup = employeeSearchQuery ? filteredRecordsByEmployee : filteredRecordsByCategory;
+        return recordsToGroup.reduce((acc, record) => {
             if (!acc[record.fileName]) {
                 acc[record.fileName] = [];
             }
             acc[record.fileName].push(record);
             return acc;
         }, {} as Record<string, SavedRecord[]>);
-    }, [filteredRecords]);
+    }, [filteredRecordsByCategory, filteredRecordsByEmployee, employeeSearchQuery]);
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -506,11 +519,49 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         <CardHeader>
           <CardTitle>Saved Records</CardTitle>
           <CardDescription>
-            {employeeOnly ? "View and manage records you have created." : "View and manage all records across the company."}
+            {employeeOnly ? "View and manage records you have created." : "Search employee records or browse by category."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-            {!activeCategory ? (
+            {!employeeOnly && (
+                 <div className="relative mb-6">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by Employee Name..."
+                        className="pl-8"
+                        value={employeeSearchQuery}
+                        onChange={(e) => {
+                            setEmployeeSearchQuery(e.target.value);
+                            setActiveCategory(null);
+                            setSearchQuery('');
+                        }}
+                    />
+                </div>
+            )}
+            
+            {employeeSearchQuery ? (
+                 <div className="mt-6">
+                    <h2 className="text-2xl font-bold mb-4">Records for {employeeSearchQuery}</h2>
+                     {Object.entries(recordsByFileName).length > 0 ? (
+                        <Accordion type="multiple" className="w-full space-y-2">
+                             {Object.entries(recordsByFileName).map(([fileName, records]) => (
+                                <AccordionItem value={fileName} key={fileName}>
+                                    <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                        <div className="flex items-center gap-3">
+                                            <Icon className="h-5 w-5 text-primary" />
+                                            <span>{fileName}</span>
+                                            <Badge variant="secondary">{records.length}</Badge>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-2">
+                                        {/* Table content as before */}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    ) : <p>No records found for this employee.</p>}
+                 </div>
+            ) : !activeCategory ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {mainCategories.map(({ name, icon: Icon }) => (
                          <Card
@@ -545,7 +596,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
                     ) : error ? (
                         <div className="text-destructive text-center">{error}</div>
-                    ) : filteredRecords.length > 0 ? (
+                    ) : filteredRecordsByCategory.length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
                              {Object.entries(recordsByFileName).map(([fileName, records]) => {
                                 if (records.length === 0) return null;
