@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
@@ -126,7 +126,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
-            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
+            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd, 
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
             p.workingDrawingsStart, p.workingDrawingsEnd, 
@@ -227,6 +227,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
@@ -433,20 +438,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
-                    const bankTimelineHeaders = [
-                        'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
-                        'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount',
-                        'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
-                        'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 
-                        'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
-                        'workingDrawingsStart', 'workingDrawingsEnd', 
-                        'siteVisitStart', 'siteVisitEnd', 
-                        'finalBill', 'projectClosure'
-                    ];
                     const isTimelineProject = isTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
-                        ? bankTimelineHeaders
+                        ? Object.keys(firstItem || {}).filter(key => key !== 'id')
                         : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
                             ? Object.keys(firstItem).filter(key => key !== 'id')
                             : null;
@@ -513,6 +508,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         );
     };
 
+    if (!isClient) {
+        return (
+             <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        );
+    }
+
     return (
     <div className="space-y-6">
       <Card>
@@ -544,7 +545,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     <h2 className="text-2xl font-bold mb-4">Records for {employeeSearchQuery}</h2>
                      {Object.entries(recordsByFileName).length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
-                             {Object.entries(recordsByFileName).map(([fileName, records]) => (
+                             {Object.entries(recordsByFileName).map(([fileName, records]) => {
+                                const Icon = getIconForFile(fileName);
+                                return(
                                 <AccordionItem value={fileName} key={fileName}>
                                     <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
                                         <div className="flex items-center gap-3">
@@ -557,7 +560,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                         {/* Table content as before */}
                                     </AccordionContent>
                                 </AccordionItem>
-                            ))}
+                            )})
+                            }
                         </Accordion>
                     ) : <p>No records found for this employee.</p>}
                  </div>
