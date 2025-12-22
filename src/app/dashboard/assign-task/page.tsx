@@ -4,43 +4,15 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2, FileText, Check } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useState, useMemo } from 'react';
-import { useFirebase } from '@/firebase/provider';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMemo } from 'react';
 import { useCurrentUser } from '@/context/UserContext';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
-import { StatusBadge } from '@/components/ui/badge';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -112,21 +84,9 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
 }
 
 export default function AssignTaskPage() {
-    const { user: currentUser, employees, employeesByDepartment } = useCurrentUser();
+    const { employeesByDepartment } = useCurrentUser();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
-    const { firestore } = useFirebase();
-    const { toast } = useToast();
     const { tasks } = useTasks(undefined, true); // Fetch all tasks for admin view
-    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
-
-    const canUpdateStatus = useMemo(() => {
-        if (!currentUser) return false;
-        const allowedDepts = ['architects', 'draftpersons', 'finance', 'quantity-management', 'hr'];
-        return isAdmin || currentUser.departments.some(d => allowedDepts.includes(d));
-    }, [currentUser, isAdmin]);
-
-    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const tasksByEmployee = useMemo(() => {
         return tasks.reduce((acc, task) => {
@@ -139,69 +99,6 @@ export default function AssignTaskPage() {
         }, {} as Record<string, Task[]>);
     }, [tasks]);
 
-    const getEmployeeName = (employeeId: string) => {
-        const employee = employees.find(e => e.uid === employeeId);
-        return employee?.name || employeeId;
-    };
-    
-    const getInitials = (name: string) => {
-        if (!name) return '';
-        const nameParts = name.split(' ');
-        if (nameParts.length > 1 && nameParts[nameParts.length - 1]) {
-            return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
-        }
-        return name[0] ? name[0].toUpperCase() : '';
-    }
-
-    const openDeleteDialog = (task: Task) => {
-        setTaskToDelete(task);
-        setIsDeleteDialogOpen(true);
-    };
-    
-    const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
-        if (!firestore || !currentUser) {
-          toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
-          return;
-        }
-
-        if (!canUpdateStatus) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to update task statuses.' });
-            return;
-        }
-
-        const taskRef = doc(firestore, 'tasks', task.id);
-        try {
-            await updateDoc(taskRef, { status: newStatus });
-            toast({ title: 'Status Updated', description: 'Task status has been updated.' });
-        } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${task.id}`, operation: 'update', requestResourceData: { status: newStatus } }));
-        }
-    };
-    
-    const confirmDelete = () => {
-        if (!taskToDelete || !firestore) return;
-        if (!isAdmin) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
-            return;
-        }
-
-        deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
-            .then(() => {
-                toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
-                setIsDeleteDialogOpen(false);
-                setTaskToDelete(null);
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: `tasks/${taskToDelete.id}`,
-                    operation: 'delete'
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setIsDeleteDialogOpen(false);
-                setTaskToDelete(null);
-            });
-    };
-    
     return (
         <div className="space-y-8">
             <DashboardPageHeader
@@ -226,109 +123,6 @@ export default function AssignTaskPage() {
                     </div>
                 )
             })}
-             <Card>
-                <CardHeader>
-                    <CardTitle>All Assigned Tasks by Employee</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Accordion type="multiple" className="w-full space-y-2">
-                        {employees.map(employee => {
-                            const employeeTasks = tasksByEmployee[employee.uid] || [];
-                            return (
-                                <AccordionItem value={employee.uid} key={employee.uid}>
-                                    <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarFallback className="bg-secondary text-secondary-foreground font-bold">{getInitials(employee.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <span>{employee.name}</span>
-                                            <span className="text-sm text-muted-foreground">({employeeTasks.length} tasks)</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pt-2">
-                                         <div className="border rounded-b-lg">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Task Name</TableHead>
-                                                        <TableHead>Assigned By</TableHead>
-                                                        <TableHead>Status</TableHead>
-                                                        <TableHead className="text-right">Action</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {employeeTasks.length > 0 ? employeeTasks.map(task => (
-                                                        <TableRow key={task.id}>
-                                                            <TableCell>{task.taskName}</TableCell>
-                                                            <TableCell>{task.assignedBy}</TableCell>
-                                                            <TableCell>
-                                                                <Select
-                                                                    value={task.status}
-                                                                    onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                                                    disabled={!canUpdateStatus}
-                                                                >
-                                                                    <SelectTrigger className="w-[180px]">
-                                                                        <StatusBadge status={task.status} />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="not-started">Not Started</SelectItem>
-                                                                        <SelectItem value="in-progress">In Progress</SelectItem>
-                                                                        <SelectItem value="pending-approval">Pending Approval</SelectItem>
-                                                                        <SelectItem value="completed">Completed</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <div className="flex gap-1 justify-end">
-                                                                    {task.submissionUrl && (
-                                                                        <Button variant="ghost" size="icon" asChild title="View Submission">
-                                                                            <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer">
-                                                                                <FileText className="h-4 w-4 text-blue-500" />
-                                                                            </a>
-                                                                        </Button>
-                                                                    )}
-                                                                    {isAdmin && task.status === 'pending-approval' && (
-                                                                        <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task, 'completed')} title="Approve Task">
-                                                                            <Check className="h-4 w-4 text-green-500" />
-                                                                        </Button>
-                                                                    )}
-                                                                    {isAdmin && (
-                                                                      <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
-                                                                          <Trash2 className="h-4 w-4 text-destructive" />
-                                                                      </Button>
-                                                                    )}
-                                                                </div>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )) : (
-                                                        <TableRow>
-                                                            <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No tasks assigned to this employee.</TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                         </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            )
-                        })}
-                    </Accordion>
-                </CardContent>
-            </Card>
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the task "{taskToDelete?.taskName}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }
