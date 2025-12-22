@@ -582,10 +582,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             {employeeSearchQuery ? (
                  <div className="mt-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold">Records for {employeeSearchQuery}</h2>
-                        <Button onClick={handleViewFullReport} disabled={filteredRecordsByEmployee.length === 0}>
-                            <Eye className="mr-2 h-4 w-4" /> View Full Report
-                        </Button>
+                        <h2 className="text-2xl font-bold">Records for "{employeeSearchQuery}"</h2>
+                        {filteredRecordsByEmployee.length > 0 && (
+                            <Button onClick={handleViewFullReport}>
+                                <Eye className="mr-2 h-4 w-4" /> View Full Report
+                            </Button>
+                        )}
                     </div>
                      {Object.entries(recordsByFileName).length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
