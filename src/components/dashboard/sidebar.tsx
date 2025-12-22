@@ -38,7 +38,8 @@ import {
   KeyRound,
   PlusCircle,
   Edit,
-  Trash2
+  Trash2,
+  ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -58,6 +59,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Dialog,
@@ -358,6 +360,12 @@ export default function DashboardSidebar() {
                     </AvatarFallback>
                 </Avatar>
                 <p className="font-semibold text-sidebar-foreground">{currentUser.name}</p>
+                 <Button asChild variant="link" className="text-xs h-auto p-0 mt-1 text-sidebar-foreground/70 hover:text-primary">
+                  <Link href="/employee-dashboard">
+                      <ArrowLeft className="h-3 w-3 mr-1"/>
+                      Switch to Employee View
+                  </Link>
+              </Button>
               </div>
             </>
           )}
@@ -425,3 +433,4 @@ export default function DashboardSidebar() {
       </Sidebar>
   );
 }
+
