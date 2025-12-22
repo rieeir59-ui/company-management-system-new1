@@ -199,8 +199,8 @@ export default function DailyReportPage() {
       {
         id: Date.now() + Math.random(),
         date: date,
-        startTime: '',
-        endTime: '',
+        startTime: '09:30',
+        endTime: '18:00',
         customerJobNumber: 'IHA-J000-0000',
         projectName: 'C-B-D',
         designType: 'EXTERIOR',
