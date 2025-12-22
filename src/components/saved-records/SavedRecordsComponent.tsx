@@ -291,6 +291,15 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         }, {} as Record<string, SavedRecord[]>);
     }, [filteredRecordsByCategory, filteredRecordsByEmployee, employeeSearchQuery]);
 
+    const getAssignedToFromRecord = (record: SavedRecord) => {
+      if (record.fileName === 'Task Assignment' && Array.isArray(record.data) && record.data[0]?.category === 'Task Assignment') {
+        const assignedToItem = record.data[0].items.find((item: any) => item.label === 'assignedTo');
+        return assignedToItem?.value || 'N/A';
+      }
+      return 'N/A';
+    };
+
+
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
         setIsDeleteDialogOpen(true);
@@ -482,12 +491,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                              <Table>
                                 <TableBody>
                                 {section.items.map((item: any, i: number) => {
+                                    if (typeof item === 'object' && item.label && item.value !== undefined) return <TableRow key={i}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
                                     if (typeof item === 'string') {
                                         const parts = item.split(/:(.*)/s);
-                                        return <TableRow key={i}><TableCell className="font-semibold">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
-                                    }
-                                    if(item.label) {
-                                         return <TableRow key={i}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
+                                        return parts.length > 1 ? <TableRow key={i}><TableCell className="font-semibold">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow> : <TableRow key={i}><TableCell colSpan={2}>{item}</TableCell></TableRow>;
                                     }
                                      return <TableRow key={i}><TableCell colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
                                 })}
@@ -605,6 +612,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                              {Object.entries(recordsByFileName).map(([fileName, records]) => {
                                 if (records.length === 0) return null;
                                 const Icon = getIconForFile(fileName);
+                                const isTaskAssignment = fileName === 'Task Assignment';
+
                                 return (
                                     <AccordionItem value={fileName} key={fileName}>
                                         <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
@@ -621,6 +630,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                         <TableRow>
                                                             <TableHead>Project Name</TableHead>
                                                             <TableHead>File Name</TableHead>
+                                                            {isTaskAssignment && <TableHead>Assigned To</TableHead>}
                                                             {!employeeOnly && <TableHead>Created By</TableHead>}
                                                             <TableHead>Date</TableHead>
                                                             <TableHead className="text-right">Actions</TableHead>
@@ -631,6 +641,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
                                                                 <TableCell>{record.fileName}</TableCell>
+                                                                {isTaskAssignment && <TableCell>{getAssignedToFromRecord(record)}</TableCell>}
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                                 <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                                 <TableCell className="text-right">
