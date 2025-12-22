@@ -34,6 +34,13 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { StatusBadge } from '@/components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -137,6 +144,15 @@ export default function AssignTaskPage() {
         return employee?.name || employeeId;
     };
     
+    const getInitials = (name: string) => {
+        if (!name) return '';
+        const nameParts = name.split(' ');
+        if (nameParts.length > 1 && nameParts[nameParts.length - 1]) {
+            return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
+        }
+        return name[0] ? name[0].toUpperCase() : '';
+    }
+
     const openDeleteDialog = (task: Task) => {
         setTaskToDelete(task);
         setIsDeleteDialogOpen(true);
@@ -212,67 +228,91 @@ export default function AssignTaskPage() {
             })}
              <Card>
                 <CardHeader>
-                    <CardTitle>All Assigned Tasks</CardTitle>
+                    <CardTitle>All Assigned Tasks by Employee</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="font-semibold">Task Name</TableHead>
-                                <TableHead className="font-semibold">Assigned To</TableHead>
-                                <TableHead className="font-semibold">Assigned By</TableHead>
-                                <TableHead className="font-semibold">Status</TableHead>
-                                <TableHead className="font-semibold text-right">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {tasks.map(task => (
-                                <TableRow key={task.id} className="text-base">
-                                    <TableCell className="text-base">{task.taskName}</TableCell>
-                                    <TableCell className="text-base">{getEmployeeName(task.assignedTo)}</TableCell>
-                                    <TableCell className="text-base">{task.assignedBy}</TableCell>
-                                    <TableCell>
-                                        <Select
-                                            value={task.status}
-                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                            disabled={!canUpdateStatus}
-                                        >
-                                            <SelectTrigger className="w-[180px]">
-                                                <StatusBadge status={task.status} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="not-started">Not Started</SelectItem>
-                                                <SelectItem value="in-progress">In Progress</SelectItem>
-                                                <SelectItem value="pending-approval">Pending Approval</SelectItem>
-                                                <SelectItem value="completed">Completed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-1 justify-end">
-                                            {task.submissionUrl && (
-                                                <Button variant="ghost" size="icon" asChild title="View Submission">
-                                                    <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer">
-                                                        <FileText className="h-4 w-4 text-blue-500" />
-                                                    </a>
-                                                </Button>
-                                            )}
-                                            {isAdmin && task.status === 'pending-approval' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task, 'completed')} title="Approve Task">
-                                                    <Check className="h-4 w-4 text-green-500" />
-                                                </Button>
-                                            )}
-                                            {isAdmin && (
-                                              <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
-                                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                              </Button>
-                                            )}
+                    <Accordion type="multiple" className="w-full space-y-2">
+                        {employees.map(employee => {
+                            const employeeTasks = tasksByEmployee[employee.uid] || [];
+                            return (
+                                <AccordionItem value={employee.uid} key={employee.uid}>
+                                    <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-9 w-9">
+                                                <AvatarFallback className="bg-secondary text-secondary-foreground font-bold">{getInitials(employee.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <span>{employee.name}</span>
+                                            <span className="text-sm text-muted-foreground">({employeeTasks.length} tasks)</span>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-2">
+                                         <div className="border rounded-b-lg">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Task Name</TableHead>
+                                                        <TableHead>Assigned By</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead className="text-right">Action</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {employeeTasks.length > 0 ? employeeTasks.map(task => (
+                                                        <TableRow key={task.id}>
+                                                            <TableCell>{task.taskName}</TableCell>
+                                                            <TableCell>{task.assignedBy}</TableCell>
+                                                            <TableCell>
+                                                                <Select
+                                                                    value={task.status}
+                                                                    onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
+                                                                    disabled={!canUpdateStatus}
+                                                                >
+                                                                    <SelectTrigger className="w-[180px]">
+                                                                        <StatusBadge status={task.status} />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="not-started">Not Started</SelectItem>
+                                                                        <SelectItem value="in-progress">In Progress</SelectItem>
+                                                                        <SelectItem value="pending-approval">Pending Approval</SelectItem>
+                                                                        <SelectItem value="completed">Completed</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                <div className="flex gap-1 justify-end">
+                                                                    {task.submissionUrl && (
+                                                                        <Button variant="ghost" size="icon" asChild title="View Submission">
+                                                                            <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer">
+                                                                                <FileText className="h-4 w-4 text-blue-500" />
+                                                                            </a>
+                                                                        </Button>
+                                                                    )}
+                                                                    {isAdmin && task.status === 'pending-approval' && (
+                                                                        <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task, 'completed')} title="Approve Task">
+                                                                            <Check className="h-4 w-4 text-green-500" />
+                                                                        </Button>
+                                                                    )}
+                                                                    {isAdmin && (
+                                                                      <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
+                                                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                                                      </Button>
+                                                                    )}
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )) : (
+                                                        <TableRow>
+                                                            <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No tasks assigned to this employee.</TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                         </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )
+                        })}
+                    </Accordion>
                 </CardContent>
             </Card>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
