@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -17,7 +16,7 @@ service cloud.firestore {
 
     // Helper: Check if user is authorized to update task status
     function canUpdateTaskStatus() {
-        return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['architects','draftpersons','finance','quantity-management','hr']);
+        return isLoggedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['architects','draftpersons','finance','quantity-management','hr']) || isAssignee());
     }
     
     // Helper: Check if the user is the one the task is assigned to
@@ -41,9 +40,11 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow read: if isAdmin() || isAssignee();
+      allow read: if isLoggedIn();
       allow create: if isAdmin();
-      allow update: if isAdmin() || canUpdateTaskStatus();
+      // Admins or the assigned user can update tasks
+      allow update: if isAdmin() || isAssignee();
+      // Only admins can delete tasks.
       allow delete: if isAdmin();
     }
 
