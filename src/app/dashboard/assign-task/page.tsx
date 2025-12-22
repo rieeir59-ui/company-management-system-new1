@@ -5,28 +5,24 @@ import {
   Card,
   CardContent,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCurrentUser } from '@/context/UserContext';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
-
-const departments = [
-    { name: 'ADMIN', slug: 'admin' },
-    { name: 'HR', slug: 'hr' },
-    { name: 'SOFTWARE ENGINEER', slug: 'software-engineer' },
-    { name: 'DRAFTPERSONS', slug: 'draftpersons' },
-    { name: '3D VISULIZER', slug: '3d-visualizer' },
-    { name: 'ARCHITECTS', slug: 'architects' },
-    { name: 'FINANCE', slug: 'finance' },
-    { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
-];
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { StatusBadge } from '@/components/ui/badge';
 
 
 function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }) {
+    const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+
     const taskStats = useMemo(() => {
         let total = 0;
         let overdue = 0;
@@ -51,34 +47,90 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
 
     return (
          <div className="flex flex-col">
-            <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-2 border-primary/80">
-                    <CardContent className="p-4">
-                        <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
-                        <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1"><Briefcase size={14} /><span>Tasks</span></div>
-                                <span>{taskStats.total}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                 <div className="flex items-center gap-1"><XCircle size={14} className="text-red-500" /><span>Overdue</span></div>
-                                <span className="text-red-500">{taskStats.overdue}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1"><Clock size={14} className="text-blue-500" /><span>In Progress</span></div>
-                                <span className="text-blue-500">{taskStats.inProgress}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                               <div className="flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /><span>Completed</span></div>
-                                <span className="text-green-500">{taskStats.completed}</span>
-                            </div>
+            <Card className="hover:shadow-lg transition-shadow h-full border-2 border-primary/80 relative">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More options</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                           <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`}>Assign New Task</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                             <Link href={`/dashboard/department/${employee.departments[0]}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsTaskDialogOpen(true)}>
+                            View Assigned Tasks
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <CardContent className="p-4">
+                    <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
+                    <div className="mt-2 text-sm text-muted-foreground space-y-1">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1"><Briefcase size={14} /><span>Tasks</span></div>
+                            <span>{taskStats.total}</span>
                         </div>
-                    </CardContent>
-                </Card>
-            </Link>
+                        <div className="flex justify-between items-center">
+                             <div className="flex items-center gap-1"><XCircle size={14} className="text-red-500" /><span>Overdue</span></div>
+                            <span className="text-red-500">{taskStats.overdue}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1"><Clock size={14} className="text-blue-500" /><span>In Progress</span></div>
+                            <span className="text-blue-500">{taskStats.inProgress}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                           <div className="flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /><span>Completed</span></div>
+                            <span className="text-green-500">{taskStats.completed}</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
              <Link href={`/employee-dashboard?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
                 View Dashboard
             </Link>
+
+            <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Assigned Tasks for {employee.name}</DialogTitle>
+                        <DialogDescription>A list of all tasks assigned to this employee.</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Project</TableHead>
+                                    <TableHead>Task</TableHead>
+                                    <TableHead>End Date</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tasks.length > 0 ? tasks.map(task => (
+                                    <TableRow key={task.id}>
+                                        <TableCell>{task.projectName}</TableCell>
+                                        <TableCell>{task.taskName}</TableCell>
+                                        <TableCell>{task.endDate || 'N/A'}</TableCell>
+                                        <TableCell><StatusBadge status={task.status} /></TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center">No tasks assigned.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -98,6 +150,18 @@ export default function AssignTaskPage() {
             return acc;
         }, {} as Record<string, Task[]>);
     }, [tasks]);
+    
+     const departments = useMemo(() => [
+        { name: 'CEO', slug: 'ceo' },
+        { name: 'ADMIN', slug: 'admin' },
+        { name: 'HR', slug: 'hr' },
+        { name: 'SOFTWARE ENGINEER', slug: 'software-engineer' },
+        { name: 'DRAFTPERSONS', slug: 'draftpersons' },
+        { name: '3D VISULIZER', slug: '3d-visualizer' },
+        { name: 'ARCHITECTS', slug: 'architects' },
+        { name: 'FINANCE', slug: 'finance' },
+        { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
+    ], []);
 
     return (
         <div className="space-y-8">
@@ -126,3 +190,4 @@ export default function AssignTaskPage() {
         </div>
     );
 }
+
