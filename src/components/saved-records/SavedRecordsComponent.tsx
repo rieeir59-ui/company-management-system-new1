@@ -204,7 +204,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
                         const parts = item.split(/:(.*)/s);
                         return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
                     }
-                    return [JSON.stringify(item), ''];
+                     return [JSON.stringify(item), ''];
                 });
                 doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: 'bold' } } });
             }
@@ -316,6 +316,38 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const openViewDialog = (record: SavedRecord) => {
         setViewingRecord(record);
         setIsViewDialogOpen(true);
+    };
+
+    const handleViewFullReport = () => {
+        if (filteredRecordsByEmployee.length === 0) return;
+        const employeeName = filteredRecordsByEmployee[0].employeeName;
+        const doc = new jsPDF() as any;
+
+        doc.setFontSize(18);
+        doc.text(`Consolidated Report for ${employeeName}`, 14, 20);
+
+        let yPos = 30;
+
+        Object.entries(recordsByFileName).forEach(([fileName, recordsList]) => {
+            if (yPos > 250) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.text(fileName, 14, yPos);
+            yPos += 10;
+            
+            const head = [['Project Name', 'Created Date']];
+            const body = recordsList.map(r => [r.projectName, r.createdAt.toLocaleDateString()]);
+            
+            doc.autoTable({
+                startY: yPos,
+                head: head,
+                body: body,
+                theme: 'grid',
+                headStyles: { fillColor: [45, 95, 51] },
+            });
+            yPos = doc.autoTable.previous.finalY + 15;
+        });
+
+        doc.save(`${employeeName}_Consolidated_Report.pdf`);
     };
 
     const dashboardPrefix = employeeOnly ? 'employee-dashboard' : 'dashboard';
@@ -549,7 +581,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             
             {employeeSearchQuery ? (
                  <div className="mt-6">
-                    <h2 className="text-2xl font-bold mb-4">Records for {employeeSearchQuery}</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold">Records for {employeeSearchQuery}</h2>
+                        <Button onClick={handleViewFullReport} disabled={filteredRecordsByEmployee.length === 0}>
+                            <Eye className="mr-2 h-4 w-4" /> View Full Report
+                        </Button>
+                    </div>
                      {Object.entries(recordsByFileName).length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
                              {Object.entries(recordsByFileName).map(([fileName, records]) => {
