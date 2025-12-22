@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, ImagePlus, Trash2, ImageUp } from 'lucide-react';
+import { Save, Download, ImagePlus, Trash2, ImageUp, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -21,6 +21,7 @@ import { useRecords } from '@/context/RecordContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import Link from 'next/link';
 
 type RemarksState = Record<string, string>;
 
@@ -130,7 +131,7 @@ export default function SiteVisitPage() {
             return;
         }
 
-        const dataToSave = {
+        const dataToSave: any = {
             fileName: 'Site Visit Proforma',
             projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
             data: [
@@ -140,51 +141,55 @@ export default function SiteVisitPage() {
                 ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
                 ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
                 ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                { category: 'Pictures', items: [] as { comment: string; url: string }[] } // Placeholder for pictures
+                { category: 'Pictures', items: [] } 
             ]
         };
 
         try {
             const savedDocRef = await addRecord(dataToSave as any);
             
-            pictures.filter(p => p.file).forEach(p => {
+            const pictureUploadPromises = pictures.filter(p => p.file).map(p => {
                 const upload = p as Required<PictureRow>;
                 const filePath = `site-visits/${Date.now()}_${upload.file.name}`;
                 const storageRef = ref(storage, filePath);
                 const uploadTask = uploadBytesResumable(storageRef, upload.file);
 
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress } : up));
-                    },
-                    (error) => {
-                        console.error("Upload failed:", error);
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
-                    },
-                    async () => {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
-                        
-                        if (savedDocRef && firestore) {
-                            const newPictureData = { comment: upload.comment, url: downloadURL };
-                            const currentDoc = await getDoc(savedDocRef);
-                            if (currentDoc.exists()) {
-                                const docData = currentDoc.data().data || [];
-                                const pictureSection = docData.find((s:any) => s.category === 'Pictures');
-                                if (pictureSection) {
-                                    pictureSection.items.push(newPictureData);
-                                    await updateDoc(savedDocRef, { data: docData });
-                                }
-                            }
+                return new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress } : up));
+                        },
+                        (error) => {
+                            console.error("Upload failed:", error);
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+                            reject(error);
+                        },
+                        async () => {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
+                            resolve({ comment: upload.comment, url: downloadURL });
                         }
-                    }
-                );
+                    );
+                });
             });
 
+            const uploadedPictures = await Promise.all(pictureUploadPromises);
+
+            if (savedDocRef && firestore && uploadedPictures.length > 0) {
+                 const currentDoc = await getDoc(savedDocRef);
+                if (currentDoc.exists()) {
+                    const docData = currentDoc.data().data || [];
+                    const pictureSection = docData.find((s:any) => s.category === 'Pictures');
+                    if (pictureSection) {
+                        pictureSection.items = uploadedPictures;
+                        await updateDoc(savedDocRef, { data: docData });
+                    }
+                }
+            }
         } catch (error) {
             console.error("An error occurred during save:", error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the initial record.' });
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
         }
     };
     
@@ -323,8 +328,11 @@ export default function SiteVisitPage() {
                 imageHint={image?.imageHint || ''}
             />
             <Card>
-                <CardHeader>
+                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma (Architect Visit)</CardTitle>
+                    <Link href="/dashboard" passHref>
+                        <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
+                    </Link>
                 </CardHeader>
                 <CardContent className="space-y-8">
                     <div className="p-6 border rounded-lg space-y-4">
@@ -395,4 +403,3 @@ export default function SiteVisitPage() {
         </div>
     );
 }
-

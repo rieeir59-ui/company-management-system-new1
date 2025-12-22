@@ -218,7 +218,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineI
             </SidebarMenuItem>
 
              <SidebarMenuItem>
-              <Collapsible>
+              <Collapsible open={pathname.startsWith('/employee-dashboard/timelines-of-bank')}>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     className="group-data-[collapsible=icon]:justify-center"
