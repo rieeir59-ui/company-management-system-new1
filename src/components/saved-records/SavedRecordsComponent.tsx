@@ -625,91 +625,92 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     ))}
                 </div>
             ) : (
-                <div>
-                    <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" size="icon" onClick={() => setActiveCategory(null)}>
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <h2 className="text-2xl font-bold">{activeCategory}</h2>
-                    </div>
-                    <div className="relative mb-4">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={`Search in ${activeCategory}...`}
-                            className="pl-8"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : error ? (
-                        <div className="text-destructive text-center">{error}</div>
-                    ) : filteredRecordsByCategory.length > 0 ? (
-                        <Accordion type="multiple" className="w-full space-y-2">
-                             {Object.entries(recordsByFileName).map(([fileName, records]) => {
-                                if (records.length === 0) return null;
-                                const Icon = getIconForFile(fileName);
-                                const isTaskAssignment = fileName === 'Task Assignment';
-
-                                return (
-                                    <AccordionItem value={fileName} key={fileName}>
-                                        <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
-                                            <div className="flex items-center gap-3">
-                                                <Icon className="h-5 w-5 text-primary" />
-                                                <span>{fileName}</span>
-                                                <Badge variant="secondary">{records.length}</Badge>
-                                            </div>
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pt-2">
-                                            <div className="border rounded-b-lg">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Project Name</TableHead>
-                                                            <TableHead>File Name</TableHead>
-                                                            {isTaskAssignment && <TableHead>Assigned To</TableHead>}
-                                                            {!employeeOnly && <TableHead>Created By</TableHead>}
-                                                            <TableHead>Date</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {records.map(record => (
-                                                            <TableRow key={record.id}>
-                                                                <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                                <TableCell>{record.fileName}</TableCell>
-                                                                {isTaskAssignment && <TableCell>{getAssignedToFromRecord(record)}</TableCell>}
-                                                                {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
-                                                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                                <TableCell className="text-right">
-                                                                    <div className="flex gap-1 justify-end">
-                                                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
-                                                                        {canEditOrDelete(record) && (
-                                                                            <>
-                                                                                <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
-                                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                );
-                            })}
-                        </Accordion>
-                    ) : (
-                        <div className="text-center py-10">
-                            <p className="text-muted-foreground">No records found for this category.</p>
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <Button variant="outline" size="icon" onClick={() => setActiveCategory(null)}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <CardTitle className="text-2xl font-bold">{activeCategory}</CardTitle>
                         </div>
-                    )}
-                </div>
+                         <div className="relative mt-4">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={`Search in ${activeCategory}...`}
+                                className="pl-8"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        ) : error ? (
+                            <div className="text-destructive text-center">{error}</div>
+                        ) : filteredRecordsByCategory.length > 0 ? (
+                           <Accordion type="multiple" className="w-full space-y-2">
+                                {Object.entries(recordsByFileName).map(([fileName, records]) => {
+                                    if (records.length === 0) return null;
+                                    const Icon = getIconForFile(fileName);
+                                    const isTaskAssignment = fileName === 'Task Assignment';
+
+                                    return (
+                                        <AccordionItem value={fileName} key={fileName}>
+                                            <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                                <div className="flex items-center gap-3">
+                                                    <Icon className="h-5 w-5 text-primary" />
+                                                    <span>{fileName}</span>
+                                                    <Badge variant="secondary">{records.length}</Badge>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pt-2">
+                                                <div className="border rounded-b-lg">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Project Name</TableHead>
+                                                                {isTaskAssignment && <TableHead>Assigned To</TableHead>}
+                                                                {!employeeOnly && <TableHead>Created By</TableHead>}
+                                                                <TableHead>Date</TableHead>
+                                                                <TableHead className="text-right">Actions</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {records.map(record => (
+                                                                <TableRow key={record.id}>
+                                                                    <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                    {isTaskAssignment && <TableCell>{getAssignedToFromRecord(record)}</TableCell>}
+                                                                    {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                                                    <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <div className="flex gap-1 justify-end">
+                                                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                            {canEditOrDelete(record) && (
+                                                                                <>
+                                                                                    <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    );
+                                })}
+                            </Accordion>
+                        ) : (
+                            <div className="text-center py-10">
+                                <p className="text-muted-foreground">No records found for this category.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             )}
         </CardContent>
       </Card>
