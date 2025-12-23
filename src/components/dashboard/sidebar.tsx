@@ -39,6 +39,9 @@ import {
   Edit,
   Trash2,
   ArrowLeft,
+  UploadCloud,
+  Building2,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -298,11 +301,47 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu 
-                visibleTopLevelItems={visibleTopLevelItems} 
-                projectManualItems={projectManualItems || []} 
-                bankTimelineItems={bankTimelineItems || []} 
-            />
+            <>
+              <MemoizedSidebarMenu 
+                  visibleTopLevelItems={visibleTopLevelItems} 
+                  projectManualItems={projectManualItems || []} 
+                  bankTimelineItems={bankTimelineItems || []} 
+              />
+              <SidebarMenu>
+                 <SidebarMenuItem>
+                    <Collapsible>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          className="group-data-[collapsible=icon]:justify-center"
+                          tooltip="Upload"
+                        >
+                          <UploadCloud className="size-5" />
+                          <span className="group-data-[collapsible=icon]:hidden">Upload</span>
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent asChild>
+                        <SidebarMenuSub>
+                          <SidebarMenuSubItem>
+                            <Link href="/dashboard/upload-files?category=Banks" passHref>
+                              <SidebarMenuSubButton><Landmark className="size-4 mr-2" />Bank</SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                          <SidebarMenuSubItem>
+                            <Link href="/dashboard/upload-files?category=Commercial" passHref>
+                              <SidebarMenuSubButton><Building2 className="size-4 mr-2" />Commercial</SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                           <SidebarMenuSubItem>
+                            <Link href="/dashboard/upload-files?category=Residential" passHref>
+                              <SidebarMenuSubButton><Home className="size-4 mr-2" />Residential</SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </Collapsible>
+                 </SidebarMenuItem>
+              </SidebarMenu>
+            </>
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">

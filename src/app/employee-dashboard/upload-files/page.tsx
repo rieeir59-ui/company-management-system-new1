@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,8 +70,8 @@ const UploadForm = ({ category }: { category: string }) => {
             const savedDocId = await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
-            
-             if (savedDocId) {
+
+            if (savedDocId) {
                 await addRecord({
                   fileName: 'Uploaded File',
                   projectName: upload.customName,
@@ -92,7 +93,6 @@ const UploadForm = ({ category }: { category: string }) => {
             setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
             toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded and recorded.` });
 
-            // Automatically remove the completed upload row after a short delay
             setTimeout(() => {
                 setUploads(prev => {
                     const remaining = prev.filter(up => up.id !== upload.id);
@@ -190,9 +190,18 @@ const UploadForm = ({ category }: { category: string }) => {
     );
 };
 
-export default function UploadFilesPage() {
+function UploadFilesPageContent() {
     const image = PlaceHolderImages.find(p => p.id === 'upload-files');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Banks');
+    const searchParams = useSearchParams();
+    const initialCategory = searchParams.get('category');
+    
+    const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'Banks');
+
+    useEffect(() => {
+        if (initialCategory) {
+            setSelectedCategory(initialCategory);
+        }
+    }, [initialCategory]);
 
     return (
         <div className="space-y-8">
@@ -234,4 +243,12 @@ export default function UploadFilesPage() {
             </Card>
         </div>
     );
+}
+
+export default function UploadFilesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UploadFilesPageContent />
+    </Suspense>
+  )
 }

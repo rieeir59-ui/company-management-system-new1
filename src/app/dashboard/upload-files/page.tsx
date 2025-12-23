@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -189,9 +190,18 @@ const UploadForm = ({ category }: { category: string }) => {
     );
 };
 
-export default function UploadFilesPage() {
+function UploadFilesPageContent() {
     const image = PlaceHolderImages.find(p => p.id === 'upload-files');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Banks');
+    const searchParams = useSearchParams();
+    const initialCategory = searchParams.get('category');
+    
+    const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'Banks');
+
+    useEffect(() => {
+        if (initialCategory) {
+            setSelectedCategory(initialCategory);
+        }
+    }, [initialCategory]);
 
     return (
         <div className="space-y-8">
@@ -233,4 +243,12 @@ export default function UploadFilesPage() {
             </Card>
         </div>
     );
+}
+
+export default function UploadFilesPage() {
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <UploadFilesPageContent />
+      </Suspense>
+    )
 }
