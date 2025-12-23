@@ -15,7 +15,8 @@ import {
   FirestoreError,
   query,
   orderBy,
-  onSnapshot
+  onSnapshot,
+  DocumentReference
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -38,7 +39,7 @@ export type UploadedFile = {
 
 type FileContextType = {
   fileRecords: UploadedFile[];
-  addFileRecord: (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>, file: File, onProgress: (progress: number) => void) => Promise<string | undefined>;
+  addFileRecord: (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>, file: File, onProgress: (progress: number) => void) => Promise<DocumentReference | undefined>;
   updateFileRecord: (id: string, updatedData: Partial<UploadedFile>) => Promise<void>;
   deleteFileRecord: (id: string) => Promise<void>;
   isLoading: boolean;
@@ -93,7 +94,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [firestore, currentUser, isUserLoading]);
 
-  const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName' | 'fileUrl'>, file: File, onProgress: (progress: number) => void): Promise<string | undefined> => {
+  const addFileRecord = useCallback(async (record: Omit<UploadedFile, 'id' | 'createdAt' | 'employeeId' | 'employeeName' | 'fileUrl'>, file: File, onProgress: (progress: number) => void): Promise<DocumentReference | undefined> => {
     if (!firestore || !currentUser || !firebaseApp) {
         const errMessage = 'You must be logged in to upload files.';
         toast({ variant: 'destructive', title: 'Error', description: errMessage });
@@ -149,7 +150,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
                     if (docRef) {
                         await updateDoc(docRef, { fileUrl: downloadURL });
                     }
-                    resolve(docRef.id);
+                    resolve(docRef);
 
                 } catch (updateError) {
                     console.error("Error updating Firestore document with URL:", updateError);
@@ -239,4 +240,3 @@ export const useFileRecords = () => {
   }
   return context;
 };
-

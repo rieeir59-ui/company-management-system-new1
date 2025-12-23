@@ -67,18 +67,18 @@ const UploadForm = ({ category }: { category: string }) => {
         };
         
         try {
-            const savedDocId = await addFileRecord(fileRecordData, upload.file, (progress) => {
+            const savedDocRef = await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
 
-            if (savedDocId) {
+            if (savedDocRef) {
                 await addRecord({
                   fileName: 'Uploaded File',
                   projectName: upload.customName,
                   data: [{
                     category: 'File Upload Details',
                     items: [
-                      { label: 'File ID', value: savedDocId },
+                      { label: 'File ID', value: savedDocRef.id },
                       { label: 'Category', value: category },
                       ...(category === 'Banks' ? [{ label: 'Bank', value: upload.bankName }] : []),
                       { label: 'Custom Name', value: upload.customName },
