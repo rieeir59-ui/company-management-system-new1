@@ -57,22 +57,21 @@ const UploadForm = ({ category }: { category: string }) => {
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
 
-        const fileRecordData = {
-            category: category,
-            bankName: upload.bankName,
-            customName: upload.customName,
-            originalName: upload.file.name,
-            fileType: upload.file.type,
-            size: upload.file.size,
-        };
-        
         try {
+            const fileRecordData = {
+                category: category,
+                bankName: upload.bankName,
+                customName: upload.customName,
+                originalName: upload.file.name,
+                fileType: upload.file.type,
+                size: upload.file.size,
+            };
+
             const savedDocRef = await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
 
             if (savedDocRef) {
-                // Also create a record in the general "savedRecords" collection
                 await addRecord({
                   fileName: 'Uploaded File',
                   projectName: upload.customName,
@@ -247,9 +246,9 @@ function UploadFilesPageContent() {
 }
 
 export default function UploadFilesPage() {
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <UploadFilesPageContent />
-      </Suspense>
-    )
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UploadFilesPageContent />
+    </Suspense>
+  )
 }
