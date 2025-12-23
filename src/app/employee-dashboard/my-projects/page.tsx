@@ -126,7 +126,7 @@ function MyProjectsComponent() {
       const notStarted = allItems.filter(p => p.status === 'not-started' || p.status === 'Not Started').length;
       return { total, completed, inProgress, notStarted };
   }, [combinedSchedule]);
-    
+
   const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
     if (!firestore || !currentUser) return;
     
@@ -409,6 +409,7 @@ function MyProjectsComponent() {
                                                 <SelectItem value="not-started">Not Started</SelectItem>
                                                 <SelectItem value="in-progress">In Progress</SelectItem>
                                                 <SelectItem value="completed">Completed</SelectItem>
+                                                {project.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                             </SelectContent>
                                         </Select>
                                     </TableCell>
@@ -577,7 +578,7 @@ function MyProjectsComponent() {
                 </DialogHeader>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={confirmDeleteManualEntry}>Delete</Button>
+                    <Button onClick={confirmDeleteManualEntry} className="bg-destructive hover:bg-destructive/80">Delete</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
