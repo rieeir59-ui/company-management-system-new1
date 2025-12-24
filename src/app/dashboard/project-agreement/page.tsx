@@ -92,7 +92,7 @@ const initialPaymentSchedule = [
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { addRecord, records, updateRecord } = useRecords();
     
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
@@ -155,8 +155,14 @@ export default function ProjectAgreementPage() {
         ]
       };
 
+      const existingRecord = records.find(r => r.fileName === 'Project Agreement' && r.projectName === recordData.projectName);
+
       try {
-        await addRecord(recordData as any);
+        if (existingRecord) {
+            await updateRecord(existingRecord.id, recordData);
+        } else {
+            await addRecord(recordData as any);
+        }
       } catch (error) {
            // Error is handled by the context
       }
