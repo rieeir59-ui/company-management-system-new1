@@ -174,7 +174,7 @@ export default function ProjectDetailPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Activity</TableHead>
+                        <TableHead>Phase</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead className="text-right">Duration</TableHead>

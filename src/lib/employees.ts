@@ -24,7 +24,7 @@ export const employees: Employee[] = [
   { uid: 'user11', name: 'Luqman', contact: '0321-1111261', email: 'luqman@ri-hub.com', record: 'EMP-011', avatarId: 'avatar-2', departments: ['architects', 'admin'], password: 'password' },
   { uid: 'user12', name: 'Asad', contact: '0321-4333215', email: 'asad@ri-hub.com', record: 'EMP-012', avatarId: 'avatar-2', departments: ['architects', 'admin'], password: 'password' },
   { uid: 'user13', name: 'Waleed', contact: '0332-0424458', email: 'waleed@ri-hub.com', record: 'EMP-013', avatarId: 'avatar-2', departments: ['architects'], password: 'password' },
-  { uid: 'user14', name: 'Kizzar', contact: '0313-9592679', email: 'kizzar@ri-hub.com', record: 'EMP-014', avatarId: 'avatar-2', departments: ['architects'], password: 'password' },
+  { uid: 'user14', name: 'Khizar', contact: '0313-9592679', email: 'khizar@ri-hub.com', record: 'EMP-014', avatarId: 'avatar-2', departments: ['architects'], password: 'password' },
   { uid: 'user15', name: 'Waqas', contact: '0321-8404780', email: 'waqas@ri-hub.com', record: 'EMP-015', avatarId: 'avatar-2', departments: ['draftpersons'], password: 'password' },
   { uid: 'user16', name: 'Noman', contact: '0302-8499301', email: 'noman@ri-hub.com', record: 'EMP-016', avatarId: 'avatar-2', departments: ['quantity-management', 'admin'], password: 'password' },
 ];
