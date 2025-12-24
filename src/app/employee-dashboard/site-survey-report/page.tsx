@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,8 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import Image from 'next/image';
+import { useCurrentUser } from '@/context/UserContext';
 import { useRecords } from '@/context/RecordContext';
-
 
 interface Personnel {
   id: number;
@@ -34,6 +35,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 export default function SiteSurveyReportPage() {
     const { toast } = useToast();
+    const { user: currentUser } = useCurrentUser();
     const { addRecord } = useRecords();
 
     const [bankName, setBankName] = useState('HABIB BANK LIMITED');
@@ -89,7 +91,7 @@ export default function SiteSurveyReportPage() {
                 { category: 'Personnel Present', items: personnel.map(p => `${p.name} (${p.designation})`) },
                 { category: 'Observations', items: [observations] },
                 { category: 'Recommendations', items: [recommendations] },
-                { category: 'Pictures', items: pictures.map(p => `Image: ${p.previewUrl}, Description: ${p.description}`) }
+                { category: 'Pictures', items: pictures.map(p => `Description: ${p.description}`) }
             ],
         };
         
@@ -108,6 +110,19 @@ export default function SiteSurveyReportPage() {
         const margin = 14;
         let yPos = 20;
 
+        const addTextSection = (title: string, text: string) => {
+            if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text(title.toUpperCase(), margin, yPos);
+            yPos += 7;
+            doc.setFont('helvetica', 'normal');
+            const lines = doc.splitTextToSize(text, pageWidth - margin * 2);
+            doc.text(lines, margin, yPos);
+            yPos += lines.length * 5 + 10;
+        };
+
+
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text(bankName, pageWidth / 2, yPos, { align: 'center' });
@@ -122,13 +137,8 @@ export default function SiteSurveyReportPage() {
         doc.text(reportDate, pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
-        doc.setFont('helvetica', 'bold');
-        doc.text('SITE SURVEY DATE:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        doc.text(`• ${surveyDate}`, margin + 5, yPos);
-        yPos += 12;
-
+        addTextSection('Site Survey Date:', `• ${surveyDate}`);
+        
         doc.setFont('helvetica', 'bold');
         doc.text('PERSONNEL PRESENT DURING SITE VISIT:', margin, yPos);
         yPos += 7;
@@ -147,7 +157,7 @@ export default function SiteSurveyReportPage() {
         
         for (const pic of pictures) {
             if (pic.previewUrl && pic.file) {
-                 if (yPos > 180) { // Check if space is enough for image + text
+                 if (yPos > pageHeight - 80) { // Check if space is enough for image + text
                     doc.addPage();
                     yPos = 20;
                 }
@@ -174,26 +184,13 @@ export default function SiteSurveyReportPage() {
             }
         }
         
-        if (yPos > 240) { doc.addPage(); yPos = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text('OBSERVATIONS AND REMARKS BY KS & ASSOCIATES:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        const obsLines = doc.splitTextToSize(observations, pageWidth - (margin * 2));
-        doc.text(obsLines, margin, yPos);
-        yPos += obsLines.length * 5 + 10;
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+        addTextSection('Observations and Remarks by KS & Associates:', observations);
         
-        if (yPos > 240) { doc.addPage(); yPos = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.text('RECOMMENDATION:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        const recLines = doc.splitTextToSize(recommendations, pageWidth - (margin * 2));
-        doc.text(recLines, margin, yPos);
-        yPos += recLines.length * 5 + 10;
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+        addTextSection('Recommendation:', recommendations);
         
-        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
         doc.text('Signatures:', margin, yPos);
         yPos += 15;
         doc.text('____________________', margin, yPos);

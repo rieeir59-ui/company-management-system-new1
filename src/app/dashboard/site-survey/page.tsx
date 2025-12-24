@@ -57,7 +57,7 @@ export default function ProjectDataPage() {
     
     const handleSave = () => {
        const dataToSave = {
-          fileName: "Site Survey Report",
+          fileName: "Site Survey",
           projectName: formState['project_name_header'] || 'Untitled Site Survey',
           data: [{
                 category: 'Site Survey Data',
@@ -470,3 +470,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
+    

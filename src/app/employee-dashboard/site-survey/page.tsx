@@ -55,9 +55,9 @@ export default function ProjectDataPage() {
         setFormState(prev => ({ ...prev, [name]: value }));
     };
     
-    const handleSave = async () => {
+    const handleSave = () => {
        const dataToSave = {
-          fileName: "Site Survey Report",
+          fileName: "Site Survey",
           projectName: formState['project_name_header'] || 'Untitled Site Survey',
           data: [{
                 category: 'Site Survey Data',
@@ -65,12 +65,7 @@ export default function ProjectDataPage() {
             }]
         };
         
-        try {
-            await addRecord(dataToSave as any);
-        } catch (error) {
-             // Error is handled by context's toast
-             console.error("Save failed in component:", error);
-        }
+        addRecord(dataToSave as any);
     }
 
     const handleDownloadPdf = () => {
@@ -475,3 +470,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
+
