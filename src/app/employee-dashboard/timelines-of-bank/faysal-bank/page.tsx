@@ -136,7 +136,7 @@ function FBLTimelineComponent() {
     
     const removeProjectRow = (id: number) => {
         setProjectRows(projectRows.filter(row => row.id !== id));
-        deleteProject('fbl', id);
+        deleteProject('faysal-bank', id);
         toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
     };
     
