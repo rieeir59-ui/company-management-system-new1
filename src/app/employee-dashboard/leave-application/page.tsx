@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -30,7 +30,7 @@ export default function LeaveApplicationPage() {
 
   const [formState, setFormState] = useState({
     position: '',
-    status: 'Full-time', // Default to Full-time
+    status: 'Full-time',
     leaveFrom: '',
     leaveTo: '',
     returnDate: '',
@@ -44,7 +44,6 @@ export default function LeaveApplicationPage() {
       reason: '',
       paid: false,
       unpaid: false,
-      date: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -165,10 +164,10 @@ export default function LeaveApplicationPage() {
 
     const drawCheckbox = (x: number, y: number, checked: boolean) => {
       doc.setLineWidth(0.2);
-      doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
+      doc.rect(x, y - 3.5, 4, 4);
       if (checked) {
-          doc.setFillColor(0, 0, 0); // Set fill color to black
-          doc.rect(x + 0.5, y - 3, 3, 3, 'F'); // Draw a filled rectangle
+          doc.setFillColor(0, 0, 0);
+          doc.rect(x + 0.5, y - 3, 3, 3, 'F');
       }
     };
     
@@ -227,9 +226,6 @@ export default function LeaveApplicationPage() {
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
     doc.text(hrApprovalState.reason, 16, y-1);
-    y += 10;
-
-    doc.text(`Date: ${hrApprovalState.date}`, 14, y);
     y += 10;
     
     drawCheckbox(14, y, hrApprovalState.paid);
@@ -339,10 +335,6 @@ export default function LeaveApplicationPage() {
                     <div className="space-y-2">
                         <Label htmlFor="hr_reason">REASON:</Label>
                         <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))}/>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="hr_date">Date:</Label>
-                        <Input id="hr_date" type="date" value={hrApprovalState.date} onChange={e => setHrApprovalState(s => ({...s, date: e.target.value}))} className="w-fit" />
                     </div>
                     <div className="flex items-center gap-6 pt-4">
                         <div className="flex items-center space-x-2">
