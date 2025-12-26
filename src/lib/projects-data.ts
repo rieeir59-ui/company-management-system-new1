@@ -99,8 +99,8 @@ export const bankAlfalahProjects: ProjectRow[] = [
 ];
 
 export const bankAlHabibProjects: ProjectRow[] = [
-    { id: 701, srNo: '1', projectName: 'Bank Al Habib CLIFTON BRANCH', area: '5,500.00', projectHolder: '', allocationDate: '13-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', headCountStart: 'DONE', proposalStart: '14-Oct-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' },
-    { id: 702, srNo: '2', projectName: 'Khyaban-e-Hafiz Office and Branch', area: '13,500.00', projectHolder: '', allocationDate: '13-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', headCountStart: 'DONE', proposalStart: '14-Oct-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' }
+    { id: 701, srNo: '1', projectName: 'Bank Al Habib CLIFTON BRANCH', area: '5,500.00', projectHolder: '', allocationDate: '13-Oct-25', headCount: 'DONE', proposalStart: '14-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', finalBill: '', projectClosure: '' },
+    { id: 702, srNo: '2', projectName: 'Khyaban-e-Hafiz Office and Branch', area: '13,500.00', projectHolder: '', allocationDate: '13-Oct-25', headCount: 'DONE', proposalStart: '14-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', finalBill: '', projectClosure: '' }
 ];
 
 export const cbdProjects: ProjectRow[] = [
