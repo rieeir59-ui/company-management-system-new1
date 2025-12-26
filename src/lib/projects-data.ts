@@ -105,7 +105,7 @@ export let bankAlHabibProjects: ProjectRow[] = [
 
 export let cbdProjects: ProjectRow[] = [
     { id: 801, srNo: '1', projectName: 'Nawaz sharif Business Hub', area: '25 Kanals', projectHolder: 'ASAD/WALEED/Jabbar', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', headCountStart: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' },
-    { id: 802, srNo: '2', projectName: 'C-B-D', area: '', projectHolder: 'ASAD/WALEED', allocationDate: '16-Jun-25', siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', headCountStart: '16-Jun-25', proposalStart: '16-Jun-25', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' }
+    { id: 802, srNo: '2', projectName: 'C-B-D', area: '', projectHolder: 'ASAD/WALEED', allocationDate: '16-Jun-25', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '16-Jun-25', proposalStart: '16-Jun-25', proposalEnd: '', threedStart: '16-Jun-25', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'Material Board in Progress', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' }
 ];
 
 export let commercialProjects: ProjectRow[] = [
@@ -183,3 +183,5 @@ export const deleteProject = (category: string, projectId: number) => {
     }
     return false;
 }
+
+    
