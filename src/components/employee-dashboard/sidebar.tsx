@@ -198,7 +198,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                   <SidebarMenuSub>
-                     <SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
                       <Link href="/employee-dashboard/timelines-of-bank/askari-bank" passHref>
                         <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
                           <Landmark className="size-4 mr-2" />
@@ -239,10 +239,10 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                       </Link>
                     </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/fbl" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/fbl')}>
+                      <Link href="/employee-dashboard/timelines-of-bank/faysal-bank" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/faysal-bank')}>
                           <Landmark className="size-4 mr-2" />
-                          Faysal Bank
+                          FBL
                         </SidebarMenuSubButton>
                       </Link>
                     </SidebarMenuSubItem>

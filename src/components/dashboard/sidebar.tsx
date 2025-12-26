@@ -204,10 +204,10 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, projectManualItems }: 
                       </Link>
                     </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
-                      <Link href="/dashboard/timelines-of-bank/fbl" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/fbl')}>
+                      <Link href="/dashboard/timelines-of-bank/faysal-bank" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/faysal-bank')}>
                           <Landmark className="size-4 mr-2" />
-                          Faysal Bank
+                          FBL
                         </SidebarMenuSubButton>
                       </Link>
                     </SidebarMenuSubItem>
