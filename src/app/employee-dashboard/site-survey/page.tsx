@@ -56,15 +56,15 @@ export default function ProjectDataPage() {
     };
     
     const handleSave = () => {
-        const dataToSave = {
-            fileName: "Site Survey Report",
-            projectName: formState['project_name_header'] || 'Untitled Site Survey',
-            data: [{
+       const dataToSave = {
+          fileName: "Site Survey Report",
+          projectName: formState['project_name_header'] || 'Untitled Site Survey',
+          data: [{
                 category: 'Site Survey Data',
                 items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
             }]
         };
-
+        
         addRecord(dataToSave as any);
     }
 
@@ -470,5 +470,4 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-
     
