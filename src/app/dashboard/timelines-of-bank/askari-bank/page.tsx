@@ -145,7 +145,8 @@ function AskariBankTimelineComponent() {
             projectName: 'Askari Bank Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Overall Status', items: [{label: 'Status', value: overallStatus}]},
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -324,3 +325,6 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
+
+    
+      
