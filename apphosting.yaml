@@ -4,6 +4,7 @@
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
+  minInstances: 1
   maxInstances: 1
   # Make the backend publicly available.
   ingressSettings: ALLOW_ALL

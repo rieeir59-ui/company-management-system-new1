@@ -75,5 +75,11 @@ export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashb
   if (slug) {
     return `/${dashboardPrefix}/${slug}`;
   }
+  
+  if (fileName.endsWith(" Timeline")) {
+    const bankKey = fileName.replace(" Timeline", "").toLowerCase().replace(/ /g, '-');
+    return `/${dashboardPrefix}/timelines-of-bank/${bankKey}`;
+  }
+  
   return null;
 }
