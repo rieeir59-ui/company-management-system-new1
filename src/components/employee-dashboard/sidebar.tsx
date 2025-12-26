@@ -198,11 +198,75 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                   <SidebarMenuSub>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/askari-bank" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
+                          <Landmark className="size-4 mr-2" />
+                          Askari Bank
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <Link href="/employee-dashboard/timelines-of-bank/bank-al-falah" passHref>
                         <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-falah')}>
                           <Landmark className="size-4 mr-2" />
                           Bank Al-Falah
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/bank-al-habib" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-habib')}>
+                          <Landmark className="size-4 mr-2" />
+                          Bank Al-Habib
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/cbd" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/cbd')}>
+                          <Landmark className="size-4 mr-2" />
+                          CBD
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/dib" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/dib')}>
+                          <Landmark className="size-4 mr-2" />
+                          DIB
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/fbl" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/fbl')}>
+                          <Landmark className="size-4 mr-2" />
+                          Faysal Bank
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/hbl" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/hbl')}>
+                          <Landmark className="size-4 mr-2" />
+                          HBL
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/mcb" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/mcb')}>
+                          <Landmark className="size-4 mr-2" />
+                          MCB
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/ubl" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/ubl')}>
+                          <Landmark className="size-4 mr-2" />
+                          UBL
                         </SidebarMenuSubButton>
                       </Link>
                     </SidebarMenuSubItem>
