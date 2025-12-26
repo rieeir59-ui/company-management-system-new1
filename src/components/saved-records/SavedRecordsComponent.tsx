@@ -229,13 +229,13 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = (allFileNames || []).filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
+        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
 
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
             { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
             { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
-            { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report'] }
+            { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
         ];
     }, [bankTimelineCategories]);
 

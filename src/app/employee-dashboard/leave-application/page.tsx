@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Download } from 'lucide-react';
+import { Send, Download, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
@@ -21,12 +21,14 @@ import { differenceInDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Loader2 } from 'lucide-react';
+import { useRecords } from '@/context/RecordContext';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
   const { firestore } = useFirebase();
+  const { addRecord } = useRecords();
 
   const [formState, setFormState] = useState({
     position: '',
@@ -143,6 +145,34 @@ export default function LeaveApplicationPage() {
         setIsLoading(false);
     }
   };
+
+  const handleSave = () => {
+    if (!currentUser) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
+      return;
+    }
+    const dataToSave = {
+      fileName: 'Leave Request Form',
+      projectName: `Leave Request - ${currentUser.name} - ${formState.leaveFrom}`,
+      data: [{
+        category: 'Leave Request Details',
+        items: [
+          { label: 'Employee Name', value: currentUser.name },
+          { label: 'Employee Number', value: currentUser.record },
+          { label: 'Department', value: currentUser.departments.join(', ') },
+          { label: 'Position', value: formState.position },
+          { label: 'Status', value: formState.status },
+          { label: 'Leave From', value: formState.leaveFrom },
+          { label: 'Leave To', value: formState.leaveTo },
+          { label: 'Return Date', value: formState.returnDate },
+          { label: 'Total Days', value: totalDays.toString() },
+          { label: 'Leave Type', value: formState.reasonForRequested.join(', ') },
+          { label: 'Reason', value: formState.reason },
+        ]
+      }]
+    };
+    addRecord(dataToSave as any);
+  };
   
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
@@ -243,7 +273,6 @@ export default function LeaveApplicationPage() {
     doc.save('leave-request.pdf');
     toast({ title: 'Download Started', description: 'Your leave request PDF is being generated.' });
   };
-
 
   return (
     <div className="space-y-8">
@@ -349,11 +378,14 @@ export default function LeaveApplicationPage() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-lg">
-                <Button type="button" onClick={handleDownloadPdf} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                <Button type="submit" disabled={isLoading}>
-                    <Send className="mr-2 h-4 w-4" />
-                    {isLoading ? 'Sending...' : 'Send Request'}
-                </Button>
+                <Button type="button" onClick={handleSave} variant="outline" ><Save className="mr-2 h-4 w-4" /> Save Record</Button>
+                <div className="flex gap-2">
+                    <Button type="button" onClick={handleDownloadPdf} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        {isLoading ? 'Sending...' : 'Send Request'}
+                    </Button>
+                </div>
             </CardFooter>
         </form>
       </Card>
