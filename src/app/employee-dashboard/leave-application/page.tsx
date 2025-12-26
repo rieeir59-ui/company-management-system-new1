@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -19,12 +21,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
+import { Loader2 } from 'lucide-react';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
   const { firestore } = useFirebase();
+  const { addRecord } = useRecords();
 
   const [formState, setFormState] = useState({
     position: '',
@@ -35,7 +40,7 @@ export default function LeaveApplicationPage() {
     reasonForRequested: [] as string[],
     reason: '',
   });
-  
+
   const [hrApprovalState, setHrApprovalState] = useState({
       approved: false,
       denied: false,
