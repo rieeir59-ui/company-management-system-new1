@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -275,9 +276,9 @@ function BankTimelinePage() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
-                <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
-                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
+                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} placeholder="Enter overall status or remarks..."/>
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
             </CardContent>
