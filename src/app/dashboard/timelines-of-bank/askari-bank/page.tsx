@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,10 +78,8 @@ function AskariBankTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contract']?.start || '',
-                    contactEnd: taskMap['contract']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
+                    contract: taskMap['contract']?.start || '',
+                    headCount: taskMap['headcountrequirment']?.start || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -126,7 +125,7 @@ function AskariBankTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
@@ -145,7 +144,7 @@ function AskariBankTimelineComponent() {
             projectName: 'Askari Bank Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Overall Status', items: [{label: 'Status', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -156,24 +155,20 @@ function AskariBankTimelineComponent() {
         doc.text("Askari Bank Timeline", 14, 15);
         
         const head = [
-            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract\nStart', 'Contract\nEnd', 'Head Count\n/ Requirment\nStart', 'Head Count\n/ Requirment\nEnd',
-             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
-             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
-             'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project\nClosure']
+            ['Sr. No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
+             'Site Survey', 'Contract', 'Head Count / Requirment',
+             'Proposal / Design Development', '3D\'s', 'Tender Package Architectural', 'Tender Package MEP',
+             'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
-            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
-            p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
+            `${p.siteSurveyStart} - ${p.siteSurveyEnd}`, p.contract, p.headCount,
+            `${p.proposalStart} - ${p.proposalEnd}`, `${p.threedStart} - ${p.threedEnd}`,
+            `${p.tenderArchStart} - ${p.tenderArchEnd}`, `${p.tenderMepStart} - ${p.tenderMepEnd}`,
+            `${p.boqStart} - ${p.boqEnd}`, p.tenderStatus, p.comparative, 
+            `${p.workingDrawingsStart} - ${p.workingDrawingsEnd}`, 
+            `${p.siteVisitStart} - ${p.siteVisitEnd}`, 
             p.finalBill, p.projectClosure
         ]);
 
@@ -182,12 +177,12 @@ function AskariBankTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
+            styles: { fontSize: 5, cellPadding: 1 },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
-        doc.text("Maam Isbah Remarks & Order", 14, lastY);
+        doc.text("Overall Status:", 14, lastY);
         lastY += 7;
         doc.text(remarks, 14, lastY);
         lastY += 10;
@@ -236,8 +231,8 @@ function AskariBankTimelineComponent() {
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
-                                <th colSpan={2} className="border p-1">Contract</th>
-                                <th colSpan={2} className="border p-1">Head Count / Requirment</th>
+                                <th rowSpan={2} className="border p-1">Contract</th>
+                                <th rowSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
                                 <th colSpan={2} className="border p-1">Tender Package Architectural</th>
@@ -258,8 +253,6 @@ function AskariBankTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                                 <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
@@ -274,10 +267,8 @@ function AskariBankTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} className="w-28" /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.contactStart} onChange={e => handleProjectChange(row.id, 'contactStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.contactEnd} onChange={e => handleProjectChange(row.id, 'contactEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.headCountStart} onChange={e => handleProjectChange(row.id, 'headCountStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.headCountEnd} onChange={e => handleProjectChange(row.id, 'headCountEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalStart} onChange={e => handleProjectChange(row.id, 'proposalStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
@@ -305,8 +296,8 @@ function AskariBankTimelineComponent() {
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
                 <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
-                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} placeholder="Enter overall status or remarks..."/>
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
             </CardContent>
@@ -317,3 +308,4 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
+
