@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -72,7 +71,8 @@ import {
   Edit,
   Trash2,
   PlusCircle,
-  CalendarOff
+  CalendarOff,
+  List,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -198,6 +198,14 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                   <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/running-projects-summary" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/running-projects-summary')}>
+                          <List className="size-4 mr-2" />
+                          Running Projects Summary
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <Link href="/employee-dashboard/timelines-of-bank/askari-bank" passHref>
                         <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
