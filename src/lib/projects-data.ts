@@ -156,17 +156,17 @@ export const bankProjectsMap: Record<string, ProjectRow[]> = {
 };
 
 export const bankTimelineCategories = [
-    "Askari Bank Timeline",
-    "Bank Alfalah Timeline",
-    "Bank Al Habib Timeline",
-    "CBD Timeline",
-    "DIB Timeline",
-    "FBL Timeline",
-    "HBL Timeline",
-    "MCB Timeline",
-    "UBL Timeline",
-    "Commercial Timeline",
-    "Residential Timeline"
+    "Askari Bank",
+    "Bank Alfalah",
+    "Bank Al Habib",
+    "CBD",
+    "DIB",
+    "Faysal Bank",
+    "HBL",
+    "MCB",
+    "UBL",
+    "Commercial",
+    "Residential"
 ];
 
 export const deleteProject = (bankName: string, projectId: number) => {
