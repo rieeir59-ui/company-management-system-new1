@@ -85,9 +85,9 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const doc = new jsPDF();
         let y = 20;
 
-        const employeeInfo = record.data.find(d => d.category === 'Employee Information')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
-        const leaveDetails = record.data.find(d => d.category === 'Leave Details')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
-        const hrApproval = record.data.find(d => d.category === 'HR Approval')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const employeeInfo = record.data.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const leaveDetails = record.data.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const hrApproval = record.data.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
@@ -151,7 +151,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         y += 5;
         doc.setLineWidth(0.5);
         doc.line(14, y, 196, y);
-        doc.text(leaveDetails['Reason'], 16, y-1);
+        doc.text(leaveDetails['Reason'] || '', 16, y-1);
         y += 15;
         
         addSectionHeader('HR Department Approval:');
@@ -166,7 +166,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         y += 5;
         doc.setLineWidth(0.5);
         doc.line(14, y, 196, y);
-        doc.text(hrApproval['Reason'], 16, y-1);
+        doc.text(hrApproval['Reason'] || '', 16, y-1);
         y += 10;
         
         drawCheckbox(14, y, hrApproval['Paid Leave'] === 'true');
@@ -400,9 +400,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
     
     if (viewingRecord.fileName === 'Leave Request Form') {
-        const employeeInfo = dataSections.find(d => d.category === 'Employee Information')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
-        const leaveDetails = dataSections.find(d => d.category === 'Leave Details')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
-        const hrApproval = dataSections.find(d => d.category === 'HR Approval')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const employeeInfo = dataSections.find((d: any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const leaveDetails = dataSections.find((d: any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const hrApproval = dataSections.find((d: any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
         return (
             <div className="space-y-4 text-sm">
                 <div className="p-4 border rounded-lg">
@@ -620,3 +620,5 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
+    
