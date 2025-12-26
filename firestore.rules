@@ -8,16 +8,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: Check if user is admin
+    // Helper: Check if user is an admin
     function isAdmin() {
-      // Use `exists` for performance and safety over `get`.
+      // Use exists for performance and safety over get.
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
 
-    // Helper: Check if user is authorized to update task status
-    function canUpdateTaskStatus() {
-        return isLoggedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['architects','draftpersons','finance','quantity-management','hr']);
+    // Helper: Check if the user is the one the task is assigned to
+    function isAssignee() {
+      return request.auth != null &&
+             resource.data.assignedTo == request.auth.uid;
     }
 
     // USERS collection
@@ -28,20 +29,16 @@ service cloud.firestore {
 
     // SAVED RECORDS collection
     match /savedRecords/{recordId} {
-      allow read: if isLoggedIn(); 
+      allow get, list: if isLoggedIn();
       allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
-      allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid); // Only owner or admin
+      allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
     }
 
     // TASKS collection
     match /tasks/{taskId} {
-      // Any logged-in user can read tasks to see team-wide assignments.
       allow read: if isLoggedIn();
-      // Only admins can create new tasks.
       allow create: if isAdmin();
-      // Admins or specific department members can update tasks
-      allow update: if isAdmin() || canUpdateTaskStatus();
-      // Only admins can delete tasks.
+      allow update: if isAdmin() || isAssignee();
       allow delete: if isAdmin();
     }
 
@@ -49,6 +46,13 @@ service cloud.firestore {
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
       allow write: if isLoggedIn();
+    }
+
+    // LEAVE REQUESTS collection
+    match /leaveRequests/{leaveId} {
+      allow read: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
+      allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
   }
 }
