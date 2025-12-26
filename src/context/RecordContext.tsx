@@ -46,13 +46,7 @@ type RecordContextType = {
   getRecordById: (id: string) => SavedRecord | undefined;
   updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
   projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
-  bankTimelineItems: { href: string; label: string; icon: React.ElementType; }[];
-  addBank: (bankName: string) => void;
-  updateBank: (oldName: string, newName: string) => void;
-  deleteBank: (bankName: string) => void;
-  getBankProjects: (bankName: string) => ProjectRow[];
   error: string | null;
-  bankTimelineCategories: string[];
 };
 
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
@@ -64,9 +58,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [bankTimelineCategories, setBankTimelineCategories] = useState<string[]>([]);
-
-
+  
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
   // Fetch records
@@ -98,17 +90,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
           } as SavedRecord;
         });
         setRecords(fetched);
-        
-        const banks = new Set(fetched
-            .filter(r => r.fileName.endsWith('Timeline'))
-            .map(r => r.fileName.replace(' Timeline', ''))
-            .filter(name => !['Commercial', 'Residential'].includes(name))
-        );
-        const uniqueBanks = Array.from(banks);
-        if(uniqueBanks.length !== bankTimelineCategories.length || uniqueBanks.some(b => !bankTimelineCategories.includes(b))) {
-           setBankTimelineCategories(uniqueBanks);
-        }
-
         setError(null);
       },
       (err: FirestoreError) => {
@@ -193,30 +174,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast, currentUser, isAdmin, records]
   );
 
-  const getBankProjects = useCallback((bankName: string) => {
-    return bankProjectsMap[bankName.toLowerCase()] || [];
-  }, []);
-  
-  const addBank = (bankName: string) => {
-    if (!bankTimelineCategories.includes(bankName)) {
-      setBankTimelineCategories(prev => [...prev, bankName]);
-    }
-  };
-
-  const updateBank = (oldName: string, newName: string) => {
-    setBankTimelineCategories(prev => prev.map(b => (b === oldName ? newName : b)));
-    // Here you would also update any records in Firestore
-    // For now, we just update the local state
-    toast({ title: 'Bank Updated', description: `Renamed '${oldName}' to '${newName}'.` });
-  };
-  
-  const deleteBank = (bankName: string) => {
-    setBankTimelineCategories(prev => prev.filter(b => b !== bankName));
-    // Here you would also delete records in Firestore
-    toast({ title: 'Bank Deleted', description: `Timeline for '${bankName}' has been removed.` });
-  };
-
-
   // Update task status (admin or assigned employee)
   const updateTaskStatus = useCallback(
     async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
@@ -254,18 +211,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       };
     });
 
-  const bankTimelineItems = [
-    { href: '/dashboard/timelines-of-bank/commercial', label: 'Commercial', icon: Building2 },
-    { href: '/dashboard/timelines-of-bank/residential', label: 'Residential', icon: Home },
-    ...bankTimelineCategories.map(bank => ({
-      href: `/dashboard/timelines-of-bank/${encodeURIComponent(bank)}`,
-      label: bank,
-      icon: Landmark,
-    }))
-  ];
-
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects, bankTimelineCategories }}>
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems }}>
       {children}
     </RecordContext.Provider>
   );

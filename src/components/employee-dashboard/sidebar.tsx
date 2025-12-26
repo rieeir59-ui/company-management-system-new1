@@ -130,46 +130,13 @@ const getInitials = (name: string) => {
 }
 
 // Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineItems }: { menuItems: any[], projectManualItems: any[], bankTimelineItems: any[] }) => {
+const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems: any[], projectManualItems: any[] }) => {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
-  const { user: currentUser } = useCurrentUser();
-  const { addBank, updateBank, deleteBank } = useRecords();
-  const [newBankName, setNewBankName] = useState('');
-  const [isAddBankOpen, setIsAddBankOpen] = useState(false);
-  const [bankToEdit, setBankToEdit] = useState<string | null>(null);
-  const [bankToDelete, setBankToDelete] = useState<string | null>(null);
-
-  const canManageBanks = useMemo(() => {
-    return currentUser && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
-  }, [currentUser]);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  const handleAddBank = () => {
-    if (newBankName) {
-      addBank(newBankName);
-      setIsAddBankOpen(false);
-      setNewBankName('');
-    }
-  };
-
-  const handleUpdateBank = () => {
-    if (bankToEdit && newBankName) {
-      updateBank(bankToEdit, newBankName);
-      setBankToEdit(null);
-      setNewBankName('');
-    }
-  };
-
-  const confirmDeleteBank = () => {
-    if (bankToDelete) {
-      deleteBank(bankToDelete);
-      setBankToDelete(null);
-    }
-  };
 
 
   return (
@@ -218,88 +185,6 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems, bankTimelineI
                 </CollapsibleContent>
               </Collapsible>
             </SidebarMenuItem>
-
-             <SidebarMenuItem>
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Timelines of Bank"
-                  >
-                    <Landmark className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                   <SidebarMenuSub>
-                    {(bankTimelineItems || []).map((item) => (
-                      <SidebarMenuSubItem key={item.href} className="group/sub-item">
-                        <Link href={item.href} passHref className="flex-grow">
-                          <SidebarMenuSubButton isActive={pathname === item.href}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                          </SidebarMenuSubButton>
-                        </Link>
-                         {canManageBanks && (
-                          <div className="flex items-center opacity-0 group-hover/sub-item:opacity-100 transition-opacity">
-                            <Dialog onOpenChange={(open) => { if(!open) setBankToEdit(null)}}>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {setBankToEdit(item.label); setNewBankName(item.label);}}><Edit className="h-3 w-3"/></Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Bank Name</DialogTitle>
-                                        <DialogDescription>Rename '{bankToEdit}'.</DialogDescription>
-                                    </DialogHeader>
-                                    <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} />
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                        <Button onClick={handleUpdateBank}>Save</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                             <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setBankToDelete(item.label)}><Trash2 className="h-3 w-3 text-destructive"/></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>This will delete the '{bankToDelete}' timeline and all its records. This action cannot be undone.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={() => setBankToDelete(null)}>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={confirmDeleteBank} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        )}
-                      </SidebarMenuSubItem>
-                    ))}
-                     {canManageBanks && (
-                        <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="ghost" className="w-full justify-start h-8 mt-1 text-xs">
-                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Bank
-                                </Button>
-                            </DialogTrigger>
-                             <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Bank</DialogTitle>
-                                </DialogHeader>
-                                <Input value={newBankName} onChange={(e) => setNewBankName(e.target.value)} placeholder="Enter bank name" />
-                                <DialogFooter>
-                                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                    <Button onClick={handleAddBank}>Save</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                     )}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
         </>
       )}
     </SidebarMenu>
@@ -311,7 +196,7 @@ export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
-  const { bankTimelineItems, projectManualItems } = useRecords();
+  const { projectManualItems } = useRecords();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = React.useCallback(() => {
@@ -328,7 +213,7 @@ export default function EmployeeDashboardSidebar() {
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
-    const allMenuItems = [...topLevelItems, ...projectManualItems, ...bankTimelineItems];
+    const allMenuItems = [...topLevelItems, ...projectManualItems];
 
     const menuResults = allMenuItems.filter(item =>
       item.label.toLowerCase().includes(lowerCaseQuery)
@@ -339,7 +224,7 @@ export default function EmployeeDashboardSidebar() {
     );
     
     return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()) };
-  }, [searchQuery, projectManualItems, bankTimelineItems]);
+  }, [searchQuery, projectManualItems]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -408,7 +293,6 @@ export default function EmployeeDashboardSidebar() {
             <MemoizedSidebarMenu 
                 menuItems={topLevelItems} 
                 projectManualItems={projectManualItems || []}
-                bankTimelineItems={bankTimelineItems || []}
             />
           )}
         </SidebarContent>
