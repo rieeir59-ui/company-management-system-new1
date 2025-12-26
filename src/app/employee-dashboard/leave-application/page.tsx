@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Download, CalendarOff } from 'lucide-react';
+import { Send, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
@@ -21,9 +20,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useRecords } from '@/context/RecordContext';
 import { Loader2 } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useRecords } from '@/context/RecordContext';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
@@ -34,7 +32,7 @@ export default function LeaveApplicationPage() {
 
   const [formState, setFormState] = useState({
     position: '',
-    status: 'Full-time',
+    status: 'Full-time', // Default to Full-time
     leaveFrom: '',
     leaveTo: '',
     returnDate: '',
@@ -67,6 +65,12 @@ export default function LeaveApplicationPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleStatusCheckboxChange = (status: 'Full-time' | 'Part-time', checked: boolean) => {
+    if (checked) {
+        setFormState(prev => ({ ...prev, status: status }));
+    }
   };
 
   const handleReasonCheckboxChange = (reason: string, checked: boolean) => {
@@ -162,7 +166,7 @@ export default function LeaveApplicationPage() {
     };
     
     addSectionHeader('Employee to Complete');
-    doc.autoTable({
+    (doc as any).autoTable({
         startY: y, theme: 'grid', showHead: false,
         body: [
             [`Employee Name: ${currentUser?.name || ''}`, `Employee Number: ${currentUser?.record || ''}`],
@@ -285,21 +289,16 @@ export default function LeaveApplicationPage() {
                     </div>
                      <div className="space-y-2">
                         <Label>Status (select one)</Label>
-                        <RadioGroup 
-                            name="status"
-                            value={formState.status} 
-                            onValueChange={(value) => setFormState(prev => ({...prev, status: value}))} 
-                            className="flex gap-4"
-                        >
+                         <div className="flex items-center gap-4">
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="Full-time" id="status_full" />
+                               <Checkbox id="status_full" checked={formState.status === 'Full-time'} onCheckedChange={(c) => handleStatusCheckboxChange('Full-time', !!c)} />
                                 <Label htmlFor="status_full">Full-time</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="Part-time" id="status_part" />
+                                <Checkbox id="status_part" checked={formState.status === 'Part-time'} onCheckedChange={(c) => handleStatusCheckboxChange('Part-time', !!c)} />
                                 <Label htmlFor="status_part">Part-time</Label>
                             </div>
-                        </RadioGroup>
+                        </div>
                     </div>
                      <p className="pt-4">I hereby request a leave of absence effective from:</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
