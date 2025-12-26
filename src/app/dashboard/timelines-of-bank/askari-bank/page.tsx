@@ -144,7 +144,7 @@ function AskariBankTimelineComponent() {
             projectName: 'Askari Bank Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Overall Status', items: [{label: 'Status', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -182,7 +182,7 @@ function AskariBankTimelineComponent() {
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
-        doc.text("Overall Status:", 14, lastY);
+        doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
         doc.text(remarks, 14, lastY);
         lastY += 10;
@@ -296,8 +296,8 @@ function AskariBankTimelineComponent() {
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
                 <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
-                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} placeholder="Enter overall status or remarks..."/>
+                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} placeholder="Enter remarks..."/>
                     <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
             </CardContent>
@@ -308,4 +308,3 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
-
