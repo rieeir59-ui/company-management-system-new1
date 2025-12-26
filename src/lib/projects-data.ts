@@ -89,7 +89,7 @@ export let fblProjects: ProjectRow[] = [
 ];
 
 export let dibProjects: ProjectRow[] = [
-     { id: 501, srNo: '1', projectName: 'DUBAI ISLAMIC BANK LHR', area: '7,550.00', projectHolder: 'ASAD MUJAHID', allocationDate: '19-Sep-25', siteSurveyStart: '20-Sep-25', siteSurveyEnd: '20-Sep-25', contactStart: '', headCountStart: 'DONE', proposalStart: '24-Sep-25', proposalEnd: '28-Sep-25', threedStart: '3-Oct-25', threedEnd: '3-Nov-25', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' }
+     { id: 501, srNo: '1', projectName: 'DUBAI ISLAMIC BANK LHR', area: '7,550.00', projectHolder: 'ASAD MUJAHID', allocationDate: '19-Sep-25', siteSurveyStart: '20-Sep-25', siteSurveyEnd: '20-Sep-25', contract: 'Shared', headCount: 'DONE', proposalStart: '24-Sep-25', proposalEnd: '28-Sep-25', threedStart: '3-Oct-25', threedEnd: '3-Nov-25', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: 'Done', finalBill: '', projectClosure: '' }
 ];
 
 export let bankAlfalahProjects: ProjectRow[] = [
