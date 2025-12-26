@@ -25,7 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
 import { Building2, Home, Landmark } from 'lucide-react';
 
 export type SavedRecord = {
@@ -47,6 +47,7 @@ type RecordContextType = {
   updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
   projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
   error: string | null;
+  bankTimelineCategories: string[];
 };
 
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
@@ -107,7 +108,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>): Promise<DocumentReference | undefined> => {
       if (!firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-        throw new Error('User not authenticated');
+        return Promise.reject(new Error('User not authenticated'));
       }
 
       const dataToSave = {
@@ -124,7 +125,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
-        throw err;
+        return Promise.reject(err);
       }
     },
     [firestore, currentUser, toast]
@@ -133,12 +134,15 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   // Update record
   const updateRecord = useCallback(
     async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>) => {
-      if (!firestore || !currentUser) return;
+      if (!firestore || !currentUser) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
+          return Promise.reject(new Error('User not authenticated'));
+      }
       
       const recordToUpdate = records.find(r => r.id === id);
       if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
           toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
-          return;
+          return Promise.reject(new Error('Permission denied'));
       }
 
       try {
@@ -147,6 +151,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'update', requestResourceData: updatedData }));
+        return Promise.reject(err);
       }
     },
     [firestore, toast, currentUser, isAdmin, records]
@@ -155,12 +160,15 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   // Delete record
   const deleteRecord = useCallback(
     async (id: string) => {
-      if (!firestore || !currentUser) return;
+      if (!firestore || !currentUser) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to delete records.' });
+          return Promise.reject(new Error('User not authenticated'));
+      }
       
       const recordToDelete = records.find(r => r.id === id);
       if (recordToDelete && !isAdmin && recordToDelete.employeeId !== currentUser.uid) {
           toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this record.' });
-          return;
+          return Promise.reject(new Error('Permission denied'));
       }
 
       try {
@@ -169,6 +177,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'delete' }));
+        return Promise.reject(err);
       }
     },
     [firestore, toast, currentUser, isAdmin, records]
@@ -212,7 +221,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     });
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems }}>
+    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineCategories }}>
       {children}
     </RecordContext.Provider>
   );
