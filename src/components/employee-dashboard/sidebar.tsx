@@ -71,7 +71,8 @@ import {
   ClipboardList,
   Edit,
   Trash2,
-  PlusCircle
+  PlusCircle,
+  CalendarOff
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -109,6 +110,7 @@ const topLevelItems = [
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
+    { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
