@@ -148,7 +148,7 @@ export const bankProjectsMap: Record<string, ProjectRow[]> = {
     "hbl": hblProjects,
     "ubl": ublProjects,
     "mcb": mcbProjects,
-    "faysal-bank": fblProjects,
+    "fbl": fblProjects,
     "dib": dibProjects,
     "bank-al-falah": bankAlfalahProjects,
     "bank-al-habib": bankAlHabibProjects,
