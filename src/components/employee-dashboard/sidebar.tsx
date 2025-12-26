@@ -185,6 +185,47 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                 </CollapsibleContent>
               </Collapsible>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton
+                    className="group-data-[collapsible=icon]:justify-center"
+                    tooltip="Timeline of Projects"
+                  >
+                    <Clock className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Timeline of Projects</span>
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/bank-al-falah" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-falah')}>
+                          <Landmark className="size-4 mr-2" />
+                          Bank Al-Falah
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/commercial" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/commercial')}>
+                           <Building2 className="size-4 mr-2" />
+                          Commercial
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                       <Link href="/employee-dashboard/timelines-of-bank/residential" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/residential')}>
+                           <Home className="size-4 mr-2" />
+                          Residential
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenuItem>
         </>
       )}
     </SidebarMenu>
