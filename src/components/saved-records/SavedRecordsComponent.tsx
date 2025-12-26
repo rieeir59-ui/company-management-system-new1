@@ -81,12 +81,107 @@ const generatePdfForRecord = (record: SavedRecord) => {
         }
     };
     
-    const isTimeline = record.fileName.endsWith('Timeline');
+    if (record.fileName === 'Leave Request Form') {
+        const doc = new jsPDF();
+        let y = 20;
 
-    if (isTimeline) {
-        doc.setProperties({
-            title: `${record.projectName} Timeline`
+        const employeeInfo = record.data.find(d => d.category === 'Employee Information')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const leaveDetails = record.data.find(d => d.category === 'Leave Details')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const hrApproval = record.data.find(d => d.category === 'HR Approval')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('LEAVE REQUEST FORM', doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        y += 15;
+
+        doc.setFontSize(10);
+        
+        const addSectionHeader = (text: string) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(text, 14, y);
+            y += 7;
+            doc.setFont('helvetica', 'normal');
+        };
+
+        const drawCheckbox = (x: number, y: number, checked: boolean) => {
+          doc.setLineWidth(0.2);
+          doc.rect(x, y - 3.5, 4, 4);
+          if (checked) {
+              doc.setFillColor(0, 0, 0);
+              doc.rect(x + 0.5, y - 3, 3, 3, 'F');
+          }
+        };
+        
+        addSectionHeader('Employee to Complete');
+        (doc as any).autoTable({
+            startY: y, theme: 'grid', showHead: false,
+            body: [
+                [`Employee Name: ${employeeInfo['Employee Name'] || ''}`, `Employee Number: ${employeeInfo['Employee Number'] || ''}`],
+                [`Department: ${employeeInfo['Department'] || ''}`, `Position: ${employeeInfo['Position'] || ''}`],
+            ]
         });
+        y = (doc as any).autoTable.previous.finalY + 5;
+        
+        doc.text(`Status (select one):`, 14, y);
+        drawCheckbox(50, y, leaveDetails['Status'] === 'Full-time');
+        doc.text('Full-time', 55, y);
+        drawCheckbox(80, y, leaveDetails['Status'] === 'Part-time');
+        doc.text('Part-time', 85, y);
+        y += 10;
+        
+        doc.text(`I hereby request a leave of absence effective from (${leaveDetails['Leave From']}) to (${leaveDetails['Leave To']})`, 14, y);
+        y += 7;
+        doc.text(`Total Days: ${leaveDetails['Total Days']}`, 14, y);
+        y += 7;
+        doc.text(`I expect to return to work on Date: (${leaveDetails['Return Date']})`, 14, y);
+        y += 10;
+        
+        addSectionHeader('Reason for Requested:');
+        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Sick Leave'));
+        doc.text('SICK LEAVE', 20, y);
+        y += 7;
+        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Casual Leave'));
+        doc.text('CASUAL LEAVE', 20, y);
+        y += 7;
+        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Annual Leave'));
+        doc.text('ANNUAL LEAVE', 20, y);
+        y += 10;
+        
+        doc.text('REASON:', 14, y);
+        y += 5;
+        doc.setLineWidth(0.5);
+        doc.line(14, y, 196, y);
+        doc.text(leaveDetails['Reason'], 16, y-1);
+        y += 15;
+        
+        addSectionHeader('HR Department Approval:');
+        drawCheckbox(14, y, hrApproval['Approved'] === 'true');
+        doc.text('LEAVE APPROVED', 20, y);
+        y += 7;
+        drawCheckbox(14, y, hrApproval['Denied'] === 'true');
+        doc.text('LEAVE DENIED', 20, y);
+        y += 10;
+        
+        doc.text('REASON:', 14, y);
+        y += 5;
+        doc.setLineWidth(0.5);
+        doc.line(14, y, 196, y);
+        doc.text(hrApproval['Reason'], 16, y-1);
+        y += 10;
+        
+        drawCheckbox(14, y, hrApproval['Paid Leave'] === 'true');
+        doc.text('PAID LEAVE', 20, y);
+        drawCheckbox(60, y, hrApproval['Unpaid Leave'] === 'true');
+        doc.text('UNPAID LEAVE', 66, y);
+        y += 20;
+
+        doc.text('COMPANY CEO: SIGNATURE', 14, y);
+        doc.text('DATE:', 150, y);
+        y += 5;
+        doc.line(14, y, 90, y);
+        doc.line(160, y, 196, y);
+    } else if (record.fileName.endsWith('Timeline')) {
+        doc.setProperties({ title: `${record.projectName} Timeline` });
         doc.setFontSize(10);
         doc.text(record.projectName, 14, 15);
 
@@ -125,7 +220,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
@@ -157,7 +252,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
             doc.text(`Date: ${dateText}`, 14, lastY);
         }
-
     } else {
         addDefaultHeader(record.fileName, record.projectName);
         
@@ -229,7 +323,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
+        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name));
 
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
@@ -300,110 +394,90 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
-    const renderRecordContent = () => {
-        if (!viewingRecord) return null;
+   const renderRecordContent = () => {
+    if (!viewingRecord) return null;
+
+    const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
     
-        const isBankTimeline = viewingRecord.fileName.includes('Timeline');
-        
-        const dataAsArray = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
-        
-        let remarksSection: any = null;
-        let mainDataSections = dataAsArray;
-
-        if (isBankTimeline) {
-            remarksSection = dataAsArray.find((s: any) => s.category === 'Remarks');
-            mainDataSections = dataAsArray.filter((s: any) => s.category !== 'Remarks');
-        }
-
+    if (viewingRecord.fileName === 'Leave Request Form') {
+        const employeeInfo = dataSections.find(d => d.category === 'Employee Information')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const leaveDetails = dataSections.find(d => d.category === 'Leave Details')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
+        const hrApproval = dataSections.find(d => d.category === 'HR Approval')?.items.reduce((acc, item) => ({...acc, [item.label]: item.value}), {}) || {};
         return (
-            <div className="space-y-4">
-                {mainDataSections.map((section: any, index: number) => {
-                    if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
-
-                    let firstItem = section.items[0];
-                    if (typeof firstItem === 'string') {
-                        try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
-                    }
-                    
-                    const bankTimelineHeaders = [
-                        'srNo', 'projectName', 'area', 'projectHolder', 'allocationDate', 
-                        'siteSurveyStart', 'siteSurveyEnd', 'contract', 'headCount',
-                        'proposalStart', 'proposalEnd', 'threedStart', 'threedEnd', 
-                        'tenderArchStart', 'tenderArchEnd', 'tenderMepStart', 'tenderMepEnd', 
-                        'boqStart', 'boqEnd', 'tenderStatus', 'comparative', 
-                        'workingDrawingsStart', 'workingDrawingsEnd', 
-                        'siteVisitStart', 'siteVisitEnd', 
-                        'finalBill', 'projectClosure'
-                    ];
-                    const isTimelineProject = isBankTimeline && section.category === 'Projects';
-
-                    const headers = isTimelineProject
-                        ? bankTimelineHeaders
-                        : (typeof firstItem === 'object' && firstItem !== null && Object.keys(firstItem).length > 0 && !firstItem.label)
-                            ? Object.keys(firstItem).filter(key => key !== 'id')
-                            : null;
-
-                    if (headers) {
-                        return (
-                            <div key={index}>
-                                <h3 className="font-bold text-primary mb-2">{section.category}</h3>
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                {headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {section.items.map((item: any, i: number) => {
-                                                let parsedItem = item;
-                                                if (typeof item === 'string') {
-                                                    try { parsedItem = JSON.parse(item); } catch (e) { return <TableRow key={i}><TableCell colSpan={headers.length}>{item}</TableCell></TableRow>; }
-                                                }
-                                                return (
-                                                    <TableRow key={i}>
-                                                        {headers.map(header => <TableCell key={header}>{String(parsedItem[header] ?? '')}</TableCell>)}
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </div>
-                        );
-                    }
-                    
-                    return (
-                        <div key={index}>
-                            <h3 className="font-bold text-primary mb-2">{section.category}</h3>
-                             <Table>
-                                <TableBody>
-                                {section.items.map((item: any, i: number) => {
-                                    if (typeof item === 'string') {
-                                        const parts = item.split(/:(.*)/s);
-                                        return <TableRow key={i}><TableCell className="font-semibold">{parts[0]}</TableCell><TableCell>{parts[1]?.trim()}</TableCell></TableRow>;
-                                    }
-                                    if(item.label) {
-                                         return <TableRow key={i}><TableCell className="font-semibold">{item.label}</TableCell><TableCell>{String(item.value)}</TableCell></TableRow>;
-                                    }
-                                     return <TableRow key={i}><TableCell colSpan={2}>{JSON.stringify(item)}</TableCell></TableRow>;
-                                })}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    );
-                })}
-                {remarksSection && (
-                    <div className="mt-4 pt-4 border-t">
-                        <h3 className="font-bold text-primary mb-2">{remarksSection.category}</h3>
-                        {remarksSection.items.map((remark: {label: string, value: string}, i: number) => (
-                           <p key={i}><strong>{remark.label}:</strong> {remark.value}</p>
-                        ))}
-                    </div>
-                )}
+            <div className="space-y-4 text-sm">
+                <div className="p-4 border rounded-lg">
+                    <h3 className="font-bold text-primary mb-2">Employee Information</h3>
+                    <p><strong>Employee Name:</strong> {employeeInfo['Employee Name']}</p>
+                    <p><strong>Employee Number:</strong> {employeeInfo['Employee Number']}</p>
+                    <p><strong>Department:</strong> {employeeInfo['Department']}</p>
+                    <p><strong>Position:</strong> {employeeInfo['Position']}</p>
+                    <p><strong>Status:</strong> {employeeInfo['Status']}</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                    <h3 className="font-bold text-primary mb-2">Leave Details</h3>
+                    <p><strong>Leave From:</strong> {leaveDetails['Leave From']}</p>
+                    <p><strong>Leave To:</strong> {leaveDetails['Leave To']}</p>
+                    <p><strong>Return Date:</strong> {leaveDetails['Return Date']}</p>
+                    <p><strong>Total Days:</strong> {leaveDetails['Total Days']}</p>
+                    <p><strong>Leave Type:</strong> {leaveDetails['Leave Type']}</p>
+                    <p><strong>Reason:</strong> {leaveDetails['Reason']}</p>
+                </div>
+                 <div className="p-4 border rounded-lg">
+                    <h3 className="font-bold text-primary mb-2">HR Approval</h3>
+                    <p><strong>Approved:</strong> {hrApproval['Approved'] === 'true' ? 'Yes' : 'No'}</p>
+                    <p><strong>Denied:</strong> {hrApproval['Denied'] === 'true' ? 'Yes' : 'No'}</p>
+                    <p><strong>Reason:</strong> {hrApproval['Reason']}</p>
+                    <p><strong>Paid Leave:</strong> {hrApproval['Paid Leave'] === 'true' ? 'Yes' : 'No'}</p>
+                    <p><strong>Unpaid Leave:</strong> {hrApproval['Unpaid Leave'] === 'true' ? 'Yes' : 'No'}</p>
+                </div>
             </div>
         );
-    };
+    }
+    
+    // Fallback for other record types
+    return (
+        <div className="space-y-4">
+            {dataSections.map((section: any, index: number) => {
+                if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
+
+                let firstItem = section.items[0];
+                if (typeof firstItem === 'string') {
+                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
+                }
+                
+                const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
+                const headers = isTable ? Object.keys(firstItem).filter(key => key !== 'id') : [];
+
+                return (
+                    <div key={index}>
+                        <h3 className="font-bold text-primary mb-2">{section.category}</h3>
+                        {isTable ? (
+                            <Table>
+                                <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
+                                <TableBody>
+                                    {section.items.map((item: any, i: number) => {
+                                        let parsed = item;
+                                        if(typeof item === 'string') try {parsed = JSON.parse(item)} catch(e){return null}
+                                        return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsed[h] ?? '')}</TableCell>)}</TableRow>
+                                    })}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="space-y-1 text-sm">
+                                {section.items.map((item: any, i: number) => {
+                                    if(typeof item === 'object' && item.label) return <p key={i}><strong>{item.label}:</strong> {String(item.value)}</p>
+                                    const parts = String(item).split(/:(.*)/s);
+                                    return <p key={i}><strong>{parts[0]}:</strong> {parts[1]?.trim()}</p>
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 
     return (
     <div className="space-y-6">

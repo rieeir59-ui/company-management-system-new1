@@ -154,22 +154,39 @@ export default function LeaveApplicationPage() {
     const dataToSave = {
       fileName: 'Leave Request Form',
       projectName: `Leave Request - ${currentUser.name} - ${formState.leaveFrom}`,
-      data: [{
-        category: 'Leave Request Details',
-        items: [
-          { label: 'Employee Name', value: currentUser.name },
-          { label: 'Employee Number', value: currentUser.record },
-          { label: 'Department', value: currentUser.departments.join(', ') },
-          { label: 'Position', value: formState.position },
-          { label: 'Status', value: formState.status },
-          { label: 'Leave From', value: formState.leaveFrom },
-          { label: 'Leave To', value: formState.leaveTo },
-          { label: 'Return Date', value: formState.returnDate },
-          { label: 'Total Days', value: totalDays.toString() },
-          { label: 'Leave Type', value: formState.reasonForRequested.join(', ') },
-          { label: 'Reason', value: formState.reason },
-        ]
-      }]
+      data: [
+        {
+          category: 'Employee Information',
+          items: [
+            { label: 'Employee Name', value: currentUser.name },
+            { label: 'Employee Number', value: currentUser.record },
+            { label: 'Department', value: currentUser.departments.join(', ') },
+            { label: 'Position', value: formState.position },
+            { label: 'Status', value: formState.status },
+          ]
+        },
+        {
+          category: 'Leave Details',
+          items: [
+            { label: 'Leave From', value: formState.leaveFrom },
+            { label: 'Leave To', value: formState.leaveTo },
+            { label: 'Return Date', value: formState.returnDate },
+            { label: 'Total Days', value: totalDays.toString() },
+            { label: 'Leave Type', value: formState.reasonForRequested.join(', ') },
+            { label: 'Reason', value: formState.reason },
+          ]
+        },
+        {
+          category: 'HR Approval',
+          items: [
+            { label: 'Approved', value: hrApprovalState.approved.toString() },
+            { label: 'Denied', value: hrApprovalState.denied.toString() },
+            { label: 'Reason', value: hrApprovalState.reason },
+            { label: 'Paid Leave', value: hrApprovalState.paid.toString() },
+            { label: 'Unpaid Leave', value: hrApprovalState.unpaid.toString() },
+          ]
+        }
+      ]
     };
     addRecord(dataToSave as any);
   };
