@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -43,6 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
+import { Checkbox } from '../ui/checkbox';
 
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'landscape' }) as any;
@@ -105,11 +105,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         const drawCheckbox = (x: number, y: number, checked: boolean) => {
           doc.setLineWidth(0.2);
-          doc.rect(x, y - 3.5, 4, 4);
-          if (checked) {
-              doc.setFillColor(0, 0, 0);
-              doc.rect(x + 0.5, y - 3, 3, 3, 'F');
-          }
+          doc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
         };
         
         addSectionHeader('Employee to Complete');
@@ -137,21 +133,21 @@ const generatePdfForRecord = (record: SavedRecord) => {
         y += 10;
         
         addSectionHeader('Reason for Requested:');
-        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Sick Leave'));
-        doc.text('SICK LEAVE', 20, y);
-        y += 7;
-        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Casual Leave'));
-        doc.text('CASUAL LEAVE', 20, y);
-        y += 7;
-        drawCheckbox(14, y, leaveDetails['Leave Type']?.includes('Annual Leave'));
-        doc.text('ANNUAL LEAVE', 20, y);
-        y += 10;
+        (leaveDetails['Leave Type']?.split(', ') || []).forEach((reason: string) => {
+            drawCheckbox(14, y, true);
+            doc.text(reason.toUpperCase(), 20, y);
+            y += 7;
+        });
+        
+        y += 3;
         
         doc.text('REASON:', 14, y);
         y += 5;
         doc.setLineWidth(0.5);
         doc.line(14, y, 196, y);
-        doc.text(leaveDetails['Reason'] || '', 16, y-1);
+        if (leaveDetails['Reason']) {
+            doc.text(leaveDetails['Reason'], 16, y - 1);
+        }
         y += 15;
         
         addSectionHeader('HR Department Approval:');
@@ -166,7 +162,9 @@ const generatePdfForRecord = (record: SavedRecord) => {
         y += 5;
         doc.setLineWidth(0.5);
         doc.line(14, y, 196, y);
-        doc.text(hrApproval['Reason'] || '', 16, y-1);
+        if (hrApproval['Reason']) {
+            doc.text(hrApproval['Reason'], 16, y-1);
+        }
         y += 10;
         
         doc.text('Date:', 14, y);
@@ -398,90 +396,119 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
-   const renderRecordContent = () => {
-    if (!viewingRecord) return null;
+    const renderRecordContent = () => {
+        if (!viewingRecord) return null;
 
-    const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
+        const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
+
+        if (viewingRecord.fileName === 'Leave Request Form') {
+            const employeeInfo = dataSections.find((d: any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
+            const leaveDetails = dataSections.find((d: any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
+            const hrApproval = dataSections.find((d: any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
+            
+            return (
+                <Card className="font-sans">
+                    <CardHeader className="text-center border-b">
+                        <CardTitle className="text-lg font-bold">LEAVE REQUEST FORM</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6 space-y-6">
+                        <div className="space-y-4">
+                            <h3 className="font-bold">Employee to Complete</h3>
+                            <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
+                                <div><span className="font-semibold">Employee Name:</span> {employeeInfo['Employee Name']}</div>
+                                <div><span className="font-semibold">Employee Number:</span> {employeeInfo['Employee Number']}</div>
+                                <div><span className="font-semibold">Department:</span> {employeeInfo['Department']}</div>
+                                <div><span className="font-semibold">Position:</span> {employeeInfo['Position']}</div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="font-semibold">Status (select one):</span>
+                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Status'] === 'Full-time'} disabled /> <Label>Full-time</Label></div>
+                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Status'] === 'Part-time'} disabled /> <Label>Part-time</Label></div>
+                            </div>
+                            <div>
+                                <p>I hereby request a leave of absence effective from ({leaveDetails['Leave From']}) to ({leaveDetails['Leave To']})</p>
+                                <p><strong>Total Days:</strong> {leaveDetails['Total Days']}</p>
+                                <p>I expect to return to work on Date: ({leaveDetails['Return Date']})</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h3 className="font-bold">Reason for Requested:</h3>
+                            <div className="flex flex-col space-y-1 pl-4">
+                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Sick Leave')} disabled /><Label>SICK LEAVE</Label></div>
+                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Casual Leave')} disabled /><Label>CASUAL LEAVE</Label></div>
+                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Annual Leave')} disabled /><Label>ANNUAL LEAVE</Label></div>
+                            </div>
+                            <div className="pt-2">
+                                <p><strong>REASON:</strong></p>
+                                <p className="pl-4 border-b pb-1">{leaveDetails['Reason'] || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="font-bold">HR Department Approval:</h3>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Approved'] === 'true'} disabled /><Label>LEAVE APPROVED</Label></div>
+                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Denied'] === 'true'} disabled /><Label>LEAVE DENIED</Label></div>
+                            </div>
+                            <div className="pt-2">
+                                <p><strong>REASON:</strong></p>
+                                <p className="pl-4 border-b pb-1">{hrApproval['Reason'] || 'N/A'}</p>
+                            </div>
+                             <p><strong>Date:</strong> {hrApproval['Date'] || '____________'}</p>
+                             <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Paid Leave'] === 'true'} disabled /><Label>PAID LEAVE</Label></div>
+                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Unpaid Leave'] === 'true'} disabled /><Label>UNPAID LEAVE</Label></div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            );
+        }
     
-    if (viewingRecord.fileName === 'Leave Request Form') {
-        const employeeInfo = dataSections.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const leaveDetails = dataSections.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const hrApproval = dataSections.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        // Fallback for other record types
         return (
-            <div className="space-y-4 text-sm">
-                <div className="p-4 border rounded-lg">
-                    <h3 className="font-bold text-primary mb-2">Employee Information</h3>
-                    <p><strong>Employee Name:</strong> {employeeInfo['Employee Name']}</p>
-                    <p><strong>Employee Number:</strong> {employeeInfo['Employee Number']}</p>
-                    <p><strong>Department:</strong> {employeeInfo['Department']}</p>
-                    <p><strong>Position:</strong> {employeeInfo['Position']}</p>
-                    <p><strong>Status:</strong> {employeeInfo['Status']}</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                    <h3 className="font-bold text-primary mb-2">Leave Details</h3>
-                    <p><strong>Leave From:</strong> {leaveDetails['Leave From']}</p>
-                    <p><strong>Leave To:</strong> {leaveDetails['Leave To']}</p>
-                    <p><strong>Return Date:</strong> {leaveDetails['Return Date']}</p>
-                    <p><strong>Total Days:</strong> {leaveDetails['Total Days']}</p>
-                    <p><strong>Leave Type:</strong> {leaveDetails['Leave Type']}</p>
-                    <p><strong>Reason:</strong> {leaveDetails['Reason'] || 'N/A'}</p>
-                </div>
-                 <div className="p-4 border rounded-lg">
-                    <h3 className="font-bold text-primary mb-2">HR Approval</h3>
-                    <p><strong>Approved:</strong> {hrApproval['Approved'] === 'true' ? 'Yes' : 'No'}</p>
-                    <p><strong>Denied:</strong> {hrApproval['Denied'] === 'true' ? 'Yes' : 'No'}</p>
-                    <p><strong>Reason:</strong> {hrApproval['Reason'] || 'N/A'}</p>
-                    <p><strong>Date:</strong> {hrApproval['Date'] || 'N/A'}</p>
-                    <p><strong>Paid Leave:</strong> {hrApproval['Paid Leave'] === 'true' ? 'Yes' : 'No'}</p>
-                    <p><strong>Unpaid Leave:</strong> {hrApproval['Unpaid Leave'] === 'true' ? 'Yes' : 'No'}</p>
-                </div>
+            <div className="space-y-4">
+                {dataSections.map((section: any, index: number) => {
+                    if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
+
+                    let firstItem = section.items[0];
+                    if (typeof firstItem === 'string') {
+                        try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
+                    }
+                    
+                    const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
+                    const headers = isTable ? Object.keys(firstItem).filter(key => key !== 'id') : [];
+
+                    return (
+                        <div key={index}>
+                            <h3 className="font-bold text-primary mb-2">{section.category}</h3>
+                            {isTable ? (
+                                <Table>
+                                    <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
+                                    <TableBody>
+                                        {section.items.map((item: any, i: number) => {
+                                            let parsed = item;
+                                            if(typeof item === 'string') try {parsed = JSON.parse(item)} catch(e){return null}
+                                            return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsed[h] ?? '')}</TableCell>)}</TableRow>
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="space-y-1 text-sm">
+                                    {section.items.map((item: any, i: number) => {
+                                        if(typeof item === 'object' && item.label) return <p key={i}><strong>{item.label}:</strong> {String(item.value)}</p>
+                                        const parts = String(item).split(/:(.*)/s);
+                                        return <p key={i}><strong>{parts[0]}:</strong> {parts[1]?.trim()}</p>
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         );
-    }
-    
-    // Fallback for other record types
-    return (
-        <div className="space-y-4">
-            {dataSections.map((section: any, index: number) => {
-                if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
-
-                let firstItem = section.items[0];
-                if (typeof firstItem === 'string') {
-                    try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
-                }
-                
-                const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
-                const headers = isTable ? Object.keys(firstItem).filter(key => key !== 'id') : [];
-
-                return (
-                    <div key={index}>
-                        <h3 className="font-bold text-primary mb-2">{section.category}</h3>
-                        {isTable ? (
-                            <Table>
-                                <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
-                                <TableBody>
-                                    {section.items.map((item: any, i: number) => {
-                                        let parsed = item;
-                                        if(typeof item === 'string') try {parsed = JSON.parse(item)} catch(e){return null}
-                                        return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsed[h] ?? '')}</TableCell>)}</TableRow>
-                                    })}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <div className="space-y-1 text-sm">
-                                {section.items.map((item: any, i: number) => {
-                                    if(typeof item === 'object' && item.label) return <p key={i}><strong>{item.label}:</strong> {String(item.value)}</p>
-                                    const parts = String(item).split(/:(.*)/s);
-                                    return <p key={i}><strong>{parts[0]}:</strong> {parts[1]?.trim()}</p>
-                                })}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
+    };
 
 
     return (
