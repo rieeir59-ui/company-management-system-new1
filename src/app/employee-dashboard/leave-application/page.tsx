@@ -23,6 +23,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
@@ -98,13 +99,14 @@ export default function LeaveApplicationPage() {
         employeeRecord: currentUser.record,
         department: currentUser.departments.join(', '),
         position: formState.position,
+        status: formState.status,
         leaveType: formState.reasonForRequested.join(', '),
         leaveFrom: formState.leaveFrom,
         leaveTo: formState.leaveTo,
         returnDate: formState.returnDate,
         reason: formState.reason,
         totalDays,
-        status: 'pending', // 'pending', 'approved', 'denied'
+        requestStatus: 'pending', // 'pending', 'approved', 'denied'
         requestedAt: serverTimestamp()
     };
     
@@ -280,6 +282,24 @@ export default function LeaveApplicationPage() {
                             <Label htmlFor="position">Position</Label>
                             <Input id="position" name="position" value={formState.position} onChange={handleChange} required/>
                         </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Status (select one)</Label>
+                        <RadioGroup 
+                            name="status"
+                            value={formState.status} 
+                            onValueChange={(value) => setFormState(prev => ({...prev, status: value}))} 
+                            className="flex gap-4"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Full-time" id="status_full" />
+                                <Label htmlFor="status_full">Full-time</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Part-time" id="status_part" />
+                                <Label htmlFor="status_part">Part-time</Label>
+                            </div>
+                        </RadioGroup>
                     </div>
                      <p className="pt-4">I hereby request a leave of absence effective from:</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
