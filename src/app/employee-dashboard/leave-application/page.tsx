@@ -16,9 +16,8 @@ import { useFirebase } from '@/firebase/provider';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { format, differenceInDays, parseISO, isValid } from 'date-fns';
+import { differenceInDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -36,6 +35,17 @@ export default function LeaveApplicationPage() {
     returnDate: '',
     reasonForRequested: [] as string[],
     reason: '',
+    contactDuringLeave: '',
+    workCoveredBy: '',
+  });
+  
+  const [hrApprovalState, setHrApprovalState] = useState({
+      approved: false,
+      denied: false,
+      reason: '',
+      paid: false,
+      unpaid: false,
+      date: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -86,14 +96,15 @@ export default function LeaveApplicationPage() {
         employeeRecord: currentUser.record,
         department: currentUser.departments.join(', '),
         position: formState.position,
-        status: formState.status,
+        leaveType: formState.reasonForRequested.join(', '),
         leaveFrom: formState.leaveFrom,
         leaveTo: formState.leaveTo,
         returnDate: formState.returnDate,
-        reasonForRequested: formState.reasonForRequested.join(', '),
         reason: formState.reason,
+        contactDuringLeave: formState.contactDuringLeave,
+        workCoveredBy: formState.workCoveredBy,
         totalDays,
-        requestStatus: 'pending', // 'pending', 'approved', 'denied'
+        status: 'pending', // 'pending', 'approved', 'denied'
         requestedAt: serverTimestamp()
     };
     
@@ -115,7 +126,7 @@ export default function LeaveApplicationPage() {
         });
         
         setFormState({
-            position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
+            position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: '', contactDuringLeave: '', workCoveredBy: ''
         });
 
     } catch (serverError) {
@@ -169,6 +180,8 @@ export default function LeaveApplicationPage() {
     
     doc.text(`I hereby request a leave of absence effective from (${formState.leaveFrom}) to (${formState.leaveTo})`, 14, y);
     y += 7;
+    doc.text(`Total Days: ${totalDays}`, 14, y);
+    y += 7;
     doc.text(`I expect to return to work on Date: (${formState.returnDate})`, 14, y);
     y += 10;
     
@@ -191,24 +204,38 @@ export default function LeaveApplicationPage() {
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
     doc.text(formState.reason, 16, y-1);
-    y += 15;
+    y += 10;
+
+    doc.text(`Contact during Leave: ${formState.contactDuringLeave}`, 14, y);
+    y += 7;
+    doc.text(`Work covered by: ${formState.workCoveredBy}`, 14, y);
+    y+=15;
     
     addSectionHeader('HR Department Approval:');
     doc.rect(14, y-3.5, 4, 4);
+    if(hrApprovalState.approved) doc.text('X', 15, y);
     doc.text('LEAVE APPROVED', 20, y);
     y += 7;
     doc.rect(14, y-3.5, 4, 4);
+    if(hrApprovalState.denied) doc.text('X', 15, y);
     doc.text('LEAVE DENIED', 20, y);
     y += 10;
     
     doc.text('REASON:', 14, y);
     y += 5;
+    doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
-    y += 15;
+    doc.text(hrApprovalState.reason, 16, y-1);
+    y += 10;
 
+    doc.text(`Date: ${hrApprovalState.date}`, 14, y);
+    y += 10;
+    
     doc.rect(14, y-3.5, 4, 4);
+    if(hrApprovalState.paid) doc.text('X', 15, y);
     doc.text('PAID LEAVE', 20, y);
     doc.rect(60, y-3.5, 4, 4);
+    if(hrApprovalState.unpaid) doc.text('X', 61, y);
     doc.text('UNPAID LEAVE', 66, y);
     y += 20;
 
@@ -258,18 +285,14 @@ export default function LeaveApplicationPage() {
                             <Label htmlFor="position">Position</Label>
                             <Input id="position" name="position" value={formState.position} onChange={handleChange} required/>
                         </div>
-                         <div className="space-y-2 md:col-span-2">
-                            <Label>Status (select one):</Label>
-                            <RadioGroup value={formState.status} onValueChange={(v) => setFormState(p => ({...p, status: v}))} className="flex gap-6 pt-2">
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Full-time" id="full-time" /><Label htmlFor="full-time">Full-time</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Part-time" id="part-time" /><Label htmlFor="part-time">Part-time</Label></div>
-                            </RadioGroup>
-                        </div>
                     </div>
                      <p className="pt-4">I hereby request a leave of absence effective from:</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input id="leaveFrom" name="leaveFrom" type="date" value={formState.leaveFrom} onChange={handleChange} required />
                         <div className="flex items-center gap-2"> to <Input id="leaveTo" name="leaveTo" type="date" value={formState.leaveTo} onChange={handleChange} required /></div>
+                    </div>
+                    <div>
+                        <p className="font-semibold">Total Days: {totalDays}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Label htmlFor="returnDate">I expect to return to work on Date:</Label>
@@ -290,6 +313,43 @@ export default function LeaveApplicationPage() {
                         <Label htmlFor="reason" className="font-semibold text-lg text-primary">REASON:</Label>
                         <Textarea id="reason" name="reason" value={formState.reason} onChange={handleChange} required />
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="contactDuringLeave">Contact during Leave:</Label>
+                        <Input id="contactDuringLeave" name="contactDuringLeave" value={formState.contactDuringLeave} onChange={handleChange} required />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="workCoveredBy">Work covered by:</Label>
+                        <Input id="workCoveredBy" name="workCoveredBy" value={formState.workCoveredBy} onChange={handleChange} required />
+                    </div>
+                </div>
+                 <div className="mt-8 p-4 border rounded-lg space-y-4">
+                    <h3 className="font-semibold text-lg text-primary">HR Department Approval:</h3>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="leave_approved" checked={hrApprovalState.approved} onCheckedChange={(c) => setHrApprovalState(s => ({...s, approved: !!c, denied: !!c ? false: s.denied}))} />
+                        <Label htmlFor="leave_approved">LEAVE APPROVED</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false: s.approved}))} />
+                        <Label htmlFor="leave_denied">LEAVE DENIED</Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="hr_reason">REASON:</Label>
+                        <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))}/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="hr_date">Date:</Label>
+                        <Input id="hr_date" type="date" value={hrApprovalState.date} onChange={e => setHrApprovalState(s => ({...s, date: e.target.value}))} className="w-fit" />
+                    </div>
+                    <div className="flex items-center gap-6 pt-4">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.unpaid}))} />
+                            <Label htmlFor="paid_leave">PAID LEAVE</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="unpaid_leave" checked={hrApprovalState.unpaid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, unpaid: !!c, paid: !!c ? false : s.paid}))} />
+                            <Label htmlFor="unpaid_leave">UNPAID LEAVE</Label>
+                        </div>
+                    </div>
                 </div>
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-lg">
@@ -304,3 +364,5 @@ export default function LeaveApplicationPage() {
     </div>
   );
 }
+
+    
