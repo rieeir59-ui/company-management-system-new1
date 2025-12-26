@@ -21,14 +21,12 @@ import { differenceInDays, parseISO, isValid } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Loader2 } from 'lucide-react';
-import { useRecords } from '@/context/RecordContext';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
   const { firestore } = useFirebase();
-  const { addRecord } = useRecords();
 
   const [formState, setFormState] = useState({
     position: '',
@@ -164,6 +162,15 @@ export default function LeaveApplicationPage() {
         y += 7;
         doc.setFont('helvetica', 'normal');
     };
+
+    const drawCheckbox = (x: number, y: number, checked: boolean) => {
+      doc.setLineWidth(0.2);
+      doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
+      if (checked) {
+          doc.setFillColor(0, 0, 0); // Set fill color to black
+          doc.rect(x + 0.5, y - 3, 3, 3, 'F'); // Draw a filled rectangle
+      }
+    };
     
     addSectionHeader('Employee to Complete');
     (doc as any).autoTable({
@@ -176,11 +183,9 @@ export default function LeaveApplicationPage() {
     y = (doc as any).autoTable.previous.finalY + 5;
     
     doc.text(`Status (select one):`, 14, y);
-    doc.rect(50, y-3.5, 4, 4);
-    if(formState.status === 'Full-time') doc.text('X', 51, y);
+    drawCheckbox(50, y, formState.status === 'Full-time');
     doc.text('Full-time', 55, y);
-    doc.rect(80, y-3.5, 4, 4);
-    if(formState.status === 'Part-time') doc.text('X', 81, y);
+    drawCheckbox(80, y, formState.status === 'Part-time');
     doc.text('Part-time', 85, y);
     y += 10;
     
@@ -192,16 +197,13 @@ export default function LeaveApplicationPage() {
     y += 10;
     
     addSectionHeader('Reason for Requested:');
-    doc.rect(14, y-3.5, 4, 4);
-    if(formState.reasonForRequested.includes('Sick Leave')) doc.text('X', 15, y);
+    drawCheckbox(14, y, formState.reasonForRequested.includes('Sick Leave'));
     doc.text('SICK LEAVE', 20, y);
     y += 7;
-    doc.rect(14, y-3.5, 4, 4);
-    if(formState.reasonForRequested.includes('Casual Leave')) doc.text('X', 15, y);
+    drawCheckbox(14, y, formState.reasonForRequested.includes('Casual Leave'));
     doc.text('CASUAL LEAVE', 20, y);
     y += 7;
-    doc.rect(14, y-3.5, 4, 4);
-    if(formState.reasonForRequested.includes('Annual Leave')) doc.text('X', 15, y);
+    drawCheckbox(14, y, formState.reasonForRequested.includes('Annual Leave'));
     doc.text('ANNUAL LEAVE', 20, y);
     y += 10;
     
@@ -213,12 +215,10 @@ export default function LeaveApplicationPage() {
     y += 15;
     
     addSectionHeader('HR Department Approval:');
-    doc.rect(14, y-3.5, 4, 4);
-    if(hrApprovalState.approved) doc.text('X', 15, y);
+    drawCheckbox(14, y, hrApprovalState.approved);
     doc.text('LEAVE APPROVED', 20, y);
     y += 7;
-    doc.rect(14, y-3.5, 4, 4);
-    if(hrApprovalState.denied) doc.text('X', 15, y);
+    drawCheckbox(14, y, hrApprovalState.denied);
     doc.text('LEAVE DENIED', 20, y);
     y += 10;
     
@@ -232,11 +232,9 @@ export default function LeaveApplicationPage() {
     doc.text(`Date: ${hrApprovalState.date}`, 14, y);
     y += 10;
     
-    doc.rect(14, y-3.5, 4, 4);
-    if(hrApprovalState.paid) doc.text('X', 15, y);
+    drawCheckbox(14, y, hrApprovalState.paid);
     doc.text('PAID LEAVE', 20, y);
-    doc.rect(60, y-3.5, 4, 4);
-    if(hrApprovalState.unpaid) doc.text('X', 61, y);
+    drawCheckbox(60, y, hrApprovalState.unpaid);
     doc.text('UNPAID LEAVE', 66, y);
     y += 20;
 
