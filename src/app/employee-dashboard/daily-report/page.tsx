@@ -76,7 +76,6 @@ type ReportEntry = {
 const calculateTotalUnits = (startTime: string, endTime: string): string => {
     if (!startTime || !endTime) return '0:00';
     
-    // Create dummy dates to parse times
     const start = new Date(`1970-01-01T${startTime}`);
     const end = new Date(`1970-01-01T${endTime}`);
 
