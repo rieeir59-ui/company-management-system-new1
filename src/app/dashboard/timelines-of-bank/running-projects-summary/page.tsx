@@ -55,11 +55,16 @@ export default function RunningProjectsSummaryPage() {
     const [summaryData, setSummaryData] = useState<SummaryRow[]>(initialSummaryData);
 
     const totalProjects = useMemo(() => {
-        return summaryData.reduce((acc, curr) => acc + curr.count, 0);
+        return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
     }, [summaryData]);
 
     const handleRemarkChange = (srNo: number, value: string) => {
         setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
+    };
+
+    const handleCountChange = (srNo: number, value: string) => {
+        const newCount = parseInt(value, 10);
+        setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: isNaN(newCount) ? 0 : newCount } : row));
     };
 
     const handleSave = () => {
@@ -123,7 +128,14 @@ export default function RunningProjectsSummaryPage() {
                             <TableRow key={row.srNo}>
                                 <TableCell>{row.srNo}</TableCell>
                                 <TableCell>{row.project}</TableCell>
-                                <TableCell>{row.count}</TableCell>
+                                <TableCell>
+                                    <Input 
+                                        type="number"
+                                        value={row.count}
+                                        onChange={(e) => handleCountChange(row.srNo, e.target.value)}
+                                        className="w-24 border-0 focus-visible:ring-1"
+                                    />
+                                </TableCell>
                                 <TableCell>
                                     <Input 
                                         value={row.remarks}
