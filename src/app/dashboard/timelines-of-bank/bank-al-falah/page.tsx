@@ -318,7 +318,7 @@ function BankAlfalahTimelineComponent() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
-                 <div className="mt-8">
+                <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Overall Status</h3>
                     <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
                 </div>
@@ -338,3 +338,5 @@ export default function Page() {
 }
 
       
+
+  
