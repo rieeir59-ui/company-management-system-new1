@@ -30,6 +30,8 @@ export interface ProjectRow {
   siteVisitEnd?: string;
   finalBill: string;
   projectClosure: string;
+  contract?: string;
+  headCount?: string;
 }
 
 export const askariBankProjects: ProjectRow[] = [
@@ -91,9 +93,9 @@ export const dibProjects: ProjectRow[] = [
 ];
 
 export const bankAlfalahProjects: ProjectRow[] = [
-    { id: 601, srNo: '1', projectName: 'BALF Currency Exchange Dolmen Mall Lahore', area: '800.00', projectHolder: 'Haseeb', allocationDate: '26-May-25', siteSurveyStart: '04-Apr-25', siteSurveyEnd: '04-Apr-25', contactStart: 'Received', headCountStart: '', proposalStart: '05-Apr-25', proposalEnd: '11-Apr-25', threedStart: '14-Apr-25', threedEnd: '18-Apr-25', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '10-Sep-25', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'Sent', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' },
-    { id: 602, srNo: '2', projectName: 'Bank Al-Falah Brand Manual', area: 'N/A', projectHolder: 'Zain', allocationDate: '02-Feb-25', siteSurveyStart: 'N/A', siteSurveyEnd: 'N/A', contactStart: '11-Feb-25', headCountStart: 'N/A', proposalStart: 'N/A', proposalEnd: 'N/A', threedStart: 'N/A', threedEnd: 'N/A', tenderArchStart: 'N/A', tenderArchEnd: 'N/A', tenderMepStart: '05-Aug-25', tenderMepEnd: '', boqStart: 'N/A', boqEnd: 'N/A', tenderStatus: 'N/A', comparative: 'N/A', workingDrawingsStart: 'N/A', siteVisitStart: 'N/A', finalBill: 'N/A', projectClosure: '' },
-    { id: 603, srNo: '3', projectName: 'BALF Shahdin Manzil Branch Lahore', area: '3,830.00', projectHolder: 'Mujahid Luqman', allocationDate: 'N/A', siteSurveyStart: 'N/A', siteSurveyEnd: 'N/A', contactStart: 'Received', headCountStart: '', proposalStart: '25-Sep-25', proposalEnd: '21-Oct-25', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', siteVisitStart: '', finalBill: '', projectClosure: '' }
+    { id: 601, srNo: '1', projectName: 'BALF Currency Exchange Dolmen Mall Lahore', area: '800', projectHolder: 'Haseeb', allocationDate: '26-May-25', siteSurveyStart: '04-Apr-25', siteSurveyEnd: '04-Apr-25', contract: 'Received', headCount: '', proposalStart: '05-Apr-25', proposalEnd: '11-Apr-25', threedStart: '14-Apr-25', threedEnd: '18-Apr-25', tenderArchStart: 'Sent', tenderArchEnd: '', tenderMepStart: '10-Sep-25', tenderMepEnd: '', boqStart: 'Sent', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: '' },
+    { id: 602, srNo: '2', projectName: 'Bank Al-Falah Brand Manual', area: 'N/A', projectHolder: 'Zain', allocationDate: '02-Feb-25', siteSurveyStart: '', siteSurveyEnd: '', contract: '11-Feb-25', headCount: 'N/A', proposalStart: 'N/A', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '05-Aug-25', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: '' },
+    { id: 603, srNo: '3', projectName: 'BALF Shahdin Manzil Branch Lahore', area: '3,830', projectHolder: 'Mujahid Luqman', allocationDate: 'Received', siteSurveyStart: 'Received', siteSurveyEnd: '', contract: '', headCount: '', proposalStart: '25-Sep-25', proposalEnd: '21-Oct-25', threedStart: 'Done', threedEnd: '', tenderArchStart: 'In progress', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: '' }
 ];
 
 export const bankAlHabibProjects: ProjectRow[] = [
@@ -142,14 +144,14 @@ export const allProjects: ProjectRow[] = [
 ];
 
 export const bankProjectsMap: Record<string, ProjectRow[]> = {
-    "askari bank": askariBankProjects,
+    "askari-bank": askariBankProjects,
     "hbl": hblProjects,
     "ubl": ublProjects,
     "mcb": mcbProjects,
-    "fbl": fblProjects,
+    "faysal-bank": fblProjects,
     "dib": dibProjects,
-    "bank alfalah": bankAlfalahProjects,
-    "bank al habib": bankAlHabibProjects,
+    "bank-al-falah": bankAlfalahProjects,
+    "bank-al-habib": bankAlHabibProjects,
     "cbd": cbdProjects,
 };
 
@@ -166,3 +168,15 @@ export const bankTimelineCategories = [
     "Commercial Timeline",
     "Residential Timeline"
 ];
+
+export const deleteProject = (bankName: string, projectId: number) => {
+  const bankKey = bankName.toLowerCase().replace(/ /g, '-');
+  if (bankProjectsMap[bankKey]) {
+    const projectIndex = bankProjectsMap[bankKey].findIndex(p => p.id === projectId);
+    if (projectIndex > -1) {
+      bankProjectsMap[bankKey].splice(projectIndex, 1);
+      return true;
+    }
+  }
+  return false;
+}

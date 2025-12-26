@@ -1,17 +1,19 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, PlusCircle, Trash2, Bot } from 'lucide-react';
+import { Save, Download, PlusCircle, Trash2, Bot, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { commercialProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
+import { commercialProjects as initialProjectRowsData, type ProjectRow, deleteProject } from '@/lib/projects-data';
+import Link from 'next/link';
 
 function CommercialTimelineComponent() {
     const { toast } = useToast();
@@ -19,6 +21,10 @@ function CommercialTimelineComponent() {
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
+
+    useEffect(() => {
+        setProjectRows(initialProjectRowsData);
+    }, []);
 
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
@@ -131,6 +137,8 @@ function CommercialTimelineComponent() {
     
     const removeProjectRow = (id: number) => {
         setProjectRows(projectRows.filter(row => row.id !== id));
+        deleteProject('commercial', id);
+        toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
     };
     
     const handleSave = () => {
@@ -151,18 +159,24 @@ function CommercialTimelineComponent() {
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract\nStart', 'Contract\nEnd', 'Head Count\n/ Requirment\nStart', 'Head Count\n/ Requirment\nEnd',
              'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 'Working\nDrawings', 'Site\nVisit', 'Final\nBill', 'Project\nClosure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
+             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
+             'Site Visit\nStart', 'Site Visit\nEnd', 
+             'Final Bill', 'Project\nClosure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, `${p.contactStart} - ${p.contactEnd}`, `${p.headCountStart} - ${p.headCountEnd}`,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, `${p.workingDrawingsStart} - ${p.workingDrawingsEnd}`, `${p.siteVisitStart} - ${p.siteVisitEnd}`, p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
+            p.workingDrawingsStart, p.workingDrawingsEnd, 
+            p.siteVisitStart, p.siteVisitEnd, 
+            p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -189,7 +203,12 @@ function CommercialTimelineComponent() {
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">Commercial Timeline</CardTitle>
+                <div className="flex items-center gap-4">
+                    <Button asChild variant="outline" size="icon">
+                        <Link href="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+                    </Button>
+                    <CardTitle className="text-center font-headline text-3xl text-primary">Commercial Timeline</CardTitle>
+                </div>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
