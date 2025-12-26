@@ -34,20 +34,12 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
     }
 
-    // TASKS collection
-    match /tasks/{taskId} {
-      allow read: if isLoggedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isAssignee();
-      allow delete: if isAdmin();
-    }
-
     // UPLOADED FILES collection
     match /uploadedFiles/{fileId} {
       allow read: if isLoggedIn();
       allow write: if isLoggedIn();
     }
-
+    
     // LEAVE REQUESTS collection
     match /leaveRequests/{leaveId} {
       allow read: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
@@ -59,6 +51,14 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read, update: if isAdmin(); // Only admins can read/update notifications
       allow create: if isLoggedIn(); // Any logged-in user can create (e.g., by submitting leave)
+    }
+
+    // TASKS collection
+    match /tasks/{taskId} {
+      allow read: if isLoggedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isAssignee();
+      allow delete: if isAdmin();
     }
   }
 }
