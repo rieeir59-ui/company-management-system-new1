@@ -36,7 +36,7 @@ service cloud.firestore {
 
     // TASKS collection
     match /tasks/{taskId} {
-      allow read: if isAdmin() || isAssignee();
+      allow read: if isLoggedIn();
       allow create: if isAdmin();
       allow update: if isAdmin() || isAssignee();
       allow delete: if isAdmin();
@@ -53,6 +53,12 @@ service cloud.firestore {
       allow read: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
       allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
       allow update, delete: if isAdmin();
+    }
+
+    // NOTIFICATIONS collection
+    match /notifications/{notificationId} {
+      allow read, update: if isAdmin(); // Only admins can read/update notifications
+      allow create: if isLoggedIn(); // Any logged-in user can create (e.g., by submitting leave)
     }
   }
 }

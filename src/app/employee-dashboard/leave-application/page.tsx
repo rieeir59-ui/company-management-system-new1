@@ -82,7 +82,18 @@ export default function LeaveApplicationPage() {
     };
     
     try {
-        await addDoc(collection(firestore, 'leaveRequests'), leaveRequestData);
+        const leaveDocRef = await addDoc(collection(firestore, 'leaveRequests'), leaveRequestData);
+        
+        // Create notification for admin
+        await addDoc(collection(firestore, 'notifications'), {
+            type: 'leave_request',
+            message: `${currentUser.name} has requested for ${totalDays} day(s) of ${formState.leaveType.toLowerCase()} leave.`,
+            relatedId: leaveDocRef.id,
+            recipientRole: 'admin', // Targeting all admins
+            status: 'unread',
+            createdAt: serverTimestamp(),
+        });
+        
         toast({
             title: "Request Sent",
             description: "Your leave request has been sent for approval.",

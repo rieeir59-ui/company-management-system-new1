@@ -2,6 +2,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/context/UserContext";
+import { Notifications } from "./Notifications";
 
 export function Header() {
   const { user } = useCurrentUser();
@@ -21,6 +22,7 @@ export function Header() {
       <div className="flex-1">
         {/* You can add a title here if needed */}
       </div>
+       <Notifications />
        {user && (
          <div className="flex items-center gap-3">
             <span className="font-semibold text-sm hidden sm:inline-block">{user.name}</span>
