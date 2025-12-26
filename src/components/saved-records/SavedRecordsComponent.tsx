@@ -169,6 +169,10 @@ const generatePdfForRecord = (record: SavedRecord) => {
         doc.text(hrApproval['Reason'] || '', 16, y-1);
         y += 10;
         
+        doc.text('Date:', 14, y);
+        doc.text(hrApproval['Date'] || '____________', 25, y);
+        y += 10;
+        
         drawCheckbox(14, y, hrApproval['Paid Leave'] === 'true');
         doc.text('PAID LEAVE', 20, y);
         drawCheckbox(60, y, hrApproval['Unpaid Leave'] === 'true');
@@ -400,9 +404,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
     
     if (viewingRecord.fileName === 'Leave Request Form') {
-        const employeeInfo = dataSections.find((d: any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const leaveDetails = dataSections.find((d: any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const hrApproval = dataSections.find((d: any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const employeeInfo = dataSections.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const leaveDetails = dataSections.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
+        const hrApproval = dataSections.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({...acc, [item.label]: item.value}), {}) || {};
         return (
             <div className="space-y-4 text-sm">
                 <div className="p-4 border rounded-lg">
@@ -420,13 +424,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     <p><strong>Return Date:</strong> {leaveDetails['Return Date']}</p>
                     <p><strong>Total Days:</strong> {leaveDetails['Total Days']}</p>
                     <p><strong>Leave Type:</strong> {leaveDetails['Leave Type']}</p>
-                    <p><strong>Reason:</strong> {leaveDetails['Reason']}</p>
+                    <p><strong>Reason:</strong> {leaveDetails['Reason'] || 'N/A'}</p>
                 </div>
                  <div className="p-4 border rounded-lg">
                     <h3 className="font-bold text-primary mb-2">HR Approval</h3>
                     <p><strong>Approved:</strong> {hrApproval['Approved'] === 'true' ? 'Yes' : 'No'}</p>
                     <p><strong>Denied:</strong> {hrApproval['Denied'] === 'true' ? 'Yes' : 'No'}</p>
-                    <p><strong>Reason:</strong> {hrApproval['Reason']}</p>
+                    <p><strong>Reason:</strong> {hrApproval['Reason'] || 'N/A'}</p>
+                    <p><strong>Date:</strong> {hrApproval['Date'] || 'N/A'}</p>
                     <p><strong>Paid Leave:</strong> {hrApproval['Paid Leave'] === 'true' ? 'Yes' : 'No'}</p>
                     <p><strong>Unpaid Leave:</strong> {hrApproval['Unpaid Leave'] === 'true' ? 'Yes' : 'No'}</p>
                 </div>
@@ -620,5 +625,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
-    

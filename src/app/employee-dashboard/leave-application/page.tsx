@@ -44,6 +44,7 @@ export default function LeaveApplicationPage() {
       approved: false,
       denied: false,
       reason: '',
+      hrApprovalDate: '',
       paid: false,
       unpaid: false,
   });
@@ -182,6 +183,7 @@ export default function LeaveApplicationPage() {
             { label: 'Approved', value: hrApprovalState.approved.toString() },
             { label: 'Denied', value: hrApprovalState.denied.toString() },
             { label: 'Reason', value: hrApprovalState.reason },
+            { label: 'Date', value: hrApprovalState.hrApprovalDate },
             { label: 'Paid Leave', value: hrApprovalState.paid.toString() },
             { label: 'Unpaid Leave', value: hrApprovalState.unpaid.toString() },
           ]
@@ -257,7 +259,7 @@ export default function LeaveApplicationPage() {
     y += 5;
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
-    doc.text(formState.reason, 16, y-1);
+    doc.text(formState.reason || '', 16, y - 1);
     y += 15;
     
     addSectionHeader('HR Department Approval:');
@@ -272,7 +274,11 @@ export default function LeaveApplicationPage() {
     y += 5;
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
-    doc.text(hrApprovalState.reason, 16, y-1);
+    doc.text(hrApprovalState.reason || '', 16, y - 1);
+    y += 10;
+    
+    doc.text('Date:', 14, y);
+    doc.text(hrApprovalState.hrApprovalDate || '____________', 25, y);
     y += 10;
     
     drawCheckbox(14, y, hrApprovalState.paid);
@@ -381,6 +387,10 @@ export default function LeaveApplicationPage() {
                     <div className="space-y-2">
                         <Label htmlFor="hr_reason">REASON:</Label>
                         <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))}/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="hr_approval_date">Date:</Label>
+                        <Input id="hr_approval_date" type="date" value={hrApprovalState.hrApprovalDate} onChange={e => setHrApprovalState(s => ({...s, hrApprovalDate: e.target.value}))}/>
                     </div>
                     <div className="flex items-center gap-6 pt-4">
                         <div className="flex items-center space-x-2">
