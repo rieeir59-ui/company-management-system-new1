@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -35,8 +34,6 @@ export default function LeaveApplicationPage() {
     returnDate: '',
     reasonForRequested: [] as string[],
     reason: '',
-    contactDuringLeave: '',
-    workCoveredBy: '',
   });
   
   const [hrApprovalState, setHrApprovalState] = useState({
@@ -101,8 +98,6 @@ export default function LeaveApplicationPage() {
         leaveTo: formState.leaveTo,
         returnDate: formState.returnDate,
         reason: formState.reason,
-        contactDuringLeave: formState.contactDuringLeave,
-        workCoveredBy: formState.workCoveredBy,
         totalDays,
         status: 'pending', // 'pending', 'approved', 'denied'
         requestedAt: serverTimestamp()
@@ -126,7 +121,7 @@ export default function LeaveApplicationPage() {
         });
         
         setFormState({
-            position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: '', contactDuringLeave: '', workCoveredBy: ''
+            position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
         });
 
     } catch (serverError) {
@@ -204,12 +199,7 @@ export default function LeaveApplicationPage() {
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
     doc.text(formState.reason, 16, y-1);
-    y += 10;
-
-    doc.text(`Contact during Leave: ${formState.contactDuringLeave}`, 14, y);
-    y += 7;
-    doc.text(`Work covered by: ${formState.workCoveredBy}`, 14, y);
-    y+=15;
+    y += 15;
     
     addSectionHeader('HR Department Approval:');
     doc.rect(14, y-3.5, 4, 4);
@@ -313,14 +303,6 @@ export default function LeaveApplicationPage() {
                         <Label htmlFor="reason" className="font-semibold text-lg text-primary">REASON:</Label>
                         <Textarea id="reason" name="reason" value={formState.reason} onChange={handleChange} required />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="contactDuringLeave">Contact during Leave:</Label>
-                        <Input id="contactDuringLeave" name="contactDuringLeave" value={formState.contactDuringLeave} onChange={handleChange} required />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="workCoveredBy">Work covered by:</Label>
-                        <Input id="workCoveredBy" name="workCoveredBy" value={formState.workCoveredBy} onChange={handleChange} required />
-                    </div>
                 </div>
                  <div className="mt-8 p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold text-lg text-primary">HR Department Approval:</h3>
@@ -329,7 +311,7 @@ export default function LeaveApplicationPage() {
                         <Label htmlFor="leave_approved">LEAVE APPROVED</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false: s.approved}))} />
+                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false : s.approved}))} />
                         <Label htmlFor="leave_denied">LEAVE DENIED</Label>
                     </div>
                     <div className="space-y-2">
@@ -364,5 +346,3 @@ export default function LeaveApplicationPage() {
     </div>
   );
 }
-
-    
