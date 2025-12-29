@@ -294,8 +294,10 @@ function MyProjectsComponent() {
     const openDeleteDialog = (item: Task | ManualEntry) => {
         if((item as any).isManual){
             setDeletingEntry(item as ManualEntry);
+            setTaskToDelete(null);
         } else {
             setTaskToDelete(item as Task);
+            setDeletingEntry(null);
         }
         setIsDeleteDialogOpen(true);
     };
@@ -324,6 +326,7 @@ function MyProjectsComponent() {
         }
         setIsDeleteDialogOpen(false);
     };
+    
     
     const addManualEntry = () => {
         setManualEntries(prev => [...prev, {
@@ -374,7 +377,7 @@ function MyProjectsComponent() {
           startY: 42,
           head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
           body: body,
-          headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
+          headStyles: { fillColor: [22, 163, 74] },
       });
       
       let finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -469,7 +472,7 @@ function MyProjectsComponent() {
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                         )}
-                                        {canEdit && (
+                                        {canEdit && (item.isManual || isAdmin) && (
                                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as any)}>
                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
@@ -595,3 +598,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
