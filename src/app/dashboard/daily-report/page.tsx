@@ -203,8 +203,9 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-      const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
-      return entries
+    const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
+
+    return entries
         .filter(entry => {
             const entryDate = parseISO(entry.date);
             return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
