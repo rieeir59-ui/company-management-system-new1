@@ -43,7 +43,6 @@ import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
-import { Checkbox } from '../ui/checkbox';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -94,11 +93,12 @@ const generatePdfForRecord = (record: SavedRecord) => {
         addDefaultHeader(record.fileName, record.projectName);
 
         const addSection = (title: string, data: Record<string, any>) => {
-             const body = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object').map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]);
+             const body = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value) ).map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]);
              if (body.length === 0) return;
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
             doc.text(title, margin, yPos);
             yPos += 8;
             
@@ -108,14 +108,17 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 theme: 'grid',
                 styles: { fontSize: 9, cellPadding: 2 },
                 head: [['Field', 'Value']],
-                headStyles: { fillColor: primaryColor },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
+                showHead: false,
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
+                didDrawPage: (data) => {
+                  yPos = data.cursor?.y ?? 20;
+                }
             });
             yPos = doc.autoTable.previous.finalY + 10;
         };
         
         const addTextAreaSection = (title: string, content: string) => {
-            if (!content?.trim()) return;
+            if (!content || !content.trim()) return;
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             addSection(title, {'Details': content});
         };
@@ -131,229 +134,39 @@ const generatePdfForRecord = (record: SavedRecord) => {
             'Residence Phone': info.ownerResPhone,
         });
         
+        addSection("Owner's Project Representative", {
+            'Name': info.repName, 'Office Address': info.repOfficeAddress,
+            'Residence Address': info.repResAddress, 'Office Phone': info.repOfficePhone,
+            'Residence Phone': info.repResPhone,
+        });
+
         if(yPos > 200) {doc.addPage(); yPos = 20;}
 
-        addSection("Consultants", {});
+        addSectionTitle("Consultants");
          doc.autoTable({
-            startY: yPos - 8,
+            startY: yPos,
             head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
             body: Object.entries(consultants).map(([type, values]: [string, any]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
-            theme: 'grid'
+            theme: 'grid',
+            headStyles: { fillColor: primaryColor }
         });
         yPos = doc.autoTable.previous.finalY + 10;
         
         if(yPos > 200) {doc.addPage(); yPos = 20;}
         
-        addSection("Requirements", {});
+        addSectionTitle("Requirements");
         doc.autoTable({
-            startY: yPos - 8,
+            startY: yPos,
             head: [['Description', 'Nos.', 'Remarks']],
             body: Object.entries(requirements).map(([req, values]: [string, any]) => [req, values.nos, values.remarks]),
-            theme: 'grid'
+            theme: 'grid',
+             headStyles: { fillColor: primaryColor }
         });
         yPos = doc.autoTable.previous.finalY + 10;
 
         addTextAreaSection('Special Confidential Requirements', info.specialConfidential);
         addTextAreaSection('Miscellaneous Notes', info.miscNotes);
 
-        addFooter();
-        doc.save(`${record.projectName}_${record.fileName}.pdf`);
-        return;
-    }
-
-    if (record.fileName === 'Leave Request Form') {
-        const leaveDoc = new jsPDF(); // Use a new instance for portrait mode
-        let y = 20;
-
-        const employeeInfo = record.data.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const leaveDetails = record.data.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-        const hrApproval = record.data.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-
-        leaveDoc.setFont('helvetica', 'bold');
-        leaveDoc.setFontSize(16);
-        leaveDoc.text('LEAVE REQUEST FORM', leaveDoc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-        y += 15;
-
-        leaveDoc.setFontSize(10);
-        
-        const addSectionHeader = (text: string) => {
-            leaveDoc.setFont('helvetica', 'bold');
-            leaveDoc.text(text, 14, y);
-            y += 7;
-            leaveDoc.setFont('helvetica', 'normal');
-        };
-
-        const drawCheckbox = (x: number, y: number, checked: boolean) => {
-          leaveDoc.setLineWidth(0.2);
-          leaveDoc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
-        };
-        
-        addSectionHeader('Employee to Complete');
-        (leaveDoc as any).autoTable({
-            startY: y, theme: 'grid', showHead: false,
-            body: [
-                [`Employee Name: ${employeeInfo['Employee Name'] || ''}`, `Employee Number: ${employeeInfo['Employee Number'] || ''}`],
-                [`Department: ${employeeInfo['Department'] || ''}`, `Position: ${employeeInfo['Position']}`],
-            ]
-        });
-        y = (leaveDoc as any).autoTable.previous.finalY + 5;
-        
-        leaveDoc.text(`Status (select one):`, 14, y);
-        drawCheckbox(50, y, leaveDetails['Status'] === 'Full-time');
-        leaveDoc.text('Full-time', 55, y);
-        drawCheckbox(80, y, leaveDetails['Status'] === 'Part-time');
-        leaveDoc.text('Part-time', 85, y);
-        y += 10;
-        
-        const fromDate = leaveDetails['Leave From'] ? leaveDetails['Leave From'] : '( ____________ )';
-        const toDate = leaveDetails['Leave To'] ? leaveDetails['Leave To'] : '( ____________ )';
-        const returnDate = leaveDetails['Return Date'] ? leaveDetails['Return Date'] : '( ____________ )';
-        leaveDoc.text(`I hereby request a leave of absence effective from ${fromDate} to ${toDate}`, 14, y);
-        y += 7;
-        leaveDoc.text(`Total Days: ${leaveDetails['Total Days']}`, 14, y);
-        y += 7;
-        leaveDoc.text(`I expect to return to work on Date: ${returnDate}`, 14, y);
-        y += 10;
-        
-        addSectionHeader('Reason for Requested:');
-        (leaveDetails['Leave Type']?.split(', ') || []).forEach((reason: string) => {
-            drawCheckbox(14, y, true);
-            leaveDoc.text(reason.toUpperCase(), 20, y);
-            y += 7;
-        });
-        
-        y += 3;
-        
-        leaveDoc.text('REASON:', 14, y);
-        y += 5;
-        leaveDoc.setLineWidth(0.5);
-        leaveDoc.line(14, y, 196, y);
-        if (leaveDetails['Reason']) {
-            leaveDoc.text(leaveDetails['Reason'], 16, y - 1);
-        }
-        y += 15;
-        
-        addSectionHeader('HR Department Approval:');
-        drawCheckbox(14, y, hrApproval['Approved'] === 'true');
-        leaveDoc.text('LEAVE APPROVED', 20, y);
-        y += 7;
-        drawCheckbox(14, y, hrApproval['Denied'] === 'true');
-        leaveDoc.text('LEAVE DENIED', 20, y);
-        y += 10;
-        
-        leaveDoc.text('REASON:', 14, y);
-        y += 5;
-        leaveDoc.setLineWidth(0.5);
-        leaveDoc.line(14, y, 196, y);
-        if (hrApproval['Reason']) {
-            leaveDoc.text(hrApproval['Reason'], 16, y-1);
-        }
-        y += 10;
-        
-        leaveDoc.text('Date:', 14, y);
-        leaveDoc.text(hrApproval['Date'] || '____________', 25, y);
-        y += 10;
-        
-        drawCheckbox(14, y, hrApproval['Paid Leave'] === 'true');
-        leaveDoc.text('PAID LEAVE', 20, y);
-        drawCheckbox(60, y, hrApproval['Unpaid Leave'] === 'true');
-        leaveDoc.text('UNPAID LEAVE', 66, y);
-        y += 20;
-
-        leaveDoc.text('COMPANY CEO: SIGNATURE', 14, y);
-        leaveDoc.text('DATE:', 150, y);
-        y += 5;
-        leaveDoc.line(14, y, 90, y);
-        leaveDoc.line(160, y, 196, y);
-
-        addFooter();
-        leaveDoc.save(`${record.projectName}_${record.fileName}.pdf`);
-        return;
-    } else if (record.fileName.endsWith('Timeline')) {
-        doc.setProperties({ title: `${record.projectName} Timeline` });
-        doc.setFontSize(10);
-        doc.text(record.fileName, 14, 15);
-
-        const projects: ProjectRow[] = record.data.find((s:any) => s.category === 'Projects')?.items || [];
-        const statusSection = record.data.find((s: any) => s.category === 'Overall Status');
-        const remarksSection = record.data.find((s:any) => s.category === 'Remarks');
-        
-        const head = [
-            [
-                { content: 'Sr.No', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Project Name', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Area in Sft', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Project Holder', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Allocation Date / RFP', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Site Survey', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Contract', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Head Count / Requirement', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Proposal / Design Development', colSpan: 2, styles: { halign: 'center' } },
-                { content: "3D's", colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Tender Package Architectural', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Tender Package MEP', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'BOQ', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Tender Status', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Comparative', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Working Drawings', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Site Visit', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Final Bill', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Project Closure', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
-            ],
-            [
-                'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End'
-            ].map(h => ({ content: h, styles: { halign: 'center' } }))
-        ];
-        
-        const body = projects.map(p => [
-            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
-            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
-            p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
-            p.finalBill, p.projectClosure
-        ]);
-
-        doc.autoTable({
-            head: head,
-            body: body,
-            startY: 20,
-            theme: 'grid',
-            styles: { fontSize: 4.5, cellPadding: 1, valign: 'middle', halign: 'center', lineWidth: 0.1 },
-            headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 4, valign: 'middle', halign: 'center', lineWidth: 0.1 },
-        });
-
-        let lastY = doc.autoTable.previous.finalY + 10;
-        
-        const addRemarksSection = (title: string, items: any[]) => {
-            if (!items || items.length === 0) return;
-            const text = items[0]?.value || '';
-            if (!text.trim()) return;
-
-            if (lastY > pageHeight - 30) { doc.addPage(); lastY = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(title, 14, lastY);
-            lastY += 7;
-            doc.setFont('helvetica', 'normal');
-            const splitText = doc.splitTextToSize(text, pageWidth - 28);
-            doc.text(splitText, 14, lastY);
-            lastY += splitText.length * 5 + 5;
-        }
-
-        addRemarksSection("Overall Status:", statusSection?.items);
-        addRemarksSection("Maam Isbah Remarks & Order", remarksSection?.items);
-
-        if(remarksSection){
-            const dateText = remarksSection.items.find((item: any) => item.label === "Date")?.value || "";
-            if (dateText) {
-                doc.text(`Date: ${dateText}`, 14, lastY);
-            }
-        }
     } else {
         addDefaultHeader(record.fileName, record.projectName);
         
@@ -381,7 +194,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 const headers = Object.keys(firstItem).filter(key => key !== 'id');
                 const body = section.items.map((item: any) => {
                     let parsedItem = item;
-                    if(typeof item === 'string') try { parsedItem = JSON.parse(item); } catch(e){ return headers.map(() => ''); }
+                    if(typeof item === 'string') try {parsedItem = JSON.parse(item)} catch(e){return headers.map(() => '');}
                     return headers.map(header => String(parsedItem[header] ?? ''));
                 });
                 doc.autoTable({
@@ -506,7 +319,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
             
             const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && key !== 'specialConfidential' && key !== 'miscNotes' );
+                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(key));
                 if (entries.length === 0) return null;
                 return (
                     <div className="mb-6">

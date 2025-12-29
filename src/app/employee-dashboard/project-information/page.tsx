@@ -148,8 +148,8 @@ function ProjectInformationComponent() {
         if (recordId) {
             const record = getRecordById(recordId);
             if (record && Array.isArray(record.data)) {
-                const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
-                setFormState(prev => ({...prev, ...mainData}));
+                 const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
+                 setFormState(prev => ({...prev, ...mainData}));
 
                 const loadedConsultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
                 setConsultants(loadedConsultants);
@@ -234,7 +234,13 @@ function ProjectInformationComponent() {
               body: body,
               theme: 'grid',
               styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+              head: [['Field', 'Value']],
+              headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
               columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+              didDrawPage: (data) => {
+                  // Reset yPos for the new page
+                  yPos = data.cursor?.y ?? 20;
+              }
           });
           yPos = doc.autoTable.previous.finalY + 10;
       };
@@ -650,8 +656,8 @@ function ProjectInformationComponent() {
                                     {residenceRequirements.map((req, index) => (
                                         <TableRow key={req}>
                                             <TableCell><Label>{`${index + 1}. ${req}`}</Label></TableCell>
-                                            <TableCell><Input value={requirements[req].nos} onChange={(e) => handleRequirementChange(req, 'nos', e.target.value)} /></TableCell>
-                                            <TableCell><Input value={requirements[req].remarks} onChange={(e) => handleRequirementChange(req, 'remarks', e.target.value)} /></TableCell>
+                                            <TableCell><Input value={requirements[req]?.nos || ''} onChange={(e) => handleRequirementChange(req, 'nos', e.target.value)} /></TableCell>
+                                            <TableCell><Input value={requirements[req]?.remarks || ''} onChange={(e) => handleRequirementChange(req, 'remarks', e.target.value)} /></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
