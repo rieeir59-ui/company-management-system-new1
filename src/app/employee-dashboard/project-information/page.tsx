@@ -12,11 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Save, Download, Loader2, Printer, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useSearchParams } from 'next/navigation';
@@ -40,7 +36,7 @@ const Section = ({ title, children, className }: { title: string; children: Reac
 const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, placeholder?: string, type?:string }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
         <Label htmlFor={id} className="md:text-right">{label}</Label>
-        <Input id={id} name={id} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
+        <Input id={id} name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
     </div>
 );
 
@@ -218,8 +214,6 @@ function ProjectInformationComponent() {
         const dataToSave = {
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
-            employeeId: currentUser.uid,
-            employeeName: currentUser.name,
             data: [
                 { category: 'Project Information', items: formState },
                 { category: 'Consultants', items: consultants },
@@ -242,7 +236,6 @@ function ProjectInformationComponent() {
       const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
       let yPos = 15;
       const primaryColor = [45, 95, 51];
-      const headingFillColor = [240, 240, 240];
       const margin = 14;
 
       const addSectionTitle = (title: string) => {
@@ -268,10 +261,10 @@ function ProjectInformationComponent() {
 
       const drawCheckbox = (x: number, y: number, checked: boolean) => {
           doc.setLineWidth(0.2);
-          doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
+          doc.rect(x, y - 3.5, 4, 4); 
           if (checked) {
-              doc.setFillColor(0, 0, 0); // Set fill color to black
-              doc.rect(x + 0.5, y - 3, 3, 3, 'F'); // Draw a filled rectangle
+              doc.setFillColor(0, 0, 0); 
+              doc.rect(x + 0.5, y - 3, 3, 3, 'F');
           }
       };
 
@@ -352,7 +345,7 @@ function ProjectInformationComponent() {
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
-      if (yPos > pageHeight - 80) { // Check for space before adding the cost section
+      if (yPos > pageHeight - 80) {
           doc.addPage();
           yPos = 20;
       }
@@ -449,12 +442,21 @@ function ProjectInformationComponent() {
       });
       yPos = doc.autoTable.previous.finalY + 10;
 
-      addSectionTitle("Special Confidential Requirements");
-      doc.text(doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2), margin, yPos);
-      yPos += doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2).length * 5 + 10;
+      const addTextAreaSection = (title: string, content: string) => {
+        if (yPos > 260) { doc.addPage(); yPos = 20; }
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, margin, yPos);
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const splitContent = doc.splitTextToSize(content, pageWidth - margin * 2);
+        doc.text(splitContent, margin, yPos);
+        yPos += splitContent.length * 5 + 10;
+      }
       
-      addSectionTitle("Miscellaneous Notes");
-      doc.text(doc.splitTextToSize(formState.miscNotes, pageWidth - margin * 2), margin, yPos);
+      addTextAreaSection("Special Confidential Requirements", formState.specialConfidential);
+      addTextAreaSection("Miscellaneous Notes", formState.miscNotes);
       
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
@@ -684,8 +686,10 @@ function ProjectInformationComponent() {
                         </Section>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
-                            <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf}><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleSave}>
+                                {recordId ? <><Edit className="mr-2 h-4 w-4" /> Update Record</> : <><Save className="mr-2 h-4 w-4" /> Save Record</>}
+                            </Button>
+                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>

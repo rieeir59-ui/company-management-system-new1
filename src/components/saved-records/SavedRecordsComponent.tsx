@@ -82,6 +82,84 @@ const generatePdfForRecord = (record: SavedRecord) => {
         }
     };
     
+    if (record.fileName === 'Project Information') {
+        const infoDoc = new jsPDF(); // Portrait for this form
+        let y = 15;
+
+        const info = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
+        const consultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
+        const requirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
+        const otherNotes = record.data.find((d:any) => d.category === 'Other Notes')?.items || {};
+
+        const addSectionTitle = (title: string) => {
+            if (y > 260) { infoDoc.addPage(); y = 20; }
+            infoDoc.setFont('helvetica', 'bold');
+            infoDoc.setFontSize(12);
+            infoDoc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            infoDoc.text(title, margin, y);
+            y += 8;
+            infoDoc.setTextColor(0,0,0);
+        };
+        
+        const addTable = (body: (string | null)[][]) => {
+            (infoDoc as any).autoTable({
+                startY: y,
+                body: body,
+                theme: 'grid',
+                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+            });
+            y = (infoDoc as any).autoTable.previous.finalY + 10;
+        };
+
+        const addTextAreaSection = (title: string, content: string) => {
+            if (!content?.trim()) return;
+            if (y > 260) { infoDoc.addPage(); y = 20; }
+            addSectionTitle(title);
+            infoDoc.setFontSize(10);
+            infoDoc.setFont('helvetica', 'normal');
+            const splitContent = infoDoc.splitTextToSize(content, pageWidth - margin * 2);
+            infoDoc.text(splitContent, margin, y);
+            y += splitContent.length * 5 + 10;
+        };
+
+        infoDoc.setFont('helvetica', 'bold');
+        infoDoc.setFontSize(16);
+        infoDoc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        infoDoc.text('PROJECT INFORMATION', infoDoc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        y += 15;
+        infoDoc.setTextColor(0, 0, 0);
+
+        addSectionTitle("Project Information");
+        addTable([
+            ['Project:', info.project], ['Address:', info.address], ['Project No:', info.projectNo],
+            ['Prepared By:', info.preparedBy], ['Prepared Date:', info.preparedDate]
+        ]);
+        
+        addSectionTitle("About Owner");
+        addTable([
+            ['Full Name:', info.ownerFullName], ['Address (Office):', info.ownerOfficeAddress], ['Address (Res.):', info.ownerResAddress],
+            ['Phone (Office):', info.ownerOfficePhone], ['Phone (Res.):', info.ownerResPhone]
+        ]);
+        
+        addSectionTitle("Owner's Project Representative");
+        addTable([
+            ['Name:', info.repName], ['Address (Office):', info.repOfficeAddress], ['Address (Res.):', info.repResAddress],
+            ['Phone (Office):', info.repOfficePhone], ['Phone (Res.):', info.repResPhone]
+        ]);
+
+        infoDoc.addPage();
+        y = 20;
+
+        addTextAreaSection('Special Confidential Requirements', otherNotes.specialConfidential);
+        addTextAreaSection('Miscellaneous Notes', otherNotes.miscNotes);
+
+        addFooter();
+        infoDoc.save(`${record.projectName}_${record.fileName}.pdf`);
+        return;
+    }
+
+
     if (record.fileName === 'Leave Request Form') {
         const leaveDoc = new jsPDF(); // Use a new instance for portrait mode
         let y = 20;
@@ -114,7 +192,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
             startY: y, theme: 'grid', showHead: false,
             body: [
                 [`Employee Name: ${employeeInfo['Employee Name'] || ''}`, `Employee Number: ${employeeInfo['Employee Number'] || ''}`],
-                [`Department: ${employeeInfo['Department'] || ''}`, `Position: ${employeeInfo['Position'] || ''}`],
+                [`Department: ${employeeInfo['Department'] || ''}`, `Position: ${employeeInfo['Position']}`],
             ]
         });
         y = (leaveDoc as any).autoTable.previous.finalY + 5;
@@ -297,10 +375,8 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 const headers = Object.keys(firstItem).filter(key => key !== 'id');
                 const body = section.items.map((item: any) => {
                     let parsedItem = item;
-                    if (typeof item === 'string') {
-                        try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => ''); }
-                    }
-                    return headers.map(header => String(parsedItem[header] ?? ''));
+                    if(typeof item === 'string') try {parsed = JSON.parse(item)} catch(e){return headers.map(() => '');}
+                    return headers.map(header => String(parsed[header] ?? ''));
                 });
                  doc.autoTable({
                     startY: yPos,
@@ -313,7 +389,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
             } else {
                  const body = section.items.map((item: any) => {
-                    if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                    if (typeof item === 'object' && item.label) return [item.label, String(item.value)];
                     if (typeof item === 'string') {
                         const parts = item.split(/:(.*)/s);
                         return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
@@ -443,12 +519,15 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
             return (
                 <div className="space-y-6">
-                    <Section title="Project Information" data={Object.entries(info).slice(0, 16)} />
-                    <Section title="Project Details" data={Object.entries(info).slice(16, 26)} />
-                    <Section title="Project Cost" data={Object.entries(info).slice(26, 32)} />
-                    <Section title="Project Dates" data={Object.entries(info).slice(32, 46)} />
-                    <Section title="Provided by Owner" data={Object.entries(info).slice(46, 52)} />
-                    <Section title="Compensation" data={Object.entries(info).slice(52, 62)} />
+                    <Section title="Project Information" data={Object.entries(info).slice(0, 5)} />
+                    <Section title="About Owner" data={Object.entries(info).slice(5, 10)} />
+                    <Section title="Owner's Project Representative" data={Object.entries(info).slice(10, 15)} />
+                    <Section title="About Project" data={Object.entries(info).slice(15, 26)} />
+                    <Section title="Project Details" data={Object.entries(info).slice(26, 32)} />
+                    <Section title="Project Cost" data={Object.entries(info).slice(32, 38)} />
+                    <Section title="Dates Concerned with Project" data={Object.entries(info).slice(38, 52)} />
+                    <Section title="Provided by Owner" data={Object.entries(info).slice(52, 58)} />
+                    <Section title="Compensation" data={Object.entries(info).slice(58, 68)} />
 
                     <div className="mb-6">
                       <h3 className="font-bold text-lg mb-2 text-primary">Consultants</h3>
