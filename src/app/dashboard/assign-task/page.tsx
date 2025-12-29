@@ -97,7 +97,7 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
                     </CardContent>
                 </Card>
             </Link>
-             <Link href={`/employee-dashboard?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
+             <Link href={`/employee-dashboard/my-projects?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
                 View Dashboard
             </Link>
         </div>
