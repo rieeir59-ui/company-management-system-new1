@@ -53,6 +53,7 @@ import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
+import { useTasks } from '@/hooks/use-tasks';
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -251,8 +252,9 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems, projectManualItems }: 
 MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
 
 export default function DashboardSidebar() {
-  const { user: currentUser, logout } = useCurrentUser();
+  const { user: currentUser, logout, employees } = useCurrentUser();
   const { projectManualItems, records } = useRecords();
+  const { tasks } = useTasks(undefined, true);
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,7 +276,7 @@ export default function DashboardSidebar() {
   }, [currentUser]);
   
   const searchResults = useMemo(() => {
-    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: {} };
+    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: {}, taskResults: {} };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
@@ -299,12 +301,25 @@ export default function DashboardSidebar() {
         return acc;
     }, {} as Record<string, typeof records>);
     
+    const taskResults = tasks.filter(task => {
+        const employee = employees.find(e => e.uid === task.assignedTo);
+        return employee?.name.toLowerCase().includes(lowerCaseQuery);
+    }).reduce((acc, task) => {
+        const employeeName = employees.find(e => e.uid === task.assignedTo)?.name || 'Unknown Employee';
+        if (!acc[employeeName]) {
+            acc[employeeName] = [];
+        }
+        acc[employeeName].push(task);
+        return acc;
+    }, {} as Record<string, typeof tasks>);
+    
     return { 
         menuResults, 
         projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), 
-        recordResults 
+        recordResults,
+        taskResults,
     };
-  }, [searchQuery, visibleTopLevelItems, projectManualItems, records]);
+  }, [searchQuery, visibleTopLevelItems, projectManualItems, records, tasks, employees]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -365,27 +380,53 @@ export default function DashboardSidebar() {
                         ))}
                     </SidebarMenuItem>
                 )}
-                 {Object.entries(searchResults.recordResults).map(([fileName, fileRecords]) => {
-                    const Icon = getIconForFile(fileName);
-                    return (
-                        <SidebarMenuItem key={fileName}>
-                            <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">{fileName}</span>
-                            {fileRecords.map(record => {
-                                const url = getFormUrlFromFileName(record.fileName, 'dashboard');
-                                if (!url) return null;
-                                return (
-                                    <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
-                                        <SidebarMenuButton>
-                                            <Icon className="size-5" />
-                                            <span>{record.projectName}</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                )
-                            })}
-                        </SidebarMenuItem>
-                    )
-                 })}
-                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && Object.keys(searchResults.recordResults).length === 0 && (
+                 {Object.keys(searchResults.recordResults).length > 0 && (
+                     <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Saved Records</span>
+                        {Object.entries(searchResults.recordResults).map(([fileName, fileRecords]) => {
+                            const Icon = getIconForFile(fileName);
+                            return (
+                                <div key={fileName} className="pl-3 mt-1">
+                                    <span className="text-xs font-medium text-sidebar-foreground/60">{fileName}</span>
+                                    {fileRecords.map(record => {
+                                        const url = getFormUrlFromFileName(record.fileName, 'dashboard');
+                                        if (!url) return null;
+                                        return (
+                                            <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
+                                                <SidebarMenuButton>
+                                                    <Icon className="size-4" />
+                                                    <span>{record.projectName}</span>
+                                                </SidebarMenuButton>
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        })}
+                     </SidebarMenuItem>
+                 )}
+                 {Object.keys(searchResults.taskResults).length > 0 && (
+                    <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Assigned Tasks</span>
+                         {Object.entries(searchResults.taskResults).map(([employeeName, employeeTasks]) => {
+                             const employee = employees.find(e => e.name === employeeName);
+                             return (
+                                <div key={employeeName} className="pl-3 mt-1">
+                                    <span className="text-xs font-medium text-sidebar-foreground/60">{employeeName}</span>
+                                    {employeeTasks.map(task => (
+                                        <Link href={`/dashboard/my-projects?employeeId=${employee?.record}`} key={task.id} passHref>
+                                            <SidebarMenuButton>
+                                                <Briefcase className="size-4" />
+                                                <span>{task.taskName}</span>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )
+                         })}
+                    </SidebarMenuItem>
+                 )}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && Object.keys(searchResults.recordResults).length === 0 && Object.keys(searchResults.taskResults).length === 0 && (
                     <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
                 )}
              </SidebarMenu>

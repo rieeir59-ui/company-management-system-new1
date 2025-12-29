@@ -306,7 +306,7 @@ export default function EmployeeDashboardSidebar() {
         projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), 
         recordResults 
     };
-  }, [searchQuery, projectManualItems, records, currentUser, topLevelItems]);
+  }, [searchQuery, projectManualItems, records, currentUser]);
   
   return (
       <Sidebar side="left" collapsible="icon">
