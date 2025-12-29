@@ -47,6 +47,7 @@ import {
   Presentation,
   CalendarOff,
   Eye,
+  Folder
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -55,7 +56,7 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects } from '@/lib/projects-data';
+import { allProjects, type ProjectRow } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
@@ -63,6 +64,7 @@ import { useTasks } from '@/hooks/use-tasks';
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard/project-information', label: 'Project Information', icon: Folder },
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
     { href: '/dashboard/daily-report', label: 'Daily Work Report', icon: ClipboardList },
     { href: '/dashboard/site-visit', label: 'Site Visit', icon: Eye },
