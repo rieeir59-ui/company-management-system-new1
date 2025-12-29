@@ -310,6 +310,7 @@ function MyProjectsComponent() {
         if (taskToDelete && firestore) {
             if (!isAdmin) {
                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
+                setIsDeleteDialogOpen(false);
                 return;
             }
              deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
@@ -345,15 +346,15 @@ function MyProjectsComponent() {
     };
 
     const handleSaveSchedule = async () => {
-        const firstProjectName = manualEntries.find(item => item.projectName)?.projectName;
+        const firstManualProjectName = manualEntries.find(item => item.projectName)?.projectName;
 
         await addOrUpdateRecord({
             fileName: 'Project Schedule',
-            projectName: firstProjectName || `${displayUser?.name}'s Project Schedule`,
+            projectName: firstManualProjectName || `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
                 remarks: remarks,
-                items: combinedSchedule.filter(item => item.isManual).map(item => ({
+                items: manualEntries.map(item => ({
                     label: `Project: ${item.projectName}`,
                     value: `Detail: ${item.detail}, Status: ${item.status}, Start: ${item.startDate}, End: ${item.endDate}`,
                 })),
@@ -413,8 +414,81 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
+                <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
+                <CardDescription>A list of tasks assigned by the administration.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoadingTasks ? (
+                    <div className="flex justify-center items-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="ml-4">Loading tasks...</p>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="font-semibold">Task</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {allProjects.length === 0 ? (
+                            <TableRow>
+                                    <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
+                            </TableRow>
+                            ) : allProjects.map((project) => (
+                                <TableRow key={project.id}>
+                                    <TableCell className="font-medium text-base">{project.taskName}</TableCell>
+                                    <TableCell className="text-base">{project.assignedBy}</TableCell>
+                                    <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell className="text-base">{project.endDate || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={project.status}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                              <StatusBadge status={project.status} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="not-started">Not Started</SelectItem>
+                                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex gap-1 justify-end">
+                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
+                                            {isAdmin && (
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(project)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>Manually add your own tasks or view tasks assigned by the administration.</CardDescription>
+                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -429,15 +503,15 @@ function MyProjectsComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {combinedSchedule.map(item => (
+                        {manualEntries.map(item => (
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
                                 <TableCell>
                                   <Select
                                     value={item.status}
-                                    onValueChange={(newStatus: any) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
-                                    disabled={!canEdit || item.status === 'pending-approval'}
+                                    onValueChange={(val: ManualEntry['status']) => handleManualEntryChange(item.id, 'status', val)}
+                                    disabled={!canEdit}
                                   >
                                     <SelectTrigger className="w-[180px]">
                                       <StatusBadge status={item.status as Task['status']} />
@@ -446,11 +520,6 @@ function MyProjectsComponent() {
                                       <SelectItem value="Not Started">Not Started</SelectItem>
                                       <SelectItem value="In Progress">In Progress</SelectItem>
                                       <SelectItem value="Completed">Completed</SelectItem>
-                                      {/* Add these back in case status from DB has them */}
-                                      <SelectItem value="not-started">Not Started</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
-                                      {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>
                                 </TableCell>
@@ -458,30 +527,12 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => item.isManual ? openEditDialog(item as ManualEntry) : openViewDialog(item as Task)}>
-                                            <Eye className="h-4 w-4"/>
+                                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                                            <Edit className="h-4 w-4"/>
                                         </Button>
-                                        {item.isManual ? (
-                                            <>
-                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}>
-                                                    <Upload className="h-4 w-4" />
-                                                </Button>
-                                                {isAdmin && (
-                                                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as Task)}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                )}
-                                            </>
-                                        )}
+                                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
                                     </div>
                                 </TableCell>
                             </TableRow>
