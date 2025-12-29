@@ -60,6 +60,14 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -141,7 +149,7 @@ export default function DailyReportPage() {
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === employeeRecordId);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeRecord === employeeRecordId);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -209,6 +217,7 @@ export default function DailyReportPage() {
   const entriesByDate = useMemo(() => {
     return entries
         .filter(entry => {
+            if(!entry.date) return false;
             const entryDate = parseISO(entry.date);
             return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
         })
@@ -655,4 +664,5 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
