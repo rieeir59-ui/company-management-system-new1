@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Save, Download, Loader2, Printer } from 'lucide-react';
+import { Save, Download, Loader2, Printer, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
@@ -22,6 +22,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { useSearchParams } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -36,7 +37,7 @@ const Section = ({ title, children, className }: { title: string; children: Reac
     </div>
 );
 
-const InputRow = ({ label, id, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder?: string, type?:string }) => (
+const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, placeholder?: string, type?:string }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
         <Label htmlFor={id} className="md:text-right">{label}</Label>
         <Input id={id} name={id} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
@@ -60,8 +61,8 @@ const residenceRequirements = [
 function ProjectInformationComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
+    const { addRecord, getRecordById, updateRecord } = useRecords();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
 
@@ -149,70 +150,37 @@ function ProjectInformationComponent() {
     );
 
      useEffect(() => {
-        if (recordId && firestore) {
-            const fetchRecord = async () => {
-                setIsLoading(true);
-                try {
-                    const docRef = doc(firestore, 'savedRecords', recordId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const record = docSnap.data();
-                        
-                        const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items.reduce((acc: any, item: string) => {
-                            const [key, ...value] = item.split(':');
-                            acc[key.trim()] = value.join(':').trim();
-                            return acc;
-                        }, {}) || {};
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && Array.isArray(record.data)) {
+                 const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
+                 const loadedFormState: any = {};
+                 for (const key in formState) {
+                   if (mainData[key] !== undefined) {
+                     if (typeof formState[key as keyof typeof formState] === 'boolean') {
+                         loadedFormState[key] = mainData[key] === 'true';
+                     } else {
+                         loadedFormState[key] = mainData[key];
+                     }
+                   }
+                 }
+                 setFormState(s => ({...s, ...loadedFormState}));
+                
+                const loadedConsultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
+                setConsultants(loadedConsultants);
 
-                        const loadedFormState: any = {};
-                        for (const key in formState) {
-                          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                          if (mainData[formattedKey] !== undefined) {
-                            if (typeof formState[key as keyof typeof formState] === 'boolean') {
-                                loadedFormState[key] = mainData[formattedKey] === 'true';
-                            } else {
-                                loadedFormState[key] = mainData[formattedKey];
-                            }
-                          }
-                        }
-                        setFormState(s => ({...s, ...loadedFormState}));
-                        
-                        const loadedConsultants = JSON.parse(JSON.stringify(consultants));
-                        const consultantData = record.data.find((d: any) => d.category === 'Consultants')?.items || [];
-                        consultantData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedConsultants[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
-                        });
-                        setConsultants(loadedConsultants);
+                const loadedRequirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
+                setRequirements(loadedRequirements);
 
-                        const loadedRequirements = JSON.parse(JSON.stringify(requirements));
-                        const requirementsData = record.data.find((d: any) => d.category === 'Requirements')?.items || [];
-                        requirementsData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedRequirements[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
-                        });
-                        setRequirements(loadedRequirements);
-                        
+                const otherNotes = record.data.find((d:any) => d.category === 'Other Notes')?.items || {};
+                setFormState(s => ({...s, specialConfidential: otherNotes.specialConfidential || '', miscNotes: otherNotes.miscNotes || ''}));
 
-                    } else {
-                        toast({ variant: "destructive", title: "Error", description: "Record not found."});
-                    }
-                } catch (e) {
-                     toast({ variant: "destructive", title: "Error", description: "Failed to load record."});
-                     console.error("Error fetching document:", e);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            fetchRecord();
-        } else {
-          setIsLoading(false);
+            } else if(recordId) {
+                toast({ variant: "destructive", title: "Error", description: "Record not found."});
+            }
         }
-    }, [recordId, firestore, toast]);
+        setIsLoading(false);
+    }, [recordId, getRecordById, toast]);
 
     const handleRequirementChange = (item: string, field: 'nos' | 'remarks', value: string) => {
         setRequirements(prev => ({
@@ -242,7 +210,7 @@ function ProjectInformationComponent() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
+        if (!currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return;
         }
@@ -250,43 +218,20 @@ function ProjectInformationComponent() {
         const dataToSave = {
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
-            data: [{
-                category: 'Project Information',
-                items: Object.entries(formState).map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
-            }, {
-                category: 'Consultants',
-                items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
-            },
-            {
-                category: 'Requirements',
-                items: Object.entries(requirements).map(([req, values]) => `${req}: ${JSON.stringify(values)}`)
-            }],
+            employeeId: currentUser.uid,
+            employeeName: currentUser.name,
+            data: [
+                { category: 'Project Information', items: formState },
+                { category: 'Consultants', items: consultants },
+                { category: 'Requirements', items: requirements },
+                { category: 'Other Notes', items: { specialConfidential: formState.specialConfidential, miscNotes: formState.miscNotes } }
+            ]
         };
 
-        try {
-            if (recordId) {
-                const docRef = doc(firestore, 'savedRecords', recordId);
-                await updateDoc(docRef, {
-                    projectName: dataToSave.projectName,
-                    data: dataToSave.data,
-                });
-                toast({ title: 'Record Updated', description: "The project information has been updated." });
-            } else {
-                await addDoc(collection(firestore, 'savedRecords'), {
-                    employeeId: currentUser.record,
-                    employeeName: currentUser.name,
-                    ...dataToSave,
-                    createdAt: serverTimestamp(),
-                });
-                toast({ title: 'Record Saved', description: "The project information has been saved." });
-            }
-        } catch (serverError) {
-             const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: recordId ? 'update' : 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        if (recordId) {
+            await updateRecord(recordId, dataToSave);
+        } else {
+            await addRecord(dataToSave as any);
         }
     };
     
@@ -301,7 +246,7 @@ function ProjectInformationComponent() {
       const margin = 14;
 
       const addSectionTitle = (title: string) => {
-          if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
+          if (yPos > 260) { doc.addPage(); yPos = 20; }
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
           doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -547,31 +492,31 @@ function ProjectInformationComponent() {
                 <CardContent className="max-w-3xl mx-auto">
                     <form className="space-y-8">
                         <div className="space-y-4">
-                            <InputRow label="Project:" id="project" value={formState.project} onChange={handleChange} />
-                            <InputRow label="Address:" id="address" value={formState.address} onChange={handleChange} />
-                            <InputRow label="Project No:" id="projectNo" value={formState.projectNo} onChange={handleChange} />
-                            <InputRow label="Prepared By:" id="preparedBy" value={formState.preparedBy} onChange={handleChange} />
-                            <InputRow label="Prepared Date:" id="preparedDate" value={formState.preparedDate} onChange={handleChange} type="date" />
+                            <InputRow label="Project:" id="project" name="project" value={formState.project} onChange={handleChange} />
+                            <InputRow label="Address:" id="address" name="address" value={formState.address} onChange={handleChange} />
+                            <InputRow label="Project No:" id="projectNo" name="projectNo" value={formState.projectNo} onChange={handleChange} />
+                            <InputRow label="Prepared By:" id="preparedBy" name="preparedBy" value={formState.preparedBy} onChange={handleChange} />
+                            <InputRow label="Prepared Date:" id="preparedDate" name="preparedDate" value={formState.preparedDate} onChange={handleChange} type="date" />
                         </div>
                         
                         <Section title="About Owner">
-                            <InputRow label="Full Name:" id="ownerFullName" value={formState.ownerFullName} onChange={handleChange} />
-                            <InputRow label="Address (Office):" id="ownerOfficeAddress" value={formState.ownerOfficeAddress} onChange={handleChange} />
-                            <InputRow label="Address (Res.):" id="ownerResAddress" value={formState.ownerResAddress} onChange={handleChange} />
-                            <InputRow label="Phone (Office):" id="ownerOfficePhone" value={formState.ownerOfficePhone} onChange={handleChange} />
-                            <InputRow label="Phone (Res.):" id="ownerResPhone" value={formState.ownerResPhone} onChange={handleChange} />
+                            <InputRow label="Full Name:" id="ownerFullName" name="ownerFullName" value={formState.ownerFullName} onChange={handleChange} />
+                            <InputRow label="Address (Office):" id="ownerOfficeAddress" name="ownerOfficeAddress" value={formState.ownerOfficeAddress} onChange={handleChange} />
+                            <InputRow label="Address (Res.):" id="ownerResAddress" name="ownerResAddress" value={formState.ownerResAddress} onChange={handleChange} />
+                            <InputRow label="Phone (Office):" id="ownerOfficePhone" name="ownerOfficePhone" value={formState.ownerOfficePhone} onChange={handleChange} />
+                            <InputRow label="Phone (Res.):" id="ownerResPhone" name="ownerResPhone" value={formState.ownerResPhone} onChange={handleChange} />
                         </Section>
 
                         <Section title="Owner's Project Representative">
-                             <InputRow label="Name:" id="repName" value={formState.repName} onChange={handleChange} />
-                            <InputRow label="Address (Office):" id="repOfficeAddress" value={formState.repOfficeAddress} onChange={handleChange} />
-                            <InputRow label="Address (Res.):" id="repResAddress" value={formState.repResAddress} onChange={handleChange} />
-                            <InputRow label="Phone (Office):" id="repOfficePhone" value={formState.repOfficePhone} onChange={handleChange} />
-                            <InputRow label="Phone (Res.):" id="repResPhone" value={formState.repResPhone} onChange={handleChange} />
+                             <InputRow label="Name:" id="repName" name="repName" value={formState.repName} onChange={handleChange} />
+                            <InputRow label="Address (Office):" id="repOfficeAddress" name="repOfficeAddress" value={formState.repOfficeAddress} onChange={handleChange} />
+                            <InputRow label="Address (Res.):" id="repResAddress" name="repResAddress" value={formState.repResAddress} onChange={handleChange} />
+                            <InputRow label="Phone (Office):" id="repOfficePhone" name="repOfficePhone" value={formState.repOfficePhone} onChange={handleChange} />
+                            <InputRow label="Phone (Res.):" id="repResPhone" name="repResPhone" value={formState.repResPhone} onChange={handleChange} />
                         </Section>
 
                         <Section title="About Project">
-                            <InputRow label="Address:" id="projectAboutAddress" value={formState.projectAboutAddress} onChange={handleChange} />
+                            <InputRow label="Address:" id="projectAboutAddress" name="projectAboutAddress" value={formState.projectAboutAddress} onChange={handleChange} />
                              <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-2">
                                 <Label className="md:text-right font-bold mt-2">Project Reqt.</Label>
                                 <div className="md:col-span-2 space-y-3">
