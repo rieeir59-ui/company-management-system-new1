@@ -175,7 +175,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             await addRecord(recordData);
         }
     },
-    [firestore, currentUser, toast, records, addRecord]
+    [firestore, currentUser, toast, records, addRecord, updateRecord]
   );
 
 
@@ -231,16 +231,17 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
-  const projectManualItems = allFileNames
-    .filter(name => !name.includes('Timeline') && name !== 'Task Assignment' && name !== 'My Projects')
+  const projectManualItems = useMemo(() => allFileNames
+    .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects'].includes(name))
     .map(name => {
-      const url = `/${currentUser?.role === 'admin' ? 'dashboard' : 'employee-dashboard'}/${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+      const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
+      const url = `/${dashboardPrefix}/${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
       return {
-        href: `/dashboard/${name.toLowerCase().replace(/\s/g, '-').replace(/\(|\)/g, '')}`,
+        href: url,
         label: name,
         icon: getIconForFile(name),
       };
-    });
+  }), [isAdmin]);
   
   const value = useMemo(() => ({ 
       records, 
