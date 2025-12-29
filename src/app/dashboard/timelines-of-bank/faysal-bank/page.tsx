@@ -128,7 +128,7 @@ function FBLTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
@@ -160,23 +160,19 @@ function FBLTimelineComponent() {
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
-             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
-             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
-             'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project\nClosure']
+             'Site Survey', 'Contract', 'Head Count / Requirment',
+             'Proposal / Design Development', '3D\'s', 'Tender Package Architectural', 'Tender Package MEP',
+             'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
-            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
-            p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
+            `${p.siteSurveyStart} - ${p.siteSurveyEnd}`, p.contract, p.headCount,
+            `${p.proposalStart} - ${p.proposalEnd}`, `${p.threedStart} - ${p.threedEnd}`,
+            `${p.tenderArchStart} - ${p.tenderArchEnd}`, `${p.tenderMepStart} - ${p.tenderMepEnd}`,
+            `${p.boqStart} - ${p.boqEnd}`, p.tenderStatus, p.comparative, 
+            `${p.workingDrawingsStart} - ${p.workingDrawingsEnd}`, 
+            `${p.siteVisitStart} - ${p.siteVisitEnd}`, 
             p.finalBill, p.projectClosure
         ]);
 
@@ -241,38 +237,38 @@ function FBLTimelineComponent() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
-                         <thead>
-                            <tr className="bg-primary/20">
+                        <thead>
+                            <tr className="bg-primary/20 text-center">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
-                                <th rowSpan={2} className="border p-1">Project Name</th>
-                                <th rowSpan={2} className="border p-1">Area in Sft</th>
-                                <th rowSpan={2} className="border p-1">Project Holder</th>
-                                <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
-                                <th colSpan={2} className="border p-1">Site Survey</th>
+                                <th rowSpan={2} className="border p-1 min-w-[200px] text-left">Project Name</th>
+                                <th rowSpan={2} className="border p-1">Area</th>
+                                <th rowSpan={2} className="border p-1">Holder</th>
+                                <th rowSpan={2} className="border p-1">RFP Date</th>
+                                <th colSpan={2} className="border p-1">Survey</th>
                                 <th rowSpan={2} className="border p-1">Contract</th>
-                                <th rowSpan={2} className="border p-1">Head Count / Requirment</th>
-                                <th colSpan={2} className="border p-1">Proposal / Design Development</th>
+                                <th rowSpan={2} className="border p-1">Head Count</th>
+                                <th colSpan={2} className="border p-1">Proposal</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
-                                <th colSpan={2} className="border p-1">Tender Package Architectural</th>
-                                <th colSpan={2} className="border p-1">Tender Package MEP</th>
+                                <th colSpan={2} className="border p-1">Tender Arch</th>
+                                <th colSpan={2} className="border p-1">Tender MEP</th>
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
-                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
+                                <th colSpan={2} className="border p-1">Working Drawings</th>
+                                <th colSpan={2} className="border p-1">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
                             </tr>
-                            <tr className="bg-primary/10">
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                            <tr className="bg-primary/10 text-center">
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
+                                <th className="border p-1">Start</th><th className="border p-1">End</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -282,7 +278,7 @@ function FBLTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" /></td>
                                     <td className="border"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" /></td>
-                                    <td className="border"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} className="w-28" /></td>
+                                    <td className="border"><Input type="date" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} /></td>
@@ -331,8 +327,3 @@ function FBLTimelineComponent() {
 export default function Page() {
   return <FBLTimelineComponent />;
 }
-
-    
-      
-
-  
