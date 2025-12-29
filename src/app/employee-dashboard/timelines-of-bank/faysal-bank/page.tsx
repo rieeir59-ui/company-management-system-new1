@@ -117,7 +117,6 @@ function FBLTimelineComponent() {
         }
     };
 
-
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
     };
@@ -159,7 +158,8 @@ function FBLTimelineComponent() {
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey', 'Contract', 'Head Count', 'Proposal', '3D\'s', 'Tender Arch', 'Tender MEP',
+             'Site Survey', 'Contract', 'Head Count / Requirment',
+             'Proposal / Design Development', '3D\'s', 'Tender Package Architectural', 'Tender Package MEP',
              'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
@@ -325,3 +325,7 @@ function FBLTimelineComponent() {
 export default function Page() {
   return <FBLTimelineComponent />;
 }
+
+      
+
+  

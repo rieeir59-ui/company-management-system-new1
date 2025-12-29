@@ -79,10 +79,8 @@ function FBLTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contract']?.start || '',
-                    contactEnd: taskMap['contract']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
+                    contract: taskMap['contract']?.start || '',
+                    headCount: taskMap['headcountrequirment']?.start || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -118,6 +116,7 @@ function FBLTimelineComponent() {
             setIsGenerating(false);
         }
     };
+
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
@@ -327,3 +326,8 @@ function FBLTimelineComponent() {
 export default function Page() {
   return <FBLTimelineComponent />;
 }
+
+    
+      
+
+  
