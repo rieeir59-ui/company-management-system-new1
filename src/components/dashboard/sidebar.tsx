@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -273,7 +274,7 @@ export default function DashboardSidebar() {
   }, [currentUser]);
   
   const searchResults = useMemo(() => {
-    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: [] };
+    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: {} };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
@@ -287,10 +288,22 @@ export default function DashboardSidebar() {
     );
 
     const recordResults = records.filter(record => 
-        record.projectName.toLowerCase().includes(lowerCaseQuery)
-    );
+        record.projectName.toLowerCase().includes(lowerCaseQuery) ||
+        record.fileName.toLowerCase().includes(lowerCaseQuery)
+    ).reduce((acc, record) => {
+        const key = record.fileName;
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(record);
+        return acc;
+    }, {} as Record<string, typeof records>);
     
-    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), recordResults };
+    return { 
+        menuResults, 
+        projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), 
+        recordResults 
+    };
   }, [searchQuery, visibleTopLevelItems, projectManualItems, records]);
   
   return (
@@ -352,24 +365,26 @@ export default function DashboardSidebar() {
                         ))}
                     </SidebarMenuItem>
                 )}
-                 {searchResults.recordResults.length > 0 && (
-                    <SidebarMenuItem>
-                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Saved Records</span>
-                        {searchResults.recordResults.map((record) => {
-                            const Icon = getIconForFile(record.fileName);
-                            const url = getFormUrlFromFileName(record.fileName, 'dashboard');
-                            return (
-                                <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
-                                    <SidebarMenuButton>
-                                        <Icon className="size-5" />
-                                        <span>{record.projectName} ({record.fileName})</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            )
-                        })}
-                    </SidebarMenuItem>
-                )}
-                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && searchResults.recordResults.length === 0 && (
+                 {Object.entries(searchResults.recordResults).map(([fileName, fileRecords]) => {
+                    const Icon = getIconForFile(fileName);
+                    return (
+                        <SidebarMenuItem key={fileName}>
+                            <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">{fileName}</span>
+                            {fileRecords.map(record => {
+                                const url = getFormUrlFromFileName(record.fileName, 'dashboard');
+                                return (
+                                    <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
+                                        <SidebarMenuButton>
+                                            <Icon className="size-5" />
+                                            <span>{record.projectName}</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                )
+                            })}
+                        </SidebarMenuItem>
+                    )
+                 })}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && Object.keys(searchResults.recordResults).length === 0 && (
                     <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
                 )}
              </SidebarMenu>
