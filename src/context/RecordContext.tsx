@@ -23,7 +23,7 @@ import {
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
-import { allFileNames } from '@/lib/utils';
+import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
 import { Building2, Home, Landmark } from 'lucide-react';
@@ -231,17 +231,19 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
-  const projectManualItems = useMemo(() => allFileNames
-    .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects'].includes(name))
-    .map(name => {
-      const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
-      const url = `/${dashboardPrefix}/${name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-      return {
-        href: url,
-        label: name,
-        icon: getIconForFile(name),
-      };
-  }), [isAdmin]);
+  const projectManualItems = useMemo(() => {
+    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
+    return allFileNames
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects'].includes(name))
+        .map(name => {
+            const url = getFormUrlFromFileName(name, dashboardPrefix);
+            return {
+                href: url,
+                label: name,
+                icon: getIconForFile(name),
+            };
+        });
+  }, [isAdmin]);
   
   const value = useMemo(() => ({ 
       records, 

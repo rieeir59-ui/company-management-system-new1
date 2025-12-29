@@ -288,7 +288,7 @@ export default function EmployeeDashboardSidebar() {
       project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
 
-    const recordResults = records.filter(record => 
+    const recordResults = (records || []).filter(record => 
         (record.projectName.toLowerCase().includes(lowerCaseQuery) ||
         record.fileName.toLowerCase().includes(lowerCaseQuery)) &&
         record.employeeId === currentUser?.uid // Only show own records in employee dashboard search

@@ -42,6 +42,11 @@ import {
   Home,
   Archive,
   ClipboardList,
+  Compass,
+  FileSearch,
+  Presentation,
+  CalendarOff,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -60,6 +65,11 @@ const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
     { href: '/dashboard/daily-report', label: 'Daily Work Report', icon: ClipboardList },
+    { href: '/dashboard/site-visit', label: 'Site Visit', icon: Eye },
+    { href: '/dashboard/site-survey', label: 'Site Survey', icon: Compass },
+    { href: '/dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
+    { href: '/dashboard/proposal-request', label: 'Proposal Request', icon: FileText },
+    { href: '/dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
     { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
@@ -255,7 +265,7 @@ MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
 
 export default function DashboardSidebar() {
   const { user: currentUser, logout, employees } = useCurrentUser();
-  const { projectManualItems, records } = useRecords();
+  const { projectManualItems } = useRecords();
   const { tasks } = useTasks(undefined, true);
   const { toast } = useToast();
   const router = useRouter();
@@ -291,7 +301,7 @@ export default function DashboardSidebar() {
       project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
 
-    const recordResults = records.filter(record => 
+    const recordResults = (useRecords().records || []).filter(record => 
         record.projectName.toLowerCase().includes(lowerCaseQuery) ||
         record.fileName.toLowerCase().includes(lowerCaseQuery)
     ).reduce((acc, record) => {
@@ -301,7 +311,7 @@ export default function DashboardSidebar() {
         }
         acc[key].push(record);
         return acc;
-    }, {} as Record<string, typeof records>);
+    }, {} as Record<string, ReturnType<typeof useRecords>['records']>);
     
     const taskResults = tasks.filter(task => {
         const employee = employees.find(e => e.uid === task.assignedTo);
@@ -321,7 +331,7 @@ export default function DashboardSidebar() {
         recordResults,
         taskResults,
     };
-  }, [searchQuery, visibleTopLevelItems, projectManualItems, records, tasks, employees]);
+  }, [searchQuery, visibleTopLevelItems, projectManualItems, useRecords, tasks, employees]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -409,7 +419,7 @@ export default function DashboardSidebar() {
                  )}
                  {Object.keys(searchResults.taskResults).length > 0 && (
                     <SidebarMenuItem>
-                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Assigned Tasks</span>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Assigned Tasks by Employee</span>
                          {Object.entries(searchResults.taskResults).map(([employeeName, employeeTasks]) => {
                              const employee = employees.find(e => e.name === employeeName);
                              return (
