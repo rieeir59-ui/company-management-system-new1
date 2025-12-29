@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
+import { Compass } from 'lucide-react';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -237,11 +238,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name));
+        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Site Survey'].includes(name));
 
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
             { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
+            { name: 'Site Survey', icon: Compass, files: ['Site Survey'] },
             { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
             { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
         ];
@@ -319,7 +321,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
             
             const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(key));
+                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(key) );
                 if (entries.length === 0) return null;
                 return (
                     <div className="mb-6">
