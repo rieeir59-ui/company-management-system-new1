@@ -248,11 +248,7 @@ export default function LeaveApplicationPage() {
 
     const drawCheckbox = (x: number, y: number, checked: boolean) => {
       doc.setLineWidth(0.2);
-      doc.rect(x, y - 3.5, 4, 4);
-      if (checked) {
-          doc.setFillColor(0, 0, 0);
-          doc.rect(x + 0.5, y - 3, 3, 3, 'F');
-      }
+      doc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
     };
     
     addSectionHeader('Employee to Complete');
@@ -272,11 +268,14 @@ export default function LeaveApplicationPage() {
     doc.text('Part-time', 85, y);
     y += 10;
     
-    doc.text(`I hereby request a leave of absence effective from (${formState.leaveFrom}) to (${formState.leaveTo})`, 14, y);
+    const fromDate = formState.leaveFrom || '( ____________ )';
+    const toDate = formState.leaveTo || '( ____________ )';
+    const returnDate = formState.returnDate || '( ____________ )';
+    doc.text(`I hereby request a leave of absence effective from ${fromDate} to ${toDate}`, 14, y);
     y += 7;
     doc.text(`Total Days: ${totalDays}`, 14, y);
     y += 7;
-    doc.text(`I expect to return to work on Date: (${formState.returnDate})`, 14, y);
+    doc.text(`I expect to return to work on Date: ${returnDate}`, 14, y);
     y += 10;
     
     addSectionHeader('Reason for Requested:');
@@ -441,7 +440,7 @@ export default function LeaveApplicationPage() {
                     </div>
                     <div className="flex items-center gap-6 pt-4">
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.unpaid}))} disabled />
+                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.paid}))} disabled />
                             <Label htmlFor="paid_leave">PAID LEAVE</Label>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -466,4 +465,3 @@ export default function LeaveApplicationPage() {
     </div>
   );
 }
-
