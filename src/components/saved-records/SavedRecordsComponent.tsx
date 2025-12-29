@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -82,106 +83,110 @@ const generatePdfForRecord = (record: SavedRecord) => {
     };
     
     if (record.fileName === 'Leave Request Form') {
-        const doc = new jsPDF();
+        const leaveDoc = new jsPDF(); // Use a new instance for portrait mode
         let y = 20;
 
         const employeeInfo = record.data.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
         const leaveDetails = record.data.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
         const hrApproval = record.data.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.text('LEAVE REQUEST FORM', doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        leaveDoc.setFont('helvetica', 'bold');
+        leaveDoc.setFontSize(16);
+        leaveDoc.text('LEAVE REQUEST FORM', leaveDoc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
         y += 15;
 
-        doc.setFontSize(10);
+        leaveDoc.setFontSize(10);
         
         const addSectionHeader = (text: string) => {
-            doc.setFont('helvetica', 'bold');
-            doc.text(text, 14, y);
+            leaveDoc.setFont('helvetica', 'bold');
+            leaveDoc.text(text, 14, y);
             y += 7;
-            doc.setFont('helvetica', 'normal');
+            leaveDoc.setFont('helvetica', 'normal');
         };
 
         const drawCheckbox = (x: number, y: number, checked: boolean) => {
-          doc.setLineWidth(0.2);
-          doc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
+          leaveDoc.setLineWidth(0.2);
+          leaveDoc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
         };
         
         addSectionHeader('Employee to Complete');
-        (doc as any).autoTable({
+        (leaveDoc as any).autoTable({
             startY: y, theme: 'grid', showHead: false,
             body: [
                 [`Employee Name: ${employeeInfo['Employee Name'] || ''}`, `Employee Number: ${employeeInfo['Employee Number'] || ''}`],
                 [`Department: ${employeeInfo['Department'] || ''}`, `Position: ${employeeInfo['Position'] || ''}`],
             ]
         });
-        y = (doc as any).autoTable.previous.finalY + 5;
+        y = (leaveDoc as any).autoTable.previous.finalY + 5;
         
-        doc.text(`Status (select one):`, 14, y);
+        leaveDoc.text(`Status (select one):`, 14, y);
         drawCheckbox(50, y, leaveDetails['Status'] === 'Full-time');
-        doc.text('Full-time', 55, y);
+        leaveDoc.text('Full-time', 55, y);
         drawCheckbox(80, y, leaveDetails['Status'] === 'Part-time');
-        doc.text('Part-time', 85, y);
+        leaveDoc.text('Part-time', 85, y);
         y += 10;
         
-        doc.text(`I hereby request a leave of absence effective from (${leaveDetails['Leave From']}) to (${leaveDetails['Leave To']})`, 14, y);
+        leaveDoc.text(`I hereby request a leave of absence effective from (${leaveDetails['Leave From']}) to (${leaveDetails['Leave To']})`, 14, y);
         y += 7;
-        doc.text(`Total Days: ${leaveDetails['Total Days']}`, 14, y);
+        leaveDoc.text(`Total Days: ${leaveDetails['Total Days']}`, 14, y);
         y += 7;
-        doc.text(`I expect to return to work on Date: (${leaveDetails['Return Date']})`, 14, y);
+        leaveDoc.text(`I expect to return to work on Date: (${leaveDetails['Return Date']})`, 14, y);
         y += 10;
         
         addSectionHeader('Reason for Requested:');
         (leaveDetails['Leave Type']?.split(', ') || []).forEach((reason: string) => {
             drawCheckbox(14, y, true);
-            doc.text(reason.toUpperCase(), 20, y);
+            leaveDoc.text(reason.toUpperCase(), 20, y);
             y += 7;
         });
         
         y += 3;
         
-        doc.text('REASON:', 14, y);
+        leaveDoc.text('REASON:', 14, y);
         y += 5;
-        doc.setLineWidth(0.5);
-        doc.line(14, y, 196, y);
+        leaveDoc.setLineWidth(0.5);
+        leaveDoc.line(14, y, 196, y);
         if (leaveDetails['Reason']) {
-            doc.text(leaveDetails['Reason'], 16, y - 1);
+            leaveDoc.text(leaveDetails['Reason'], 16, y - 1);
         }
         y += 15;
         
         addSectionHeader('HR Department Approval:');
         drawCheckbox(14, y, hrApproval['Approved'] === 'true');
-        doc.text('LEAVE APPROVED', 20, y);
+        leaveDoc.text('LEAVE APPROVED', 20, y);
         y += 7;
         drawCheckbox(14, y, hrApproval['Denied'] === 'true');
-        doc.text('LEAVE DENIED', 20, y);
+        leaveDoc.text('LEAVE DENIED', 20, y);
         y += 10;
         
-        doc.text('REASON:', 14, y);
+        leaveDoc.text('REASON:', 14, y);
         y += 5;
-        doc.setLineWidth(0.5);
-        doc.line(14, y, 196, y);
+        leaveDoc.setLineWidth(0.5);
+        leaveDoc.line(14, y, 196, y);
         if (hrApproval['Reason']) {
-            doc.text(hrApproval['Reason'], 16, y-1);
+            leaveDoc.text(hrApproval['Reason'], 16, y-1);
         }
         y += 10;
         
-        doc.text('Date:', 14, y);
-        doc.text(hrApproval['Date'] || '____________', 25, y);
+        leaveDoc.text('Date:', 14, y);
+        leaveDoc.text(hrApproval['Date'] || '____________', 25, y);
         y += 10;
         
         drawCheckbox(14, y, hrApproval['Paid Leave'] === 'true');
-        doc.text('PAID LEAVE', 20, y);
+        leaveDoc.text('PAID LEAVE', 20, y);
         drawCheckbox(60, y, hrApproval['Unpaid Leave'] === 'true');
-        doc.text('UNPAID LEAVE', 66, y);
+        leaveDoc.text('UNPAID LEAVE', 66, y);
         y += 20;
 
-        doc.text('COMPANY CEO: SIGNATURE', 14, y);
-        doc.text('DATE:', 150, y);
+        leaveDoc.text('COMPANY CEO: SIGNATURE', 14, y);
+        leaveDoc.text('DATE:', 150, y);
         y += 5;
-        doc.line(14, y, 90, y);
-        doc.line(160, y, 196, y);
+        leaveDoc.line(14, y, 90, y);
+        leaveDoc.line(160, y, 196, y);
+
+        addFooter();
+        leaveDoc.save(`${record.projectName}_${record.fileName}.pdf`);
+        return;
     } else if (record.fileName.endsWith('Timeline')) {
         doc.setProperties({ title: `${record.projectName} Timeline` });
         doc.setFontSize(10);
@@ -421,44 +426,50 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
             return (
                 <div className="space-y-4">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Sr.</TableHead>
-                                <TableHead>Project</TableHead>
-                                <TableHead>Area</TableHead>
-                                <TableHead>Holder</TableHead>
-                                <TableHead>RFP</TableHead>
-                                <TableHead>Survey</TableHead>
-                                <TableHead>Proposal</TableHead>
-                                <TableHead>3D's</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {projects.map(p => (
-                                <TableRow key={p.id}>
-                                    <TableCell>{p.srNo}</TableCell>
-                                    <TableCell>{p.projectName}</TableCell>
-                                    <TableCell>{p.area}</TableCell>
-                                    <TableCell>{p.projectHolder}</TableCell>
-                                    <TableCell>{p.allocationDate}</TableCell>
-                                    <TableCell>{p.siteSurveyStart} - {p.siteSurveyEnd}</TableCell>
-                                    <TableCell>{p.proposalStart} - {p.proposalEnd}</TableCell>
-                                    <TableCell>{p.threedStart} - {p.threedEnd}</TableCell>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Sr.</TableHead>
+                                    <TableHead>Project</TableHead>
+                                    <TableHead>Area</TableHead>
+                                    <TableHead>Holder</TableHead>
+                                    <TableHead>RFP</TableHead>
+                                    <TableHead>Survey</TableHead>
+                                    <TableHead>Proposal</TableHead>
+                                    <TableHead>3D's</TableHead>
+                                    <TableHead>Tender Arch</TableHead>
+                                    <TableHead>Tender MEP</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {projects.map(p => (
+                                    <TableRow key={p.id}>
+                                        <TableCell>{p.srNo}</TableCell>
+                                        <TableCell>{p.projectName}</TableCell>
+                                        <TableCell>{p.area}</TableCell>
+                                        <TableCell>{p.projectHolder}</TableCell>
+                                        <TableCell>{p.allocationDate}</TableCell>
+                                        <TableCell>{p.siteSurveyStart} - {p.siteSurveyEnd}</TableCell>
+                                        <TableCell>{p.proposalStart} - {p.proposalEnd}</TableCell>
+                                        <TableCell>{p.threedStart} - {p.threedEnd}</TableCell>
+                                        <TableCell>{p.tenderArchStart} - {p.tenderArchEnd}</TableCell>
+                                        <TableCell>{p.tenderMepStart} - {p.tenderMepEnd}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                     {statusSection?.items[0]?.value && (
                         <div>
                             <h4 className="font-bold text-primary">Overall Status</h4>
-                            <p className="text-sm text-muted-foreground">{statusSection.items[0].value}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{statusSection.items[0].value}</p>
                         </div>
                     )}
                     {remarksSection?.items[0]?.value && (
                         <div>
                             <h4 className="font-bold text-primary">Maam Isbah Remarks & Order</h4>
-                            <p className="text-sm text-muted-foreground">{remarksSection.items[0].value}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{remarksSection.items[0].value}</p>
                             <p className="text-xs text-muted-foreground mt-1">Date: {remarksSection.items[1]?.value}</p>
                         </div>
                     )}
