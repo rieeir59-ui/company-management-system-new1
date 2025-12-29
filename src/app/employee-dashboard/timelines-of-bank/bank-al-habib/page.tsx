@@ -147,7 +147,8 @@ function BankAlHabibTimelineComponent() {
             projectName: 'Bank Al Habib Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Overall Status', items: [{label: 'Status', value: overallStatus}]},
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -196,7 +197,7 @@ function BankAlHabibTimelineComponent() {
         doc.setFont('helvetica', 'normal');
         doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
         lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
-
+        
         doc.setFont('helvetica', 'bold');
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
@@ -316,7 +317,7 @@ function BankAlHabibTimelineComponent() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
-                <div className="mt-8">
+                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Overall Status</h3>
                     <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
                 </div>
@@ -334,3 +335,4 @@ function BankAlHabibTimelineComponent() {
 export default function Page() {
   return <BankAlHabibTimelineComponent />;
 }
+

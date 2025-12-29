@@ -1,18 +1,19 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, PlusCircle, Trash2, Bot } from 'lucide-react';
+import { Save, Download, PlusCircle, Trash2, Bot, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { commercialProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
+import { commercialProjects as initialProjectRowsData, type ProjectRow, deleteProject } from '@/lib/projects-data';
+import Link from 'next/link';
 
 function CommercialTimelineComponent() {
     const { toast } = useToast();
@@ -21,6 +22,10 @@ function CommercialTimelineComponent() {
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
+
+    useEffect(() => {
+        setProjectRows(initialProjectRowsData);
+    }, []);
 
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
@@ -133,6 +138,8 @@ function CommercialTimelineComponent() {
     
     const removeProjectRow = (id: number) => {
         setProjectRows(projectRows.filter(row => row.id !== id));
+        deleteProject('commercial', id);
+        toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
     };
     
     const handleSave = () => {
@@ -141,7 +148,8 @@ function CommercialTimelineComponent() {
             projectName: 'Commercial Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Overall Status', items: [{label: 'Status', value: overallStatus}]},
+                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -187,7 +195,7 @@ function CommercialTimelineComponent() {
         doc.setFont('helvetica', 'normal');
         doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
         lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
-
+        
         doc.setFont('helvetica', 'bold');
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
@@ -204,7 +212,12 @@ function CommercialTimelineComponent() {
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">Commercial Timeline</CardTitle>
+                 <div className="flex items-center gap-4">
+                    <Button asChild variant="outline" size="icon">
+                        <Link href="/employee-dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+                    </Button>
+                    <CardTitle className="text-center font-headline text-3xl text-primary">Commercial Timeline</CardTitle>
+                </div>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -243,8 +256,8 @@ function CommercialTimelineComponent() {
                                 <th colSpan={2} className="border p-1">BOQ</th>
                                 <th rowSpan={2} className="border p-1">Tender Status</th>
                                 <th rowSpan={2} className="border p-1">Comparative</th>
-                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Working Drawings</th>
-                                <th colSpan={2} className="border p-1 font-semibold text-foreground">Site Visit</th>
+                                <th colSpan={2} className="border p-1">Working Drawings</th>
+                                <th colSpan={2} className="border p-1">Site Visit</th>
                                 <th rowSpan={2} className="border p-1">Final Bill</th>
                                 <th rowSpan={2} className="border p-1">Project Closure</th>
                                 <th rowSpan={2} className="border p-1">Action</th>
@@ -258,8 +271,8 @@ function CommercialTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
-                                <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -302,7 +315,7 @@ function CommercialTimelineComponent() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
-                <div className="mt-8">
+                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Overall Status</h3>
                     <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
                 </div>
@@ -320,5 +333,6 @@ function CommercialTimelineComponent() {
 export default function Page() {
   return <CommercialTimelineComponent />;
 }
+
 
     

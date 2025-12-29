@@ -12,10 +12,10 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { fblProjects as initialProjectRowsData, type ProjectRow, deleteProject } from '@/lib/projects-data';
+import { cbdProjects as initialProjectRowsData, type ProjectRow, deleteProject } from '@/lib/projects-data';
 import Link from 'next/link';
 
-function FBLTimelineComponent() {
+function CBDTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
@@ -79,10 +79,8 @@ function FBLTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contract']?.start || '',
-                    contactEnd: taskMap['contract']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
+                    contract: taskMap['contract']?.start || '',
+                    headCount: taskMap['headcountrequirment']?.start || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -137,14 +135,14 @@ function FBLTimelineComponent() {
     
     const removeProjectRow = (id: number) => {
         setProjectRows(projectRows.filter(row => row.id !== id));
-        deleteProject('faysal-bank', id);
+        deleteProject('cbd', id);
         toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
     };
     
     const handleSave = () => {
         addRecord({
-            fileName: 'Faysal Bank Timeline',
-            projectName: 'Faysal Bank Projects',
+            fileName: 'CBD Timeline',
+            projectName: 'CBD Projects',
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Overall Status', items: [{label: 'Status', value: overallStatus}]},
@@ -156,11 +154,12 @@ function FBLTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text("Faysal Bank Timeline", 14, 15);
+        doc.text("CBD Timeline", 14, 15);
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey', 'Contract', 'Head Count', 'Proposal', '3D\'s', 'Tender Arch', 'Tender MEP',
+             'Site Survey', 'Contract', 'Head Count / Requirment',
+             'Proposal / Design Development', '3D\'s', 'Tender Package Architectural', 'Tender Package MEP',
              'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
@@ -180,8 +179,8 @@ function FBLTimelineComponent() {
             body: body,
             startY: 20,
             theme: 'grid',
-            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
-            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
+            styles: { fontSize: 5, cellPadding: 1 },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
@@ -202,7 +201,7 @@ function FBLTimelineComponent() {
 
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
-        doc.save('fbl_timeline.pdf');
+        doc.save('cbd_timeline.pdf');
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
@@ -213,7 +212,7 @@ function FBLTimelineComponent() {
                     <Button asChild variant="outline" size="icon">
                         <Link href="/employee-dashboard"><ArrowLeft className="h-4 w-4" /></Link>
                     </Button>
-                    <CardTitle className="text-center font-headline text-3xl text-primary">Faysal Bank Timeline</CardTitle>
+                    <CardTitle className="text-center font-headline text-3xl text-primary">CBD Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
@@ -236,7 +235,7 @@ function FBLTimelineComponent() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
-                         <thead>
+                        <thead>
                             <tr className="bg-primary/20">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
                                 <th rowSpan={2} className="border p-1">Project Name</th>
@@ -324,10 +323,6 @@ function FBLTimelineComponent() {
 }
 
 export default function Page() {
-  return <FBLTimelineComponent />;
+  return <CBDTimelineComponent />;
 }
 
-    
-      
-
-  
