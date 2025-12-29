@@ -34,6 +34,9 @@ export default function LeaveApplicationPage() {
   const recordId = searchParams.get('id');
 
   const [formState, setFormState] = useState({
+    employeeName: '',
+    employeeNumber: '',
+    department: '',
     position: '',
     status: 'Full-time',
     leaveFrom: '',
@@ -63,6 +66,9 @@ export default function LeaveApplicationPage() {
             const hrInfo = record.data?.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
 
             setFormState({
+                employeeName: employeeInfo['Employee Name'] || '',
+                employeeNumber: employeeInfo['Employee Number'] || '',
+                department: employeeInfo['Department'] || '',
                 position: employeeInfo['Position'] || '',
                 status: employeeInfo['Status'] || 'Full-time',
                 leaveFrom: leaveDetails['Leave From'] || '',
@@ -131,9 +137,9 @@ export default function LeaveApplicationPage() {
 
     const leaveRequestData = {
         employeeId: currentUser.uid,
-        employeeName: currentUser.name,
-        employeeRecord: currentUser.record,
-        department: currentUser.departments.join(', '),
+        employeeName: formState.employeeName,
+        employeeRecord: formState.employeeNumber,
+        department: formState.department,
         position: formState.position,
         status: formState.status,
         leaveType: formState.reasonForRequested.join(', '),
@@ -151,7 +157,7 @@ export default function LeaveApplicationPage() {
         
         await addDoc(collection(firestore, 'notifications'), {
             type: 'leave_request',
-            message: `${currentUser.name} has requested for ${totalDays} day(s) of leave.`,
+            message: `${formState.employeeName} has requested for ${totalDays} day(s) of leave.`,
             relatedId: leaveDocRef.id,
             recipientRole: 'admin',
             status: 'unread',
@@ -164,7 +170,7 @@ export default function LeaveApplicationPage() {
         });
         
         setFormState({
-            position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
+            employeeName: '', employeeNumber: '', department: '', position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
         });
 
     } catch (serverError) {
@@ -186,14 +192,14 @@ export default function LeaveApplicationPage() {
     }
     const dataToSave = {
       fileName: 'Leave Request Form',
-      projectName: `Leave Request - ${currentUser.name} - ${formState.leaveFrom}`,
+      projectName: `Leave Request - ${formState.employeeName || currentUser.name} - ${formState.leaveFrom}`,
       data: [
         {
           category: 'Employee Information',
           items: [
-            { label: 'Employee Name', value: currentUser.name },
-            { label: 'Employee Number', value: currentUser.record },
-            { label: 'Department', value: currentUser.departments.join(', ') },
+            { label: 'Employee Name', value: formState.employeeName },
+            { label: 'Employee Number', value: formState.employeeNumber },
+            { label: 'Department', value: formState.department },
             { label: 'Position', value: formState.position },
             { label: 'Status', value: formState.status },
           ]
@@ -255,8 +261,8 @@ export default function LeaveApplicationPage() {
     (doc as any).autoTable({
         startY: y, theme: 'grid', showHead: false,
         body: [
-            [`Employee Name: ${currentUser?.name || ''}`, `Employee Number: ${currentUser?.record || ''}`],
-            [`Department: ${currentUser?.departments.join(', ') || ''}`, `Position: ${formState.position}`],
+            [`Employee Name: ${formState.employeeName || ''}`, `Employee Number: ${formState.employeeNumber || ''}`],
+            [`Department: ${formState.department || ''}`, `Position: ${formState.position}`],
         ]
     });
     y = (doc as any).autoTable.previous.finalY + 5;
@@ -268,9 +274,9 @@ export default function LeaveApplicationPage() {
     doc.text('Part-time', 85, y);
     y += 10;
     
-    const fromDate = formState.leaveFrom || '( ____________ )';
-    const toDate = formState.leaveTo || '( ____________ )';
-    const returnDate = formState.returnDate || '( ____________ )';
+    const fromDate = formState.leaveFrom ? formState.leaveFrom : '( ____________ )';
+    const toDate = formState.leaveTo ? formState.leaveTo : '( ____________ )';
+    const returnDate = formState.returnDate ? formState.returnDate : '( ____________ )';
     doc.text(`I hereby request a leave of absence effective from ${fromDate} to ${toDate}`, 14, y);
     y += 7;
     doc.text(`Total Days: ${totalDays}`, 14, y);
@@ -363,16 +369,16 @@ export default function LeaveApplicationPage() {
                     <h3 className="font-semibold text-lg text-primary">Employee to Complete</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Employee Name</Label>
-                            <Input value={currentUser?.name || ''} readOnly />
+                            <Label htmlFor="employeeName">Employee Name</Label>
+                            <Input id="employeeName" name="employeeName" value={formState.employeeName} onChange={handleChange} required />
                         </div>
                         <div className="space-y-2">
-                            <Label>Employee Number</Label>
-                            <Input value={currentUser?.record || ''} readOnly />
+                            <Label htmlFor="employeeNumber">Employee Number</Label>
+                            <Input id="employeeNumber" name="employeeNumber" value={formState.employeeNumber} onChange={handleChange} required />
                         </div>
                         <div className="space-y-2">
-                            <Label>Department</Label>
-                            <Input value={currentUser?.departments.join(', ') || ''} readOnly />
+                            <Label htmlFor="department">Department</Label>
+                            <Input id="department" name="department" value={formState.department} onChange={handleChange} required />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="position">Position</Label>
@@ -465,3 +471,5 @@ export default function LeaveApplicationPage() {
     </div>
   );
 }
+
+    
