@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ function ResidentialTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
+    const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
     
@@ -45,7 +47,7 @@ function ResidentialTimelineComponent() {
             projectName: 'Residential Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -81,10 +83,20 @@ function ResidentialTimelineComponent() {
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
         
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Overall Status:", 14, lastY);
+        lastY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
+        
+        doc.setFont('helvetica', 'bold');
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
-        doc.text(remarks, 14, lastY);
-        lastY += 10;
+        doc.setFont('helvetica', 'normal');
+        doc.text(remarks, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(remarks, { maxWidth: 260 }).h + 10;
 
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
@@ -180,6 +192,11 @@ function ResidentialTimelineComponent() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
+                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
+                </div>
+
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
                     <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
@@ -193,3 +210,6 @@ function ResidentialTimelineComponent() {
 export default function Page() {
   return <ResidentialTimelineComponent />;
 }
+
+
+    
