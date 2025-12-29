@@ -8,6 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const allFileNames = [
   "Architect's Supplemental Instructions",
+  "Architect's Field Report",
   "Bill of Quantity",
   "Change Order",
   "Consent of Surety (Retainage)",
@@ -33,6 +34,7 @@ export const allFileNames = [
   "Task Assignment",
   "Site Visit Proforma",
   "Site Survey Report",
+  "Site Survey",
   "Uploaded File",
   "Daily Work Report",
   "Leave Request Form",
@@ -40,6 +42,7 @@ export const allFileNames = [
 
 const fileNameToUrlMap: Record<string, string> = {
   "Architect's Supplemental Instructions": "architects-instructions",
+  "Architect's Field Report": "field-reports-meetings/architects-field-report",
   "Bill of Quantity": "bill-of-quantity",
   "Change Order": "change-order",
   "Consent of Surety (Retainage)": "consent-of-surety",
@@ -64,7 +67,8 @@ const fileNameToUrlMap: Record<string, string> = {
   "My Projects": "my-projects",
   "Task Assignment": "assign-task/form",
   "Site Visit Proforma": "site-visit",
-  "Site Survey Report": "site-survey",
+  "Site Survey Report": "site-survey-report",
+  "Site Survey": "site-survey",
   "Uploaded File": "files-record",
   "Daily Work Report": "daily-report",
   "Leave Request Form": "leave-application",
