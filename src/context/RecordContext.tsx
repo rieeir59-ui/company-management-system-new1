@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import {
@@ -41,6 +41,7 @@ export type SavedRecord = {
 type RecordContextType = {
   records: SavedRecord[];
   addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
+  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<void>;
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
@@ -129,6 +130,26 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     [firestore, currentUser, toast]
+  );
+  
+  const addOrUpdateRecord = useCallback(
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
+        if (!firestore || !currentUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
+            return Promise.reject(new Error('User not authenticated'));
+        }
+
+        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
+
+        if (existingRecord) {
+            // Update existing record
+            await updateRecord(existingRecord.id, recordData);
+        } else {
+            // Add new record
+            await addRecord(recordData);
+        }
+    },
+    [firestore, currentUser, toast, records, addRecord, updateRecord]
   );
 
   // Update record
@@ -219,9 +240,23 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         icon: getIconForFile(name),
       };
     });
+  
+  const value = useMemo(() => ({ 
+      records, 
+      addRecord, 
+      addOrUpdateRecord, 
+      updateRecord, 
+      deleteRecord, 
+      getRecordById, 
+      updateTaskStatus, 
+      error, 
+      projectManualItems, 
+      bankTimelineCategories 
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems]);
+
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineCategories }}>
+    <RecordContext.Provider value={value}>
       {children}
     </RecordContext.Provider>
   );
