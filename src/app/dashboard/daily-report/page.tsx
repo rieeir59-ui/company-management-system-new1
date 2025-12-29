@@ -60,7 +60,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -131,16 +130,17 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const targetEmployeeUid = isAdmin ? selectedEmployeeId : currentUser?.uid;
+    if (isCustomRange) return; // Don't run this effect if custom range is active
 
-    if (!targetEmployeeUid) {
+    const targetEmployeeUid = isAdmin ? selectedEmployeeId : currentUser?.uid;
+    const targetEmployee = employees.find(e => e.uid === targetEmployeeUid);
+    const employeeRecordId = targetEmployee?.record;
+
+    if (!employeeRecordId) {
         setEntries([]);
         return;
     }
     
-    const targetEmployeeRecord = employees.find(e => e.uid === targetEmployeeUid);
-    const employeeRecordId = targetEmployeeRecord?.record;
-
     const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === employeeRecordId);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
@@ -170,7 +170,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployeeId, isAdmin, employees]);
+  }, [records, currentUser, selectedEmployeeId, isAdmin, employees, isCustomRange]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -655,3 +655,4 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
