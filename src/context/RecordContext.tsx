@@ -132,26 +132,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, currentUser, toast]
   );
   
-  const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return Promise.reject(new Error('User not authenticated'));
-        }
-
-        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
-
-        if (existingRecord) {
-            // Update existing record
-            await updateRecord(existingRecord.id, recordData);
-        } else {
-            // Add new record
-            await addRecord(recordData);
-        }
-    },
-    [firestore, currentUser, toast, records, addRecord, updateRecord]
-  );
-
   // Update record
   const updateRecord = useCallback(
     async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>) => {
@@ -177,6 +157,27 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     },
     [firestore, toast, currentUser, isAdmin, records]
   );
+  
+  const addOrUpdateRecord = useCallback(
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
+        if (!firestore || !currentUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
+            return Promise.reject(new Error('User not authenticated'));
+        }
+
+        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
+
+        if (existingRecord) {
+            // Update existing record
+            await updateRecord(existingRecord.id, recordData);
+        } else {
+            // Add new record
+            await addRecord(recordData);
+        }
+    },
+    [firestore, currentUser, toast, records, addRecord]
+  );
+
 
   // Delete record
   const deleteRecord = useCallback(
