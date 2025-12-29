@@ -185,9 +185,10 @@ const generatePdfForRecord = (record: SavedRecord) => {
     } else if (record.fileName.endsWith('Timeline')) {
         doc.setProperties({ title: `${record.projectName} Timeline` });
         doc.setFontSize(10);
-        doc.text(record.projectName, 14, 15);
+        doc.text(record.fileName, 14, 15);
 
         const projects: ProjectRow[] = record.data.find((s:any) => s.category === 'Projects')?.items || [];
+        const statusSection = record.data.find((s: any) => s.category === 'Overall Status');
         const remarksSection = record.data.find((s:any) => s.category === 'Remarks');
         
         const head = [
@@ -198,10 +199,10 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 { content: 'Project Holder', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
                 { content: 'Allocation Date / RFP', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
                 { content: 'Site Survey', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Contract', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Head Count / Requirment', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Contract', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Head Count / Requirement', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
                 { content: 'Proposal / Design Development', colSpan: 2, styles: { halign: 'center' } },
-                { content: '3D\'s', colSpan: 2, styles: { halign: 'center' } },
+                { content: "3D's", colSpan: 2, styles: { halign: 'center' } },
                 { content: 'Tender Package Architectural', colSpan: 2, styles: { halign: 'center' } },
                 { content: 'Tender Package MEP', colSpan: 2, styles: { halign: 'center' } },
                 { content: 'BOQ', colSpan: 2, styles: { halign: 'center' } },
@@ -213,10 +214,9 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 { content: 'Project Closure', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
             ],
             [
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date'
+                'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End'
             ].map(h => ({ content: h, styles: { halign: 'center' } }))
         ];
         
@@ -240,19 +240,32 @@ const generatePdfForRecord = (record: SavedRecord) => {
             headStyles: { fillColor: primaryColor, fontStyle: 'bold', fontSize: 4, valign: 'middle', halign: 'center', lineWidth: 0.1 },
         });
 
-        if (remarksSection) {
-            let lastY = doc.autoTable.previous.finalY + 10;
-            const remarksText = remarksSection.items.find((item: any) => item.label === "Maam Isbah Remarks & Order")?.value || "";
-            const dateText = remarksSection.items.find((item: any) => item.label === "Date")?.value || "";
+        let lastY = doc.autoTable.previous.finalY + 10;
+        
+        const addRemarksSection = (title: string, items: any[]) => {
+            if (!items || items.length === 0) return;
+            const text = items[0]?.value || '';
+            if (!text.trim()) return;
+
+            if (lastY > pageHeight - 30) { doc.addPage(); lastY = 20; }
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text("Maam Isbah Remarks & Order", 14, lastY);
+            doc.text(title, 14, lastY);
             lastY += 7;
             doc.setFont('helvetica', 'normal');
-            doc.text(remarksText, 14, lastY, { maxWidth: pageWidth - 28 });
-            lastY += doc.getTextDimensions(remarksText, { maxWidth: pageWidth - 28 }).h + 10;
+            const splitText = doc.splitTextToSize(text, pageWidth - 28);
+            doc.text(splitText, 14, lastY);
+            lastY += splitText.length * 5 + 5;
+        }
 
-            doc.text(`Date: ${dateText}`, 14, lastY);
+        addRemarksSection("Overall Status:", statusSection?.items);
+        addRemarksSection("Maam Isbah Remarks & Order", remarksSection?.items);
+
+        if(remarksSection){
+            const dateText = remarksSection.items.find((item: any) => item.label === "Date")?.value || "";
+            if (dateText) {
+                doc.text(`Date: ${dateText}`, 14, lastY);
+            }
         }
     } else {
         addDefaultHeader(record.fileName, record.projectName);
@@ -400,11 +413,63 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (!viewingRecord) return null;
 
         const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
+        
+        if (viewingRecord.fileName.endsWith('Timeline')) {
+            const projects: ProjectRow[] = dataSections.find((s:any) => s.category === 'Projects')?.items || [];
+            const statusSection = dataSections.find((s: any) => s.category === 'Overall Status');
+            const remarksSection = dataSections.find((s:any) => s.category === 'Remarks');
+
+            return (
+                <div className="space-y-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sr.</TableHead>
+                                <TableHead>Project</TableHead>
+                                <TableHead>Area</TableHead>
+                                <TableHead>Holder</TableHead>
+                                <TableHead>RFP</TableHead>
+                                <TableHead>Survey</TableHead>
+                                <TableHead>Proposal</TableHead>
+                                <TableHead>3D's</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {projects.map(p => (
+                                <TableRow key={p.id}>
+                                    <TableCell>{p.srNo}</TableCell>
+                                    <TableCell>{p.projectName}</TableCell>
+                                    <TableCell>{p.area}</TableCell>
+                                    <TableCell>{p.projectHolder}</TableCell>
+                                    <TableCell>{p.allocationDate}</TableCell>
+                                    <TableCell>{p.siteSurveyStart} - {p.siteSurveyEnd}</TableCell>
+                                    <TableCell>{p.proposalStart} - {p.proposalEnd}</TableCell>
+                                    <TableCell>{p.threedStart} - {p.threedEnd}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    {statusSection?.items[0]?.value && (
+                        <div>
+                            <h4 className="font-bold text-primary">Overall Status</h4>
+                            <p className="text-sm text-muted-foreground">{statusSection.items[0].value}</p>
+                        </div>
+                    )}
+                    {remarksSection?.items[0]?.value && (
+                        <div>
+                            <h4 className="font-bold text-primary">Maam Isbah Remarks & Order</h4>
+                            <p className="text-sm text-muted-foreground">{remarksSection.items[0].value}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Date: {remarksSection.items[1]?.value}</p>
+                        </div>
+                    )}
+                </div>
+            )
+        }
 
         if (viewingRecord.fileName === 'Leave Request Form') {
-            const employeeInfo = dataSections.find((d: any) => d.category === 'Employee Information')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
-            const leaveDetails = dataSections.find((d: any) => d.category === 'Leave Details')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
-            const hrApproval = dataSections.find((d: any) => d.category === 'HR Approval')?.items.reduce((acc: any, item: any) => ({ ...acc, [item.label]: item.value }), {}) || {};
+            const employeeInfo = dataSections.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+            const leaveDetails = dataSections.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+            const hrApproval = dataSections.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
             
             return (
                 <Card className="font-sans">
