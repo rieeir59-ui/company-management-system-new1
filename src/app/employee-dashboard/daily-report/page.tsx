@@ -105,7 +105,8 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser?.uid);
+    if (!currentUser) return;
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.record);
     
     if (dailyReportRecord && dailyReportRecord.data && Array.isArray(dailyReportRecord.data)) {
         const loadedEntries = dailyReportRecord.data.flatMap((dayData: any) => 
@@ -153,10 +154,12 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-      return entries.reduce((acc, entry) => {
-          (acc[entry.date] = acc[entry.date] || []).push(entry);
-          return acc;
-      }, {} as Record<string, ReportEntry[]>);
+    return entries.reduce((acc, entry) => {
+        if (entry.date) {
+            (acc[entry.date] = acc[entry.date] || []).push(entry);
+        }
+        return acc;
+    }, {} as Record<string, ReportEntry[]>);
   }, [entries]);
 
   const totalPeriodUnits = useMemo(() => {
