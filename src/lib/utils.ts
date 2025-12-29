@@ -24,6 +24,7 @@ export const allFileNames = [
   "Project Application Summary",
   "Project Checklist",
   "Project Data",
+  "Project Information",
   "Proposal Request",
   "Rate Analysis",
   "Shop Drawing and Sample Record",
@@ -34,7 +35,6 @@ export const allFileNames = [
   "Site Survey Report",
   "Uploaded File",
   "Daily Work Report",
-  "Project Information",
   "Leave Request Form",
 ];
 
