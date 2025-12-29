@@ -45,12 +45,16 @@ import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
 import { Checkbox } from '../ui/checkbox';
 
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
+
 const generatePdfForRecord = (record: SavedRecord) => {
-    const doc = new jsPDF({ orientation: 'landscape' }) as any;
+    const doc = new jsPDF({ orientation: 'portrait' }) as jsPDFWithAutoTable;
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-    let yPos = 20;
+    let yPos = 15;
     const primaryColor = [45, 95, 51];
     const margin = 14;
 
@@ -83,79 +87,78 @@ const generatePdfForRecord = (record: SavedRecord) => {
     };
     
     if (record.fileName === 'Project Information') {
-        const infoDoc = new jsPDF(); // Portrait for this form
-        let y = 15;
-        
         const info = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
         const consultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
         const requirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
         const otherNotes = record.data.find((d:any) => d.category === 'Other Notes')?.items || {};
 
-        const addSectionTitle = (title: string) => {
-            if (y > 260) { infoDoc.addPage(); y = 20; }
-            infoDoc.setFont('helvetica', 'bold');
-            infoDoc.setFontSize(12);
-            infoDoc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            infoDoc.text(title, margin, y);
-            y += 8;
-            infoDoc.setTextColor(0,0,0);
-        };
-        
-        const addTable = (body: (string | null)[][]) => {
-            (infoDoc as any).autoTable({
-                startY: y,
+        addDefaultHeader(record.fileName, record.projectName);
+
+        const addSection = (title: string, data: Record<string, any>) => {
+             const body = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object').map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]);
+             if (body.length === 0) return;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text(title, margin, yPos);
+            yPos += 8;
+            
+            doc.autoTable({
+                startY: yPos,
                 body: body,
                 theme: 'grid',
-                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+                styles: { fontSize: 9, cellPadding: 2 },
+                head: [['Field', 'Value']],
+                headStyles: { fillColor: primaryColor },
+                columnStyles: { 0: { fontStyle: 'bold' } }
             });
-            y = (infoDoc as any).autoTable.previous.finalY + 10;
+            yPos = doc.autoTable.previous.finalY + 10;
         };
-
+        
         const addTextAreaSection = (title: string, content: string) => {
             if (!content?.trim()) return;
-            if (y > 260) { infoDoc.addPage(); y = 20; }
-            addSectionTitle(title);
-            infoDoc.setFontSize(10);
-            infoDoc.setFont('helvetica', 'normal');
-            const splitContent = infoDoc.splitTextToSize(content, infoDoc.internal.pageSize.getWidth() - margin * 2);
-            infoDoc.text(splitContent, margin, y);
-            y += splitContent.length * 5 + 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            addSection(title, {'Details': content});
         };
         
-        infoDoc.setFont('helvetica', 'bold');
-        infoDoc.setFontSize(16);
-        infoDoc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        infoDoc.text('PROJECT INFORMATION', infoDoc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-        y += 15;
-        infoDoc.setTextColor(0, 0, 0);
+        addSection("Project Information", {
+            'Project': info.project, 'Address': info.address, 'Project No': info.projectNo,
+            'Prepared By': info.preparedBy, 'Prepared Date': info.preparedDate,
+        });
 
-        addSectionTitle("Project Information");
-        addTable([
-            ['Project:', info.project], ['Address:', info.address], ['Project No:', info.projectNo],
-            ['Prepared By:', info.preparedBy], ['Prepared Date:', info.preparedDate]
-        ].filter(row => row[1]));
+        addSection("About Owner", {
+            'Full Name': info.ownerFullName, 'Office Address': info.ownerOfficeAddress,
+            'Residence Address': info.ownerResAddress, 'Office Phone': info.ownerOfficePhone,
+            'Residence Phone': info.ownerResPhone,
+        });
         
-        addSectionTitle("About Owner");
-        addTable([
-            ['Full Name:', info.ownerFullName], ['Address (Office):', info.ownerOfficeAddress], ['Address (Res.):', info.ownerResAddress],
-            ['Phone (Office):', info.ownerOfficePhone], ['Phone (Res.):', info.ownerResPhone]
-        ].filter(row => row[1]));
+        if(yPos > 200) {doc.addPage(); yPos = 20;}
 
-        addSectionTitle("Owner's Project Representative");
-        addTable([
-            ['Name:', info.repName], ['Address (Office):', info.repOfficeAddress], ['Address (Res.):', info.repResAddress],
-            ['Phone (Office):', info.repOfficePhone], ['Phone (Res.):', info.repResPhone]
-        ].filter(row => row[1]));
+        addSection("Consultants", {});
+         doc.autoTable({
+            startY: yPos - 8,
+            head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+            body: Object.entries(consultants).map(([type, values]: [string, any]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
+            theme: 'grid'
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
         
-        infoDoc.addPage();
-        y = 20;
+        if(yPos > 200) {doc.addPage(); yPos = 20;}
+        
+        addSection("Requirements", {});
+        doc.autoTable({
+            startY: yPos - 8,
+            head: [['Description', 'Nos.', 'Remarks']],
+            body: Object.entries(requirements).map(([req, values]: [string, any]) => [req, values.nos, values.remarks]),
+            theme: 'grid'
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
 
         addTextAreaSection('Special Confidential Requirements', otherNotes.specialConfidential);
         addTextAreaSection('Miscellaneous Notes', otherNotes.miscNotes);
 
         addFooter();
-        infoDoc.save(`${record.projectName}_${record.fileName}.pdf`);
+        doc.save(`${record.projectName}_${record.fileName}.pdf`);
         return;
     }
 
@@ -499,36 +502,67 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
         const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
         
+        const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
+            const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object');
+            if (entries.length === 0) return null;
+            return (
+                <div className="mb-6">
+                    <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
+                    <div className="border rounded-md">
+                        <Table>
+                            <TableBody>
+                                {entries.map(([key, value]) => (
+                                    <TableRow key={key}>
+                                        <TableCell className="font-semibold w-1/3">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
+                                        <TableCell>{String(value)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            );
+        };
+
         if (viewingRecord.fileName === 'Project Information') {
             const info = dataSections.find((d: any) => d.category === 'Project Information')?.items || {};
             const consultants = dataSections.find((d: any) => d.category === 'Consultants')?.items || {};
             const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
             const otherNotes = dataSections.find((d:any) => d.category === 'Other Notes')?.items || {};
 
-            const Section = ({ title, data }: { title: string, data: Record<string, any> }) => (
-                <div className="mb-6">
-                    <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
-                    <Table>
-                        <TableBody>
-                            {Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean').map(([key, value]) => (
-                                <TableRow key={key}>
-                                    <TableCell className="font-semibold w-1/3">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
-                                    <TableCell>{String(value)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            );
-
             return (
                 <div className="space-y-6">
                     <Section title="Project Information" data={info} />
-                    {/* Add other sections as needed */}
+                    <Section title="Owner & Representative" data={{...info}} />
+                    
+                    <div className="mb-6">
+                        <h3 className="font-bold text-lg mb-2 text-primary">Consultants</h3>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Within Fee</TableHead><TableHead>Additional Fee</TableHead><TableHead>By Architect</TableHead><TableHead>By Owner</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {Object.entries(consultants).map(([type, values]: [string, any]) => (
+                                    <TableRow key={type}><TableCell>{type}</TableCell><TableCell>{values.withinFee}</TableCell><TableCell>{values.additionalFee}</TableCell><TableCell>{values.architect}</TableCell><TableCell>{values.owner}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    
+                    <div className="mb-6">
+                        <h3 className="font-bold text-lg mb-2 text-primary">Requirements</h3>
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Description</TableHead><TableHead>Nos.</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {Object.entries(requirements).map(([req, values]: [string, any]) => (
+                                    <TableRow key={req}><TableCell>{req}</TableCell><TableCell>{values.nos}</TableCell><TableCell>{values.remarks}</TableCell></TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    <Section title="Other Notes" data={otherNotes} />
                 </div>
             );
         }
-
 
         if (viewingRecord.fileName === 'Leave Request Form') {
             const employeeInfo = dataSections.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
@@ -765,11 +799,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
       </AlertDialog>
       
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-7xl">
+            <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>{viewingRecord?.fileName}: {viewingRecord?.projectName}</DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto p-1">
+                <div className="max-h-[70vh] overflow-y-auto p-4 border rounded-md my-4">
                     {renderRecordContent()}
                 </div>
                 <DialogFooter>
@@ -782,3 +816,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
   );
 }
 
+    
