@@ -101,7 +101,7 @@ function MyProjectsComponent() {
  
   useEffect(() => {
     if (!displayUser) return;
-    const scheduleRecord = records.find(r => r.fileName === 'My Projects' && r.employeeId === displayUser.uid);
+    const scheduleRecord = records.find(r => r.fileName === 'Project Schedule' && r.employeeId === displayUser.uid);
     if (scheduleRecord && scheduleRecord.data) {
         const scheduleData = scheduleRecord.data.find((d: any) => d.category === 'My Project Schedule');
         if (scheduleData) {
@@ -252,8 +252,8 @@ function MyProjectsComponent() {
         const isOwnTask = currentUser.uid === task.assignedTo;
 
         if (!isAdmin && !isOwnTask) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
-            return;
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
+             return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
@@ -326,9 +326,11 @@ function MyProjectsComponent() {
     };
 
     const handleSaveSchedule = async () => {
+        const firstProjectName = manualEntries.find(item => item.projectName)?.projectName;
+
         await addOrUpdateRecord({
-            fileName: 'My Projects',
-            projectName: `${displayUser?.name}'s Project Schedule`,
+            fileName: 'Project Schedule',
+            projectName: firstProjectName || `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
                 remarks: remarks,
@@ -569,3 +571,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
