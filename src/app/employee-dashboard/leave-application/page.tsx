@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Download, Save } from 'lucide-react';
+import { Send, Download, Save, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,13 +22,16 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Loader2 } from 'lucide-react';
 import { useRecords } from '@/context/RecordContext';
+import { useSearchParams } from 'next/navigation';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
   const { firestore } = useFirebase();
-  const { addRecord } = useRecords();
+  const { addRecord, getRecordById, updateRecord } = useRecords();
+  const searchParams = useSearchParams();
+  const recordId = searchParams.get('id');
 
   const [formState, setFormState] = useState({
     position: '',
@@ -44,9 +47,43 @@ export default function LeaveApplicationPage() {
       approved: false,
       denied: false,
       reason: '',
+      paid: false,
+      unpaid: false,
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecordLoading, setIsRecordLoading] = useState(!!recordId);
+
+  useEffect(() => {
+    if (recordId) {
+        const record = getRecordById(recordId);
+        if (record) {
+            const employeeInfo = record.data?.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+            const leaveDetails = record.data?.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+            const hrInfo = record.data?.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
+
+            setFormState({
+                position: employeeInfo['Position'] || '',
+                status: employeeInfo['Status'] || 'Full-time',
+                leaveFrom: leaveDetails['Leave From'] || '',
+                leaveTo: leaveDetails['Leave To'] || '',
+                returnDate: leaveDetails['Return Date'] || '',
+                reasonForRequested: leaveDetails['Leave Type']?.split(', ') || [],
+                reason: leaveDetails['Reason'] || '',
+            });
+
+            setHrApprovalState({
+                approved: hrInfo['Approved'] === 'true',
+                denied: hrInfo['Denied'] === 'true',
+                reason: hrInfo['Reason'] || '',
+                paid: hrInfo['Paid Leave'] === 'true',
+                unpaid: hrInfo['Unpaid Leave'] === 'true',
+            });
+        }
+    }
+    setIsRecordLoading(false);
+  }, [recordId, getRecordById]);
+
 
   const totalDays = useMemo(() => {
     if (formState.leaveFrom && formState.leaveTo) {
@@ -184,7 +221,11 @@ export default function LeaveApplicationPage() {
         }
       ]
     };
-    addRecord(dataToSave as any);
+    if (recordId) {
+        updateRecord(recordId, dataToSave);
+    } else {
+        addRecord(dataToSave as any);
+    }
   };
   
   const handleDownloadPdf = () => {
@@ -253,7 +294,9 @@ export default function LeaveApplicationPage() {
     y += 5;
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
-    doc.text(formState.reason || '', 16, y - 1);
+    if (formState.reason) {
+        doc.text(formState.reason, 16, y - 1);
+    }
     y += 15;
     
     addSectionHeader('HR Department Approval:');
@@ -268,7 +311,9 @@ export default function LeaveApplicationPage() {
     y += 5;
     doc.setLineWidth(0.5);
     doc.line(14, y, 196, y);
-    doc.text(hrApprovalState.reason || '', 16, y-1);
+    if (hrApprovalState.reason) {
+        doc.text(hrApprovalState.reason, 16, y-1);
+    }
     y += 10;
     
     doc.text('Date:', 14, y);
@@ -290,6 +335,14 @@ export default function LeaveApplicationPage() {
     doc.save('leave-request.pdf');
     toast({ title: 'Download Started', description: 'Your leave request PDF is being generated.' });
   };
+  
+  if (isRecordLoading) {
+      return (
+          <div className="flex justify-center items-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-8">
@@ -371,16 +424,16 @@ export default function LeaveApplicationPage() {
                  <div className="mt-8 p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold text-lg text-primary">HR Department Approval:</h3>
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="leave_approved" checked={hrApprovalState.approved} onCheckedChange={(c) => setHrApprovalState(s => ({...s, approved: !!c, denied: !!c ? false: s.denied}))} />
+                        <Checkbox id="leave_approved" checked={hrApprovalState.approved} onCheckedChange={(c) => setHrApprovalState(s => ({...s, approved: !!c, denied: !!c ? false: s.denied}))} disabled />
                         <Label htmlFor="leave_approved">LEAVE APPROVED</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false : s.approved}))} />
+                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false : s.approved}))} disabled />
                         <Label htmlFor="leave_denied">LEAVE DENIED</Label>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="hr_reason">REASON:</Label>
-                        <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))}/>
+                        <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))} disabled/>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="hr_approval_date">Date:</Label>
@@ -388,11 +441,11 @@ export default function LeaveApplicationPage() {
                     </div>
                     <div className="flex items-center gap-6 pt-4">
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.unpaid}))} />
+                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.unpaid}))} disabled />
                             <Label htmlFor="paid_leave">PAID LEAVE</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="unpaid_leave" checked={hrApprovalState.unpaid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, unpaid: !!c, paid: !!c ? false : s.paid}))} />
+                            <Checkbox id="unpaid_leave" checked={hrApprovalState.unpaid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, unpaid: !!c, paid: !!c ? false : s.paid}))} disabled />
                             <Label htmlFor="unpaid_leave">UNPAID LEAVE</Label>
                         </div>
                     </div>
@@ -403,8 +456,8 @@ export default function LeaveApplicationPage() {
                 <div className="flex gap-2">
                     <Button type="button" onClick={handleDownloadPdf} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        {isLoading ? 'Sending...' : 'Send Request'}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (recordId ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />) }
+                        {recordId ? 'Update Request' : 'Send Request'}
                     </Button>
                 </div>
             </CardFooter>
@@ -414,4 +467,3 @@ export default function LeaveApplicationPage() {
   );
 }
 
-    
