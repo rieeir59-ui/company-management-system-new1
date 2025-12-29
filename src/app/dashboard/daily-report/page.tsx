@@ -131,13 +131,17 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
-    if (!targetEmployeeId) {
+    const targetEmployeeUid = isAdmin ? selectedEmployeeId : currentUser?.uid;
+
+    if (!targetEmployeeUid) {
         setEntries([]);
         return;
     }
+    
+    const targetEmployeeRecord = employees.find(e => e.uid === targetEmployeeUid);
+    const employeeRecordId = targetEmployeeRecord?.record;
 
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeId);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === employeeRecordId);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -166,7 +170,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployeeId, isAdmin]);
+  }, [records, currentUser, selectedEmployeeId, isAdmin, employees]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -203,8 +207,6 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-    const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
-
     return entries
         .filter(entry => {
             const entryDate = parseISO(entry.date);
@@ -214,7 +216,7 @@ export default function DailyReportPage() {
           (acc[entry.date] = acc[entry.date] || []).push(entry);
           return acc;
       }, {} as Record<string, ReportEntry[]>);
-  }, [entries, dateInterval, isAdmin, selectedEmployeeId, currentUser]);
+  }, [entries, dateInterval]);
 
   const totalPeriodUnits = useMemo(() => {
     const totalMinutes = dateInterval.reduce((total, day) => {
