@@ -29,6 +29,7 @@ import {
   Database,
   Users,
   LayoutDashboard,
+  Folder,
   Briefcase,
   BookCopy,
   FileUp,
@@ -52,13 +53,14 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects } from '@/lib/projects-data';
+import { allProjects, type ProjectRow } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
     { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
+    { href: '/employee-dashboard/project-information', label: 'Project Information', icon: Folder },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
