@@ -38,7 +38,7 @@ export default function LeaveApplicationPage() {
     employeeNumber: '',
     department: '',
     position: '',
-    status: 'Full-time',
+    status: '',
     leaveFrom: '',
     leaveTo: '',
     returnDate: '',
@@ -472,4 +472,3 @@ export default function LeaveApplicationPage() {
   );
 }
 
-    
