@@ -124,6 +124,8 @@ export default function DailyReportPage() {
       const employee = employees.find(e => e.uid === employeeUid);
       setSelectedEmployee(employee);
       setComboboxOpen(false);
+      // When admin selects a new employee, reset the entries to force a reload in the next effect.
+      setEntries([]);
   };
 
 
@@ -138,18 +140,16 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (isCustomRange) return; // Don't run this effect if custom range is active
+    if (isCustomRange) return;
 
-    const targetEmployeeUid = isAdmin ? selectedEmployeeId : currentUser?.uid;
-    const targetEmployee = employees.find(e => e.uid === targetEmployeeUid);
-    const employeeRecordId = targetEmployee?.record;
+    const targetEmployeeRecordId = isAdmin ? (employees.find(e => e.uid === selectedEmployeeId)?.record) : currentUser?.record;
 
-    if (!employeeRecordId) {
+    if (!targetEmployeeRecordId) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeRecord === employeeRecordId);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeRecordId);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -358,7 +358,7 @@ export default function DailyReportPage() {
                     { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
                 ]);
             }
-            return rows.length > 0 ? rows : [['', format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
+            return rows.length > 0 ? rows : [[format(day, 'EEEE').toUpperCase(), format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
         }),
         theme: 'grid',
         headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
@@ -664,5 +664,6 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
 
