@@ -14,12 +14,12 @@ import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Lo
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useRecords } from '@/context/RecordContext';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { StatusBadge } from '@/components/ui/badge';
@@ -94,6 +94,7 @@ function MyProjectsComponent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deletingEntry, setDeletingEntry] = useState<ManualEntry | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
 
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
@@ -291,21 +292,39 @@ function MyProjectsComponent() {
         toast({title: 'Entry Updated', description: 'Manual project entry has been updated.'});
     }
 
-    const openDeleteDialog = (entry: ManualEntry) => {
-        setDeletingEntry(entry);
+    const openDeleteDialog = (item: Task | ManualEntry) => {
+        if((item as any).isManual){
+            setDeletingEntry(item as ManualEntry);
+        } else {
+            setTaskToDelete(item as Task);
+        }
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmDeleteManualEntry = () => {
-        if (!deletingEntry) return;
-        removeManualEntry(deletingEntry.id);
+    const confirmDelete = () => {
+        if (deletingEntry) {
+            removeManualEntry(deletingEntry.id);
+            setDeletingEntry(null);
+            toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
+        }
+        if (taskToDelete && firestore) {
+            if (!isAdmin) {
+                toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
+                return;
+            }
+             deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
+                .then(() => {
+                    toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
+                    setTaskToDelete(null);
+                })
+                .catch(serverError => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskToDelete.id}`, operation: 'delete' }));
+                    setTaskToDelete(null);
+                });
+        }
         setIsDeleteDialogOpen(false);
-        setDeletingEntry(null);
-        toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
     };
     
-    
-
     const addManualEntry = () => {
         setManualEntries(prev => [...prev, {
             id: Date.now(),
@@ -395,7 +414,7 @@ function MyProjectsComponent() {
         <Card>
             <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>Manually add and track your own project tasks and schedules. Assigned tasks are also shown here.</CardDescription>
+                <CardDescription>Manually add your own tasks or view tasks assigned by the administration.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -442,7 +461,7 @@ function MyProjectsComponent() {
                                        <Button variant="ghost" size="icon" onClick={() => item.isManual ? openEditDialog(item as ManualEntry) : openViewDialog(item as Task)}>
                                             <Eye className="h-4 w-4"/>
                                         </Button>
-                                        {item.isManual && (
+                                        {item.isManual ? (
                                             <>
                                                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                                     <Edit className="h-4 w-4" />
@@ -451,11 +470,17 @@ function MyProjectsComponent() {
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </>
-                                        )}
-                                        {!item.isManual && (
-                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}>
-                                                <Upload className="h-4 w-4" />
-                                            </Button>
+                                        ) : (
+                                            <>
+                                                <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}>
+                                                    <Upload className="h-4 w-4" />
+                                                </Button>
+                                                {isAdmin && (
+                                                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as Task)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </TableCell>
@@ -542,20 +567,20 @@ function MyProjectsComponent() {
             </DialogContent>
         </Dialog>
 
-         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Are you sure?</DialogTitle>
-                    <DialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName}".
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={confirmDeleteManualEntry}>Delete</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
     </div>
   );
@@ -571,5 +596,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
