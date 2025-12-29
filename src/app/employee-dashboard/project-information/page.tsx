@@ -57,7 +57,6 @@ const residenceRequirements = [
 function ProjectInformationComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
     const { toast } = useToast();
-    const { user: currentUser } = useCurrentUser();
     const { addRecord, getRecordById, updateRecord } = useRecords();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
@@ -206,11 +205,6 @@ function ProjectInformationComponent() {
     };
 
     const handleSave = async () => {
-        if (!currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
@@ -345,7 +339,7 @@ function ProjectInformationComponent() {
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
-      if (yPos > pageHeight - 80) {
+      if (yPos > pageHeight - 80) { // Check for space before adding the cost section
           doc.addPage();
           yPos = 20;
       }
@@ -551,7 +545,7 @@ function ProjectInformationComponent() {
                               <div className="flex items-center space-x-2"><RadioGroupItem value="renovation" id="status_reno" /><Label htmlFor="status_reno">Rehabilitation/Renovation</Label></div>
                             </RadioGroup>
                           </div>
-                          <InputRow label="Project Area:" id="projectArea" value={formState.projectArea} onChange={handleChange} />
+                          <InputRow label="Project Area:" id="projectArea" name="projectArea" value={formState.projectArea} onChange={handleChange} />
                           <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-2">
                             <Label htmlFor="specialRequirements" className="md:text-right">Special Requirements of Project:</Label>
                             <Textarea id="specialRequirements" name="specialRequirements" value={formState.specialRequirements} onChange={handleChange} className="md:col-span-2" />
@@ -559,44 +553,44 @@ function ProjectInformationComponent() {
                         </Section>
                         
                         <Section title="Project's Cost">
-                          <InputRow label="i. Architectural Designing" id="costArchitectural" value={formState.costArchitectural} onChange={handleChange} />
-                          <InputRow label="ii. Interior Decoration" id="costInterior" value={formState.costInterior} onChange={handleChange} />
-                          <InputRow label="iii. Landscaping" id="costLandscaping" value={formState.costLandscaping} onChange={handleChange} />
-                          <InputRow label="iv. Construction" id="costConstruction" value={formState.costConstruction} onChange={handleChange} />
-                          <InputRow label="v. Turnkey" id="costTurnkey" value={formState.costTurnkey} onChange={handleChange} />
-                          <InputRow label="vi. Other" id="costOther" value={formState.costOther} onChange={handleChange} />
+                          <InputRow label="i. Architectural Designing" id="costArchitectural" name="costArchitectural" value={formState.costArchitectural} onChange={handleChange} />
+                          <InputRow label="ii. Interior Decoration" id="costInterior" name="costInterior" value={formState.costInterior} onChange={handleChange} />
+                          <InputRow label="iii. Landscaping" id="costLandscaping" name="costLandscaping" value={formState.costLandscaping} onChange={handleChange} />
+                          <InputRow label="iv. Construction" id="costConstruction" name="costConstruction" value={formState.costConstruction} onChange={handleChange} />
+                          <InputRow label="v. Turnkey" id="costTurnkey" name="costTurnkey" value={formState.costTurnkey} onChange={handleChange} />
+                          <InputRow label="vi. Other" id="costOther" name="costOther" value={formState.costOther} onChange={handleChange} />
                         </Section>
                         
                         <Section title="Dates Concerned with Project">
-                          <InputRow label="First Information about Project:" id="dateFirstInfo" value={formState.dateFirstInfo} onChange={handleChange} type="date" />
-                          <InputRow label="First Meeting:" id="dateFirstMeeting" value={formState.dateFirstMeeting} onChange={handleChange} type="date" />
-                          <InputRow label="First Working on Project:" id="dateFirstWorking" value={formState.dateFirstWorking} onChange={handleChange} type="date" />
+                          <InputRow label="First Information about Project:" id="dateFirstInfo" name="dateFirstInfo" value={formState.dateFirstInfo} onChange={handleChange} type="date" />
+                          <InputRow label="First Meeting:" id="dateFirstMeeting" name="dateFirstMeeting" value={formState.dateFirstMeeting} onChange={handleChange} type="date" />
+                          <InputRow label="First Working on Project:" id="dateFirstWorking" name="dateFirstWorking" value={formState.dateFirstWorking} onChange={handleChange} type="date" />
                           <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">First Proposal:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateFirstProposalStart" value={formState.dateFirstProposalStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateFirstProposalEnd" value={formState.dateFirstProposalEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateFirstProposalStart" name="dateFirstProposalStart" value={formState.dateFirstProposalStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateFirstProposalEnd" name="dateFirstProposalEnd" value={formState.dateFirstProposalEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">Second Proposal:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateSecondProposalStart" value={formState.dateSecondProposalStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateSecondProposalEnd" value={formState.dateSecondProposalEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateSecondProposalStart" name="dateSecondProposalStart" value={formState.dateSecondProposalStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateSecondProposalEnd" name="dateSecondProposalEnd" value={formState.dateSecondProposalEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
-                          <InputRow label="First Information:" id="dateFirstInfo2" value={formState.dateFirstInfo2} onChange={handleChange} type="date" />
-                          <InputRow label="Working on Finalized Proposal:" id="dateWorkingFinalized" value={formState.dateWorkingFinalized} onChange={handleChange} type="date" />
-                          <InputRow label="Revised Presentation:" id="dateRevisedPresentation" value={formState.dateRevisedPresentation} onChange={handleChange} type="date" />
-                          <InputRow label="Quotation:" id="dateQuotation" value={formState.dateQuotation} onChange={handleChange} type="date" />
+                          <InputRow label="First Information:" id="dateFirstInfo2" name="dateFirstInfo2" value={formState.dateFirstInfo2} onChange={handleChange} type="date" />
+                          <InputRow label="Working on Finalized Proposal:" id="dateWorkingFinalized" name="dateWorkingFinalized" value={formState.dateWorkingFinalized} onChange={handleChange} type="date" />
+                          <InputRow label="Revised Presentation:" id="dateRevisedPresentation" name="dateRevisedPresentation" value={formState.dateRevisedPresentation} onChange={handleChange} type="date" />
+                          <InputRow label="Quotation:" id="dateQuotation" name="dateQuotation" value={formState.dateQuotation} onChange={handleChange} type="date" />
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">Drawings:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateDrawingsStart" value={formState.dateDrawingsStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateDrawingsEnd" value={formState.dateDrawingsEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateDrawingsStart" name="dateDrawingsStart" value={formState.dateDrawingsStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateDrawingsEnd" name="dateDrawingsEnd" value={formState.dateDrawingsEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
-                          <InputRow label="Other Major Projects Milestone Dates:" id="dateOtherMilestones" value={formState.dateOtherMilestones} onChange={handleChange} type="date" />
+                          <InputRow label="Other Major Projects Milestone Dates:" id="dateOtherMilestones" name="dateOtherMilestones" value={formState.dateOtherMilestones} onChange={handleChange} type="date" />
                         </Section>
                         
                         <Section title="Provided by Owner">
@@ -609,21 +603,21 @@ function ProjectInformationComponent() {
                         </Section>
 
                         <Section title="Compensation">
-                           <InputRow label="Initial Payment:" id="compInitialPayment" value={formState.compInitialPayment} onChange={handleChange} />
-                           <InputRow label="Basic Services (% of Cost of Construction):" id="compBasicServices" value={formState.compBasicServices} onChange={handleChange} />
+                           <InputRow label="Initial Payment:" id="compInitialPayment" name="compInitialPayment" value={formState.compInitialPayment} onChange={handleChange} />
+                           <InputRow label="Basic Services (% of Cost of Construction):" id="compBasicServices" name="compBasicServices" value={formState.compBasicServices} onChange={handleChange} />
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                             <Label className="md:text-right font-bold">Breakdown by Phase:</Label>
                             <div className="md:col-span-2 space-y-2">
-                              <InputRow label="Schematic Design (%):" id="compSchematic" value={formState.compSchematic} onChange={handleChange} />
-                              <InputRow label="Design Development (%):" id="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
-                              <InputRow label="Construction Doc's (%):" id="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
-                              <InputRow label="Bidding / Negotiation (%):" id="compBidding" value={formState.compBidding} onChange={handleChange} />
-                              <InputRow label="Construction Contract Admin (%):" id="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
+                              <InputRow label="Schematic Design (%):" id="compSchematic" name="compSchematic" value={formState.compSchematic} onChange={handleChange} />
+                              <InputRow label="Design Development (%):" id="compDesignDev" name="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
+                              <InputRow label="Construction Doc's (%):" id="compConstructionDocs" name="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
+                              <InputRow label="Bidding / Negotiation (%):" id="compBidding" name="compBidding" value={formState.compBidding} onChange={handleChange} />
+                              <InputRow label="Construction Contract Admin (%):" id="compConstructionAdmin" name="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
                             </div>
                            </div>
-                           <InputRow label="Additional Services (Multiple of):" id="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
-                           <InputRow label="Reimbursable Expenses:" id="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
-                           <InputRow label="Other:" id="compOther" value={formState.compOther} onChange={handleChange} />
+                           <InputRow label="Additional Services (Multiple of):" id="compAdditionalServices" name="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
+                           <InputRow label="Reimbursable Expenses:" id="compReimbursable" name="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
+                           <InputRow label="Other:" id="compOther" name="compOther" value={formState.compOther} onChange={handleChange} />
                         </Section>
                         
                         <Section title="Consultants:">
