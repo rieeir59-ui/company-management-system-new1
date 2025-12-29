@@ -416,9 +416,82 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
-
+    
         const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
         
+        if (viewingRecord.fileName === 'Project Information') {
+            const info = dataSections.find((d: any) => d.category === 'Project Information')?.items || {};
+            const consultants = dataSections.find((d: any) => d.category === 'Consultants')?.items || {};
+            const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
+            const otherNotes = dataSections.find((d:any) => d.category === 'Other Notes')?.items || {};
+
+            const Section = ({ title, data }: { title: string, data: [string, any][] }) => (
+                <div className="mb-6">
+                    <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
+                    <Table>
+                        <TableBody>
+                            {data.filter(([, value]) => value).map(([label, value]) => (
+                                <TableRow key={label}>
+                                    <TableCell className="font-semibold w-1/3">{label.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
+                                    <TableCell>{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            );
+
+            return (
+                <div className="space-y-6">
+                    <Section title="Project Information" data={Object.entries(info).slice(0, 16)} />
+                    <Section title="Project Details" data={Object.entries(info).slice(16, 26)} />
+                    <Section title="Project Cost" data={Object.entries(info).slice(26, 32)} />
+                    <Section title="Project Dates" data={Object.entries(info).slice(32, 46)} />
+                    <Section title="Provided by Owner" data={Object.entries(info).slice(46, 52)} />
+                    <Section title="Compensation" data={Object.entries(info).slice(52, 62)} />
+
+                    <div className="mb-6">
+                      <h3 className="font-bold text-lg mb-2 text-primary">Consultants</h3>
+                      <Table>
+                        <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Within Basic Fee</TableHead><TableHead>Additional Fee</TableHead><TableHead>By Architect</TableHead><TableHead>By Owner</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {Object.entries(consultants).filter(([,v])=>(v as any).withinFee || (v as any).additionalFee || (v as any).architect || (v as any).owner).map(([type, values]) => (
+                            <TableRow key={type}>
+                              <TableCell>{type}</TableCell>
+                              <TableCell>{(values as any).withinFee}</TableCell>
+                              <TableCell>{(values as any).additionalFee}</TableCell>
+                              <TableCell>{(values as any).architect}</TableCell>
+                              <TableCell>{(values as any).owner}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="mb-6">
+                      <h3 className="font-bold text-lg mb-2 text-primary">Requirements</h3>
+                       <Table>
+                        <TableHeader><TableRow><TableHead>Description</TableHead><TableHead>Nos.</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {Object.entries(requirements).filter(([,v])=>(v as any).nos || (v as any).remarks).map(([req, values]) => (
+                            <TableRow key={req}>
+                              <TableCell>{req}</TableCell>
+                              <TableCell>{(values as any).nos}</TableCell>
+                              <TableCell>{(values as any).remarks}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                     <div>
+                        <h3 className="font-bold text-lg mb-2 text-primary">Other Notes</h3>
+                        <p><strong>Special Confidential Requirements:</strong> {otherNotes.specialConfidential}</p>
+                        <p><strong>Miscellaneous Notes:</strong> {otherNotes.miscNotes}</p>
+                    </div>
+                </div>
+            );
+        }
+
         if (viewingRecord.fileName.endsWith('Timeline')) {
             const projects: ProjectRow[] = dataSections.find((s:any) => s.category === 'Projects')?.items || [];
             const statusSection = dataSections.find((s: any) => s.category === 'Overall Status');
