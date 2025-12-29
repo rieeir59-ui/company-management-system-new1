@@ -69,7 +69,7 @@ function MyProjectsComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore, firebaseApp } = useFirebase();
-  const { addRecord } = useRecords();
+  const { addOrUpdateRecord, records } = useRecords();
   const storage = firebaseApp ? getStorage(firebaseApp) : null;
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
@@ -98,6 +98,34 @@ function MyProjectsComponent() {
 
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
   const [remarks, setRemarks] = useState('');
+ 
+  useEffect(() => {
+    if (!displayUser) return;
+    const scheduleRecord = records.find(r => r.fileName === 'My Projects' && r.employeeId === displayUser.uid);
+    if (scheduleRecord && scheduleRecord.data) {
+        const scheduleData = scheduleRecord.data.find((d: any) => d.category === 'My Project Schedule');
+        if (scheduleData) {
+            setRemarks(scheduleData.remarks || '');
+            const savedManualEntries = (scheduleData.items || [])
+                .map((item: {label:string, value:string}) => {
+                    const detailMatch = item.value.match(/Detail: (.*?),/);
+                    const statusMatch = item.value.match(/Status: (.*?),/);
+                    const startMatch = item.value.match(/Start: (.*?),/);
+                    const endMatch = item.value.match(/End: (.*)/);
+                    return {
+                        id: Math.random(),
+                        projectName: item.label.replace('Project: ', ''),
+                        detail: detailMatch ? detailMatch[1] : '',
+                        status: statusMatch ? statusMatch[1] : 'Not Started',
+                        startDate: startMatch ? startMatch[1] : '',
+                        endDate: endMatch ? endMatch[1] : ''
+                    };
+                })
+                .filter((item: ManualEntry) => item.projectName); // Filter out potentially empty items
+            setManualEntries(savedManualEntries);
+        }
+    }
+  }, [records, displayUser]);
  
   const combinedSchedule = useMemo(() => {
         const assigned = allProjects.map(p => ({
@@ -183,7 +211,7 @@ function MyProjectsComponent() {
                         submissionFileName: submissionFile.name,
                     });
                     
-                    await addRecord({
+                    await addOrUpdateRecord({
                         fileName: 'Task Submission',
                         projectName: submittingTask.projectName,
                         data: [{
@@ -195,7 +223,7 @@ function MyProjectsComponent() {
                                 { label: 'File Link', value: downloadURL },
                             ]
                         }]
-                    } as any);
+                    });
 
                     toast({
                         id: toastId,
@@ -298,18 +326,18 @@ function MyProjectsComponent() {
     };
 
     const handleSaveSchedule = async () => {
-        await addRecord({
+        await addOrUpdateRecord({
             fileName: 'My Projects',
             projectName: `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
                 remarks: remarks,
-                items: combinedSchedule.map(item => ({
+                items: combinedSchedule.filter(item => item.isManual).map(item => ({
                     label: `Project: ${item.projectName}`,
                     value: `Detail: ${item.detail}, Status: ${item.status}, Start: ${item.startDate}, End: ${item.endDate}`,
                 })),
             }],
-        } as any);
+        });
     };
     
     const handleDownloadSchedule = () => {
@@ -365,7 +393,7 @@ function MyProjectsComponent() {
         <Card>
             <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
+                <CardDescription>Manually add and track your own project tasks and schedules. Assigned tasks are also shown here.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -394,12 +422,13 @@ function MyProjectsComponent() {
                                       <StatusBadge status={item.status as Task['status']} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="not-started">Not Started</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
                                       <SelectItem value="Not Started">Not Started</SelectItem>
                                       <SelectItem value="In Progress">In Progress</SelectItem>
                                       <SelectItem value="Completed">Completed</SelectItem>
+                                      {/* Add these back in case status from DB has them */}
+                                      <SelectItem value="not-started">Not Started</SelectItem>
+                                      <SelectItem value="in-progress">In Progress</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
                                       {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>

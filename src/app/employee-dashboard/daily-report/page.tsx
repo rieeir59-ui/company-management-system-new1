@@ -92,7 +92,7 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
 export default function DailyReportPage() {
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
-  const { addRecord, records } = useRecords();
+  const { addOrUpdateRecord, records } = useRecords();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState('all');
@@ -105,34 +105,17 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser?.uid);
-    const loadedEntriesMap = new Map<number, ReportEntry>();
-
-    dailyReportRecords.forEach(record => {
-      if (record.data && Array.isArray(record.data)) {
-        record.data.forEach((dayData: any) => {
-          if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
-            dayData.items.forEach((item: any) => {
-              const entryId = item.id || Date.now() + Math.random();
-              if (!loadedEntriesMap.has(entryId)) {
-                  loadedEntriesMap.set(entryId, {
-                    id: entryId,
-                    date: item.date,
-                    startTime: item.startTime,
-                    endTime: item.endTime,
-                    customerJobNumber: item.customerJobNumber,
-                    projectName: item.projectName,
-                    designType: item.designType,
-                    projectType: item.projectType,
-                    description: item.description,
-                  });
-              }
-            });
-          }
-        });
-      }
-    });
-    setEntries(Array.from(loadedEntriesMap.values()));
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser?.uid);
+    
+    if (dailyReportRecord && dailyReportRecord.data && Array.isArray(dailyReportRecord.data)) {
+        const loadedEntries = dailyReportRecord.data.flatMap((dayData: any) => 
+            dayData.category === 'Work Entries' && Array.isArray(dayData.items) ? dayData.items : []
+        );
+        const uniqueEntries = Array.from(new Map(loadedEntries.map(item => [item.id, item])).values());
+        setEntries(uniqueEntries);
+    } else {
+        setEntries([]);
+    }
   }, [records, currentUser]);
 
   const dateInterval = useMemo(() => {
@@ -218,20 +201,17 @@ export default function DailyReportPage() {
   };
   
   const handleSave = async (date: string) => {
-    const dayEntries = entries.filter(e => e.date === date);
-    if (dayEntries.length === 0) {
-        toast({ variant: 'destructive', title: 'No Entries', description: `There are no entries to save for ${date}.`});
-        return;
-    }
+    if (!currentUser) return;
     
-    await addRecord({
+    // Consolidate all entries, not just for one day
+    await addOrUpdateRecord({
         fileName: 'Daily Work Report',
-        projectName: `Work Report for ${date}`,
+        projectName: `Daily Work Report for ${currentUser.name}`,
         data: [{
             category: 'Work Entries',
-            items: dayEntries,
+            items: entries,
         }],
-    } as any);
+    });
   };
   
   const handleDownload = () => {
@@ -256,7 +236,7 @@ export default function DailyReportPage() {
         styles: { fontSize: 9 },
         body: [
             [`EMPLOYEE NAME: ${currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${currentUser?.departments.join(', ') || 'N/A'}`],
-            [`DATE FROM: ${format(dateInterval[0], 'yyyy-MM-dd')}`, `TO DATE: ${format(dateInterval[dateInterval.length-1], 'yyyy-MM-dd')}`],
+            [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
              [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
         ],
         columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
