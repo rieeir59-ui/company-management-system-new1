@@ -135,6 +135,7 @@ function MyProjectsComponent() {
             isManual: false,
         }));
         const manual = manualEntries.map(e => ({ ...e, isManual: true }));
+        // Ensure manual entries have all fields to match Task type for simplicity in table
         const normalizedManual = manual.map(m => ({
             ...m,
             taskName: m.detail,
@@ -416,8 +417,78 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
+                <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
+                <CardDescription>A list of tasks assigned by the administration.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoadingTasks ? (
+                    <div className="flex justify-center items-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="ml-4">Loading tasks...</p>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="font-semibold">Project Name</TableHead>
+                                <TableHead className="font-semibold">Task</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {allProjects.length === 0 ? (
+                            <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned yet.</TableCell>
+                            </TableRow>
+                            ) : allProjects.map((project) => (
+                                <TableRow key={project.id}>
+                                    <TableCell className="font-medium text-base">{project.projectName}</TableCell>
+                                    <TableCell className="font-medium text-base">{project.taskName}</TableCell>
+                                    <TableCell className="text-base">{project.assignedBy}</TableCell>
+                                    <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell className="text-base">{project.endDate || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={project.status}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                              <StatusBadge status={project.status} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="not-started">Not Started</SelectItem>
+                                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex gap-1 justify-end">
+                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>A combined list of assigned tasks and your manually added projects.</CardDescription>
+                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -432,11 +503,7 @@ function MyProjectsComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {combinedSchedule.length === 0 ? (
-                           <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24">No projects or tasks yet.</TableCell>
-                           </TableRow>
-                        ) : combinedSchedule.map(item => (
+                        {combinedSchedule.map(item => (
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
@@ -598,5 +665,3 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-    
