@@ -143,7 +143,12 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         if(yPos > 200) {doc.addPage(); yPos = 20;}
 
-        addSectionTitle("Consultants");
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text("Consultants", margin, yPos);
+        yPos += 8;
+
          doc.autoTable({
             startY: yPos,
             head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
@@ -155,7 +160,12 @@ const generatePdfForRecord = (record: SavedRecord) => {
         
         if(yPos > 200) {doc.addPage(); yPos = 20;}
         
-        addSectionTitle("Requirements");
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text("Requirements", margin, yPos);
+        yPos += 8;
+
         doc.autoTable({
             startY: yPos,
             head: [['Description', 'Nos.', 'Remarks']],
@@ -238,12 +248,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Site Survey'].includes(name));
+        const projectManualFiles = (allFileNames || []).filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Site Survey Report'].includes(name));
 
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
-            { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
-            { name: 'Site Survey', icon: Compass, files: ['Site Survey'] },
+            { name: 'Project Manual', icon: BookCopy, files: [...projectManualFiles, 'Site Survey'] },
             { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
             { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
         ];
@@ -321,7 +330,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
             
             const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(key) );
+                const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value) );
                 if (entries.length === 0) return null;
                 return (
                     <div className="mb-6">
