@@ -374,6 +374,7 @@ export default function EmployeeDashboardSidebar() {
                             <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">{fileName}</span>
                             {fileRecords.map(record => {
                                 const url = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                if (!url) return null;
                                 return (
                                     <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
                                         <SidebarMenuButton>

@@ -330,7 +330,7 @@ export default function DashboardSidebar() {
           <div className="relative px-2 mb-2 group-data-[collapsible=icon]:hidden">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
             <Input 
-                placeholder="Search menu or projects..."
+                placeholder="Search..."
                 className="pl-8 bg-sidebar-accent border-sidebar-border h-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -352,7 +352,7 @@ export default function DashboardSidebar() {
                         ))}
                     </SidebarMenuItem>
                 )}
-                 {searchResults.projectResults.length > 0 && (
+                {searchResults.projectResults.length > 0 && (
                      <SidebarMenuItem>
                         <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Projects</span>
                          {searchResults.projectResults.map((project) => (
@@ -372,6 +372,7 @@ export default function DashboardSidebar() {
                             <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">{fileName}</span>
                             {fileRecords.map(record => {
                                 const url = getFormUrlFromFileName(record.fileName, 'dashboard');
+                                if (!url) return null;
                                 return (
                                     <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
                                         <SidebarMenuButton>
