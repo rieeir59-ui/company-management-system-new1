@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ function DIBTimelineComponent() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
+    const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
 
@@ -77,10 +79,8 @@ function DIBTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contactStart: taskMap['contract']?.start || '',
-                    contactEnd: taskMap['contract']?.end || '',
-                    headCountStart: taskMap['headcountrequirment']?.start || '',
-                    headCountEnd: taskMap['headcountrequirment']?.end || '',
+                    contract: taskMap['contract']?.start || '',
+                    headCount: taskMap['headcountrequirment']?.start || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -126,7 +126,7 @@ function DIBTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
@@ -145,7 +145,7 @@ function DIBTimelineComponent() {
             projectName: 'DIB Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -157,23 +157,18 @@ function DIBTimelineComponent() {
         
         const head = [
             ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
-             'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
-             'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
-             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
-             'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project\nClosure']
+             'Site Survey', 'Contract', 'Head Count', 'Proposal', '3D\'s', 'Tender Arch', 'Tender MEP',
+             'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
-            p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
-            p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
+            `${p.siteSurveyStart} - ${p.siteSurveyEnd}`, p.contract, p.headCount,
+            `${p.proposalStart} - ${p.proposalEnd}`, `${p.threedStart} - ${p.threedEnd}`,
+            `${p.tenderArchStart} - ${p.tenderArchEnd}`, `${p.tenderMepStart} - ${p.tenderMepEnd}`,
+            `${p.boqStart} - ${p.boqEnd}`, p.tenderStatus, p.comparative, 
+            `${p.workingDrawingsStart} - ${p.workingDrawingsEnd}`, 
+            `${p.siteVisitStart} - ${p.siteVisitEnd}`, 
             p.finalBill, p.projectClosure
         ]);
 
@@ -186,11 +181,21 @@ function DIBTimelineComponent() {
             headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
         });
         let lastY = (doc as any).autoTable.previous.finalY + 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Overall Status:", 14, lastY);
+        lastY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
         
+        doc.setFont('helvetica', 'bold');
         doc.text("Maam Isbah Remarks & Order", 14, lastY);
         lastY += 7;
-        doc.text(remarks, 14, lastY);
-        lastY += 10;
+        doc.setFont('helvetica', 'normal');
+        doc.text(remarks, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(remarks, { maxWidth: 260 }).h + 10;
 
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
@@ -228,7 +233,7 @@ function DIBTimelineComponent() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
-                         <thead>
+                        <thead>
                             <tr className="bg-primary/20">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
                                 <th rowSpan={2} className="border p-1">Project Name</th>
@@ -300,6 +305,11 @@ function DIBTimelineComponent() {
                 </div>
                  <Button onClick={addProjectRow} size="sm" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 
+                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
+                </div>
+
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
                     <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
