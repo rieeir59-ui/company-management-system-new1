@@ -204,8 +204,8 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 { content: 'Project Holder', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
                 { content: 'Allocation Date / RFP', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
                 { content: 'Site Survey', colSpan: 2, styles: { halign: 'center' } },
-                { content: 'Contract', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                { content: 'Head Count / Requirement', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Contract', colSpan: 2, styles: { halign: 'center' } },
+                { content: 'Head Count / Requirement', colSpan: 2, styles: { halign: 'center' } },
                 { content: 'Proposal / Design Development', colSpan: 2, styles: { halign: 'center' } },
                 { content: "3D's", colSpan: 2, styles: { halign: 'center' } },
                 { content: 'Tender Package Architectural', colSpan: 2, styles: { halign: 'center' } },
@@ -221,13 +221,13 @@ const generatePdfForRecord = (record: SavedRecord) => {
             [
                 'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End'
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End'
             ].map(h => ({ content: h, styles: { halign: 'center' } }))
         ];
         
         const body = projects.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
@@ -427,34 +427,52 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             return (
                 <div className="space-y-4">
                     <div className="overflow-x-auto">
-                        <Table>
+                        <Table className="text-xs">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Sr.</TableHead>
                                     <TableHead>Project</TableHead>
                                     <TableHead>Area</TableHead>
                                     <TableHead>Holder</TableHead>
-                                    <TableHead>RFP</TableHead>
+                                    <TableHead>RFP Date</TableHead>
                                     <TableHead>Survey</TableHead>
+                                    <TableHead>Contract</TableHead>
+                                    <TableHead>Head Count</TableHead>
                                     <TableHead>Proposal</TableHead>
                                     <TableHead>3D's</TableHead>
                                     <TableHead>Tender Arch</TableHead>
                                     <TableHead>Tender MEP</TableHead>
+                                    <TableHead>BOQ</TableHead>
+                                    <TableHead>Tender Status</TableHead>
+                                    <TableHead>Comparative</TableHead>
+                                    <TableHead>Working Drawings</TableHead>
+                                    <TableHead>Site Visit</TableHead>
+                                    <TableHead>Final Bill</TableHead>
+                                    <TableHead>Closure</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {projects.map(p => (
                                     <TableRow key={p.id}>
                                         <TableCell>{p.srNo}</TableCell>
-                                        <TableCell>{p.projectName}</TableCell>
+                                        <TableCell className="min-w-[150px]">{p.projectName}</TableCell>
                                         <TableCell>{p.area}</TableCell>
                                         <TableCell>{p.projectHolder}</TableCell>
                                         <TableCell>{p.allocationDate}</TableCell>
                                         <TableCell>{p.siteSurveyStart} - {p.siteSurveyEnd}</TableCell>
+                                        <TableCell>{p.contract || `${p.contactStart || ''} - ${p.contactEnd || ''}`}</TableCell>
+                                        <TableCell>{p.headCount || `${p.headCountStart || ''} - ${p.headCountEnd || ''}`}</TableCell>
                                         <TableCell>{p.proposalStart} - {p.proposalEnd}</TableCell>
                                         <TableCell>{p.threedStart} - {p.threedEnd}</TableCell>
                                         <TableCell>{p.tenderArchStart} - {p.tenderArchEnd}</TableCell>
                                         <TableCell>{p.tenderMepStart} - {p.tenderMepEnd}</TableCell>
+                                        <TableCell>{p.boqStart} - {p.boqEnd}</TableCell>
+                                        <TableCell>{p.tenderStatus}</TableCell>
+                                        <TableCell>{p.comparative}</TableCell>
+                                        <TableCell>{p.workingDrawingsStart} - {p.workingDrawingsEnd}</TableCell>
+                                        <TableCell>{p.siteVisitStart} - {p.siteVisitEnd}</TableCell>
+                                        <TableCell>{p.finalBill}</TableCell>
+                                        <TableCell>{p.projectClosure}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -712,7 +730,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
       </AlertDialog>
       
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-7xl">
                 <DialogHeader>
                     <DialogTitle>{viewingRecord?.fileName}: {viewingRecord?.projectName}</DialogTitle>
                 </DialogHeader>
