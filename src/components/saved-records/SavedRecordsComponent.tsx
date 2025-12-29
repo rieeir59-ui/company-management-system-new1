@@ -90,7 +90,6 @@ const generatePdfForRecord = (record: SavedRecord) => {
         const info = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
         const consultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
         const requirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
-        const otherNotes = record.data.find((d:any) => d.category === 'Other Notes')?.items || {};
 
         addDefaultHeader(record.fileName, record.projectName);
 
@@ -110,7 +109,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
                 styles: { fontSize: 9, cellPadding: 2 },
                 head: [['Field', 'Value']],
                 headStyles: { fillColor: primaryColor },
-                columnStyles: { 0: { fontStyle: 'bold' } }
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
             });
             yPos = doc.autoTable.previous.finalY + 10;
         };
@@ -154,14 +153,13 @@ const generatePdfForRecord = (record: SavedRecord) => {
         });
         yPos = doc.autoTable.previous.finalY + 10;
 
-        addTextAreaSection('Special Confidential Requirements', otherNotes.specialConfidential);
-        addTextAreaSection('Miscellaneous Notes', otherNotes.miscNotes);
+        addTextAreaSection('Special Confidential Requirements', info.specialConfidential);
+        addTextAreaSection('Miscellaneous Notes', info.miscNotes);
 
         addFooter();
         doc.save(`${record.projectName}_${record.fileName}.pdf`);
         return;
     }
-
 
     if (record.fileName === 'Leave Request Form') {
         const leaveDoc = new jsPDF(); // Use a new instance for portrait mode
@@ -502,40 +500,49 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
         const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
         
-        const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-            const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object');
-            if (entries.length === 0) return null;
-            return (
-                <div className="mb-6">
-                    <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableBody>
-                                {entries.map(([key, value]) => (
-                                    <TableRow key={key}>
-                                        <TableCell className="font-semibold w-1/3">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
-                                        <TableCell>{String(value)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-            );
-        };
-
         if (viewingRecord.fileName === 'Project Information') {
             const info = dataSections.find((d: any) => d.category === 'Project Information')?.items || {};
             const consultants = dataSections.find((d: any) => d.category === 'Consultants')?.items || {};
             const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
-            const otherNotes = dataSections.find((d:any) => d.category === 'Other Notes')?.items || {};
+            
+            const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
+                const entries = Object.entries(data).filter(([key, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && key !== 'specialConfidential' && key !== 'miscNotes' );
+                if (entries.length === 0) return null;
+                return (
+                    <div className="mb-6">
+                        <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
+                        <div className="border rounded-md">
+                            <Table>
+                                <TableBody>
+                                    {entries.map(([key, value]) => (
+                                        <TableRow key={key}>
+                                            <TableCell className="font-semibold w-1/3">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
+                                            <TableCell>{String(value)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                );
+            };
+
+            const TextAreaSection = ({ title, content }: { title: string, content: string}) => {
+                if (!content || !content.trim()) return null;
+                return (
+                     <div className="mb-6">
+                        <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
+                        <p className="text-sm p-4 border rounded-md bg-muted/50 whitespace-pre-wrap">{content}</p>
+                    </div>
+                )
+            }
 
             return (
                 <div className="space-y-6">
-                    <Section title="Project Information" data={info} />
-                    <Section title="Owner & Representative" data={{...info}} />
-                    
-                    <div className="mb-6">
+                    <Section title="Project Information" data={{'Project': info.project, 'Address': info.address, 'Project No': info.projectNo, 'Prepared By': info.preparedBy, 'Prepared Date': info.preparedDate}} />
+                    <Section title="About Owner" data={{'Full Name': info.ownerFullName, 'Office Address': info.ownerOfficeAddress, 'Residence Address': info.ownerResAddress, 'Office Phone': info.ownerOfficePhone, 'Residence Phone': info.ownerResPhone}} />
+                    <Section title="Owner's Project Representative" data={{'Name': info.repName, 'Office Address': info.repOfficeAddress, 'Residence Address': info.repResAddress, 'Office Phone': info.repOfficePhone, 'Residence Phone': info.repResPhone}} />
+                     <div className="mb-6">
                         <h3 className="font-bold text-lg mb-2 text-primary">Consultants</h3>
                         <Table>
                             <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Within Fee</TableHead><TableHead>Additional Fee</TableHead><TableHead>By Architect</TableHead><TableHead>By Owner</TableHead></TableRow></TableHeader>
@@ -546,7 +553,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             </TableBody>
                         </Table>
                     </div>
-                    
                     <div className="mb-6">
                         <h3 className="font-bold text-lg mb-2 text-primary">Requirements</h3>
                         <Table>
@@ -558,77 +564,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             </TableBody>
                         </Table>
                     </div>
-
-                    <Section title="Other Notes" data={otherNotes} />
+                    <TextAreaSection title="Special Confidential Requirements" content={info.specialConfidential} />
+                    <TextAreaSection title="Miscellaneous Notes" content={info.miscNotes} />
                 </div>
             );
         }
 
-        if (viewingRecord.fileName === 'Leave Request Form') {
-            const employeeInfo = dataSections.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-            const leaveDetails = dataSections.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-            const hrApproval = dataSections.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
-            
-            return (
-                <Card className="font-sans">
-                    <CardHeader className="text-center border-b">
-                        <CardTitle className="text-lg font-bold">LEAVE REQUEST FORM</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-6">
-                        <div className="space-y-4">
-                            <h3 className="font-bold">Employee to Complete</h3>
-                            <div className="grid grid-cols-2 gap-4 border p-4 rounded-md">
-                                <div><span className="font-semibold">Employee Name:</span> {employeeInfo['Employee Name']}</div>
-                                <div><span className="font-semibold">Employee Number:</span> {employeeInfo['Employee Number']}</div>
-                                <div><span className="font-semibold">Department:</span> {employeeInfo['Department']}</div>
-                                <div><span className="font-semibold">Position:</span> {employeeInfo['Position']}</div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="font-semibold">Status (select one):</span>
-                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Status'] === 'Full-time'} disabled /> <Label>Full-time</Label></div>
-                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Status'] === 'Part-time'} disabled /> <Label>Part-time</Label></div>
-                            </div>
-                            <div>
-                                <p>I hereby request a leave of absence effective from ({leaveDetails['Leave From']}) to ({leaveDetails['Leave To']})</p>
-                                <p><strong>Total Days:</strong> {leaveDetails['Total Days']}</p>
-                                <p>I expect to return to work on Date: ({leaveDetails['Return Date']})</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <h3 className="font-bold">Reason for Requested:</h3>
-                            <div className="flex flex-col space-y-1 pl-4">
-                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Sick Leave')} disabled /><Label>SICK LEAVE</Label></div>
-                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Casual Leave')} disabled /><Label>CASUAL LEAVE</Label></div>
-                                <div className="flex items-center gap-2"><Checkbox checked={leaveDetails['Leave Type']?.includes('Annual Leave')} disabled /><Label>ANNUAL LEAVE</Label></div>
-                            </div>
-                            <div className="pt-2">
-                                <p><strong>REASON:</strong></p>
-                                <p className="pl-4 border-b pb-1">{leaveDetails['Reason'] || 'N/A'}</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 border-t pt-4">
-                            <h3 className="font-bold">HR Department Approval:</h3>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Approved'] === 'true'} disabled /><Label>LEAVE APPROVED</Label></div>
-                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Denied'] === 'true'} disabled /><Label>LEAVE DENIED</Label></div>
-                            </div>
-                            <div className="pt-2">
-                                <p><strong>REASON:</strong></p>
-                                <p className="pl-4 border-b pb-1">{hrApproval['Reason'] || 'N/A'}</p>
-                            </div>
-                             <p><strong>Date:</strong> {hrApproval['Date'] || '____________'}</p>
-                             <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Paid Leave'] === 'true'} disabled /><Label>PAID LEAVE</Label></div>
-                                <div className="flex items-center gap-2"><Checkbox checked={hrApproval['Unpaid Leave'] === 'true'} disabled /><Label>UNPAID LEAVE</Label></div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            );
-        }
-    
         // Fallback for other record types
         return (
             <div className="space-y-4">
@@ -815,5 +756,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
-    

@@ -148,27 +148,14 @@ function ProjectInformationComponent() {
         if (recordId) {
             const record = getRecordById(recordId);
             if (record && Array.isArray(record.data)) {
-                 const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
-                 const loadedFormState: any = {};
-                 for (const key in formState) {
-                   if (mainData[key] !== undefined) {
-                     if (typeof formState[key as keyof typeof formState] === 'boolean') {
-                         loadedFormState[key] = mainData[key] === 'true';
-                     } else {
-                         loadedFormState[key] = mainData[key];
-                     }
-                   }
-                 }
-                 setFormState(s => ({...s, ...loadedFormState}));
-                
+                const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
+                setFormState(prev => ({...prev, ...mainData}));
+
                 const loadedConsultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
                 setConsultants(loadedConsultants);
 
                 const loadedRequirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
                 setRequirements(loadedRequirements);
-
-                const otherNotes = record.data.find((d:any) => d.category === 'Other Notes')?.items || {};
-                setFormState(s => ({...s, specialConfidential: otherNotes.specialConfidential || '', miscNotes: otherNotes.miscNotes || ''}));
 
             } else if(recordId) {
                 toast({ variant: "destructive", title: "Error", description: "Record not found."});
@@ -212,7 +199,6 @@ function ProjectInformationComponent() {
                 { category: 'Project Information', items: formState },
                 { category: 'Consultants', items: consultants },
                 { category: 'Requirements', items: requirements },
-                { category: 'Other Notes', items: { specialConfidential: formState.specialConfidential, miscNotes: formState.miscNotes } }
             ]
         };
 
@@ -437,6 +423,7 @@ function ProjectInformationComponent() {
       yPos = doc.autoTable.previous.finalY + 10;
 
       const addTextAreaSection = (title: string, content: string) => {
+        if (!content?.trim()) return;
         if (yPos > 260) { doc.addPage(); yPos = 20; }
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
