@@ -275,27 +275,27 @@ function AskariBankTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" /></td>
                                     <td className="border"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" /></td>
-                                    <td className="border"><Input type="date" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.proposalStart} onChange={e => handleProjectChange(row.id, 'proposalStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.threedEnd} onChange={e => handleProjectChange(row.id, 'threedEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderArchStart} onChange={e => handleProjectChange(row.id, 'tenderArchStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderArchEnd} onChange={e => handleProjectChange(row.id, 'tenderArchEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderMepStart} onChange={e => handleProjectChange(row.id, 'tenderMepStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.tenderMepEnd} onChange={e => handleProjectChange(row.id, 'tenderMepEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.boqStart} onChange={e => handleProjectChange(row.id, 'boqStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.proposalStart} onChange={e => handleProjectChange(row.id, 'proposalStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.threedEnd} onChange={e => handleProjectChange(row.id, 'threedEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.tenderArchStart} onChange={e => handleProjectChange(row.id, 'tenderArchStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.tenderArchEnd} onChange={e => handleProjectChange(row.id, 'tenderArchEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.tenderMepStart} onChange={e => handleProjectChange(row.id, 'tenderMepStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.tenderMepEnd} onChange={e => handleProjectChange(row.id, 'tenderMepEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.boqStart} onChange={e => handleProjectChange(row.id, 'boqStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.boqEnd} onChange={e => handleProjectChange(row.id, 'boqEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                    <td className="border"><Input type="date" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
-                                    <td className="border"><Input type="date" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.workingDrawingsStart} onChange={e => handleProjectChange(row.id, 'workingDrawingsStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.workingDrawingsEnd} onChange={e => handleProjectChange(row.id, 'workingDrawingsEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.siteVisitStart} onChange={e => handleProjectChange(row.id, 'siteVisitStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={row.siteVisitEnd} onChange={e => handleProjectChange(row.id, 'siteVisitEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Button variant="destructive" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4" /></Button></td>
@@ -314,7 +314,7 @@ function AskariBankTimelineComponent() {
                 <div className="mt-8">
                     <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
                     <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
-                    <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
+                    <Input type="text" onFocus={(e) => e.target.type='date'} onBlur={(e) => e.target.type='text'} placeholder="dd-mm-yy" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
                 </div>
             </CardContent>
         </Card>
@@ -324,3 +324,4 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
+
