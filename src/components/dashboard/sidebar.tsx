@@ -35,13 +35,11 @@ import {
   Search as SearchIcon,
   Settings,
   KeyRound,
-  PlusCircle,
-  Edit,
-  Trash2,
+  List,
   Clock,
   Building2,
   Home,
-  List,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -50,29 +48,10 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { getFormUrlFromFileName } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -272,7 +251,7 @@ MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
 
 export default function DashboardSidebar() {
   const { user: currentUser, logout } = useCurrentUser();
-  const { projectManualItems } = useRecords();
+  const { projectManualItems, records } = useRecords();
   const { toast } = useToast();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -294,7 +273,7 @@ export default function DashboardSidebar() {
   }, [currentUser]);
   
   const searchResults = useMemo(() => {
-    if (!searchQuery) return { menuResults: [], projectResults: [] };
+    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: [] };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
@@ -306,9 +285,13 @@ export default function DashboardSidebar() {
     const projectResults = allProjects.filter(project =>
       project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
+
+    const recordResults = records.filter(record => 
+        record.projectName.toLowerCase().includes(lowerCaseQuery)
+    );
     
-    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()) };
-  }, [searchQuery, visibleTopLevelItems, projectManualItems]);
+    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), recordResults };
+  }, [searchQuery, visibleTopLevelItems, projectManualItems, records]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -369,7 +352,24 @@ export default function DashboardSidebar() {
                         ))}
                     </SidebarMenuItem>
                 )}
-                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && (
+                 {searchResults.recordResults.length > 0 && (
+                    <SidebarMenuItem>
+                        <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">Saved Records</span>
+                        {searchResults.recordResults.map((record) => {
+                            const Icon = getIconForFile(record.fileName);
+                            const url = getFormUrlFromFileName(record.fileName, 'dashboard');
+                            return (
+                                <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
+                                    <SidebarMenuButton>
+                                        <Icon className="size-5" />
+                                        <span>{record.projectName} ({record.fileName})</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            )
+                        })}
+                    </SidebarMenuItem>
+                )}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && searchResults.recordResults.length === 0 && (
                     <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
                 )}
              </SidebarMenu>
