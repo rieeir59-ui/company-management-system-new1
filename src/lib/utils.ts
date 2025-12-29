@@ -64,7 +64,7 @@ const fileNameToUrlMap: Record<string, string> = {
   "My Projects": "my-projects",
   "Task Assignment": "assign-task/form",
   "Site Visit Proforma": "site-visit",
-  "Site Survey Report": "site-survey-report",
+  "Site Survey Report": "site-survey",
   "Uploaded File": "files-record",
   "Daily Work Report": "daily-report",
   "Leave Request Form": "leave-application",
