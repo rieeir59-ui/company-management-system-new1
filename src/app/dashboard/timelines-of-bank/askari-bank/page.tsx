@@ -145,8 +145,7 @@ function AskariBankTimelineComponent() {
             projectName: 'Askari Bank Projects',
             data: [
                 { category: 'Projects', items: projectRows },
-                { category: 'Overall Status', items: [{label: 'Status', value: overallStatus}]},
-                { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
     };
@@ -276,7 +275,7 @@ function AskariBankTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" /></td>
                                     <td className="border"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" /></td>
                                     <td className="border"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" /></td>
-                                    <td className="border"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} className="w-28" /></td>
+                                    <td className="border"><Input type="date" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} /></td>
@@ -325,8 +324,3 @@ function AskariBankTimelineComponent() {
 export default function Page() {
   return <AskariBankTimelineComponent />;
 }
-
-    
-      
-
-    
