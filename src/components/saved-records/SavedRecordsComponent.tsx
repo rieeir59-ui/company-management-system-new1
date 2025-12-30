@@ -102,7 +102,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         addDefaultHeader(record.fileName, record.projectName);
 
         const addSection = (title: string, data: Record<string, any>) => {
-             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null' && !['specialConfidential', 'miscNotes'].includes(value));
+             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null' && !['specialConfidential', 'miscNotes'].includes(value as string));
              if (entries.length === 0) return;
 
             if (yPos > 260) { doc.addPage(); yPos = 20; }
@@ -189,6 +189,58 @@ const generatePdfForRecord = (record: SavedRecord) => {
         addTextAreaSection('Special Confidential Requirements', info.specialConfidential);
         addTextAreaSection('Miscellaneous Notes', info.miscNotes);
 
+    } else if (record.fileName === 'Daily Work Report') {
+        addDefaultHeader(record.fileName, record.projectName);
+
+        const entries = record.data[0]?.items || [];
+        if (!Array.isArray(entries)) {
+            doc.text('Could not display record data.', 14, yPos);
+        } else {
+            const calculateTotalUnits = (startTime: string, endTime: string): string => {
+                if (!startTime || !endTime) return '0:00';
+                const start = new Date(`1970-01-01T${startTime}`);
+                const end = new Date(`1970-01-01T${endTime}`);
+                if (!isValid(start) || !isValid(end) || end < start) return '0:00';
+                const diff = differenceInMinutes(end, start);
+                const hours = Math.floor(diff / 60);
+                const minutes = diff % 60;
+                return `${hours}:${String(minutes).padStart(2, '0')}`;
+            };
+    
+            const entriesByDate = entries.reduce((acc, entry) => {
+                if (entry.date) {
+                    (acc[entry.date] = acc[entry.date] || []).push(entry);
+                }
+                return acc;
+            }, {} as Record<string, typeof entries>);
+    
+            const sortedDates = Object.keys(entriesByDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+
+            sortedDates.forEach(date => {
+                if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(format(parseISO(date), 'EEEE, dd MMMM yyyy'), 14, yPos);
+                yPos += 8;
+
+                const body = entriesByDate[date].map(entry => [
+                    `${entry.startTime} - ${entry.endTime}`,
+                    entry.projectName,
+                    entry.description,
+                    calculateTotalUnits(entry.startTime, entry.endTime)
+                ]);
+
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Time', 'Project', 'Description', 'Units']],
+                    body: body,
+                    theme: 'grid',
+                    headStyles: { fillColor: [240, 240, 240], textColor: 0 },
+                    styles: { fontSize: 9, cellPadding: 2 }
+                });
+                yPos = doc.autoTable.previous.finalY + 10;
+            });
+        }
     } else {
         addDefaultHeader(record.fileName, record.projectName);
         
@@ -247,7 +299,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 };
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
-    const { records, isLoading, error, deleteRecord } = useRecords();
+    const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
     const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
