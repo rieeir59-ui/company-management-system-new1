@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal, PlusCircle, Download, FileText as FileDown } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Download, FileText as FileDown, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -49,7 +49,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type Employee } from '@/lib/employees';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import jsPDF from 'jspdf';
@@ -57,6 +57,7 @@ import 'jspdf-autotable';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
+import { useRouter } from 'next/navigation';
 
 
 const departments = [
@@ -87,10 +88,13 @@ export default function EmployeePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const image = PlaceHolderImages.find(p => p.id === 'employee-record');
+  const router = useRouter();
   
   const { toast } = useToast();
 
-  const canManageEmployees = currentUser && Array.isArray(currentUser.departments) && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  const canManageEmployees = useMemo(() => {
+    return currentUser && Array.isArray(currentUser.departments) && ['software-engineer', 'admin', 'ceo'].some(role => currentUser.departments.includes(role));
+  }, [currentUser]);
 
   const handleAddEmployee = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -117,7 +121,6 @@ export default function EmployeePage() {
     if (email && email !== selectedEmployee.email) updatedData.email = email;
     if (contact && contact !== selectedEmployee.contact) updatedData.contact = contact;
     
-    // Check if departments array is different
     if (departments.length > 0 && (departments.length !== selectedEmployee.departments.length || departments.some(d => !selectedEmployee.departments.includes(d)))) {
         updatedData.departments = departments;
     }
@@ -204,6 +207,10 @@ export default function EmployeePage() {
   const [editFormDepartments, setEditFormDepartments] = useState<string[]>([]);
 
   const departmentOptions: MultiSelectOption[] = departments.map(d => ({ value: d.slug, label: d.name }));
+
+  const navigateToDashboard = (employee: Employee) => {
+    router.push(`/dashboard/my-projects?employeeId=${employee.record}`);
+  };
 
   return (
     <>
@@ -319,6 +326,7 @@ export default function EmployeePage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => navigateToDashboard(employee)}>View Dashboard</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEditDialog(employee)}>Edit</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openDeleteDialog(employee)} className="text-red-600">Delete</DropdownMenuItem>
                             </DropdownMenuContent>
