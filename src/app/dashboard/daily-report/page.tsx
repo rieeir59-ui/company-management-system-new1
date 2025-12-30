@@ -105,27 +105,39 @@ export default function DailyReportPage() {
   const { toast } = useToast();
   const { user: currentUser, employees } = useCurrentUser();
   const { addOrUpdateRecord, records } = useRecords();
-
+  
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(null);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  
+  // Find selected employee object from ID
+  const selectedEmployee = useMemo(() => {
+    if (!selectedEmployeeId) return null;
+    return employees.find(e => e.uid === selectedEmployeeId);
+  }, [selectedEmployeeId, employees]);
+
 
   useEffect(() => {
-    if(currentUser && !selectedEmployeeId) {
+    if(isAdmin && employees.length > 0 && !selectedEmployeeId) {
+        setSelectedEmployeeId(employees[0].uid);
+    } else if (!isAdmin && currentUser && !selectedEmployeeId) {
       setSelectedEmployeeId(currentUser.uid);
-      setSelectedEmployee(currentUser);
     }
-  }, [currentUser, selectedEmployeeId]);
+  }, [isAdmin, employees, currentUser, selectedEmployeeId]);
+
 
   const handleEmployeeChange = (employeeUid: string) => {
       setSelectedEmployeeId(employeeUid);
-      const employee = employees.find(e => e.uid === employeeUid);
-      setSelectedEmployee(employee);
       setComboboxOpen(false);
+      // Reset dependent state when employee changes
+      setEntries([]);
+      setCurrentDate(new Date());
+      setSelectedWeek('all');
+      setIsCustomRange(false);
+      setDateFrom(undefined);
+      setDateTo(undefined);
   };
-
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState('all');
@@ -138,13 +150,13 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const targetEmployee = isAdmin ? selectedEmployee : currentUser;
-    if (!targetEmployee?.uid) {
+    const targetUid = selectedEmployeeId;
+    if (!targetUid) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployee.uid);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetUid);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -172,7 +184,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployee, isAdmin]);
+  }, [records, selectedEmployeeId]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -283,6 +295,8 @@ export default function DailyReportPage() {
     doc.setFontSize(10);
     let yPos = 15;
 
+    const reportForUser = selectedEmployee || currentUser;
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text('ISBAH HASSAN & ASSOCIATES', pageWidth / 2, yPos, { align: 'center' });
@@ -296,7 +310,7 @@ export default function DailyReportPage() {
         theme: 'plain',
         styles: { fontSize: 9 },
         body: [
-            [`EMPLOYEE NAME: ${selectedEmployee?.name || currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ') || 'N/A'}`],
+            [`EMPLOYEE NAME: ${reportForUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${reportForUser?.departments.join(', ') || 'N/A'}`],
             [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
              [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
         ],
@@ -431,13 +445,7 @@ export default function DailyReportPage() {
                                             <CommandItem
                                             key={employee.uid}
                                             value={employee.name}
-                                            onSelect={(currentValue) => {
-                                                const selected = employees.find(e => e.name.toLowerCase() === currentValue.toLowerCase());
-                                                if (selected) {
-                                                    handleEmployeeChange(selected.uid);
-                                                }
-                                                setComboboxOpen(false);
-                                            }}
+                                            onSelect={() => handleEmployeeChange(employee.uid)}
                                             >
                                             <Check
                                                 className={cn(
@@ -557,7 +565,7 @@ export default function DailyReportPage() {
                                         {dayEntries.map((entry, entryIndex) => (
                                             <TableRow key={entry.id}>
                                                 {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
-                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
+                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="align-top">{parseISO(entry.date).getDate()}</TableCell> : null}
                                                 <TableCell>{entry.startTime}</TableCell>
                                                 <TableCell>{entry.endTime}</TableCell>
                                                 <TableCell>{entry.customerJobNumber}</TableCell>
@@ -654,6 +662,7 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
 
 
