@@ -137,7 +137,7 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!selectedEmployeeId) {
+    if (!selectedEmployeeId || !records) {
         setEntries([]);
         return;
     }
@@ -261,7 +261,7 @@ export default function DailyReportPage() {
   };
   
   const handleSave = async (date: string) => {
-    if(!currentUser) return;
+    if(!currentUser || !selectedEmployeeId) return;
     
     await addOrUpdateRecord({
         fileName: 'Daily Work Report',
@@ -653,11 +653,4 @@ export default function DailyReportPage() {
     </Card>
   );
 }
-
-
-
-
-
-
-
 
