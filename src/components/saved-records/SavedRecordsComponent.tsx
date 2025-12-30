@@ -218,27 +218,40 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
             sortedDates.forEach(date => {
                 if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text(format(parseISO(date), 'EEEE, dd MMMM yyyy'), 14, yPos);
-                yPos += 8;
-
+                
                 const body = entriesByDate[date].map(entry => [
-                    `${entry.startTime} - ${entry.endTime}`,
+                    format(parseISO(entry.date), 'EEEE'),
+                    format(parseISO(entry.date), 'dd-MMM'),
+                    entry.startTime, 
+                    entry.endTime,
+                    entry.customerJobNumber,
                     entry.projectName,
+                    entry.designType,
+                    entry.projectType,
                     entry.description,
                     calculateTotalUnits(entry.startTime, entry.endTime)
                 ]);
 
                 doc.autoTable({
                     startY: yPos,
-                    head: [['Time', 'Project', 'Description', 'Units']],
+                    head: [['DAY', 'DATE', 'START', 'END', 'CUSTOMER JOB', 'PROJECT NAME', 'DESIGN TYPE', 'PROJECT TYPE', 'DESCRIPTION', 'TOTAL UNITS']],
                     body: body,
                     theme: 'grid',
-                    headStyles: { fillColor: [240, 240, 240], textColor: 0 },
-                    styles: { fontSize: 9, cellPadding: 2 }
+                    headStyles: { fillColor: [240, 240, 240], textColor: 0, fontSize: 8 },
+                    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' }
                 });
                 yPos = doc.autoTable.previous.finalY + 10;
+
+                const dayTotalMinutes = entriesByDate[date].reduce((acc: number, entry: any) => {
+                    const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+                    return acc + (hours * 60) + minutes;
+                }, 0);
+                const totalHours = Math.floor(dayTotalMinutes / 60);
+                const totalMinutes = dayTotalMinutes % 60;
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`TOTAL UNITS: ${totalHours}:${String(totalMinutes).padStart(2, '0')}`, pageWidth - margin, yPos, {align: 'right'});
+                yPos += 15;
             });
         }
     } else {
@@ -311,9 +324,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => [
         { name: 'Banks', icon: Landmark, files: (bankTimelineCategories || []).map(b => `${b} Timeline`) },
-        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Transmittal Letter', 'Minutes of Meetings'].includes(name)) },
-        { name: 'Transmittal Letter', icon: Send, files: ['Transmittal Letter'] },
-        { name: 'Minutes of Meetings', icon: Users, files: ['Minutes of Meetings'] },
+        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name)) },
         { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
         { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
     ], [bankTimelineCategories]);
@@ -380,7 +391,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (viewingRecord.fileName === 'Daily Work Report') {
             const entries = viewingRecord.data[0]?.items || [];
             if (!Array.isArray(entries)) return <p>Could not display record data.</p>;
-
+    
             const calculateTotalUnits = (startTime: string, endTime: string): string => {
                 if (!startTime || !endTime) return '0:00';
                 const start = new Date(`1970-01-01T${startTime}`);
@@ -398,36 +409,61 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 }
                 return acc;
             }, {} as Record<string, typeof entries>);
-
+    
             const sortedDates = Object.keys(entriesByDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
     
             return (
                 <div className="space-y-6">
-                    {sortedDates.map(date => (
-                        <div key={date}>
-                            <h4 className="font-bold text-lg mb-2">{format(parseISO(date), 'EEEE, dd MMMM yyyy')}</h4>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Time</TableHead>
-                                        <TableHead>Project</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Units</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {entriesByDate[date].map(entry => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell>{entry.startTime} - {entry.endTime}</TableCell>
-                                            <TableCell>{entry.projectName}</TableCell>
-                                            <TableCell>{entry.description}</TableCell>
-                                            <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                    {sortedDates.map(date => {
+                        const dayEntries = entriesByDate[date];
+                        const totalDayMinutes = dayEntries.reduce((acc: number, entry: any) => {
+                            const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
+                            return acc + (hours * 60) + minutes;
+                        }, 0);
+                        const totalHours = Math.floor(totalDayMinutes / 60);
+                        const totalMinutes = totalDayMinutes % 60;
+
+                        return (
+                            <div key={date}>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                            <TableHead>DAY</TableHead>
+                                            <TableHead>DATE</TableHead>
+                                            <TableHead>START</TableHead>
+                                            <TableHead>END</TableHead>
+                                            <TableHead>CUSTOMER JOB</TableHead>
+                                            <TableHead>PROJECT NAME</TableHead>
+                                            <TableHead>DESIGN TYPE</TableHead>
+                                            <TableHead>PROJECT TYPE</TableHead>
+                                            <TableHead>DESCRIPTION</TableHead>
+                                            <TableHead className="text-right">TOTAL UNITS</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ))}
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dayEntries.map((entry: any, index: number) => (
+                                            <TableRow key={entry.id || index}>
+                                                <TableCell>{format(parseISO(entry.date), 'EEEE').toUpperCase()}</TableCell>
+                                                <TableCell>{format(parseISO(entry.date), 'dd-MMM')}</TableCell>
+                                                <TableCell>{entry.startTime}</TableCell>
+                                                <TableCell>{entry.endTime}</TableCell>
+                                                <TableCell>{entry.customerJobNumber}</TableCell>
+                                                <TableCell>{entry.projectName}</TableCell>
+                                                <TableCell>{entry.designType}</TableCell>
+                                                <TableCell>{entry.projectType}</TableCell>
+                                                <TableCell>{entry.description}</TableCell>
+                                                <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                        <TableRow className="font-bold bg-muted/50">
+                                            <TableCell colSpan={9} className="text-right">TOTAL UNITS</TableCell>
+                                            <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )
+                    })}
                 </div>
             )
         }
@@ -454,9 +490,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                     <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}</TableRow></TableHeader>
                                     <TableBody>
                                         {section.items.map((item: any, i: number) => {
-                                            let parsed = item;
-                                            if(typeof item === 'string') try {parsed = JSON.parse(item)} catch(e){return null}
-                                            return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsed[h] ?? '')}</TableCell>)}</TableRow>
+                                            let parsedItem = item;
+                                            if(typeof item === 'string') try {parsedItem = JSON.parse(item)} catch(e){return null}
+                                            return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsedItem[h] ?? '')}</TableCell>)}</TableRow>
                                         })}
                                     </TableBody>
                                 </Table>
