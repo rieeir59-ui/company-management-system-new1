@@ -32,19 +32,12 @@ import {
   Folder,
   Briefcase,
   BookCopy,
-  FileUp,
   Landmark,
   Search as SearchIcon,
   Clock,
   Building2,
   Home,
   List,
-  Compass,
-  FileSearch,
-  Presentation,
-  CalendarOff,
-  ClipboardList,
-  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -53,24 +46,16 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
     { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
-    { href: '/employee-dashboard/project-information', label: 'Project Information', icon: Folder },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
-    { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
-    { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
-    { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
-    { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
-    { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
-    { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
 
