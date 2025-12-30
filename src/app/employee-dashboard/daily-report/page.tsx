@@ -468,8 +468,8 @@ export default function DailyReportPage() {
                                     <React.Fragment key={dayString}>
                                         {dayEntries.map((entry, entryIndex) => (
                                             <TableRow key={entry.id}>
-                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
-                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
+                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell>}
+                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell>}
                                                 <TableCell>{entry.startTime}</TableCell>
                                                 <TableCell>{entry.endTime}</TableCell>
                                                 <TableCell>{entry.customerJobNumber}</TableCell>
@@ -566,4 +566,3 @@ export default function DailyReportPage() {
     </Card>
   );
 }
-
