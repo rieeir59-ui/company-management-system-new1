@@ -57,7 +57,7 @@ export const FileProvider = ({ children }: { children: ReactNode }) => {
   const isAdmin = currentUser?.role && ['admin', 'ceo', 'software-engineer'].includes(currentUser.role);
 
   useEffect(() => {
-    if (isUserLoading || !currentUser || !firestore) {
+    if (isUserLoading || !firestore || !currentUser) { // Wait for user to be available
       setIsLoading(false);
       setFileRecords([]);
       return;

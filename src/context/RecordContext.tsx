@@ -64,7 +64,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch records
   useEffect(() => {
-    if (isUserLoading || !firestore) {
+    if (isUserLoading || !firestore || !currentUser) { // Wait for user to be available
       setRecords([]);
       return;
     }
@@ -94,7 +94,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     );
 
     return () => unsubscribe();
-  }, [firestore, isUserLoading]);
+  }, [firestore, isUserLoading, currentUser]); // Add currentUser to dependency array
 
   // Add new record
   const addRecord = useCallback(
@@ -106,7 +106,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
       const dataToSave = {
         ...recordData,
-        employeeId: currentUser.record,
+        employeeId: currentUser.uid,
         employeeName: currentUser.name,
         createdAt: serverTimestamp(),
       };
@@ -157,7 +157,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             return Promise.reject(new Error('User not authenticated'));
         }
 
-        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.record);
+        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
 
         if (existingRecord) {
             // Update existing record
@@ -238,4 +238,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
