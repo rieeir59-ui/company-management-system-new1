@@ -331,8 +331,8 @@ export default function DailyReportPage() {
             const totalMinutes = totalDayUnitsInMinutes % 60;
             
             const rows = dayEntries.map((entry, entryIndex) => [
-                entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
-                entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
+                entryIndex === 0 ? { content: format(day, 'EEEE').toUpperCase(), rowSpan: dayEntries.length + (dayEntries.length > 0 ? 1 : 0) } : '',
+                entryIndex === 0 ? { content: format(parseISO(entry.date), 'dd-MMM'), rowSpan: dayEntries.length + (dayEntries.length > 0 ? 1 : 0) } : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -341,15 +341,21 @@ export default function DailyReportPage() {
                 entry.projectType, 
                 entry.description,
                 calculateTotalUnits(entry.startTime, entry.endTime)
-            ]);
+            ].slice(entryIndex === 0 ? 0 : 2));
             
             if (dayEntries.length > 0) {
                  rows.push([
-                    { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: 'TOTAL UNITS', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } },
                     { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
                 ]);
+            } else {
+                 rows.push([
+                    format(day, 'EEEE').toUpperCase(),
+                    format(day, 'dd-MMM'),
+                    { content: 'No entries for this day', colSpan: 8, styles: { halign: 'center', textColor: 150 }}
+                ]);
             }
-            return rows.length > 0 ? rows : [[format(day, 'EEEE').toUpperCase(), format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
+            return rows;
         }),
         theme: 'grid',
         headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
@@ -537,19 +543,22 @@ export default function DailyReportPage() {
                             {dateInterval.map((day) => {
                                 const dayString = format(day, 'yyyy-MM-dd');
                                 const dayEntries = entriesByDate[dayString] || [];
-                                if (dayEntries.length === 0) return (
-                                    <TableRow key={dayString}>
-                                        <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
-                                        <TableCell>{format(day, 'dd-MMM')}</TableCell>
-                                        <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
-                                    </TableRow>
-                                );
                                  const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                                     return acc + (hours * 60) + minutes;
                                 }, 0);
                                 const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
                                 const totalMinutes = totalDayUnitsInMinutes % 60;
+                                
+                                if (dayEntries.length === 0) {
+                                    return (
+                                        <TableRow key={dayString}>
+                                            <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
+                                            <TableCell>{format(day, 'dd-MMM')}</TableCell>
+                                            <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
+                                        </TableRow>
+                                    );
+                                }
                                 
                                 return (
                                     <React.Fragment key={dayString}>
