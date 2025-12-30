@@ -9,7 +9,7 @@ import { Download, ArrowLeft, Save } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
-import { bankProjectsMap } from '@/lib/projects-data';
+import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { useRecords } from '@/context/RecordContext';
@@ -21,28 +21,20 @@ interface SummaryRow {
   remarks: string;
 }
 
-const projectOrder = [
-    { name: 'HBL', key: 'hblProjects' },
-    { name: 'Bank Alfalah', key: 'bankAlfalahProjects' },
-    { name: 'Faysal Bank', key: 'fblProjects' },
-    { name: 'UBL', key: 'ublProjects' },
-    { name: 'DIB', key: 'dibProjects' },
-    { name: 'MCB', key: 'mcbProjects' },
-    { name: 'Askari Bank', key: 'askariBankProjects' },
-    { name: 'Commercial', key: 'commercialProjects' },
-    { name: 'C.B.D', key: 'cbdProjects' },
-    { name: 'Residential', key: 'residentialProjects' }
-];
+const projectOrder = bankTimelineCategories.map(name => ({
+    name,
+    key: `${name.toLowerCase().replace(/ /g, '-')}`
+}));
 
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
-
+    
     useEffect(() => {
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
             const savedData = localStorage.getItem(proj.key);
-            const projects = savedData ? JSON.parse(savedData) : bankProjectsMap[proj.key.replace('Projects','')] || [];
+            const projects = savedData ? JSON.parse(savedData) : (bankProjectsMap[proj.key] || []);
             return {
                 srNo: index + 1,
                 project: proj.name,
@@ -50,17 +42,10 @@ export default function RunningProjectsSummaryPage() {
                 remarks: ''
             };
         });
-
-        const residentialIndex = data.findIndex(d => d.project === 'Residential');
-        if (residentialIndex !== -1 && data[residentialIndex].srNo !== 11) {
-            const residentialData = data.splice(residentialIndex, 1)[0];
-            residentialData.srNo = 11;
-            data.push(residentialData);
-            data.sort((a, b) => a.srNo - b.srNo);
-        }
         
         setSummaryData(data);
     }, []);
+
 
     const totalProjects = useMemo(() => {
         return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
@@ -68,11 +53,6 @@ export default function RunningProjectsSummaryPage() {
 
     const handleRemarkChange = (srNo: number, value: string) => {
         setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
-    };
-
-    const handleCountChange = (srNo: number, value: string) => {
-        const newCount = parseInt(value, 10);
-        setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: isNaN(newCount) ? 0 : newCount } : row));
     };
 
     const handleSave = () => {
@@ -140,8 +120,8 @@ export default function RunningProjectsSummaryPage() {
                                     <Input 
                                         type="number"
                                         value={row.count}
-                                        onChange={(e) => handleCountChange(row.srNo, e.target.value)}
-                                        className="w-24 border-0 focus-visible:ring-1"
+                                        readOnly
+                                        className="w-24 border-0 bg-transparent focus-visible:ring-0"
                                     />
                                 </TableCell>
                                 <TableCell>
