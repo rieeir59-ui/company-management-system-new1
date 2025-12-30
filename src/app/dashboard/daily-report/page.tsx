@@ -111,7 +111,6 @@ export default function DailyReportPage() {
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
   
-  // Find selected employee object from ID
   const selectedEmployee = useMemo(() => {
     if (!selectedEmployeeId) return null;
     return employees.find(e => e.uid === selectedEmployeeId);
@@ -127,18 +126,6 @@ export default function DailyReportPage() {
   }, [isAdmin, employees, currentUser, selectedEmployeeId]);
 
 
-  const handleEmployeeChange = (employeeUid: string) => {
-      setSelectedEmployeeId(employeeUid);
-      setComboboxOpen(false);
-      // Reset dependent state when employee changes
-      setEntries([]);
-      setCurrentDate(new Date());
-      setSelectedWeek('all');
-      setIsCustomRange(false);
-      setDateFrom(undefined);
-      setDateTo(undefined);
-  };
-
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState('all');
   
@@ -150,13 +137,12 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const targetUid = selectedEmployeeId;
-    if (!targetUid) {
+    if (!selectedEmployeeId) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetUid);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployeeId);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -279,7 +265,8 @@ export default function DailyReportPage() {
     
     await addOrUpdateRecord({
         fileName: 'Daily Work Report',
-        projectName: `Work Report for ${currentUser.name}`,
+        projectName: `Work Report for ${selectedEmployee?.name || currentUser.name}`,
+        employeeId: selectedEmployeeId, // Make sure to save with the correct employee ID
         data: [{
             category: 'Work Entries',
             items: entries,
@@ -403,6 +390,10 @@ export default function DailyReportPage() {
       setDateTo(undefined);
   };
 
+  const handleEmployeeChange = (employeeUid: string) => {
+    setSelectedEmployeeId(employeeUid);
+    setComboboxOpen(false);
+  };
 
   return (
     <Card>
@@ -662,6 +653,7 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
 
 
