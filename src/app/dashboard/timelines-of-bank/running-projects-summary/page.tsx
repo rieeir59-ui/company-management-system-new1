@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,37 +22,47 @@ interface SummaryRow {
 }
 
 const projectOrder = [
-    { name: 'HBL', key: 'hbl' },
-    { name: 'Bank Alfalah', key: 'bank-al-falah' },
-    { name: 'Faysal Bank', key: 'faysal-bank' },
-    { name: 'UBL', key: 'ubl' },
-    { name: 'DIB', key: 'dib' },
-    { name: 'MCB', key: 'mcb' },
-    { name: 'Askari Bank', key: 'askari-bank' },
-    { name: 'Commercial', key: 'commercial' },
-    { name: 'C.B.D', key: 'cbd' },
-    { name: 'Residential', key: 'residential' }
+    { name: 'HBL', key: 'hblProjects' },
+    { name: 'Bank Alfalah', key: 'bankAlfalahProjects' },
+    { name: 'Faysal Bank', key: 'fblProjects' },
+    { name: 'UBL', key: 'ublProjects' },
+    { name: 'DIB', key: 'dibProjects' },
+    { name: 'MCB', key: 'mcbProjects' },
+    { name: 'Askari Bank', key: 'askariBankProjects' },
+    { name: 'Commercial', key: 'commercialProjects' },
+    { name: 'C.B.D', key: 'cbdProjects' },
+    { name: 'Residential', key: 'residentialProjects' }
 ];
 
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
     const { addRecord } = useRecords();
+    const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
+    
+    useEffect(() => {
+        const data: SummaryRow[] = projectOrder.map((proj, index) => {
+            const savedData = localStorage.getItem(proj.key);
+            const projects = savedData ? JSON.parse(savedData) : bankProjectsMap[proj.key.replace('Projects','')] || [];
+            return {
+                srNo: index + 1,
+                project: proj.name,
+                count: projects.length,
+                remarks: ''
+            };
+        });
 
-    const initialSummaryData = useMemo(() => {
-        const data: SummaryRow[] = projectOrder.map((proj, index) => ({
-            srNo: index + 1,
-            project: proj.name,
-            count: bankProjectsMap[proj.key]?.length || 0,
-            remarks: ''
-        }));
         const residentialIndex = data.findIndex(d => d.project === 'Residential');
-        if (residentialIndex !== -1) {
-            data[residentialIndex].srNo = 11;
+        if (residentialIndex !== -1 && data[residentialIndex].srNo !== 11) {
+            // Ensure residential is always srNo 11 if it exists
+            const residentialData = data.splice(residentialIndex, 1)[0];
+            residentialData.srNo = 11;
+            data.push(residentialData);
+            data.sort((a, b) => a.srNo - b.srNo);
         }
-        return data;
+        
+        setSummaryData(data);
     }, []);
 
-    const [summaryData, setSummaryData] = useState<SummaryRow[]>(initialSummaryData);
 
     const totalProjects = useMemo(() => {
         return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
