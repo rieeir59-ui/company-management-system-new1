@@ -45,7 +45,6 @@ type RecordContextType = {
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
-  updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
   projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
   error: string | null;
   bankTimelineCategories: string[];
@@ -65,20 +64,13 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch records
   useEffect(() => {
-    if (isUserLoading || !currentUser || !firestore) {
+    if (isUserLoading || !firestore) {
       setRecords([]);
       return;
     }
 
     const recordsCollection = collection(firestore, 'savedRecords');
-    let q;
-
-    if (isAdmin) {
-      q = query(recordsCollection, orderBy('createdAt', 'desc')); // Admin sees all
-    } else {
-      q = query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
-    }
-
+    const q = query(recordsCollection, orderBy('createdAt', 'desc')); 
 
     const unsubscribe = onSnapshot(
       q,
@@ -102,7 +94,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     );
 
     return () => unsubscribe();
-  }, [firestore, currentUser, isUserLoading, isAdmin]);
+  }, [firestore, isUserLoading]);
 
   // Add new record
   const addRecord = useCallback(
@@ -114,7 +106,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
       const dataToSave = {
         ...recordData,
-        employeeId: currentUser.uid,
+        employeeId: currentUser.record,
         employeeName: currentUser.name,
         createdAt: serverTimestamp(),
       };
@@ -165,7 +157,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             return Promise.reject(new Error('User not authenticated'));
         }
 
-        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
+        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.record);
 
         if (existingRecord) {
             // Update existing record
@@ -205,36 +197,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast, currentUser, isAdmin, records]
   );
 
-  // Update task status (admin or assigned employee)
-  const updateTaskStatus = useCallback(
-    async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
-      if (!firestore || !currentUser) return;
-
-      const taskRef = doc(firestore, 'tasks', taskId);
-      try {
-        const taskSnap = await getDoc(taskRef);
-        if (!taskSnap.exists()) return;
-        const taskData = taskSnap.data() as { assignedTo: string };
-        if (!(isAdmin || taskData.assignedTo === currentUser.uid)) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
-          return;
-        }
-        await updateDoc(taskRef, { status: newStatus });
-        toast({ title: 'Task Updated', description: `Task status changed to "${newStatus}".` });
-      } catch (err) {
-        console.error(err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
-      }
-    },
-    [firestore, currentUser, isAdmin, toast]
-  );
-
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
   const projectManualItems = useMemo(() => {
     const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
     return allFileNames
-        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects'].includes(name))
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Site Visit Proforma', 'Site Survey Report', 'Site Survey'].includes(name))
         .map(name => {
             const url = getFormUrlFromFileName(name, dashboardPrefix);
             return {
@@ -252,11 +220,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       updateRecord, 
       deleteRecord, 
       getRecordById, 
-      updateTaskStatus, 
       error, 
       projectManualItems, 
       bankTimelineCategories 
-    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems]);
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
 
 
   return (
@@ -271,3 +238,4 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
+

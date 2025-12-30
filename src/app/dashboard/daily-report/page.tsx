@@ -104,7 +104,7 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
 export default function DailyReportPage() {
   const { toast } = useToast();
   const { user: currentUser, employees } = useCurrentUser();
-  const { addRecord, records } = useRecords();
+  const { addOrUpdateRecord, records } = useRecords();
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(currentUser?.uid);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(currentUser);
@@ -114,7 +114,7 @@ export default function DailyReportPage() {
 
   useEffect(() => {
     if(currentUser && !selectedEmployeeId) {
-      setSelectedEmployeeId(currentUser?.uid);
+      setSelectedEmployeeId(currentUser.uid);
       setSelectedEmployee(currentUser);
     }
   }, [currentUser, selectedEmployeeId]);
@@ -124,7 +124,6 @@ export default function DailyReportPage() {
       const employee = employees.find(e => e.uid === employeeUid);
       setSelectedEmployee(employee);
       setComboboxOpen(false);
-      // When admin selects a new employee, reset the entries to force a reload in the next effect.
       setEntries([]);
   };
 
@@ -142,14 +141,14 @@ export default function DailyReportPage() {
   useEffect(() => {
     if (isCustomRange) return;
 
-    const targetEmployeeRecordId = isAdmin ? (employees.find(e => e.uid === selectedEmployeeId)?.record) : currentUser?.record;
+    const targetEmployeeRecord = isAdmin ? employees.find(e => e.uid === selectedEmployeeId) : currentUser;
 
-    if (!targetEmployeeRecordId) {
+    if (!targetEmployeeRecord?.record) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeRecordId);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeRecord.record);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -178,7 +177,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployeeId, isAdmin, employees, isCustomRange]);
+  }, [records, currentUser, selectedEmployeeId, isAdmin, employees, isCustomRange, selectedEmployee]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -269,20 +268,16 @@ export default function DailyReportPage() {
   };
   
   const handleSave = async (date: string) => {
-    const dayEntries = entries.filter(e => e.date === date);
-    if (dayEntries.length === 0) {
-        toast({ variant: 'destructive', title: 'No Entries', description: `There are no entries to save for ${date}.`});
-        return;
-    }
+    if(!currentUser) return;
     
-    await addRecord({
+    await addOrUpdateRecord({
         fileName: 'Daily Work Report',
-        projectName: `Work Report for ${date}`,
+        projectName: `Work Report for ${currentUser.name}`,
         data: [{
             category: 'Work Entries',
-            items: dayEntries,
+            items: entries,
         }],
-    } as any);
+    });
   };
   
   const handleDownload = () => {
@@ -664,6 +659,7 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
 
 
