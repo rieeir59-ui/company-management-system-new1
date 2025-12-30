@@ -106,8 +106,8 @@ export default function DailyReportPage() {
   const { user: currentUser, employees } = useCurrentUser();
   const { addOrUpdateRecord, records } = useRecords();
 
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(currentUser?.uid);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(currentUser);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(null);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
@@ -124,7 +124,6 @@ export default function DailyReportPage() {
       const employee = employees.find(e => e.uid === employeeUid);
       setSelectedEmployee(employee);
       setComboboxOpen(false);
-      setEntries([]);
   };
 
 
@@ -139,16 +138,13 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (isCustomRange) return;
-
-    const targetEmployeeRecord = isAdmin ? employees.find(e => e.uid === selectedEmployeeId) : currentUser;
-
-    if (!targetEmployeeRecord?.record) {
+    const targetEmployee = isAdmin ? selectedEmployee : currentUser;
+    if (!targetEmployee?.uid) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeRecord.record);
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployee.uid);
     
     const loadedEntriesMap = new Map<number, ReportEntry>();
 
@@ -157,10 +153,9 @@ export default function DailyReportPage() {
         record.data.forEach((dayData: any) => {
           if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
             dayData.items.forEach((item: any) => {
-              const entryId = item.id || Date.now() + Math.random();
-              if (!loadedEntriesMap.has(entryId)) {
-                  loadedEntriesMap.set(entryId, {
-                    id: entryId,
+              if (item && item.id) { // Ensure item and id exist
+                  loadedEntriesMap.set(item.id, {
+                    id: item.id,
                     date: item.date,
                     startTime: item.startTime,
                     endTime: item.endTime,
@@ -177,7 +172,7 @@ export default function DailyReportPage() {
       }
     });
     setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployeeId, isAdmin, employees, isCustomRange, selectedEmployee]);
+  }, [records, currentUser, selectedEmployee, isAdmin]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -659,6 +654,7 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
 
 
 
