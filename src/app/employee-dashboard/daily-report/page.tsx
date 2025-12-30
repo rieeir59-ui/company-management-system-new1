@@ -105,18 +105,39 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!currentUser) return;
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.record);
-    
-    if (dailyReportRecord && dailyReportRecord.data && Array.isArray(dailyReportRecord.data)) {
-        const loadedEntries = dailyReportRecord.data.flatMap((dayData: any) => 
-            dayData.category === 'Work Entries' && Array.isArray(dayData.items) ? dayData.items : []
-        );
-        const uniqueEntries = Array.from(new Map(loadedEntries.map(item => [item.id, item])).values());
-        setEntries(uniqueEntries);
-    } else {
+    if (!currentUser?.uid) {
         setEntries([]);
+        return;
     }
+    
+    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.uid);
+    
+    const loadedEntriesMap = new Map<number, ReportEntry>();
+
+    dailyReportRecords.forEach(record => {
+      if (record.data && Array.isArray(record.data)) {
+        record.data.forEach((dayData: any) => {
+          if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
+            dayData.items.forEach((item: any) => {
+              if (item && item.id) { // Ensure item and id exist
+                  loadedEntriesMap.set(item.id, {
+                    id: item.id,
+                    date: item.date,
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    customerJobNumber: item.customerJobNumber,
+                    projectName: item.projectName,
+                    designType: item.designType,
+                    projectType: item.projectType,
+                    description: item.description,
+                  });
+              }
+            });
+          }
+        });
+      }
+    });
+    setEntries(Array.from(loadedEntriesMap.values()));
   }, [records, currentUser]);
 
   const dateInterval = useMemo(() => {
@@ -154,13 +175,19 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-    return entries.reduce((acc, entry) => {
-        if (entry.date) {
-            (acc[entry.date] = acc[entry.date] || []).push(entry);
-        }
-        return acc;
-    }, {} as Record<string, ReportEntry[]>);
-  }, [entries]);
+    return entries
+        .filter(entry => {
+            if(!entry.date) return false;
+            const entryDate = parseISO(entry.date);
+            return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+        })
+        .reduce((acc, entry) => {
+          if (entry.date) {
+              (acc[entry.date] = acc[entry.date] || []).push(entry);
+          }
+          return acc;
+      }, {} as Record<string, ReportEntry[]>);
+  }, [entries, dateInterval]);
 
   const totalPeriodUnits = useMemo(() => {
     const totalMinutes = dateInterval.reduce((total, day) => {
@@ -539,3 +566,4 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
