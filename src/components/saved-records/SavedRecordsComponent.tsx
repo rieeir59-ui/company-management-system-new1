@@ -87,15 +87,27 @@ const generatePdfForRecord = (record: SavedRecord) => {
     };
     
     if (record.fileName === 'Project Information') {
-        const info = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
-        const consultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
-        const requirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
+        const dataSections = Array.isArray(record.data) ? record.data : [record.data];
+
+        const getSectionData = (category: string) => {
+            const section = dataSections.find((d: any) => d.category === category);
+            if (!section || !Array.isArray(section.items)) return {};
+            return section.items.reduce((acc: any, item: { label: string, value: string }) => {
+                acc[item.label] = item.value;
+                return acc;
+            }, {});
+        };
+
+        const info = getSectionData('Project Information');
+        const consultants = getSectionData('Consultants');
+        const requirements = getSectionData('Requirements');
 
         addDefaultHeader(record.fileName, record.projectName);
 
         const addSection = (title: string, data: Record<string, any>) => {
-             const body = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value) ).map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]);
-             if (body.length === 0) return;
+             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null');
+             if (entries.length === 0) return;
+
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
@@ -105,7 +117,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
             
             doc.autoTable({
                 startY: yPos,
-                body: body,
+                body: entries.map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]),
                 theme: 'grid',
                 styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
                 head: [['Field', 'Value']],
@@ -117,63 +129,71 @@ const generatePdfForRecord = (record: SavedRecord) => {
             });
             yPos = doc.autoTable.previous.finalY + 10;
         };
-        
+
         const addTextAreaSection = (title: string, content: string) => {
-            if (!content || !content.trim()) return;
+            if (!content || !content.trim() || content === 'undefined') return;
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             addSection(title, {'Details': content});
         };
         
         addSection("Project Information", {
-            'Project': info.project, 'Address': info.address, 'Project No': info.projectNo,
-            'Prepared By': info.preparedBy, 'Prepared Date': info.preparedDate,
+            'project': info.project, 'address': info.address, 'projectNo': info.projectNo,
+            'preparedBy': info.preparedBy, 'preparedDate': info.preparedDate,
         });
 
         addSection("About Owner", {
-            'Full Name': info.ownerFullName, 'Office Address': info.ownerOfficeAddress,
-            'Residence Address': info.ownerResAddress, 'Office Phone': info.ownerOfficePhone,
-            'Residence Phone': info.ownerResPhone,
+            'ownerFullName': info.ownerFullName, 'ownerOfficeAddress': info.ownerOfficeAddress,
+            'ownerResAddress': info.ownerResAddress, 'ownerOfficePhone': info.ownerOfficePhone,
+            'ownerResPhone': info.ownerResPhone,
         });
         
         addSection("Owner's Project Representative", {
-            'Name': info.repName, 'Office Address': info.repOfficeAddress,
-            'Residence Address': info.repResAddress, 'Office Phone': info.repOfficePhone,
-            'Residence Phone': info.repResPhone,
+            'repName': info.repName, 'repOfficeAddress': info.repOfficeAddress,
+            'repResAddress': info.repResAddress, 'repOfficePhone': info.repOfficePhone,
+            'repResPhone': info.repResPhone,
         });
 
         if(yPos > 200) {doc.addPage(); yPos = 20;}
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text("Consultants", margin, yPos);
-        yPos += 8;
-
-         doc.autoTable({
-            startY: yPos,
-            head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-            body: Object.entries(consultants).map(([type, values]: [string, any]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
-            theme: 'grid',
-            headStyles: { fillColor: primaryColor }
-        });
-        yPos = doc.autoTable.previous.finalY + 10;
+        if (consultants && Object.keys(consultants).length > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("Consultants", margin, yPos);
+            yPos += 8;
+            doc.autoTable({
+                startY: yPos,
+                head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
+                body: Object.entries(consultants).map(([type, value]: [string, any]) => {
+                    const values = JSON.parse(value);
+                    return [type, values.withinFee, values.additionalFee, values.architect, values.owner]
+                }),
+                theme: 'grid',
+                headStyles: { fillColor: primaryColor }
+            });
+            yPos = doc.autoTable.previous.finalY + 10;
+        }
         
         if(yPos > 200) {doc.addPage(); yPos = 20;}
         
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text("Requirements", margin, yPos);
-        yPos += 8;
-
-        doc.autoTable({
-            startY: yPos,
-            head: [['Description', 'Nos.', 'Remarks']],
-            body: Object.entries(requirements).map(([req, values]: [string, any]) => [req, values.nos, values.remarks]),
-            theme: 'grid',
-             headStyles: { fillColor: primaryColor }
-        });
-        yPos = doc.autoTable.previous.finalY + 10;
+        if (requirements && Object.keys(requirements).length > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("Requirements", margin, yPos);
+            yPos += 8;
+            doc.autoTable({
+                startY: yPos,
+                head: [['Description', 'Nos.', 'Remarks']],
+                body: Object.entries(requirements).map(([req, value]: [string, any]) => {
+                    const values = JSON.parse(value);
+                    return [req, values.nos, values.remarks]
+                }),
+                theme: 'grid',
+                headStyles: { fillColor: primaryColor }
+            });
+            yPos = doc.autoTable.previous.finalY + 10;
+        }
 
         addTextAreaSection('Special Confidential Requirements', info.specialConfidential);
         addTextAreaSection('Miscellaneous Notes', info.miscNotes);
@@ -248,7 +268,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const excludedFiles = ['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Transmittal Letter', 'Minutes of Meetings'];
+        const excludedFiles = ['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'];
         const projectManualFiles = (allFileNames || []).filter(name => 
             !name.includes('Timeline') && !excludedFiles.includes(name)
         );
@@ -256,8 +276,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return [
             { name: 'Banks', icon: Landmark, files: allBankFileNames },
             { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
-            { name: 'Transmittal Letter', icon: Send, files: ['Transmittal Letter'] },
-            { name: 'Minutes of Meetings', icon: Users, files: ['Minutes of Meetings'] },
             { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
             { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
         ];
@@ -330,12 +348,20 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
         
         if (viewingRecord.fileName === 'Project Information') {
-            const info = dataSections.find((d: any) => d.category === 'Project Information')?.items || {};
-            const consultants = dataSections.find((d: any) => d.category === 'Consultants')?.items || {};
-            const requirements = dataSections.find((d: any) => d.category === 'Requirements')?.items || {};
+            const getSectionData = (category: string) => {
+                const section = dataSections.find((d: any) => d.category === category);
+                if (!section || !Array.isArray(section.items)) return {};
+                return section.items.reduce((acc: any, item: { label: string, value: string }) => {
+                    acc[item.label] = item.value;
+                    return acc;
+                }, {});
+            };
+            const info = getSectionData('Project Information');
+            const consultants = getSectionData('Consultants');
+            const requirements = getSectionData('Requirements');
             
             const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-                const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value) );
+                const entries = Object.entries(data).filter(([, value]) => value && String(value).trim() && String(value).trim() !== 'null' && String(value).trim() !== 'undefined' && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value));
                 if (entries.length === 0) return null;
                 return (
                     <div className="mb-6">
@@ -357,7 +383,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             };
 
             const TextAreaSection = ({ title, content }: { title: string, content: string}) => {
-                if (!content || !content.trim()) return null;
+                if (!content || !content.trim() || content === 'undefined') return null;
                 return (
                      <div className="mb-6">
                         <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
@@ -368,31 +394,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
             return (
                 <div className="space-y-6">
-                    <Section title="Project Information" data={{'Project': info.project, 'Address': info.address, 'Project No': info.projectNo, 'Prepared By': info.preparedBy, 'Prepared Date': info.preparedDate}} />
-                    <Section title="About Owner" data={{'Full Name': info.ownerFullName, 'Office Address': info.ownerOfficeAddress, 'Residence Address': info.ownerResAddress, 'Office Phone': info.ownerOfficePhone, 'Residence Phone': info.ownerResPhone}} />
-                    <Section title="Owner's Project Representative" data={{'Name': info.repName, 'Office Address': info.repOfficeAddress, 'Residence Address': info.repResAddress, 'Office Phone': info.repOfficePhone, 'Residence Phone': info.repResPhone}} />
-                     <div className="mb-6">
-                        <h3 className="font-bold text-lg mb-2 text-primary">Consultants</h3>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Within Fee</TableHead><TableHead>Additional Fee</TableHead><TableHead>By Architect</TableHead><TableHead>By Owner</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {Object.entries(consultants).map(([type, values]: [string, any]) => (
-                                    <TableRow key={type}><TableCell>{type}</TableCell><TableCell>{values.withinFee}</TableCell><TableCell>{values.additionalFee}</TableCell><TableCell>{values.architect}</TableCell><TableCell>{values.owner}</TableCell></TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                    <div className="mb-6">
-                        <h3 className="font-bold text-lg mb-2 text-primary">Requirements</h3>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Description</TableHead><TableHead>Nos.</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {Object.entries(requirements).map(([req, values]: [string, any]) => (
-                                    <TableRow key={req}><TableCell>{req}</TableCell><TableCell>{values.nos}</TableCell><TableCell>{values.remarks}</TableCell></TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <Section title="Project Information" data={{'project': info.project, 'address': info.address, 'projectNo': info.projectNo, 'preparedBy': info.preparedBy, 'preparedDate': info.preparedDate}} />
+                    <Section title="About Owner" data={{'ownerFullName': info.ownerFullName, 'ownerOfficeAddress': info.ownerOfficeAddress, 'ownerResAddress': info.ownerResAddress, 'ownerOfficePhone': info.ownerOfficePhone, 'ownerResPhone': info.ownerResPhone}} />
+                    <Section title="Owner's Project Representative" data={{'repName': info.repName, 'repOfficeAddress': info.repOfficeAddress, 'repResAddress': info.repResAddress, 'repOfficePhone': info.repOfficePhone, 'repResPhone': info.repResPhone}} />
                     <TextAreaSection title="Special Confidential Requirements" content={info.specialConfidential} />
                     <TextAreaSection title="Miscellaneous Notes" content={info.miscNotes} />
                 </div>
@@ -418,7 +422,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                             <h3 className="font-bold text-primary mb-2">{section.category}</h3>
                             {isTable ? (
                                 <Table>
-                                    <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
+                                    <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}</TableRow></TableHeader>
                                     <TableBody>
                                         {section.items.map((item: any, i: number) => {
                                             let parsed = item;
