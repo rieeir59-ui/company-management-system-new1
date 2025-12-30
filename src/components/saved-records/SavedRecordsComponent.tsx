@@ -44,6 +44,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { type ProjectRow } from '@/lib/projects-data';
 import { Compass } from 'lucide-react';
+import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -130,7 +131,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
             if (!content || !content.trim() || content === 'undefined') return null;
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             addSection(title, {'Details': content});
-        };
+        }
         
         addSection("Project Information", {
             'project': info.project, 'address': info.address, 'projectNo': info.projectNo,
@@ -246,7 +247,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
 };
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
-    const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
+    const { records, isLoading, error, deleteRecord } = useRecords();
     const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
@@ -256,20 +257,14 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-    const mainCategories = useMemo(() => {
-        const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const projectManualFiles = allFileNames.filter(name => 
-            !name.includes('Timeline') &&
-            !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name)
-        );
-
-        return [
-            { name: 'Banks', icon: Landmark, files: allBankFileNames },
-            { name: 'Project Manual', icon: BookCopy, files: projectManualFiles },
-            { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
-            { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
-        ];
-    }, [bankTimelineCategories]);
+    const mainCategories = useMemo(() => [
+        { name: 'Banks', icon: Landmark, files: (bankTimelineCategories || []).map(b => `${b} Timeline`) },
+        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form', 'Transmittal Letter', 'Minutes of Meetings'].includes(name)) },
+        { name: 'Transmittal Letter', icon: Send, files: ['Transmittal Letter'] },
+        { name: 'Minutes of Meetings', icon: Users, files: ['Minutes of Meetings'] },
+        { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
+        { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
+    ], [bankTimelineCategories]);
 
     const filteredRecords = useMemo(() => {
         let userRecords = records;
@@ -281,11 +276,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         const categoryInfo = mainCategories.find(c => c.name === activeCategory);
         let categoryFiles = categoryInfo?.files || [];
 
-        if (activeCategory === 'Banks') {
-            const currentBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-            categoryFiles = [...new Set([...categoryFiles, ...currentBankFileNames])];
-        }
-
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
         
         if (!searchQuery) return categoryRecords;
@@ -294,7 +284,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
 
     const recordsByFileName = useMemo(() => {
         return filteredRecords.reduce((acc, record) => {
@@ -335,65 +325,65 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
     
-        const dataSections = Array.isArray(viewingRecord.data) ? viewingRecord.data : [viewingRecord.data];
-        
-        if (viewingRecord.fileName === 'Project Information') {
-            const getSectionData = (category: string) => {
-                const section = dataSections.find((d: any) => d.category === category);
-                return section?.items || {};
+        if (viewingRecord.fileName === 'Daily Work Report') {
+            const entries = viewingRecord.data[0]?.items || [];
+            if (!Array.isArray(entries)) return <p>Could not display record data.</p>;
+
+            const calculateTotalUnits = (startTime: string, endTime: string): string => {
+                if (!startTime || !endTime) return '0:00';
+                const start = new Date(`1970-01-01T${startTime}`);
+                const end = new Date(`1970-01-01T${endTime}`);
+                if (!isValid(start) || !isValid(end) || end < start) return '0:00';
+                const diff = differenceInMinutes(end, start);
+                const hours = Math.floor(diff / 60);
+                const minutes = diff % 60;
+                return `${hours}:${String(minutes).padStart(2, '0')}`;
             };
-            
-            const info = getSectionData('Project Information');
-            const consultants = getSectionData('Consultants');
-            const requirements = getSectionData('Requirements');
-            
-            const Section = ({ title, data }: { title: string, data: Record<string, any> }) => {
-                const entries = Object.entries(data).filter(([, value]) => value && String(value).trim() && String(value).trim() !== 'null' && String(value).trim() !== 'undefined' && typeof value !== 'boolean' && typeof value !== 'object' && !['specialConfidential', 'miscNotes'].includes(value));
-                if (entries.length === 0) return null;
-                return (
-                    <div className="mb-6">
-                        <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
-                        <div className="border rounded-md">
+    
+            const entriesByDate = entries.reduce((acc, entry) => {
+                if (entry.date) {
+                    (acc[entry.date] = acc[entry.date] || []).push(entry);
+                }
+                return acc;
+            }, {} as Record<string, typeof entries>);
+
+            const sortedDates = Object.keys(entriesByDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+    
+            return (
+                <div className="space-y-6">
+                    {sortedDates.map(date => (
+                        <div key={date}>
+                            <h4 className="font-bold text-lg mb-2">{format(parseISO(date), 'EEEE, dd MMMM yyyy')}</h4>
                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Time</TableHead>
+                                        <TableHead>Project</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-right">Units</TableHead>
+                                    </TableRow>
+                                </TableHeader>
                                 <TableBody>
-                                    {entries.map(([key, value]) => (
-                                        <TableRow key={key}>
-                                            <TableCell className="font-semibold w-1/3">{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableCell>
-                                            <TableCell>{String(value)}</TableCell>
+                                    {entriesByDate[date].map(entry => (
+                                        <TableRow key={entry.id}>
+                                            <TableCell>{entry.startTime} - {entry.endTime}</TableCell>
+                                            <TableCell>{entry.projectName}</TableCell>
+                                            <TableCell>{entry.description}</TableCell>
+                                            <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </div>
-                    </div>
-                );
-            };
-
-            const TextAreaSection = ({ title, content }: { title: string, content: string}) => {
-                if (!content || !content.trim() || content === 'undefined') return null;
-                return (
-                     <div className="mb-6">
-                        <h3 className="font-bold text-lg mb-2 text-primary">{title}</h3>
-                        <p className="text-sm p-4 border rounded-md bg-muted/50 whitespace-pre-wrap">{content}</p>
-                    </div>
-                )
-            }
-
-            return (
-                <div className="space-y-6">
-                    <Section title="Project Information" data={{'project': info.project, 'address': info.address, 'projectNo': info.projectNo, 'preparedBy': info.preparedBy, 'preparedDate': info.preparedDate}} />
-                    <Section title="About Owner" data={{'ownerFullName': info.ownerFullName, 'ownerOfficeAddress': info.ownerOfficeAddress, 'ownerResAddress': info.ownerResAddress, 'ownerOfficePhone': info.ownerOfficePhone, 'ownerResPhone': info.ownerResPhone}} />
-                    <Section title="Owner's Project Representative" data={{'repName': info.repName, 'repOfficeAddress': info.repOfficeAddress, 'repResAddress': info.repResAddress, 'repOfficePhone': info.repOfficePhone, 'repResPhone': info.repResPhone}} />
-                    <TextAreaSection title="Special Confidential Requirements" content={info.specialConfidential} />
-                    <TextAreaSection title="Miscellaneous Notes" content={info.miscNotes} />
+                    ))}
                 </div>
-            );
+            )
         }
-
+        
         // Fallback for other record types
         return (
             <div className="space-y-4">
-                {dataSections.map((section: any, index: number) => {
+                {Array.isArray(viewingRecord.data) && viewingRecord.data.map((section: any, index: number) => {
                     if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
 
                     let firstItem = section.items[0];
