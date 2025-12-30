@@ -235,10 +235,9 @@ function ProjectInformationComponent() {
               theme: 'grid',
               styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
               head: [['Field', 'Value']],
-              headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
-              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+              showHead: false,
+              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
               didDrawPage: (data) => {
-                  // Reset yPos for the new page
                   yPos = data.cursor?.y ?? 20;
               }
           });
@@ -401,13 +400,14 @@ function ProjectInformationComponent() {
           consultants[type]?.additionalFee || '',
           consultants[type]?.architect || '',
           consultants[type]?.owner || '',
-      ]).filter(row => row[0] || row[1] || row[2] || row[3] || row[4]);
+      ]).filter(row => row.some(cell => cell));
       
       doc.autoTable({
         startY: yPos,
         head: [['Type', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
         body: consultantBody,
-        theme: 'grid'
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor }
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
@@ -419,27 +419,20 @@ function ProjectInformationComponent() {
           req,
           requirements[req]?.nos || '',
           requirements[req]?.remarks || '',
-      ]);
+      ]).filter(row => row.some(cell => cell));
       doc.autoTable({
         startY: yPos,
         head: [['Description', 'Nos.', 'Remarks']],
         body: reqsBody,
-        theme: 'grid'
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor }
       });
       yPos = doc.autoTable.previous.finalY + 10;
 
       const addTextAreaSection = (title: string, content: string) => {
-        if (!content?.trim()) return;
+        if (!content || !content.trim() || content === 'undefined') return;
         if (yPos > 260) { doc.addPage(); yPos = 20; }
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text(title, margin, yPos);
-        yPos += 8;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        const splitContent = doc.splitTextToSize(content, pageWidth - margin * 2);
-        doc.text(splitContent, margin, yPos);
-        yPos += splitContent.length * 5 + 10;
+        addSection(title, {'Details': content});
       }
       
       addTextAreaSection("Special Confidential Requirements", formState.specialConfidential);

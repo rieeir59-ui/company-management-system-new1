@@ -91,13 +91,9 @@ const generatePdfForRecord = (record: SavedRecord) => {
 
         const getSectionData = (category: string) => {
             const section = dataSections.find((d: any) => d.category === category);
-            if (!section || !Array.isArray(section.items)) return {};
-            return section.items.reduce((acc: any, item: { label: string, value: string }) => {
-                acc[item.label] = item.value;
-                return acc;
-            }, {});
+            return section?.items || {};
         };
-
+        
         const info = getSectionData('Project Information');
         const consultants = getSectionData('Consultants');
         const requirements = getSectionData('Requirements');
@@ -105,7 +101,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         addDefaultHeader(record.fileName, record.projectName);
 
         const addSection = (title: string, data: Record<string, any>) => {
-             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null');
+             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null' && !['specialConfidential', 'miscNotes'].includes(value));
              if (entries.length === 0) return;
 
             if (yPos > 260) { doc.addPage(); yPos = 20; }
@@ -131,7 +127,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
         };
 
         const addTextAreaSection = (title: string, content: string) => {
-            if (!content || !content.trim() || content === 'undefined') return;
+            if (!content || !content.trim() || content === 'undefined') return null;
             if (yPos > 260) { doc.addPage(); yPos = 20; }
             addSection(title, {'Details': content});
         };
@@ -164,10 +160,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
             doc.autoTable({
                 startY: yPos,
                 head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-                body: Object.entries(consultants).map(([type, value]: [string, any]) => {
-                    const values = JSON.parse(value);
-                    return [type, values.withinFee, values.additionalFee, values.architect, values.owner]
-                }),
+                body: Object.entries(consultants).map(([type, values]: [string, any]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
                 theme: 'grid',
                 headStyles: { fillColor: primaryColor }
             });
@@ -185,10 +178,7 @@ const generatePdfForRecord = (record: SavedRecord) => {
             doc.autoTable({
                 startY: yPos,
                 head: [['Description', 'Nos.', 'Remarks']],
-                body: Object.entries(requirements).map(([req, value]: [string, any]) => {
-                    const values = JSON.parse(value);
-                    return [req, values.nos, values.remarks]
-                }),
+                body: Object.entries(requirements).map(([req, values]: [string, any]) => [req, values.nos, values.remarks]),
                 theme: 'grid',
                 headStyles: { fillColor: primaryColor }
             });
@@ -268,9 +258,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-        const excludedFiles = ['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'];
-        const projectManualFiles = (allFileNames || []).filter(name => 
-            !name.includes('Timeline') && !excludedFiles.includes(name)
+        const projectManualFiles = allFileNames.filter(name => 
+            !name.includes('Timeline') &&
+            !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name)
         );
 
         return [
@@ -350,12 +340,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (viewingRecord.fileName === 'Project Information') {
             const getSectionData = (category: string) => {
                 const section = dataSections.find((d: any) => d.category === category);
-                if (!section || !Array.isArray(section.items)) return {};
-                return section.items.reduce((acc: any, item: { label: string, value: string }) => {
-                    acc[item.label] = item.value;
-                    return acc;
-                }, {});
+                return section?.items || {};
             };
+            
             const info = getSectionData('Project Information');
             const consultants = getSectionData('Consultants');
             const requirements = getSectionData('Requirements');
