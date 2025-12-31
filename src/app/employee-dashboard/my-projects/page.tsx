@@ -102,7 +102,7 @@ function MyProjectsComponent() {
  
   useEffect(() => {
     if (!displayUser) return;
-    const scheduleRecord = records.find(r => r.fileName === 'Project Schedule' && r.employeeId === displayUser.uid);
+    const scheduleRecord = records.find(r => r.fileName === 'My Projects' && r.employeeId === displayUser.uid);
     if (scheduleRecord && scheduleRecord.data) {
         const scheduleData = scheduleRecord.data.find((d: any) => d.category === 'My Project Schedule');
         if (scheduleData) {
@@ -349,11 +349,9 @@ function MyProjectsComponent() {
     };
 
     const handleSaveSchedule = async () => {
-        const firstManualProjectName = manualEntries.find(item => item.projectName)?.projectName;
-
         await addOrUpdateRecord({
-            fileName: 'Project Schedule',
-            projectName: firstManualProjectName || `${displayUser?.name}'s Project Schedule`,
+            fileName: 'My Projects',
+            projectName: `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
                 remarks: remarks,
@@ -534,18 +532,15 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
-                                        {item.isManual && (
-                                          <>
-                                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                          </>
+                                        {canEdit && (
+                                            <>
+                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </>
                                         )}
                                     </div>
                                 </TableCell>

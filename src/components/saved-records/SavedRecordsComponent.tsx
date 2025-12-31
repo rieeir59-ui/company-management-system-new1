@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { generatePdfForRecord } from '@/lib/pdf-generator';
 import { Compass } from 'lucide-react';
 import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
+import { StatusBadge } from '../ui/badge';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -53,12 +54,13 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
-    const { user: currentUser, employees } = useCurrentUser();
+    const { user: currentUser } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
+    const [viewingRecordItem, setViewingRecordItem] = useState<any>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -126,8 +128,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setIsDeleteDialogOpen(false);
     };
     
-    const openViewDialog = (record: SavedRecord) => {
+    const openViewDialog = (record: SavedRecord, item?: any) => {
         setViewingRecord(record);
+        setViewingRecordItem(item || null);
         setIsViewDialogOpen(true);
     };
 
@@ -140,6 +143,21 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
+        
+        // Specific renderer for "My Projects" items
+        if(viewingRecord.fileName === 'My Projects' && viewingRecordItem) {
+             return (
+                <div className="space-y-2 text-sm">
+                    <p><strong>Project Name:</strong> {viewingRecordItem.projectName}</p>
+                    <p><strong>Detail:</strong> {viewingRecordItem.detail}</p>
+                    <p><strong>Status:</strong> <StatusBadge status={viewingRecordItem.status} /></p>
+                    <p><strong>Start Date:</strong> {viewingRecordItem.startDate || 'N/A'}</p>
+                    <p><strong>End Date:</strong> {viewingRecordItem.endDate || 'N/A'}</p>
+                    <p><strong>Employee:</strong> {viewingRecord.employeeName}</p>
+                    {viewingRecord.data.find((d: any) => d.category === 'My Project Schedule')?.remarks && <p><strong>Remarks:</strong> {viewingRecord.data.find((d: any) => d.category === 'My Project Schedule')?.remarks}</p>}
+                </div>
+            )
+        }
     
         if (viewingRecord.fileName === 'Daily Work Report') {
             const entries = viewingRecord.data[0]?.items || [];
@@ -313,43 +331,47 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         <div className="text-destructive text-center">{error}</div>
                     ) : activeCategory === 'Employee Documents' && isAdmin && !employeeOnly ? (
                          <Accordion type="multiple" className="w-full space-y-2">
-                             {Object.entries(recordsByEmployee).sort(([nameA], [nameB]) => nameA.localeCompare(nameB)).map(([employeeName, records]) => {
-                                if (records.length === 0) return null;
+                             {Object.entries(recordsByEmployee).sort(([nameA], [nameB]) => nameA.localeCompare(nameB)).map(([employeeName, employeeRecords]) => {
+                                if (employeeRecords.length === 0) return null;
                                 return (
                                     <AccordionItem value={employeeName} key={employeeName}>
                                         <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
                                             <div className="flex items-center gap-3">
                                                 <UserIcon className="h-5 w-5 text-primary" />
                                                 <span>{employeeName}</span>
-                                                <Badge variant="secondary">{records.length}</Badge>
+                                                <Badge variant="secondary">{employeeRecords.length}</Badge>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-2">
-                                            <div className="border rounded-b-lg">
-                                               <Table>
-                                                    <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>File Name</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                                    <TableBody>
-                                                        {records.map(record => (
-                                                            <TableRow key={record.id}>
-                                                                <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                                <TableCell>{record.fileName}</TableCell>
-                                                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
-                                                                <TableCell className="text-right">
-                                                                    <div className="flex gap-1 justify-end">
-                                                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
-                                                                        {canEditOrDelete(record) && (
-                                                                            <>
+                                           {Object.entries(employeeRecords.reduce((acc, record) => {
+                                                if (!acc[record.fileName]) acc[record.fileName] = [];
+                                                acc[record.fileName].push(record);
+                                                return acc;
+                                            }, {} as Record<string, SavedRecord[]>)).map(([fileName, fileRecords]) => (
+                                                 <div key={fileName} className="border rounded-lg mb-2">
+                                                    <h4 className="font-semibold p-2 bg-gray-50 text-sm">{fileName}</h4>
+                                                    <Table>
+                                                        <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                                        <TableBody>
+                                                            {fileRecords.map(record => (
+                                                                <TableRow key={record.id}>
+                                                                    <TableCell>{record.projectName}</TableCell>
+                                                                    <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <div className="flex gap-1 justify-end">
+                                                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                            {canEditOrDelete(record) && <>
                                                                                 <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
                                                                                 <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
+                                                                            </>}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                 </div>
+                                            ))}
                                         </AccordionContent>
                                     </AccordionItem>
                                 );
@@ -357,31 +379,53 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                          </Accordion>
                     ) : filteredRecords.length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
-                             {Object.entries(recordsByFileName).map(([fileName, records]) => {
-                                if (records.length === 0) return null;
+                             {Object.entries(recordsByFileName).map(([fileName, fileRecords]) => {
+                                if (fileRecords.length === 0) return null;
                                 const Icon = getIconForFile(fileName);
+                                
+                                if (fileName === 'My Projects') {
+                                    return (
+                                        <AccordionItem value={fileName} key={fileName}>
+                                            <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                                <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords[0].data[0].items.length}</Badge></div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pt-2">
+                                                <div className="border rounded-b-lg">
+                                                    <Table>
+                                                        <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Employee</TableHead><TableHead>Status</TableHead><TableHead>Start Date</TableHead><TableHead>End Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                                        <TableBody>
+                                                            {fileRecords[0].data[0].items.map((item: any, index: number) => {
+                                                                const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
+                                                                return (
+                                                                    <TableRow key={`${fileRecords[0].id}-${index}`}>
+                                                                        <TableCell>{project.projectName}</TableCell>
+                                                                        <TableCell>{fileRecords[0].employeeName}</TableCell>
+                                                                        <TableCell><StatusBadge status={project.Status.toLowerCase().replace(' ', '-')} /></TableCell>
+                                                                        <TableCell>{project.Start}</TableCell>
+                                                                        <TableCell>{project.End}</TableCell>
+                                                                        <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => openViewDialog(fileRecords[0], project)} title="View"><Eye className="h-4 w-4" /></Button></TableCell>
+                                                                    </TableRow>
+                                                                )
+                                                            })}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    )
+                                }
+                                
                                 return (
                                     <AccordionItem value={fileName} key={fileName}>
                                         <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
-                                            <div className="flex items-center gap-3">
-                                                <Icon className="h-5 w-5 text-primary" />
-                                                <span>{fileName}</span>
-                                                <Badge variant="secondary">{records.length}</Badge>
-                                            </div>
+                                            <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords.length}</Badge></div>
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-2">
                                             <div className="border rounded-b-lg">
                                                 <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Project Name</TableHead>
-                                                            {!employeeOnly && <TableHead>Created By</TableHead>}
-                                                            <TableHead>Date</TableHead>
-                                                            <TableHead className="text-right">Actions</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
+                                                    <TableHeader><TableRow><TableHead>Project Name</TableHead>{!employeeOnly && <TableHead>Created By</TableHead>}<TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                                                     <TableBody>
-                                                        {records.map(record => (
+                                                        {fileRecords.map(record => (
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
@@ -389,12 +433,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                                 <TableCell className="text-right">
                                                                     <div className="flex gap-1 justify-end">
                                                                         <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
-                                                                        {canEditOrDelete(record) && (
-                                                                            <>
-                                                                                <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
-                                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                                                            </>
-                                                                        )}
+                                                                        {canEditOrDelete(record) && <>
+                                                                            <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                        </>}
                                                                     </div>
                                                                 </TableCell>
                                                             </TableRow>
@@ -449,3 +491,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
