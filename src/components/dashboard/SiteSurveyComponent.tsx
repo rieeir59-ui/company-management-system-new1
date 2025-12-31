@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -40,7 +40,7 @@ const FormRow = ({ label, children }: { label: React.ReactNode; children: React.
     </TableRow>
 );
 
-function SiteSurveyComponent() {
+export default function SiteSurveyComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
     const { addRecord, getRecordById, updateRecord } = useRecords();
@@ -507,14 +507,6 @@ function SiteSurveyComponent() {
                 </CardContent>
             </Card>
         </div>
-    );
-}
-
-export default function Page() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <SiteSurveyComponent />
-        </Suspense>
     );
 }
 

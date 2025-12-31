@@ -19,7 +19,8 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useRecords } from '@/context/RecordContext';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { StatusBadge } from '@/components/ui/badge';
@@ -691,7 +692,7 @@ function MyProjectsComponent() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}".
+                        This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}". This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -715,4 +716,6 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+    
+
     
