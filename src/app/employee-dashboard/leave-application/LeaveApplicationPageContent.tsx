@@ -33,6 +33,10 @@ export default function LeaveApplicationPageContent() {
   const recordId = searchParams.get('id');
 
   const [formState, setFormState] = useState({
+    employeeName: '',
+    employeeNumber: '',
+    department: '',
+    position: '',
     status: 'Full-time',
     leaveFrom: '',
     leaveTo: '',
@@ -59,12 +63,17 @@ export default function LeaveApplicationPageContent() {
         const record = getRecordById(recordId);
         setRecordData(record);
         if (record) {
+            const employeeInfo = record.data?.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
             const leaveDetails = record.data?.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
             const hrInfo = record.data?.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
 
             setFormState(prev => ({
                 ...prev,
-                status: record.data?.find((d:any) => d.category === 'Employee Information')?.items.find((i:any) => i.label === 'Status')?.value || 'Full-time',
+                employeeName: employeeInfo['Employee Name'] || '',
+                employeeNumber: employeeInfo['Employee Number'] || '',
+                department: employeeInfo['Department'] || '',
+                position: employeeInfo['Position'] || '',
+                status: employeeInfo['Status'] || 'Full-time',
                 leaveFrom: leaveDetails['Leave From'] || '',
                 leaveTo: leaveDetails['Leave To'] || '',
                 returnDate: leaveDetails['Return Date'] || '',
@@ -95,6 +104,11 @@ export default function LeaveApplicationPageContent() {
     }
     return 0;
   }, [formState.leaveFrom, formState.leaveTo]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value }));
+  };
   
   const handleStatusCheckboxChange = (status: 'Full-time' | 'Part-time') => {
     setFormState(prev => ({ ...prev, status }));
@@ -126,10 +140,10 @@ export default function LeaveApplicationPageContent() {
 
     const leaveRequestData = {
         employeeId: currentUser.uid,
-        employeeName: currentUser.name,
-        employeeRecord: currentUser.record,
-        department: currentUser.departments.join(', '),
-        position: currentUser.role,
+        employeeName: formState.employeeName,
+        employeeRecord: formState.employeeNumber,
+        department: formState.department,
+        position: formState.position,
         status: formState.status,
         leaveType: formState.reasonForRequested.join(', '),
         leaveFrom: formState.leaveFrom,
@@ -146,7 +160,7 @@ export default function LeaveApplicationPageContent() {
         
         await addDoc(collection(firestore, 'notifications'), {
             type: 'leave_request',
-            message: `${currentUser.name} has requested for ${totalDays} day(s) of leave.`,
+            message: `${formState.employeeName} has requested for ${totalDays} day(s) of leave.`,
             relatedId: leaveDocRef.id,
             recipientRole: 'admin',
             status: 'unread',
@@ -159,6 +173,10 @@ export default function LeaveApplicationPageContent() {
         });
         
         setFormState({
+            employeeName: '',
+            employeeNumber: '',
+            department: '',
+            position: '',
             status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
         });
 
@@ -181,15 +199,15 @@ export default function LeaveApplicationPageContent() {
     }
     const dataToSave = {
       fileName: 'Leave Request Form',
-      projectName: `Leave Request - ${currentUser.name} - ${formState.leaveFrom}`,
+      projectName: `Leave Request - ${formState.employeeName || 'Unknown'} - ${formState.leaveFrom}`,
       data: [
         {
           category: 'Employee Information',
           items: [
-            { label: 'Employee Name', value: currentUser.name },
-            { label: 'Employee Number', value: currentUser.record },
-            { label: 'Department', value: currentUser.departments.join(', ') },
-            { label: 'Position', value: currentUser.role },
+            { label: 'Employee Name', value: formState.employeeName },
+            { label: 'Employee Number', value: formState.employeeNumber },
+            { label: 'Department', value: formState.department },
+            { label: 'Position', value: formState.position },
             { label: 'Status', value: formState.status },
           ]
         },
@@ -250,10 +268,22 @@ export default function LeaveApplicationPageContent() {
                 <div className="p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold text-lg text-primary">Employee Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><Label>Employee Name</Label><p className="font-semibold">{currentUser?.name}</p></div>
-                        <div><Label>Employee Number</Label><p className="font-semibold">{currentUser?.record}</p></div>
-                        <div><Label>Department</Label><p className="font-semibold">{currentUser?.departments.join(', ')}</p></div>
-                        <div><Label>Position</Label><p className="font-semibold">{currentUser?.role}</p></div>
+                        <div className="space-y-2">
+                          <Label htmlFor="employeeName">Employee Name</Label>
+                          <Input id="employeeName" name="employeeName" value={formState.employeeName} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="employeeNumber">Employee Number</Label>
+                          <Input id="employeeNumber" name="employeeNumber" value={formState.employeeNumber} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="department">Department</Label>
+                          <Input id="department" name="department" value={formState.department} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="position">Position</Label>
+                          <Input id="position" name="position" value={formState.position} onChange={handleInputChange} />
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <Label>Status (select one)</Label>
@@ -273,15 +303,15 @@ export default function LeaveApplicationPageContent() {
                     <h3 className="font-semibold text-lg text-primary">Leave Details</h3>
                      <p className="pt-4">I hereby request a leave of absence effective from:</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input id="leaveFrom" name="leaveFrom" type="date" value={formState.leaveFrom} onChange={(e) => setFormState(s=>({...s, leaveFrom: e.target.value}))} required />
-                        <div className="flex items-center gap-2"> to <Input id="leaveTo" name="leaveTo" type="date" value={formState.leaveTo} onChange={(e) => setFormState(s=>({...s, leaveTo: e.target.value}))} required /></div>
+                        <Input id="leaveFrom" name="leaveFrom" type="date" value={formState.leaveFrom} onChange={handleInputChange} required />
+                        <div className="flex items-center gap-2"> to <Input id="leaveTo" name="leaveTo" type="date" value={formState.leaveTo} onChange={handleInputChange} required /></div>
                     </div>
                     <div>
                         <p className="font-semibold">Total Days: {totalDays}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Label htmlFor="returnDate">I expect to return to work on Date:</Label>
-                        <Input id="returnDate" name="returnDate" type="date" value={formState.returnDate} onChange={(e) => setFormState(s=>({...s, returnDate: e.target.value}))} required className="w-fit"/>
+                        <Input id="returnDate" name="returnDate" type="date" value={formState.returnDate} onChange={handleInputChange} required className="w-fit"/>
                     </div>
                 </div>
 
@@ -296,7 +326,7 @@ export default function LeaveApplicationPageContent() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="reason" className="font-semibold text-lg text-primary">REASON:</Label>
-                        <Textarea id="reason" name="reason" value={formState.reason} onChange={(e) => setFormState(s=>({...s, reason: e.target.value}))} required />
+                        <Textarea id="reason" name="reason" value={formState.reason} onChange={handleInputChange} required />
                     </div>
                 </div>
                  <div className="mt-8 p-4 border rounded-lg space-y-4">
@@ -345,5 +375,3 @@ export default function LeaveApplicationPageContent() {
   );
 }
 
-
-    

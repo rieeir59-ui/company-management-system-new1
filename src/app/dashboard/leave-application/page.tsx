@@ -3,7 +3,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import LeaveApplicationPage from '@/app/employee-dashboard/leave-application/page';
+import LeaveApplicationPageContent from '@/app/employee-dashboard/leave-application/LeaveApplicationPageContent';
 import { Loader2 } from 'lucide-react';
 
 function LeaveApplicationFallback() {
@@ -18,7 +18,7 @@ function LeaveApplicationFallback() {
 export default function DashboardLeaveApplicationPage() {
     return (
         <Suspense fallback={<LeaveApplicationFallback />}>
-            <LeaveApplicationPage />
+            <LeaveApplicationPageContent />
         </Suspense>
     )
 }
