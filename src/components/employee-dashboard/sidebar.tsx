@@ -42,6 +42,7 @@ import {
   Eye,
   ClipboardList,
   FileUp,
+  CalendarOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,7 @@ import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
     { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
+    { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
