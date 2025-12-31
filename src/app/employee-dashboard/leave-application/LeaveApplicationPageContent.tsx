@@ -21,7 +21,15 @@ import { differenceInDays, parseISO, isValid } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { useRecords } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
-import { generatePdfForRecord } from '@/lib/pdf-generator';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => void;
+  lastAutoTable: {
+    finalY: number;
+  };
+}
 
 export default function LeaveApplicationPageContent() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
@@ -242,6 +250,109 @@ export default function LeaveApplicationPageContent() {
     }
   };
   
+    const handleDownloadPdf = () => {
+        const doc = new jsPDF() as jsPDFWithAutoTable;
+        let yPos = 15;
+
+        const drawCheckbox = (x: number, y: number, checked: boolean) => {
+            doc.setLineWidth(0.2);
+            doc.rect(x, y - 3.5, 4, 4);
+            if (checked) {
+                doc.setDrawColor(0);
+                doc.line(x + 0.5, y - 1.5, x + 1.5, y);
+                doc.line(x + 1.5, y, x + 3.5, y - 3);
+            }
+        };
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('LEAVE REQUEST FORM', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 15;
+
+        doc.setFontSize(10);
+        
+        const addSectionHeader = (text: string) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(text, 14, yPos);
+            yPos += 7;
+            doc.setFont('helvetica', 'normal');
+        };
+
+        addSectionHeader('Employee Information');
+        doc.autoTable({
+            startY: yPos, theme: 'grid', showHead: false,
+            body: [
+                [`Employee Name: ${formState.employeeName}`, `Employee Number: ${formState.employeeNumber}`],
+                [`Department: ${formState.department}`, `Position: ${formState.position}`],
+                [{content: `Status: ${formState.status}`, colSpan: 2}]
+            ]
+        });
+        yPos = doc.autoTable.previous.finalY + 10;
+        
+        addSectionHeader('Leave Details');
+        const fromDate = formState.leaveFrom ? formState.leaveFrom : '( ____________ )';
+        const toDate = formState.leaveTo ? formState.leaveTo : '( ____________ )';
+        const returnDate = formState.returnDate ? formState.returnDate : '( ____________ )';
+        doc.text(`I hereby request a leave of absence effective from ${fromDate} to ${toDate}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Total Days: ${totalDays}`, 14, yPos);
+        yPos += 7;
+        doc.text(`I expect to return to work on Date: ${returnDate}`, 14, yPos);
+        yPos += 10;
+        
+        addSectionHeader('Reason for Requested:');
+        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Sick Leave'));
+        doc.text('SICK LEAVE', 20, yPos);
+        yPos += 7;
+        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Casual Leave'));
+        doc.text('CASUAL LEAVE', 20, yPos);
+        yPos += 7;
+        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Annual Leave'));
+        doc.text('ANNUAL LEAVE', 20, yPos);
+        yPos += 10;
+        
+        doc.text('REASON:', 14, yPos);
+        yPos += 5;
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, 196, yPos);
+        if (formState.reason) {
+            doc.text(formState.reason, 16, yPos - 1);
+        }
+        yPos += 15;
+        
+        addSectionHeader('HR Department Approval:');
+        drawCheckbox(14, yPos, hrApprovalState.approved);
+        doc.text('LEAVE APPROVED', 20, yPos);
+        yPos += 7;
+        drawCheckbox(14, yPos, hrApprovalState.denied);
+        doc.text('LEAVE DENIED', 20, yPos);
+        yPos += 10;
+        
+        doc.text('REASON:', 14, yPos);
+        yPos += 5;
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos, 196, yPos);
+        if (hrApprovalState.reason) {
+            doc.text(hrApprovalState.reason, 16, yPos-1);
+        }
+        yPos += 10;
+        
+        doc.text(`Date: ${hrApprovalState.approvalDate || '______________'}`, 14, yPos);
+        yPos += 10;
+        
+        drawCheckbox(14, yPos, hrApprovalState.paid);
+        doc.text('PAID LEAVE', 20, yPos);
+        drawCheckbox(60, yPos, hrApprovalState.unpaid);
+        doc.text('UNPAID LEAVE', 66, yPos);
+        yPos += 20;
+
+        doc.text('COMPANY CEO: ____________________', 14, yPos);
+        doc.text('DATE: ____________________', 140, yPos);
+
+        doc.save('Leave_Request_Form.pdf');
+        toast({ title: 'Download Started', description: 'Your Leave Request Form is being generated.' });
+  };
+  
   if (isRecordLoading) {
       return (
           <div className="flex justify-center items-center h-96">
@@ -354,7 +465,7 @@ export default function LeaveApplicationPageContent() {
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-lg">
                 <Button type="button" onClick={handleSave} variant="outline" ><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                 <div className="flex gap-2">
-                    {recordData && <Button type="button" onClick={() => recordData && generatePdfForRecord(recordData)} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>}
+                    <Button type="button" onClick={handleDownloadPdf} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (recordId ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />) }
                         {recordId ? 'Update Request' : 'Send Request'}
