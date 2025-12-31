@@ -1,0 +1,375 @@
+
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Save, Download, PlusCircle, Trash2, Bot, ArrowLeft, Edit, CalendarIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
+import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
+import { bankProjectsMap, type ProjectRow, deleteProject, bankTimelineCategories } from '@/lib/projects-data';
+import Link from 'next/link';
+import { format, parseISO, isValid } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { cn } from '@/lib/utils';
+
+type DashboardType = 'dashboard' | 'employee-dashboard';
+
+export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
+    const params = useParams();
+    const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
+
+    const formattedBankName = useMemo(() => {
+        return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
+    }, [bankName]);
+
+    const initialData = useMemo(() => bankProjectsMap[bankName] || [], [bankName]);
+
+    const { toast } = useToast();
+    const { addRecord } = useRecords();
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
+    const [overallStatus, setOverallStatus] = useState('');
+    const [remarks, setRemarks] = useState('');
+    const [remarksDate, setRemarksDate] = useState('');
+
+    useEffect(() => {
+        const savedData = localStorage.getItem(`${bankName}Projects`);
+        if (savedData) {
+            setProjectRows(JSON.parse(savedData));
+        } else {
+            setProjectRows(initialData);
+        }
+    }, [bankName, initialData]);
+
+    useEffect(() => {
+        localStorage.setItem(`${bankName}Projects`, JSON.stringify(projectRows));
+    }, [projectRows, bankName]);
+
+    const [genProjectName, setGenProjectName] = useState('');
+    const [genArea, setGenArea] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [editingRowId, setEditingRowId] = useState<number | null>(null);
+
+    const handleGenerateTimeline = async () => {
+        if (!genProjectName || !genArea) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Information',
+                description: 'Please enter a project name and area to generate a timeline.',
+            });
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const result = await generateTimeline({ projectName: genProjectName, area: genArea });
+            
+            const taskMap: Record<string, { start: string, end: string }> = {};
+            result.tasks.forEach(task => {
+                const key = task.taskName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                taskMap[key] = { start: task.startDate, end: task.endDate };
+            });
+
+            const projectExists = projectRows.some(row => row.projectName.toLowerCase() === genProjectName.toLowerCase());
+
+            const updateRowWithAITimeline = (row: ProjectRow): ProjectRow => ({
+                ...row,
+                area: genArea,
+                siteSurveyStart: taskMap['sitesurvey']?.start || row.siteSurveyStart,
+                siteSurveyEnd: taskMap['sitesurvey']?.end || row.siteSurveyEnd,
+                proposalStart: taskMap['proposaldesigndevelopment']?.start || row.proposalStart,
+                proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
+                threedStart: taskMap['3ds']?.start || row.threedStart,
+                threedEnd: taskMap['3ds']?.end || row.threedEnd,
+                tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
+                tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
+            });
+
+            if (projectExists) {
+                 setProjectRows(rows => rows.map(row => 
+                    row.projectName.toLowerCase() === genProjectName.toLowerCase() ? updateRowWithAITimeline(row) : row
+                ));
+            } else {
+                 const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
+                 const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+                 let newRow: ProjectRow = {
+                    id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
+                    siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+                    proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
+                    tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
+                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
+                };
+                newRow = updateRowWithAITimeline(newRow);
+                setProjectRows(prevRows => [...prevRows, newRow]);
+            }
+            
+            toast({ title: 'Timeline Generated', description: `Dates for '${genProjectName}' have been filled in.` });
+
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Generation Failed',
+                description: 'Could not generate the timeline. Please try again.',
+            });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
+        setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
+    };
+    
+    const DateInput = ({ value, onChange }: { value: string, onChange: (value: string) => void}) => {
+        return (
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn("w-full justify-start text-left font-normal text-xs h-8", !value && "text-muted-foreground")}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {value ? format(parseISO(value), "dd-MMM-yy") : <span>Pick a date</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Calendar
+                        mode="single"
+                        selected={value ? parseISO(value) : undefined}
+                        onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                        initialFocus
+                    />
+                </PopoverContent>
+            </Popover>
+        )
+    }
+
+    const addProjectRow = () => {
+        const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
+        const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+        setProjectRows([...projectRows, {
+            id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
+            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
+        }]);
+        setEditingRowId(newId);
+    };
+    
+    const removeProjectRow = (id: number) => {
+        setProjectRows(projectRows.filter(row => row.id !== id));
+        deleteProject(bankName, id);
+        toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
+    };
+    
+    const handleSave = () => {
+        addRecord({
+            fileName: `${formattedBankName} Timeline`,
+            projectName: `${formattedBankName} Projects`,
+            data: [
+                { category: 'Projects', items: projectRows },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        } as any);
+        setEditingRowId(null);
+    };
+
+    const handleDownload = () => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+        doc.setFontSize(10);
+        doc.text(formattedBankName, 14, 15);
+        
+        const head = [
+            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
+             'Site Survey', 'Contract', 'Head Count',
+             'Proposal', '3D\'s', 'Tender Arch', 'Tender MEP',
+             'BOQ', 'Tender Status', 'Comparative', 'Working Drawings', 'Site Visit', 'Final Bill', 'Project Closure']
+        ];
+        
+        const body = projectRows.map(p => [
+            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+            `${p.siteSurveyStart} - ${p.siteSurveyEnd}`, p.contract, p.headCount,
+            `${p.proposalStart} - ${p.proposalEnd}`, `${p.threedStart} - ${p.threedEnd}`,
+            `${p.tenderArchStart} - ${p.tenderArchEnd}`, `${p.tenderMepStart} - ${p.tenderMepEnd}`,
+            `${p.boqStart} - ${p.boqEnd}`, p.tenderStatus, p.comparative, 
+            `${p.workingDrawingsStart} - ${p.workingDrawingsEnd}`, 
+            `${p.siteVisitStart} - ${p.siteVisitEnd}`, 
+            p.finalBill, p.projectClosure
+        ]);
+
+        (doc as any).autoTable({
+            head: head,
+            body: body,
+            startY: 20,
+            theme: 'grid',
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
+        });
+        let lastY = (doc as any).autoTable.previous.finalY + 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text("Overall Status:", 14, lastY);
+        lastY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text("Maam Isbah Remarks & Order", 14, lastY);
+        lastY += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(remarks, 14, lastY, { maxWidth: 260 });
+        lastY += doc.getTextDimensions(remarks, { maxWidth: 260 }).h + 10;
+
+        doc.text(`Date: ${remarksDate}`, 14, lastY);
+
+        doc.save(`${bankName}_timeline.pdf`);
+        toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
+    };
+
+    if (!initialData.length && !projectRows.length) {
+         return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <Card className="w-full max-w-md text-center">
+                    <CardHeader>
+                        <CardTitle>No Data Found</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">No project data found for {formattedBankName}.</p>
+                        <Button asChild className="mt-6">
+                            <Link href={`/${dashboardType}`} className="flex items-center gap-2">
+                               <ArrowLeft className="h-4 w-4" />
+                               Back to Dashboard
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
+    const tableHeaders = [
+        "Sr.No", "Project Name", "Area", "Project Holder", "Allocation Date", 
+        "Site Survey", "Contract", "Head Count", "Proposal", "3D's", "Tender Arch", 
+        "Tender MEP", "BOQ", "Tender Status", "Comparative", "Working Drawings", 
+        "Site Visit", "Final Bill", "Project Closure", "Action"
+    ];
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Button asChild variant="outline" size="icon">
+                        <Link href={`/${dashboardType}`}><ArrowLeft className="h-4 w-4" /></Link>
+                    </Button>
+                    <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
+                </div>
+                <div className="flex gap-2">
+                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
+                    <Button onClick={addProjectRow}><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
+                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                 <Card className="mb-6 bg-muted/50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg"><Bot className="h-5 w-5" /> AI Timeline Generator</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 w-full"><Input placeholder="Project Name" value={genProjectName} onChange={(e) => setGenProjectName(e.target.value)} /></div>
+                        <div className="flex-1 w-full"><Input placeholder="Area in sft" value={genArea} onChange={(e) => setGenArea(e.target.value)} /></div>
+                        <Button onClick={handleGenerateTimeline} disabled={isGenerating} className="w-full md:w-auto">
+                            {isGenerating ? 'Generating...' : 'Generate Timeline'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-xs">
+                        <thead className="sticky top-0 bg-primary/20 z-10">
+                            <tr>
+                                {tableHeaders.map((header, index) => (
+                                     <th key={header} className="border p-1 align-bottom" colSpan={['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header) ? 2 : 1} rowSpan={['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header) ? 1 : 2}>{header}</th>
+                                ))}
+                            </tr>
+                            <tr className="bg-primary/10">
+                                {tableHeaders.flatMap(header => {
+                                    if (['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header)) {
+                                        return [<th key={`${header}-start`} className="border p-1">Start Date</th>, <th key={`${header}-end`} className="border p-1">End Date</th>]
+                                    }
+                                    return [];
+                                })}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {projectRows.map(row => (
+                                <tr key={row.id}>
+                                    <td className="border text-center p-1"><Input type="text" value={row.srNo} onChange={e => handleProjectChange(row.id, 'srNo', e.target.value)} disabled={editingRowId !== row.id} className="w-12 text-center" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} disabled={editingRowId !== row.id} className="min-w-[200px]" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} disabled={editingRowId !== row.id} className="w-32" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} disabled={editingRowId !== row.id} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.contractStart} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.contactEnd} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountStart} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountEnd} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.threedEnd} onChange={v => handleProjectChange(row.id, 'threedEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.tenderArchStart} onChange={v => handleProjectChange(row.id, 'tenderArchStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.tenderArchEnd} onChange={v => handleProjectChange(row.id, 'tenderArchEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.tenderMepStart} onChange={v => handleProjectChange(row.id, 'tenderMepStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.tenderMepEnd} onChange={v => handleProjectChange(row.id, 'tenderMepEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
+                                    <td className="border p-1"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
+                                    <td className="border p-1"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1">
+                                        <div className="flex gap-1">
+                                            {editingRowId === row.id ? (
+                                                <Button variant="ghost" size="icon" onClick={() => { setEditingRowId(null); handleSave(); }}><Save className="h-4 w-4 text-green-600" /></Button>
+                                            ) : (
+                                                <Button variant="ghost" size="icon" onClick={() => setEditingRowId(row.id)}><Edit className="h-4 w-4" /></Button>
+                                            )}
+                                            <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                 <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
+                    <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
+                </div>
+
+                <div className="mt-8">
+                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
+                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
+                    <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
