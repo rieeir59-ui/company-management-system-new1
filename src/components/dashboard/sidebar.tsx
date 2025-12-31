@@ -26,6 +26,7 @@ import {
   Search as SearchIcon,
   Settings,
   KeyRound,
+  CalendarOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ import { useTasks } from '@/hooks/use-tasks';
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
+    { href: '/dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
