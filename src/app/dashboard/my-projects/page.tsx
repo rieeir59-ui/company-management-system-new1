@@ -319,13 +319,20 @@ function MyProjectsComponent() {
       doc.setFontSize(10);
       doc.text(`Employee: ${displayUser?.name}`, 14, 30);
 
-      const body = combinedSchedule.map(item => [item.projectName, item.detail, item.status, item.startDate, item.endDate]);
+      const body = combinedSchedule.map(item => [
+          item.projectName, 
+          item.detail, 
+          item.isManual ? item.detail : item.taskDescription, 
+          item.status, 
+          item.startDate, 
+          item.endDate
+        ]);
 
       (doc as any).autoTable({
           startY: 42,
-          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+          head: [['Project Name', 'Detail', 'Description', 'Status', 'Start Date', 'End Date']],
           body: body,
-          headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
+          headStyles: { fillColor: [22, 163, 74] },
       });
       
       let finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -448,24 +455,23 @@ function MyProjectsComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {combinedSchedule.map(item => (
+                        {manualEntries.map(item => (
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
                                 <TableCell>
                                   <Select
                                     value={item.status}
-                                    onValueChange={(newStatus: Task['status']) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
-                                    disabled={!canEdit || item.status === 'pending-approval'}
+                                    onValueChange={(val: ManualEntry['status']) => handleManualEntryChange(item.id, 'status', val)}
+                                    disabled={!canEdit}
                                   >
                                     <SelectTrigger className="w-[180px]">
-                                      <StatusBadge status={item.status as Task['status']} />
+                                      <StatusBadge status={item.status} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="Not Started">Not Started</SelectItem>
                                       <SelectItem value="In Progress">In Progress</SelectItem>
                                       <SelectItem value="Completed">Completed</SelectItem>
-                                      {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>
                                 </TableCell>
@@ -473,7 +479,7 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => item.isManual ? openEditDialog(item as ManualEntry) : openViewDialog(item as Task)}>
+                                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                             <Eye className="h-4 w-4"/>
                                         </Button>
                                         {item.isManual && (

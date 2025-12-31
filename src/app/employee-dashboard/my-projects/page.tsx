@@ -372,13 +372,20 @@ function MyProjectsComponent() {
       doc.setFontSize(10);
       doc.text(`Employee: ${displayUser?.name}`, 14, 30);
 
-      const body = combinedSchedule.map(item => [item.projectName, item.detail, item.taskDescription, item.status, item.startDate, item.endDate]);
+      const body = combinedSchedule.map(item => [
+          item.projectName, 
+          item.detail, 
+          item.isManual ? item.detail : item.taskDescription, 
+          item.status, 
+          item.startDate, 
+          item.endDate
+        ]);
 
       (doc as any).autoTable({
           startY: 42,
           head: [['Project Name', 'Detail', 'Description', 'Status', 'Start Date', 'End Date']],
           body: body,
-          headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
+          headStyles: { fillColor: [22, 163, 74] },
       });
       
       let finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -530,7 +537,7 @@ function MyProjectsComponent() {
                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                             <Eye className="h-4 w-4"/>
                                         </Button>
-                                        {canEdit && (
+                                        {item.isManual && (
                                           <>
                                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                                 <Edit className="h-4 w-4" />
