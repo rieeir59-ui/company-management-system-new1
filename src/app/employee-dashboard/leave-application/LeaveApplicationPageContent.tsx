@@ -53,7 +53,10 @@ export default function LeaveApplicationPageContent() {
       reason: '',
       paid: false,
       unpaid: false,
+      approvalDate: ''
   });
+  
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isRecordLoading, setIsRecordLoading] = useState(!!recordId);
@@ -87,6 +90,7 @@ export default function LeaveApplicationPageContent() {
                 reason: hrInfo['Reason'] || '',
                 paid: hrInfo['Paid Leave'] === 'true',
                 unpaid: hrInfo['Unpaid Leave'] === 'true',
+                approvalDate: hrInfo['Approval Date'] || '',
             });
         }
     }
@@ -226,6 +230,7 @@ export default function LeaveApplicationPageContent() {
             { label: 'Reason', value: hrApprovalState.reason },
             { label: 'Paid Leave', value: hrApprovalState.paid.toString() },
             { label: 'Unpaid Leave', value: hrApprovalState.unpaid.toString() },
+            { label: 'Approval Date', value: hrApprovalState.approvalDate },
           ]
         }
       ]
@@ -319,28 +324,28 @@ export default function LeaveApplicationPageContent() {
                  <div className="mt-8 p-4 border rounded-lg space-y-4">
                     <h3 className="font-semibold text-lg text-primary">HR Department Approval:</h3>
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="leave_approved" checked={hrApprovalState.approved} onCheckedChange={(c) => setHrApprovalState(s => ({...s, approved: !!c, denied: !!c ? false: s.denied}))} disabled />
+                        <Checkbox id="leave_approved" checked={hrApprovalState.approved} onCheckedChange={(c) => setHrApprovalState(s => ({...s, approved: !!c, denied: !!c ? false: s.denied}))} disabled={!isAdmin} />
                         <Label htmlFor="leave_approved">LEAVE APPROVED</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false : s.approved}))} disabled />
+                        <Checkbox id="leave_denied" checked={hrApprovalState.denied} onCheckedChange={(c) => setHrApprovalState(s => ({...s, denied: !!c, approved: !!c ? false : s.approved}))} disabled={!isAdmin} />
                         <Label htmlFor="leave_denied">LEAVE DENIED</Label>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="hr_reason">REASON:</Label>
-                        <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))} disabled/>
+                        <Textarea id="hr_reason" value={hrApprovalState.reason} onChange={e => setHrApprovalState(s => ({...s, reason: e.target.value}))} disabled={!isAdmin}/>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="hr_approval_date">Date:</Label>
-                        <Input id="hr_approval_date" type="date" disabled/>
+                        <Input id="hr_approval_date" type="date" value={hrApprovalState.approvalDate} onChange={(e) => setHrApprovalState(s => ({...s, approvalDate: e.target.value}))} disabled={!isAdmin}/>
                     </div>
                     <div className="flex items-center gap-6 pt-4">
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.paid}))} disabled />
+                            <Checkbox id="paid_leave" checked={hrApprovalState.paid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, paid: !!c, unpaid: !!c ? false : s.paid}))} disabled={!isAdmin} />
                             <Label htmlFor="paid_leave">PAID LEAVE</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <Checkbox id="unpaid_leave" checked={hrApprovalState.unpaid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, unpaid: !!c, paid: !!c ? false : s.paid}))} disabled />
+                            <Checkbox id="unpaid_leave" checked={hrApprovalState.unpaid} onCheckedChange={(c) => setHrApprovalState(s => ({...s, unpaid: !!c, paid: !!c ? false : s.paid}))} disabled={!isAdmin} />
                             <Label htmlFor="unpaid_leave">UNPAID LEAVE</Label>
                         </div>
                     </div>
@@ -349,7 +354,7 @@ export default function LeaveApplicationPageContent() {
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-lg">
                 <Button type="button" onClick={handleSave} variant="outline" ><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                 <div className="flex gap-2">
-                    <Button type="button" onClick={() => recordData && generatePdfForRecord(recordData)} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    {recordData && <Button type="button" onClick={() => recordData && generatePdfForRecord(recordData)} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>}
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (recordId ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />) }
                         {recordId ? 'Update Request' : 'Send Request'}
@@ -361,5 +366,3 @@ export default function LeaveApplicationPageContent() {
     </div>
   );
 }
-
-    
