@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
+  lastAutoTable: {
+    finalY: number;
+  };
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | null }) => (
@@ -27,11 +30,25 @@ const DetailItem = ({ label, value }: { label: string; value?: string | null }) 
 const TimelineRow = ({ label, start, end }: { label: string; start?: string | null; end?: string | null }) => {
     let duration = 'N/A';
     if (start && end) {
-        const startDate = parse(start, 'dd-MMM-yy', new Date());
-        const endDate = parse(end, 'dd-MMM-yy', new Date());
-        if (isValid(startDate) && isValid(endDate)) {
-            const diff = differenceInDays(endDate, startDate);
-            duration = `${diff} day${diff === 1 ? '' : 's'}`;
+        try {
+            const startDate = parse(start, 'yyyy-MM-dd', new Date());
+            const endDate = parse(end, 'yyyy-MM-dd', new Date());
+            if (isValid(startDate) && isValid(endDate)) {
+                const diff = differenceInDays(endDate, startDate);
+                duration = `${diff} day${diff === 1 ? '' : 's'}`;
+            }
+        } catch(e) {
+            // handle cases where date might be in dd-MMM-yy format
+             try {
+                const startDate = parse(start, 'dd-MMM-yy', new Date());
+                const endDate = parse(end, 'dd-MMM-yy', new Date());
+                if (isValid(startDate) && isValid(endDate)) {
+                    const diff = differenceInDays(endDate, startDate);
+                    duration = `${diff} day${diff === 1 ? '' : 's'}`;
+                }
+            } catch(e2) {
+                // Ignore if parsing fails
+            }
         }
     }
 
@@ -174,7 +191,7 @@ export default function ProjectDetailPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Phase</TableHead>
+                        <TableHead>Activity</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead className="text-right">Duration</TableHead>
@@ -189,10 +206,10 @@ export default function ProjectDetailPage() {
                     <TimelineRow label="Tender Package Architectural" start={project.tenderArchStart} end={project.tenderArchEnd} />
                     <TimelineRow label="Tender Package MEP" start={project.tenderMepStart} end={project.tenderMepEnd} />
                     <TimelineRow label="BOQ" start={project.boqStart} end={project.boqEnd} />
-                    <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
-                    <TimelineRow label="Site Visit" start={project.siteVisitStart} end={project.siteVisitEnd} />
                     <TimelineRowSingle label="Tender Status" value={project.tenderStatus} />
                     <TimelineRowSingle label="Comparative" value={project.comparative} />
+                    <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
+                    <TimelineRow label="Site Visit" start={project.siteVisitStart} end={project.siteVisitEnd} />
                     <TimelineRowSingle label="Final Bill" value={project.finalBill} />
                     <TimelineRowSingle label="Project Closure" value={project.projectClosure} />
                 </TableBody>
@@ -202,3 +219,4 @@ export default function ProjectDetailPage() {
     </div>
   );
 }
+
