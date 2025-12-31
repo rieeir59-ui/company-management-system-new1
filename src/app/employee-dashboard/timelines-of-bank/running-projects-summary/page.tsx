@@ -33,8 +33,8 @@ export default function RunningProjectsSummaryPage() {
     
     useEffect(() => {
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
-            const savedData = localStorage.getItem(proj.key);
-            const projects = savedData ? JSON.parse(savedData) : (bankProjectsMap[proj.key] || []);
+            const savedData = localStorage.getItem(`${proj.key}Projects`);
+            const projects = savedData ? JSON.parse(savedData) : (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []);
             return {
                 srNo: index + 1,
                 project: proj.name,
@@ -50,6 +50,15 @@ export default function RunningProjectsSummaryPage() {
     const totalProjects = useMemo(() => {
         return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
     }, [summaryData]);
+
+    const handleCountChange = (srNo: number, value: string) => {
+        const newCount = parseInt(value, 10);
+        if (!isNaN(newCount)) {
+            setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: newCount } : row));
+        } else if (value === '') {
+            setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: 0 } : row));
+        }
+    };
 
     const handleRemarkChange = (srNo: number, value: string) => {
         setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
@@ -120,8 +129,8 @@ export default function RunningProjectsSummaryPage() {
                                     <Input 
                                         type="number"
                                         value={row.count}
-                                        readOnly
-                                        className="w-24 border-0 bg-transparent focus-visible:ring-0"
+                                        onChange={(e) => handleCountChange(row.srNo, e.target.value)}
+                                        className="w-24 border-0 bg-transparent focus-visible:ring-1"
                                     />
                                 </TableCell>
                                 <TableCell>
