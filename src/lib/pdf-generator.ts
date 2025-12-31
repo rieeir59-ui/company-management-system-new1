@@ -56,6 +56,95 @@ const addDefaultHeader = (doc: jsPDF, record: SavedRecord) => {
 
 
 export const generatePdfForRecord = (record: SavedRecord) => {
+    
+    if (record.fileName.includes('Timeline')) {
+        const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
+        const projectsData = record.data?.find((d: any) => d.category === 'Projects')?.items || [];
+        const statusData = record.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+        
+        const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+        const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+        const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+        let yPos = 20;
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(record.fileName, doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 15;
+
+        const head = [
+            [
+                { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
+                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 },
+                { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
+                { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
+                { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
+                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
+                { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+            ],
+            [
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End'
+            ]
+        ];
+
+        const body = projectsData.map((p: any) => [
+            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+            p.siteSurveyStart, p.siteSurveyEnd,
+            p.contractStart || '', p.contactEnd || '',
+            p.headCountStart || '', p.headCountEnd || '',
+            p.proposalStart, p.proposalEnd,
+            p.threedStart, p.threedEnd,
+            p.tenderArchStart, p.tenderArchEnd,
+            p.tenderMepStart, p.tenderMepEnd,
+            p.boqStart, p.boqEnd,
+            p.tenderStatus, p.comparative,
+            p.workingDrawingsStart || '', p.workingDrawingsEnd || '',
+            p.siteVisitStart || '', p.siteVisitEnd || '',
+            p.finalBill, p.projectClosure
+        ]);
+
+        doc.autoTable({
+            head: head,
+            body: body,
+            startY: yPos,
+            theme: 'grid',
+            styles: { fontSize: 5, cellPadding: 1, valign: 'middle', halign: 'center' },
+            headStyles: { fillColor: [45, 95, 51], fontStyle: 'bold', fontSize: 4.5, valign: 'middle', halign: 'center' },
+        });
+        
+        let lastY = doc.lastAutoTable.finalY + 10;
+
+        if (overallStatus) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Overall Status:", 14, lastY);
+            lastY += 7;
+            doc.setFont('helvetica', 'normal');
+            doc.text(overallStatus, 14, lastY, { maxWidth: 260 });
+            lastY += doc.getTextDimensions(overallStatus, { maxWidth: 260 }).h + 10;
+        }
+
+        if (remarks) {
+            doc.setFont('helvetica', 'bold');
+            doc.text("Maam Isbah Remarks & Order", 14, lastY);
+            lastY += 7;
+            doc.setFont('helvetica', 'normal');
+            doc.text(remarks, 14, lastY, { maxWidth: 260 });
+            lastY += doc.getTextDimensions(remarks, { maxWidth: 260 }).h + 10;
+        }
+        
+        if (remarksDate) {
+            doc.text(`Date: ${remarksDate}`, 14, lastY);
+        }
+
+        addFooter(doc);
+        doc.save(`${record.fileName.replace(/ /g, '_')}.pdf`);
+        return;
+    }
+
     const doc = new jsPDF({ orientation: 'portrait' }) as jsPDFWithAutoTable;
     let yPos = 15;
     
@@ -144,8 +233,7 @@ export const generatePdfForRecord = (record: SavedRecord) => {
         }
         yPos += 10;
         
-        doc.text('Date:', 14, yPos);
-        doc.line(25, yPos+1, 70, yPos+1);
+        doc.text(`Date: ${hrInfo['Approval Date'] || '______________'}`, 14, yPos);
         yPos += 10;
         
         drawCheckbox(doc, 14, yPos, hrInfo['Paid Leave'] === 'true');
@@ -154,11 +242,8 @@ export const generatePdfForRecord = (record: SavedRecord) => {
         doc.text('UNPAID LEAVE', 66, yPos);
         yPos += 20;
 
-        doc.text('COMPANY CEO: SIGNATURE', 14, yPos);
-        doc.text('DATE:', 150, yPos);
-        yPos += 5;
-        doc.line(14, y, 90, y);
-        doc.line(160, y, 196, y);
+        doc.text('COMPANY CEO: ____________________', 14, yPos);
+        doc.text('DATE: ____________________', 140, yPos);
 
     } else {
         // Default PDF generation for other records
@@ -190,4 +275,3 @@ export const generatePdfForRecord = (record: SavedRecord) => {
     addFooter(doc);
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
-
