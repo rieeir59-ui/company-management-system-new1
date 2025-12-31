@@ -28,50 +28,20 @@ import {
   Database,
   Users,
   LayoutDashboard,
-  Folder,
   Briefcase,
-  Book,
-  File,
-  ClipboardCheck,
-  Building,
-  FilePlus,
-  Compass,
-  FileSearch,
-  BookUser,
-  FileSignature,
-  FileKey,
-  Scroll,
-  BarChart2,
-  Calendar,
-  Wallet,
-  CheckSquare,
-  FileX,
-  FilePen,
-  File as FileIcon,
-  FileUp,
-  CircleDollarSign,
-  Clipboard,
-  Presentation,
-  Package,
-  ListChecks,
-  Palette,
-  Clock,
   BookCopy,
-  UserCog,
   Landmark,
+  Search as SearchIcon,
+  Clock,
   Building2,
   Home,
-  Save,
+  List,
+  Compass,
+  FileSearch,
   Eye,
-  Archive,
-  Search as SearchIcon,
-  Settings,
-  KeyRound,
   ClipboardList,
-  Edit,
-  Trash2,
-  PlusCircle,
-  CalendarOff
+  FileUp,
+  CalendarOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -80,41 +50,22 @@ import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/context/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { allProjects, type ProjectRow } from '@/lib/projects-data';
+import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { getFormUrlFromFileName } from '@/lib/utils';
+import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
     { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
+    { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
-    { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
+    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Briefcase },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
@@ -189,18 +140,107 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Timelines of Bank"
+                    tooltip="Timeline of Projects"
                   >
-                    <Landmark className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Timelines of Bank</span>
+                    <Clock className="size-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">Timeline of Projects</span>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/running-projects-summary" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/running-projects-summary')}>
+                          <List className="size-4 mr-2" />
+                          Running Projects Summary
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/askari-bank" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
+                          <Landmark className="size-4 mr-2" />
+                          Askari Bank
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
                       <Link href="/employee-dashboard/timelines-of-bank/bank-al-falah" passHref>
-                        <SidebarMenuSubButton isActive={pathname === '/employee-dashboard/timelines-of-bank/bank-al-falah'}>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-falah')}>
+                          <Landmark className="size-4 mr-2" />
                           Bank Al-Falah
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/bank-al-habib" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-habib')}>
+                          <Landmark className="size-4 mr-2" />
+                          Bank Al-Habib
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/cbd" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/cbd')}>
+                          <Landmark className="size-4 mr-2" />
+                          CBD
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/dib" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/dib')}>
+                          <Landmark className="size-4 mr-2" />
+                          DIB
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/faysal-bank" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/faysal-bank')}>
+                          <Landmark className="size-4 mr-2" />
+                          Faysal Bank
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/hbl" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/hbl')}>
+                          <Landmark className="size-4 mr-2" />
+                          HBL
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/mcb" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/mcb')}>
+                          <Landmark className="size-4 mr-2" />
+                          MCB
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/ubl" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/ubl')}>
+                          <Landmark className="size-4 mr-2" />
+                          UBL
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <Link href="/employee-dashboard/timelines-of-bank/commercial" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/commercial')}>
+                           <Building2 className="size-4 mr-2" />
+                          Commercial
+                        </SidebarMenuSubButton>
+                      </Link>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                       <Link href="/employee-dashboard/timelines-of-bank/residential" passHref>
+                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/residential')}>
+                           <Home className="size-4 mr-2" />
+                          Residential
                         </SidebarMenuSubButton>
                       </Link>
                     </SidebarMenuSubItem>
@@ -219,7 +259,7 @@ export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
-  const { projectManualItems } = useRecords();
+  const { projectManualItems, records } = useRecords();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = React.useCallback(() => {
@@ -232,7 +272,7 @@ export default function EmployeeDashboardSidebar() {
   }, [logout, router, toast]);
 
   const searchResults = useMemo(() => {
-    if (!searchQuery) return { menuResults: [], projectResults: [] };
+    if (!searchQuery) return { menuResults: [], projectResults: [], recordResults: {} };
 
     const lowerCaseQuery = searchQuery.toLowerCase();
     
@@ -245,9 +285,26 @@ export default function EmployeeDashboardSidebar() {
     const projectResults = allProjects.filter(project =>
       project.projectName.toLowerCase().includes(lowerCaseQuery)
     );
+
+    const recordResults = (records || []).filter(record => 
+        (record.projectName.toLowerCase().includes(lowerCaseQuery) ||
+        record.fileName.toLowerCase().includes(lowerCaseQuery)) &&
+        record.employeeId === currentUser?.uid // Only show own records in employee dashboard search
+    ).reduce((acc, record) => {
+        const key = record.fileName;
+        if (!acc[key]) {
+            acc[key] = [];
+        }
+        acc[key].push(record);
+        return acc;
+    }, {} as Record<string, typeof records>);
     
-    return { menuResults, projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()) };
-  }, [searchQuery, projectManualItems]);
+    return { 
+        menuResults, 
+        projectResults: Array.from(new Map(projectResults.map(p => [p.id, p])).values()), 
+        recordResults 
+    };
+  }, [searchQuery, projectManualItems, records, currentUser]);
   
   return (
       <Sidebar side="left" collapsible="icon">
@@ -308,7 +365,27 @@ export default function EmployeeDashboardSidebar() {
                         ))}
                     </SidebarMenuItem>
                 )}
-                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && (
+                 {Object.entries(searchResults.recordResults).map(([fileName, fileRecords]) => {
+                    const Icon = getIconForFile(fileName);
+                    return (
+                        <SidebarMenuItem key={fileName}>
+                            <span className="text-xs font-semibold text-sidebar-foreground/70 px-3">{fileName}</span>
+                            {fileRecords.map(record => {
+                                const url = getFormUrlFromFileName(record.fileName, 'employee-dashboard');
+                                if (!url) return null;
+                                return (
+                                    <Link href={`${url}?id=${record.id}`} key={record.id} passHref>
+                                        <SidebarMenuButton>
+                                            <Icon className="size-5" />
+                                            <span>{record.projectName}</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                )
+                            })}
+                        </SidebarMenuItem>
+                    )
+                 })}
+                {searchResults.menuResults.length === 0 && searchResults.projectResults.length === 0 && Object.keys(searchResults.recordResults).length === 0 && (
                     <p className="text-xs text-center text-sidebar-foreground/70 py-4">No results found.</p>
                 )}
              </SidebarMenu>
