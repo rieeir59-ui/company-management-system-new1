@@ -14,12 +14,12 @@ import { CheckCircle2, Clock, XCircle, Briefcase, PlusCircle, Save, Download, Lo
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useRecords } from '@/context/RecordContext';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
 import { StatusBadge } from '@/components/ui/badge';
@@ -69,7 +69,7 @@ function MyProjectsComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore, firebaseApp } = useFirebase();
-  const { addRecord } = useRecords();
+  const { addOrUpdateRecord, records } = useRecords();
   const storage = firebaseApp ? getStorage(firebaseApp) : null;
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
@@ -95,10 +95,39 @@ function MyProjectsComponent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deletingEntry, setDeletingEntry] = useState<ManualEntry | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
 
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
   const [remarks, setRemarks] = useState('');
+ 
+  useEffect(() => {
+    if (!displayUser) return;
+    const scheduleRecord = records.find(r => r.fileName === 'My Projects' && r.employeeId === displayUser.uid);
+    if (scheduleRecord && scheduleRecord.data) {
+        const scheduleData = scheduleRecord.data.find((d: any) => d.category === 'My Project Schedule');
+        if (scheduleData) {
+            setRemarks(scheduleData.remarks || '');
+            const savedManualEntries = (scheduleData.items || [])
+                .map((item: {label:string, value:string}) => {
+                    const detailMatch = item.value.match(/Detail: (.*?),/);
+                    const statusMatch = item.value.match(/Status: (.*?),/);
+                    const startMatch = item.value.match(/Start: (.*?),/);
+                    const endMatch = item.value.match(/End: (.*)/);
+                    return {
+                        id: Math.random(),
+                        projectName: item.label.replace('Project: ', ''),
+                        detail: detailMatch ? detailMatch[1] : '',
+                        status: statusMatch ? statusMatch[1] : 'Not Started',
+                        startDate: startMatch ? startMatch[1] : '',
+                        endDate: endMatch ? endMatch[1] : ''
+                    };
+                })
+                .filter((item: ManualEntry) => item.projectName); // Filter out potentially empty items
+            setManualEntries(savedManualEntries);
+        }
+    }
+  }, [records, displayUser]);
  
   const combinedSchedule = useMemo(() => {
         const assigned = allProjects.map(p => ({
@@ -184,7 +213,7 @@ function MyProjectsComponent() {
                         submissionFileName: submissionFile.name,
                     });
                     
-                    await addRecord({
+                    await addOrUpdateRecord({
                         fileName: 'Task Submission',
                         projectName: submittingTask.projectName,
                         data: [{
@@ -196,7 +225,7 @@ function MyProjectsComponent() {
                                 { label: 'File Link', value: downloadURL },
                             ]
                         }]
-                    } as any);
+                    });
 
                     toast({
                         id: toastId,
@@ -225,8 +254,8 @@ function MyProjectsComponent() {
         const isOwnTask = currentUser.uid === task.assignedTo;
 
         if (!isAdmin && !isOwnTask) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
-            return;
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You can only update your own tasks.' });
+             return;
         }
 
         const taskRef = doc(firestore, 'tasks', task.id);
@@ -264,21 +293,43 @@ function MyProjectsComponent() {
         toast({title: 'Entry Updated', description: 'Manual project entry has been updated.'});
     }
 
-    const openDeleteDialog = (entry: ManualEntry) => {
-        setDeletingEntry(entry);
+    const openDeleteDialog = (item: Task | ManualEntry) => {
+        if((item as any).isManual){
+            setDeletingEntry(item as ManualEntry);
+            setTaskToDelete(null);
+        } else {
+            setTaskToDelete(item as Task);
+            setDeletingEntry(null);
+        }
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmDeleteManualEntry = () => {
-        if (!deletingEntry) return;
-        removeManualEntry(deletingEntry.id);
+    const confirmDelete = () => {
+        if (deletingEntry) {
+            removeManualEntry(deletingEntry.id);
+            setDeletingEntry(null);
+            toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
+        }
+        if (taskToDelete && firestore) {
+            if (!isAdmin) {
+                toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
+                setIsDeleteDialogOpen(false);
+                return;
+            }
+             deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
+                .then(() => {
+                    toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
+                    setTaskToDelete(null);
+                })
+                .catch(serverError => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskToDelete.id}`, operation: 'delete' }));
+                    setTaskToDelete(null);
+                });
+        }
         setIsDeleteDialogOpen(false);
-        setDeletingEntry(null);
-        toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
     };
     
     
-
     const addManualEntry = () => {
         setManualEntries(prev => [...prev, {
             id: Date.now(),
@@ -299,18 +350,18 @@ function MyProjectsComponent() {
     };
 
     const handleSaveSchedule = async () => {
-        await addRecord({
+        await addOrUpdateRecord({
             fileName: 'My Projects',
             projectName: `${displayUser?.name}'s Project Schedule`,
             data: [{
                 category: "My Project Schedule",
                 remarks: remarks,
-                items: combinedSchedule.map(item => ({
+                items: manualEntries.map(item => ({
                     label: `Project: ${item.projectName}`,
                     value: `Detail: ${item.detail}, Status: ${item.status}, Start: ${item.startDate}, End: ${item.endDate}`,
                 })),
             }],
-        } as any);
+        });
     };
     
     const handleDownloadSchedule = () => {
@@ -391,6 +442,7 @@ function MyProjectsComponent() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="font-semibold">Project Name</TableHead>
                                 <TableHead className="font-semibold">Task</TableHead>
                                 <TableHead className="font-semibold">Assigned By</TableHead>
                                 <TableHead className="font-semibold">Start Date</TableHead>
@@ -402,10 +454,11 @@ function MyProjectsComponent() {
                         <TableBody>
                             {allProjects.length === 0 ? (
                             <TableRow>
-                                    <TableCell colSpan={6} className="text-center h-24">No tasks assigned yet.</TableCell>
+                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned yet.</TableCell>
                             </TableRow>
                             ) : allProjects.map((project) => (
                                 <TableRow key={project.id}>
+                                    <TableCell className="font-medium text-base">{project.projectName}</TableCell>
                                     <TableCell className="font-medium text-base">{project.taskName}</TableCell>
                                     <TableCell className="text-base">{project.assignedBy}</TableCell>
                                     <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
@@ -434,6 +487,11 @@ function MyProjectsComponent() {
                                             <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
                                                 <Upload className="h-4 w-4" />
                                             </Button>
+                                            {isAdmin && (
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(project)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -486,7 +544,7 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                        {item.isManual && (
+                                        {canEdit && (
                                             <>
                                                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                                     <Edit className="h-4 w-4" />
@@ -502,14 +560,16 @@ function MyProjectsComponent() {
                         ))}
                     </TableBody>
                 </Table>
-                <Button onClick={addManualEntry} className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Project</Button>
+                {canEdit && (
+                    <Button onClick={addManualEntry} className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Project</Button>
+                )}
                 <div className="mt-4">
                     <Label htmlFor="remarks">Remarks:</Label>
-                    <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+                    <Textarea id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} disabled={!canEdit} />
                 </div>
             </CardContent>
             <CardFooter className="justify-end gap-2">
-                <Button variant="outline" onClick={handleSaveSchedule}><Save className="h-4 w-4 mr-2"/>Save Schedule</Button>
+                <Button variant="outline" onClick={handleSaveSchedule} disabled={!canEdit}><Save className="h-4 w-4 mr-2"/>Save Schedule</Button>
                 <Button onClick={handleDownloadSchedule}><Download className="h-4 w-4 mr-2" />Download PDF</Button>
             </CardFooter>
         </Card>
@@ -580,8 +640,8 @@ function MyProjectsComponent() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-
-         <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+        
+        <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
                     <DialogTitle>My Project Schedule</DialogTitle>
@@ -595,6 +655,7 @@ function MyProjectsComponent() {
                             <TableRow>
                                 <TableHead>Project Name</TableHead>
                                 <TableHead>Detail</TableHead>
+                                <TableHead>Description</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
@@ -605,6 +666,7 @@ function MyProjectsComponent() {
                                 <TableRow key={item.id || index}>
                                     <TableCell>{item.projectName}</TableCell>
                                     <TableCell>{item.detail}</TableCell>
+                                    <TableCell>{item.isManual ? item.detail : item.taskDescription}</TableCell>
                                     <TableCell><StatusBadge status={item.status} /></TableCell>
                                     <TableCell>{item.startDate}</TableCell>
                                     <TableCell>{item.endDate}</TableCell>
@@ -624,17 +686,17 @@ function MyProjectsComponent() {
             </DialogContent>
         </Dialog>
 
-         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName}".
+                        This action cannot be undone. This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}".
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteManualEntry} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -653,6 +715,4 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
-
     

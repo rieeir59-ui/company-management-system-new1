@@ -420,7 +420,7 @@ function MyProjectsComponent() {
             <StatCard title="In Progress" value={projectStats.inProgress} icon={<Clock className="h-6 w-6" />} color="bg-blue-500 text-white" />
             <StatCard title="Not Started" value={projectStats.notStarted} icon={<XCircle className="h-6 w-6" />} color="bg-red-500 text-white" />
         </div>
-
+        
         <div className="flex justify-end">
             <Button onClick={() => setIsReportDialogOpen(true)}>
                 <Eye className="mr-2 h-4 w-4" /> View Full Report
@@ -487,6 +487,11 @@ function MyProjectsComponent() {
                                             <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
                                                 <Upload className="h-4 w-4" />
                                             </Button>
+                                            {isAdmin && (
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(project)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -650,6 +655,7 @@ function MyProjectsComponent() {
                             <TableRow>
                                 <TableHead>Project Name</TableHead>
                                 <TableHead>Detail</TableHead>
+                                <TableHead>Description</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Start Date</TableHead>
                                 <TableHead>End Date</TableHead>
@@ -660,6 +666,7 @@ function MyProjectsComponent() {
                                 <TableRow key={item.id || index}>
                                     <TableCell>{item.projectName}</TableCell>
                                     <TableCell>{item.detail}</TableCell>
+                                    <TableCell>{item.isManual ? item.detail : item.taskDescription}</TableCell>
                                     <TableCell><StatusBadge status={item.status} /></TableCell>
                                     <TableCell>{item.startDate}</TableCell>
                                     <TableCell>{item.endDate}</TableCell>
@@ -679,17 +686,17 @@ function MyProjectsComponent() {
             </DialogContent>
         </Dialog>
 
-         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName}".
+                        This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}". This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteManualEntry} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -708,5 +715,4 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
-
     
