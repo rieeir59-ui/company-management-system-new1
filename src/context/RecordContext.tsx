@@ -15,7 +15,7 @@ import {
   serverTimestamp,
   orderBy,
   where,
-  getDoc,
+  getDocs,
   type DocumentReference,
   type Timestamp,
   type FirestoreError
@@ -157,17 +157,25 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             return Promise.reject(new Error('User not authenticated'));
         }
 
-        const existingRecord = records.find(r => r.fileName === recordData.fileName && r.employeeId === currentUser.uid);
+        const recordsCollection = collection(firestore, 'savedRecords');
+        const q = query(
+            recordsCollection, 
+            where('fileName', '==', recordData.fileName), 
+            where('employeeId', '==', currentUser.uid)
+        );
 
-        if (existingRecord) {
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
             // Update existing record
-            await updateRecord(existingRecord.id, recordData);
+            const existingDoc = querySnapshot.docs[0];
+            await updateRecord(existingDoc.id, recordData);
         } else {
             // Add new record
             await addRecord(recordData);
         }
     },
-    [firestore, currentUser, toast, records, addRecord, updateRecord]
+    [firestore, currentUser, toast, addRecord, updateRecord]
   );
 
 

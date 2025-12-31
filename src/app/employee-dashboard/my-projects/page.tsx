@@ -503,27 +503,23 @@ function MyProjectsComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {combinedSchedule.map(item => (
+                        {manualEntries.map(item => (
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
                                 <TableCell>
                                   <Select
                                     value={item.status}
-                                    onValueChange={(newStatus: any) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : handleStatusChange(item as Task, newStatus)}
-                                    disabled={!canEdit || item.status === 'pending-approval'}
+                                    onValueChange={(val: ManualEntry['status']) => handleManualEntryChange(item.id, 'status', val)}
+                                    disabled={!canEdit}
                                   >
                                     <SelectTrigger className="w-[180px]">
-                                      <StatusBadge status={item.status as Task['status']} />
+                                      <StatusBadge status={item.status} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="not-started">Not Started</SelectItem>
-                                      <SelectItem value="in-progress">In Progress</SelectItem>
-                                      <SelectItem value="completed">Completed</SelectItem>
                                       <SelectItem value="Not Started">Not Started</SelectItem>
                                       <SelectItem value="In Progress">In Progress</SelectItem>
                                       <SelectItem value="Completed">Completed</SelectItem>
-                                      {item.status === 'pending-approval' && <SelectItem value="pending-approval">Pending Approval</SelectItem>}
                                     </SelectContent>
                                   </Select>
                                 </TableCell>
@@ -531,23 +527,18 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => item.isManual ? openEditDialog(item as ManualEntry) : openViewDialog(item as Task)}>
+                                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                             <Eye className="h-4 w-4"/>
                                         </Button>
-                                        {item.isManual && canEdit && (
+                                        {canEdit && (
+                                          <>
                                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>
-                                        )}
-                                        {canEdit && (item.isManual || isAdmin) && (
-                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as any)}>
+                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
-                                        )}
-                                        {!item.isManual && canEdit && (
-                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}>
-                                                <Upload className="h-4 w-4" />
-                                            </Button>
+                                          </>
                                         )}
                                     </div>
                                 </TableCell>
