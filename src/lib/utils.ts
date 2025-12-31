@@ -72,6 +72,7 @@ const fileNameToUrlMap: Record<string, string> = {
   "Uploaded File": "files-record",
   "Daily Work Report": "daily-report",
   "Leave Request Form": "leave-application",
+  "Leave Application": "leave-application",
 };
 
 export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashboard' | 'employee-dashboard'): string | null {
