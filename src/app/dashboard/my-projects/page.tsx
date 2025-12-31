@@ -89,6 +89,7 @@ function MyProjectsComponent() {
   const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -368,6 +369,12 @@ function MyProjectsComponent() {
             <StatCard title="In Progress" value={projectStats.inProgress} icon={<Clock className="h-6 w-6" />} color="bg-blue-500 text-white" />
             <StatCard title="Not Started" value={projectStats.notStarted} icon={<XCircle className="h-6 w-6" />} color="bg-red-500 text-white" />
         </div>
+        
+        <div className="flex justify-end">
+            <Button onClick={() => setIsReportDialogOpen(true)}>
+                <Eye className="mr-2 h-4 w-4" /> View Full Report
+            </Button>
+        </div>
 
         <Card>
             <CardHeader>
@@ -479,9 +486,6 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
                                         {item.isManual && (
                                             <>
                                                 <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
@@ -577,20 +581,63 @@ function MyProjectsComponent() {
             </DialogContent>
         </Dialog>
 
-         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogContent>
+         <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+            <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle>Are you sure?</DialogTitle>
+                    <DialogTitle>My Project Schedule</DialogTitle>
                     <DialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName}".
+                        Employee: {displayUser.name}
                     </DialogDescription>
                 </DialogHeader>
+                 <div className="max-h-[60vh] overflow-y-auto p-1">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Detail</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {combinedSchedule.map((item, index) => (
+                                <TableRow key={item.id || index}>
+                                    <TableCell>{item.projectName}</TableCell>
+                                    <TableCell>{item.detail}</TableCell>
+                                    <TableCell><StatusBadge status={item.status} /></TableCell>
+                                    <TableCell>{item.startDate}</TableCell>
+                                    <TableCell>{item.endDate}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                     <div className="mt-4">
+                        <h4 className="font-semibold">Remarks:</h4>
+                        <p className="text-sm text-muted-foreground">{remarks || 'No remarks provided.'}</p>
+                    </div>
+                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={confirmDeleteManualEntry}>Delete</Button>
+                     <Button onClick={handleDownloadSchedule}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete the entry "{deletingEntry?.projectName}".
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteManualEntry} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
     </div>
   );
@@ -606,3 +653,6 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+
+    

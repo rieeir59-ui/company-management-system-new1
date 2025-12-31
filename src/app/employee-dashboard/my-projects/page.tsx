@@ -89,6 +89,7 @@ function MyProjectsComponent() {
   const [submittingTask, setSubmittingTask] = useState<Task | null>(null);
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [editingEntry, setEditingEntry] = useState<ManualEntry | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -420,6 +421,12 @@ function MyProjectsComponent() {
             <StatCard title="Not Started" value={projectStats.notStarted} icon={<XCircle className="h-6 w-6" />} color="bg-red-500 text-white" />
         </div>
 
+        <div className="flex justify-end">
+            <Button onClick={() => setIsReportDialogOpen(true)}>
+                <Eye className="mr-2 h-4 w-4" /> View Full Report
+            </Button>
+        </div>
+
         <Card>
             <CardHeader>
                 <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
@@ -628,18 +635,61 @@ function MyProjectsComponent() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle>My Project Schedule</DialogTitle>
+                    <DialogDescription>
+                        Employee: {displayUser.name}
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="max-h-[60vh] overflow-y-auto p-1">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Detail</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {combinedSchedule.map((item, index) => (
+                                <TableRow key={item.id || index}>
+                                    <TableCell>{item.projectName}</TableCell>
+                                    <TableCell>{item.detail}</TableCell>
+                                    <TableCell><StatusBadge status={item.status} /></TableCell>
+                                    <TableCell>{item.startDate}</TableCell>
+                                    <TableCell>{item.endDate}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                     <div className="mt-4">
+                        <h4 className="font-semibold">Remarks:</h4>
+                        <p className="text-sm text-muted-foreground">{remarks || 'No remarks provided.'}</p>
+                    </div>
+                 </div>
+                <DialogFooter>
+                     <Button onClick={handleDownloadSchedule}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button variant="outline" onClick={() => setIsReportDialogOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
          <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete the entry "{deletingEntry?.projectName || taskToDelete?.taskName}".
+                        This will permanently delete the entry "{deletingEntry?.projectName}".
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={confirmDeleteManualEntry} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -658,3 +708,5 @@ export default function EmployeeDashboardPageWrapper() {
     </Suspense>
   )
 }
+
+    
