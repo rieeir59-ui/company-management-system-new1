@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
@@ -144,7 +145,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
         
-        // Specific renderer for "My Projects" items
         if(viewingRecord.fileName === 'My Projects' && viewingRecordItem) {
              return (
                 <div className="space-y-2 text-sm">
@@ -387,26 +387,33 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                     return (
                                         <AccordionItem value={fileName} key={fileName}>
                                             <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
-                                                <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords[0].data[0].items.length}</Badge></div>
+                                                <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords.length > 0 ? (fileRecords[0].data.find((d:any) => d.category === 'My Project Schedule')?.items.length || 0) : 0}</Badge></div>
                                             </AccordionTrigger>
                                             <AccordionContent className="pt-2">
                                                 <div className="border rounded-b-lg">
                                                     <Table>
                                                         <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Employee</TableHead><TableHead>Status</TableHead><TableHead>Start Date</TableHead><TableHead>End Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                                                         <TableBody>
-                                                            {fileRecords[0].data[0].items.map((item: any, index: number) => {
-                                                                const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
-                                                                return (
-                                                                    <TableRow key={`${fileRecords[0].id}-${index}`}>
-                                                                        <TableCell>{project.projectName}</TableCell>
-                                                                        <TableCell>{fileRecords[0].employeeName}</TableCell>
-                                                                        <TableCell><StatusBadge status={project.Status.toLowerCase().replace(' ', '-')} /></TableCell>
-                                                                        <TableCell>{project.Start}</TableCell>
-                                                                        <TableCell>{project.End}</TableCell>
-                                                                        <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => openViewDialog(fileRecords[0], project)} title="View"><Eye className="h-4 w-4" /></Button></TableCell>
-                                                                    </TableRow>
-                                                                )
-                                                            })}
+                                                            {fileRecords.map(record => (
+                                                                (record.data.find((d: any) => d.category === 'My Project Schedule')?.items || []).map((item: any, index: number) => {
+                                                                    const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
+                                                                    return (
+                                                                        <TableRow key={`${record.id}-${index}`}>
+                                                                            <TableCell>{project.projectName}</TableCell>
+                                                                            <TableCell>{record.employeeName}</TableCell>
+                                                                            <TableCell><StatusBadge status={project.Status.toLowerCase().replace(' ', '-')} /></TableCell>
+                                                                            <TableCell>{project.Start}</TableCell>
+                                                                            <TableCell>{project.End}</TableCell>
+                                                                            <TableCell className="text-right">
+                                                                                <Button variant="outline" size="sm" onClick={() => openViewDialog(record, project)}>
+                                                                                    <Eye className="h-4 w-4 mr-2" />
+                                                                                    View
+                                                                                </Button>
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )
+                                                                })
+                                                            ))}
                                                         </TableBody>
                                                     </Table>
                                                 </div>
@@ -491,4 +498,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
