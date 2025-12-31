@@ -298,7 +298,7 @@ export default function AssignTaskForm() {
                 <div className="flex justify-end gap-4 mt-8">
                         <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
                         <DialogTrigger asChild>
-                            <Button><Save className="mr-2 h-4 w-4" /> {recordId ? 'Update & Save' : 'Assign & Save'}</Button>
+                            <Button><Save className="mr-2 h-4 w-4" /> {recordId ? 'Update Record' : 'Assign & Save'}</Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
@@ -319,4 +319,3 @@ export default function AssignTaskForm() {
         </Card>
     );
 }
-
