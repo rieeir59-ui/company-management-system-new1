@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -196,7 +195,7 @@ const renderRecordContent = () => {
                                     <TableCell>{p.siteSurveyStart}</TableCell>
                                     <TableCell>{p.siteSurveyEnd}</TableCell>
                                     <TableCell>{p.contractStart}</TableCell>
-                                    <TableCell>{p.contractEnd}</TableCell>
+                                    <TableCell>{p.contactEnd}</TableCell>
                                     <TableCell>{p.headCountStart}</TableCell>
                                     <TableCell>{p.headCountEnd}</TableCell>
                                     <TableCell>{p.proposalStart}</TableCell>
@@ -231,19 +230,46 @@ const renderRecordContent = () => {
         )
     }
         
-        if(viewingRecord.fileName === 'My Projects' && viewingRecordItem) {
-             return (
-                <div className="space-y-2 text-sm">
-                    <p><strong>Project Name:</strong> {viewingRecordItem.projectName}</p>
-                    <p><strong>Detail:</strong> {viewingRecordItem.detail}</p>
-                    <p><strong>Status:</strong> <StatusBadge status={viewingRecordItem.status} /></p>
-                    <p><strong>Start Date:</strong> {viewingRecordItem.startDate || 'N/A'}</p>
-                    <p><strong>End Date:</strong> {viewingRecordItem.endDate || 'N/A'}</p>
-                    <p><strong>Employee:</strong> {viewingRecord.employeeName}</p>
-                    {viewingRecord.data.find((d: any) => d.category === 'My Project Schedule')?.remarks && <p><strong>Remarks:</strong> {viewingRecord.data.find((d: any) => d.category === 'My Project Schedule')?.remarks}</p>}
-                </div>
-            )
-        }
+    if(viewingRecord.fileName === 'My Projects') {
+        const scheduleData = viewingRecord.data.find((d: any) => d.category === 'My Project Schedule');
+        const projects = (scheduleData?.items || []).map((item: any) => {
+            const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
+            return project;
+        });
+
+         return (
+            <div className="space-y-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Project Name</TableHead>
+                            <TableHead>Detail</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {projects.map((p: any, index: number) => (
+                            <TableRow key={index}>
+                                <TableCell>{p.projectName}</TableCell>
+                                <TableCell>{p.Detail}</TableCell>
+                                <TableCell><StatusBadge status={p.Status?.toLowerCase().replace(' ', '-') || 'not-started'} /></TableCell>
+                                <TableCell>{p.Start}</TableCell>
+                                <TableCell>{p.End}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                {scheduleData?.remarks && (
+                    <div className="mt-4 pt-4 border-t">
+                        <h4 className="font-semibold">Remarks:</h4>
+                        <p className="text-sm text-muted-foreground">{scheduleData.remarks}</p>
+                    </div>
+                )}
+            </div>
+        )
+    }
     
         if (viewingRecord.fileName === 'Daily Work Report') {
             const entries = viewingRecord.data[0]?.items || [];
@@ -584,3 +610,4 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
