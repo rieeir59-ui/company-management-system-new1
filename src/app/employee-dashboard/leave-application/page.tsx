@@ -13,16 +13,15 @@ import { Send, Download, Save, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import { useFirebase } from '@/firebase/provider';
-import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Checkbox } from '@/components/ui/checkbox';
 import { differenceInDays, parseISO, isValid } from 'date-fns';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { Loader2 } from 'lucide-react';
 import { useRecords } from '@/context/RecordContext';
 import { useSearchParams } from 'next/navigation';
+import { generatePdfForRecord } from '@/lib/pdf-generator';
 
 export default function LeaveApplicationPage() {
   const image = PlaceHolderImages.find(p => p.id === 'site-visit');
@@ -34,17 +33,15 @@ export default function LeaveApplicationPage() {
   const recordId = searchParams.get('id');
 
   const [formState, setFormState] = useState({
-    employeeName: '',
-    employeeNumber: '',
-    department: '',
-    position: '',
-    status: '',
+    status: 'Full-time',
     leaveFrom: '',
     leaveTo: '',
     returnDate: '',
     reasonForRequested: [] as string[],
     reason: '',
   });
+  
+  const [recordData, setRecordData] = useState<any>(null);
 
   const [hrApprovalState, setHrApprovalState] = useState({
       approved: false,
@@ -60,23 +57,20 @@ export default function LeaveApplicationPage() {
   useEffect(() => {
     if (recordId) {
         const record = getRecordById(recordId);
+        setRecordData(record);
         if (record) {
-            const employeeInfo = record.data?.find((d:any) => d.category === 'Employee Information')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
             const leaveDetails = record.data?.find((d:any) => d.category === 'Leave Details')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
             const hrInfo = record.data?.find((d:any) => d.category === 'HR Approval')?.items.reduce((acc:any, item:any) => ({...acc, [item.label]: item.value}), {}) || {};
 
-            setFormState({
-                employeeName: employeeInfo['Employee Name'] || '',
-                employeeNumber: employeeInfo['Employee Number'] || '',
-                department: employeeInfo['Department'] || '',
-                position: employeeInfo['Position'] || '',
-                status: employeeInfo['Status'] || 'Full-time',
+            setFormState(prev => ({
+                ...prev,
+                status: record.data?.find((d:any) => d.category === 'Employee Information')?.items.find((i:any) => i.label === 'Status')?.value || 'Full-time',
                 leaveFrom: leaveDetails['Leave From'] || '',
                 leaveTo: leaveDetails['Leave To'] || '',
                 returnDate: leaveDetails['Return Date'] || '',
                 reasonForRequested: leaveDetails['Leave Type']?.split(', ') || [],
                 reason: leaveDetails['Reason'] || '',
-            });
+            }));
 
             setHrApprovalState({
                 approved: hrInfo['Approved'] === 'true',
@@ -101,11 +95,6 @@ export default function LeaveApplicationPage() {
     }
     return 0;
   }, [formState.leaveFrom, formState.leaveTo]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
-  };
   
   const handleStatusCheckboxChange = (status: 'Full-time' | 'Part-time') => {
     setFormState(prev => ({ ...prev, status }));
@@ -137,10 +126,10 @@ export default function LeaveApplicationPage() {
 
     const leaveRequestData = {
         employeeId: currentUser.uid,
-        employeeName: formState.employeeName,
-        employeeRecord: formState.employeeNumber,
-        department: formState.department,
-        position: formState.position,
+        employeeName: currentUser.name,
+        employeeRecord: currentUser.record,
+        department: currentUser.departments.join(', '),
+        position: currentUser.role,
         status: formState.status,
         leaveType: formState.reasonForRequested.join(', '),
         leaveFrom: formState.leaveFrom,
@@ -148,7 +137,7 @@ export default function LeaveApplicationPage() {
         returnDate: formState.returnDate,
         reason: formState.reason,
         totalDays,
-        requestStatus: 'pending', // 'pending', 'approved', 'denied'
+        requestStatus: 'pending', 
         requestedAt: serverTimestamp()
     };
     
@@ -157,7 +146,7 @@ export default function LeaveApplicationPage() {
         
         await addDoc(collection(firestore, 'notifications'), {
             type: 'leave_request',
-            message: `${formState.employeeName} has requested for ${totalDays} day(s) of leave.`,
+            message: `${currentUser.name} has requested for ${totalDays} day(s) of leave.`,
             relatedId: leaveDocRef.id,
             recipientRole: 'admin',
             status: 'unread',
@@ -170,7 +159,7 @@ export default function LeaveApplicationPage() {
         });
         
         setFormState({
-            employeeName: '', employeeNumber: '', department: '', position: '', status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
+            status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
         });
 
     } catch (serverError) {
@@ -192,15 +181,15 @@ export default function LeaveApplicationPage() {
     }
     const dataToSave = {
       fileName: 'Leave Request Form',
-      projectName: `Leave Request - ${formState.employeeName || currentUser.name} - ${formState.leaveFrom}`,
+      projectName: `Leave Request - ${currentUser.name} - ${formState.leaveFrom}`,
       data: [
         {
           category: 'Employee Information',
           items: [
-            { label: 'Employee Name', value: formState.employeeName },
-            { label: 'Employee Number', value: formState.employeeNumber },
-            { label: 'Department', value: formState.department },
-            { label: 'Position', value: formState.position },
+            { label: 'Employee Name', value: currentUser.name },
+            { label: 'Employee Number', value: currentUser.record },
+            { label: 'Department', value: currentUser.departments.join(', ') },
+            { label: 'Position', value: currentUser.role },
             { label: 'Status', value: formState.status },
           ]
         },
@@ -234,113 +223,6 @@ export default function LeaveApplicationPage() {
     }
   };
   
-  const handleDownloadPdf = () => {
-    const doc = new jsPDF();
-    let y = 20;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text('LEAVE REQUEST FORM', doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-    y += 15;
-
-    doc.setFontSize(10);
-    
-    const addSectionHeader = (text: string) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(text, 14, y);
-        y += 7;
-        doc.setFont('helvetica', 'normal');
-    };
-
-    const drawCheckbox = (x: number, y: number, checked: boolean) => {
-      doc.setLineWidth(0.2);
-      doc.rect(x, y - 3.5, 4, 4, checked ? 'F' : 'S');
-    };
-    
-    addSectionHeader('Employee to Complete');
-    (doc as any).autoTable({
-        startY: y, theme: 'grid', showHead: false,
-        body: [
-            [`Employee Name: ${formState.employeeName || ''}`, `Employee Number: ${formState.employeeNumber || ''}`],
-            [`Department: ${formState.department || ''}`, `Position: ${formState.position}`],
-        ]
-    });
-    y = (doc as any).autoTable.previous.finalY + 5;
-    
-    doc.text(`Status (select one):`, 14, y);
-    drawCheckbox(50, y, formState.status === 'Full-time');
-    doc.text('Full-time', 55, y);
-    drawCheckbox(80, y, formState.status === 'Part-time');
-    doc.text('Part-time', 85, y);
-    y += 10;
-    
-    const fromDate = formState.leaveFrom ? formState.leaveFrom : '( ____________ )';
-    const toDate = formState.leaveTo ? formState.leaveTo : '( ____________ )';
-    const returnDate = formState.returnDate ? formState.returnDate : '( ____________ )';
-    doc.text(`I hereby request a leave of absence effective from ${fromDate} to ${toDate}`, 14, y);
-    y += 7;
-    doc.text(`Total Days: ${totalDays}`, 14, y);
-    y += 7;
-    doc.text(`I expect to return to work on Date: ${returnDate}`, 14, y);
-    y += 10;
-    
-    addSectionHeader('Reason for Requested:');
-    drawCheckbox(14, y, formState.reasonForRequested.includes('Sick Leave'));
-    doc.text('SICK LEAVE', 20, y);
-    y += 7;
-    drawCheckbox(14, y, formState.reasonForRequested.includes('Casual Leave'));
-    doc.text('CASUAL LEAVE', 20, y);
-    y += 7;
-    drawCheckbox(14, y, formState.reasonForRequested.includes('Annual Leave'));
-    doc.text('ANNUAL LEAVE', 20, y);
-    y += 10;
-    
-    doc.text('REASON:', 14, y);
-    y += 5;
-    doc.setLineWidth(0.5);
-    doc.line(14, y, 196, y);
-    if (formState.reason) {
-        doc.text(formState.reason, 16, y - 1);
-    }
-    y += 15;
-    
-    addSectionHeader('HR Department Approval:');
-    drawCheckbox(14, y, hrApprovalState.approved);
-    doc.text('LEAVE APPROVED', 20, y);
-    y += 7;
-    drawCheckbox(14, y, hrApprovalState.denied);
-    doc.text('LEAVE DENIED', 20, y);
-    y += 10;
-    
-    doc.text('REASON:', 14, y);
-    y += 5;
-    doc.setLineWidth(0.5);
-    doc.line(14, y, 196, y);
-    if (hrApprovalState.reason) {
-        doc.text(hrApprovalState.reason, 16, y-1);
-    }
-    y += 10;
-    
-    doc.text('Date:', 14, y);
-    doc.line(25, y+1, 70, y+1);
-    y += 10;
-    
-    drawCheckbox(14, y, hrApprovalState.paid);
-    doc.text('PAID LEAVE', 20, y);
-    drawCheckbox(60, y, hrApprovalState.unpaid);
-    doc.text('UNPAID LEAVE', 66, y);
-    y += 20;
-
-    doc.text('COMPANY CEO: SIGNATURE', 14, y);
-    doc.text('DATE:', 150, y);
-    y += 5;
-    doc.line(14, y, 90, y);
-    doc.line(160, y, 196, y);
-
-    doc.save('leave-request.pdf');
-    toast({ title: 'Download Started', description: 'Your leave request PDF is being generated.' });
-  };
-  
   if (isRecordLoading) {
       return (
           <div className="flex justify-center items-center h-96">
@@ -366,24 +248,12 @@ export default function LeaveApplicationPage() {
         <form onSubmit={handleSendRequest}>
             <CardContent className="space-y-6">
                 <div className="p-4 border rounded-lg space-y-4">
-                    <h3 className="font-semibold text-lg text-primary">Employee to Complete</h3>
+                    <h3 className="font-semibold text-lg text-primary">Employee Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="employeeName">Employee Name</Label>
-                            <Input id="employeeName" name="employeeName" value={formState.employeeName} onChange={handleChange} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="employeeNumber">Employee Number</Label>
-                            <Input id="employeeNumber" name="employeeNumber" value={formState.employeeNumber} onChange={handleChange} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="department">Department</Label>
-                            <Input id="department" name="department" value={formState.department} onChange={handleChange} required />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="position">Position</Label>
-                            <Input id="position" name="position" value={formState.position} onChange={handleChange} required/>
-                        </div>
+                        <div><Label>Employee Name</Label><p className="font-semibold">{currentUser?.name}</p></div>
+                        <div><Label>Employee Number</Label><p className="font-semibold">{currentUser?.record}</p></div>
+                        <div><Label>Department</Label><p className="font-semibold">{currentUser?.departments.join(', ')}</p></div>
+                        <div><Label>Position</Label><p className="font-semibold">{currentUser?.role}</p></div>
                     </div>
                      <div className="space-y-2">
                         <Label>Status (select one)</Label>
@@ -398,17 +268,20 @@ export default function LeaveApplicationPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+                 <div className="p-4 border rounded-lg space-y-4">
+                    <h3 className="font-semibold text-lg text-primary">Leave Details</h3>
                      <p className="pt-4">I hereby request a leave of absence effective from:</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input id="leaveFrom" name="leaveFrom" type="date" value={formState.leaveFrom} onChange={handleChange} required />
-                        <div className="flex items-center gap-2"> to <Input id="leaveTo" name="leaveTo" type="date" value={formState.leaveTo} onChange={handleChange} required /></div>
+                        <Input id="leaveFrom" name="leaveFrom" type="date" value={formState.leaveFrom} onChange={(e) => setFormState(s=>({...s, leaveFrom: e.target.value}))} required />
+                        <div className="flex items-center gap-2"> to <Input id="leaveTo" name="leaveTo" type="date" value={formState.leaveTo} onChange={(e) => setFormState(s=>({...s, leaveTo: e.target.value}))} required /></div>
                     </div>
                     <div>
                         <p className="font-semibold">Total Days: {totalDays}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <Label htmlFor="returnDate">I expect to return to work on Date:</Label>
-                        <Input id="returnDate" name="returnDate" type="date" value={formState.returnDate} onChange={handleChange} required className="w-fit"/>
+                        <Input id="returnDate" name="returnDate" type="date" value={formState.returnDate} onChange={(e) => setFormState(s=>({...s, returnDate: e.target.value}))} required className="w-fit"/>
                     </div>
                 </div>
 
@@ -423,7 +296,7 @@ export default function LeaveApplicationPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="reason" className="font-semibold text-lg text-primary">REASON:</Label>
-                        <Textarea id="reason" name="reason" value={formState.reason} onChange={handleChange} required />
+                        <Textarea id="reason" name="reason" value={formState.reason} onChange={(e) => setFormState(s=>({...s, reason: e.target.value}))} required />
                     </div>
                 </div>
                  <div className="mt-8 p-4 border rounded-lg space-y-4">
@@ -459,7 +332,7 @@ export default function LeaveApplicationPage() {
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-lg">
                 <Button type="button" onClick={handleSave} variant="outline" ><Save className="mr-2 h-4 w-4" /> Save Record</Button>
                 <div className="flex gap-2">
-                    <Button type="button" onClick={handleDownloadPdf} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button type="button" onClick={() => recordData && generatePdfForRecord(recordData)} variant="outline" ><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (recordId ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />) }
                         {recordId ? 'Update Request' : 'Send Request'}
