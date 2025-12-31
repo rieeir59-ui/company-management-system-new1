@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye, Send } from "lucide-react";
+import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye, Send, User as UserIcon } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
 import {
@@ -53,7 +53,7 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
-    const { user: currentUser } = useCurrentUser();
+    const { user: currentUser, employees } = useCurrentUser();
     
     const [searchQuery, setSearchQuery] = useState('');
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
@@ -64,10 +64,11 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const mainCategories = useMemo(() => [
         { name: 'Banks', icon: Landmark, files: (bankTimelineCategories || []).map(b => `${b} Timeline`) },
-        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects', 'Leave Request Form'].includes(name)) },
-        { name: 'Assigned Tasks', icon: ClipboardCheck, files: ['Task Assignment', 'My Projects'] },
-        { name: 'Employee Records', icon: Users, files: ['Uploaded File', 'Daily Work Report', 'Leave Request Form'] }
+        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File'].includes(name)) },
+        { name: 'Employee Documents', icon: Users, files: ['My Projects', 'Task Assignment', 'Leave Request Form', 'Daily Work Report'] }
     ], [bankTimelineCategories]);
+    
+    const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
     const filteredRecords = useMemo(() => {
         let userRecords = records;
@@ -85,7 +86,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         
         return categoryRecords.filter(r => 
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+            r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.employeeName.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
 
@@ -98,6 +100,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             return acc;
         }, {} as Record<string, SavedRecord[]>);
     }, [filteredRecords]);
+
+     const recordsByEmployee = useMemo(() => {
+        if (activeCategory !== 'Employee Documents') return {};
+        return filteredRecords.reduce((acc, record) => {
+            const employeeName = record.employeeName || 'Unknown';
+            if (!acc[employeeName]) {
+                acc[employeeName] = [];
+            }
+            acc[employeeName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
+    }, [filteredRecords, activeCategory]);
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -121,7 +135,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const canEditOrDelete = (record: SavedRecord) => {
         if (!currentUser) return false;
-        const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
@@ -298,6 +311,50 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
                     ) : error ? (
                         <div className="text-destructive text-center">{error}</div>
+                    ) : activeCategory === 'Employee Documents' && isAdmin && !employeeOnly ? (
+                         <Accordion type="multiple" className="w-full space-y-2">
+                             {Object.entries(recordsByEmployee).sort(([nameA], [nameB]) => nameA.localeCompare(nameB)).map(([employeeName, records]) => {
+                                if (records.length === 0) return null;
+                                return (
+                                    <AccordionItem value={employeeName} key={employeeName}>
+                                        <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                            <div className="flex items-center gap-3">
+                                                <UserIcon className="h-5 w-5 text-primary" />
+                                                <span>{employeeName}</span>
+                                                <Badge variant="secondary">{records.length}</Badge>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2">
+                                            <div className="border rounded-b-lg">
+                                               <Table>
+                                                    <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>File Name</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                                    <TableBody>
+                                                        {records.map(record => (
+                                                            <TableRow key={record.id}>
+                                                                <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                <TableCell>{record.fileName}</TableCell>
+                                                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex gap-1 justify-end">
+                                                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                        {canEditOrDelete(record) && (
+                                                                            <>
+                                                                                <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                );
+                            })}
+                         </Accordion>
                     ) : filteredRecords.length > 0 ? (
                         <Accordion type="multiple" className="w-full space-y-2">
                              {Object.entries(recordsByFileName).map(([fileName, records]) => {
@@ -318,7 +375,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Project Name</TableHead>
-                                                            <TableHead>File Name</TableHead>
                                                             {!employeeOnly && <TableHead>Created By</TableHead>}
                                                             <TableHead>Date</TableHead>
                                                             <TableHead className="text-right">Actions</TableHead>
@@ -328,9 +384,6 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                         {records.map(record => (
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                                <TableCell>
-                                                                    {record.fileName === 'My Projects' ? `${record.fileName} (${record.employeeName})` : record.fileName}
-                                                                </TableCell>
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                                 <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                                 <TableCell className="text-right">
@@ -396,4 +449,3 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
-
