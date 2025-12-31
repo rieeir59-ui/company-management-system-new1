@@ -142,8 +142,94 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
-    const renderRecordContent = () => {
-        if (!viewingRecord) return null;
+const renderRecordContent = () => {
+    if (!viewingRecord) return null;
+
+    if (viewingRecord.fileName.includes('Timeline')) {
+        const projectsData = viewingRecord.data?.find((d: any) => d.category === 'Projects')?.items || [];
+        const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+        
+        const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+        const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+        const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+
+        return (
+            <div className="space-y-4">
+                <div className="overflow-x-auto">
+                    <Table className="text-xs">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sr.No</TableHead>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Area</TableHead>
+                                <TableHead>Holder</TableHead>
+                                <TableHead>Alloc. Date</TableHead>
+                                <TableHead colSpan={2}>Site Survey</TableHead>
+                                <TableHead colSpan={2}>Contract</TableHead>
+                                <TableHead colSpan={2}>Head Count</TableHead>
+                                <TableHead colSpan={2}>Proposal</TableHead>
+                                <TableHead colSpan={2}>3D's</TableHead>
+                                <TableHead colSpan={2}>Tender Arch</TableHead>
+                                <TableHead colSpan={2}>Tender MEP</TableHead>
+                                <TableHead colSpan={2}>BOQ</TableHead>
+                                <TableHead>Tender Status</TableHead>
+                                <TableHead>Comparative</TableHead>
+                                <TableHead colSpan={2}>Working Dwgs</TableHead>
+                                <TableHead colSpan={2}>Site Visit</TableHead>
+                                <TableHead>Final Bill</TableHead>
+                                <TableHead>Closure</TableHead>
+                            </TableRow>
+                            <TableRow>
+                                <TableHead colSpan={5}></TableHead>
+                                {[...Array(9)].flatMap((_, i) => [<TableHead key={`start-${i}`}>Start</TableHead>, <TableHead key={`end-${i}`}>End</TableHead>])}
+                                <TableHead colSpan={4}></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {projectsData.map((p: any, index: number) => (
+                                <TableRow key={p.id || index}>
+                                    <TableCell>{p.srNo}</TableCell>
+                                    <TableCell>{p.projectName}</TableCell>
+                                    <TableCell>{p.area}</TableCell>
+                                    <TableCell>{p.projectHolder}</TableCell>
+                                    <TableCell>{p.allocationDate}</TableCell>
+                                    <TableCell>{p.siteSurveyStart}</TableCell>
+                                    <TableCell>{p.siteSurveyEnd}</TableCell>
+                                    <TableCell>{p.contractStart}</TableCell>
+                                    <TableCell>{p.contractEnd}</TableCell>
+                                    <TableCell>{p.headCountStart}</TableCell>
+                                    <TableCell>{p.headCountEnd}</TableCell>
+                                    <TableCell>{p.proposalStart}</TableCell>
+                                    <TableCell>{p.proposalEnd}</TableCell>
+                                    <TableCell>{p.threedStart}</TableCell>
+                                    <TableCell>{p.threedEnd}</TableCell>
+                                    <TableCell>{p.tenderArchStart}</TableCell>
+                                    <TableCell>{p.tenderArchEnd}</TableCell>
+                                    <TableCell>{p.tenderMepStart}</TableCell>
+                                    <TableCell>{p.tenderMepEnd}</TableCell>
+                                    <TableCell>{p.boqStart}</TableCell>
+                                    <TableCell>{p.boqEnd}</TableCell>
+                                    <TableCell>{p.tenderStatus}</TableCell>
+                                    <TableCell>{p.comparative}</TableCell>
+                                    <TableCell>{p.workingDrawingsStart}</TableCell>
+                                    <TableCell>{p.workingDrawingsEnd}</TableCell>
+                                    <TableCell>{p.siteVisitStart}</TableCell>
+                                    <TableCell>{p.siteVisitEnd}</TableCell>
+                                    <TableCell>{p.finalBill}</TableCell>
+                                    <TableCell>{p.projectClosure}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <div className="mt-4 space-y-2">
+                    {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                    {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                    {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
+                </div>
+            </div>
+        )
+    }
         
         if(viewingRecord.fileName === 'My Projects' && viewingRecordItem) {
              return (
