@@ -26,7 +26,7 @@ const departments = [
 
 const DepartmentCard = ({ name, count, slug }: { name: string, count: number, slug: string }) => (
     <Link href={`/dashboard/department/${slug}`} key={name}>
-        <Card className="bg-card text-card-foreground border-2 border-primary/20 shadow-lg h-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/50 cursor-pointer">
+        <Card className="bg-black text-white border-2 border-primary shadow-lg h-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/50 cursor-pointer">
         <CardHeader>
             <CardTitle className="text-primary font-bold uppercase tracking-wider">{name}</CardTitle>
         </CardHeader>
