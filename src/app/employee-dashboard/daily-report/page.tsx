@@ -50,8 +50,6 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
-  addMonths,
-  subMonths,
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -110,34 +108,16 @@ export default function DailyReportPage() {
         return;
     }
     
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.uid);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.uid);
     
-    const loadedEntriesMap = new Map<number, ReportEntry>();
-
-    dailyReportRecords.forEach(record => {
-      if (record.data && Array.isArray(record.data)) {
-        record.data.forEach((dayData: any) => {
-          if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
-            dayData.items.forEach((item: any) => {
-              if (item && item.id) { // Ensure item and id exist
-                  loadedEntriesMap.set(item.id, {
-                    id: item.id,
-                    date: item.date,
-                    startTime: item.startTime,
-                    endTime: item.endTime,
-                    customerJobNumber: item.customerJobNumber,
-                    projectName: item.projectName,
-                    designType: item.designType,
-                    projectType: item.projectType,
-                    description: item.description,
-                  });
-              }
-            });
-          }
-        });
-      }
-    });
-    setEntries(Array.from(loadedEntriesMap.values()));
+    if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
+        const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
+        if (workEntries && Array.isArray(workEntries.items)) {
+            setEntries(workEntries.items);
+            return;
+        }
+    }
+    setEntries([]);
   }, [records, currentUser]);
 
   const dateInterval = useMemo(() => {
@@ -152,11 +132,11 @@ export default function DailyReportPage() {
           return eachDayOfInterval({ start: monthStart, end: endOfMonth(currentDate) });
         } else {
           const weekIndex = parseInt(selectedWeek, 10) - 1;
-          let weekStart = startOfWeek(addMonths(monthStart, 0), { weekStartsOn: 1 });
-          weekStart = new Date(weekStart.setDate(weekStart.getDate() + weekIndex * 7));
+          const monthStartDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+          const weekStart = new Date(monthStartDate.setDate(monthStartDate.getDate() + weekIndex * 7));
           
           if(weekStart.getMonth() !== currentDate.getMonth()){
-             weekStart = startOfMonth(currentDate);
+             return [];
           }
 
           let weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -178,13 +158,16 @@ export default function DailyReportPage() {
     return entries
         .filter(entry => {
             if(!entry.date) return false;
-            const entryDate = parseISO(entry.date);
-            return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+            try {
+                const entryDate = parseISO(entry.date);
+                if (!isValid(entryDate)) return false;
+                return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+            } catch (e) {
+                return false;
+            }
         })
         .reduce((acc, entry) => {
-          if (entry.date) {
-              (acc[entry.date] = acc[entry.date] || []).push(entry);
-          }
+          (acc[entry.date] = acc[entry.date] || []).push(entry);
           return acc;
       }, {} as Record<string, ReportEntry[]>);
   }, [entries, dateInterval]);
@@ -233,10 +216,9 @@ export default function DailyReportPage() {
   const handleSave = async (date: string) => {
     if (!currentUser) return;
     
-    // Consolidate all entries, not just for one day
     await addOrUpdateRecord({
         fileName: 'Daily Work Report',
-        projectName: `Daily Work Report for ${currentUser.name}`,
+        projectName: `Work Report for ${currentUser.name}`,
         data: [{
             category: 'Work Entries',
             items: entries,
@@ -248,7 +230,7 @@ export default function DailyReportPage() {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     doc.setFontSize(10);
     let yPos = 15;
 
@@ -288,19 +270,27 @@ export default function DailyReportPage() {
             { content: 'DESCRIPTION', styles: { halign: 'center', valign: 'middle' } },
             { content: 'TOTAL UNITS', styles: { halign: 'center', valign: 'middle' } },
         ]],
-        body: dateInterval.flatMap((day, dayIndex) => {
+        body: dateInterval.flatMap((day) => {
             const dayString = format(day, 'yyyy-MM-dd');
             const dayEntries = entriesByDate[dayString] || [];
-             const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+            const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                 const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                 return acc + (hours * 60) + minutes;
             }, 0);
             const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
             const totalMinutes = totalDayUnitsInMinutes % 60;
             
+            if (dayEntries.length === 0) {
+                 return [[
+                    format(day, 'EEEE').toUpperCase(),
+                    format(day, 'dd-MMM'),
+                    { content: 'No entries for this day', colSpan: 8, styles: { halign: 'center', textColor: 150 }}
+                ]];
+            }
+            
             const rows = dayEntries.map((entry, entryIndex) => [
-                entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
-                entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
+                entryIndex === 0 ? { content: format(day, 'EEEE').toUpperCase(), rowSpan: dayEntries.length + 1 } : '',
+                entryIndex === 0 ? { content: format(parseISO(entry.date), 'dd-MMM'), rowSpan: dayEntries.length + 1 } : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -309,15 +299,14 @@ export default function DailyReportPage() {
                 entry.projectType, 
                 entry.description,
                 calculateTotalUnits(entry.startTime, entry.endTime)
-            ]);
+            ].slice(entryIndex === 0 ? 0 : 2));
             
-            if (dayEntries.length > 0) {
-                 rows.push([
-                    { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
-                    { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
-                ]);
-            }
-            return rows.length > 0 ? rows : [['', format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
+            rows.push([
+                { content: 'TOTAL UNITS', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
+            ]);
+
+            return rows;
         }),
         theme: 'grid',
         headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
@@ -354,7 +343,6 @@ export default function DailyReportPage() {
   const filterByDateRange = () => setIsCustomRange(true);
   const filterByMonthWeek = () => {
       setIsCustomRange(false);
-      // Reset custom range dates if we switch back
       setDateFrom(undefined);
       setDateTo(undefined);
   };
@@ -450,19 +438,22 @@ export default function DailyReportPage() {
                             {dateInterval.map((day) => {
                                 const dayString = format(day, 'yyyy-MM-dd');
                                 const dayEntries = entriesByDate[dayString] || [];
-                                if (dayEntries.length === 0) return (
-                                    <TableRow key={dayString}>
-                                        <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
-                                        <TableCell>{format(day, 'dd-MMM')}</TableCell>
-                                        <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
-                                    </TableRow>
-                                );
-                                 const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                                const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                                     return acc + (hours * 60) + minutes;
                                 }, 0);
                                 const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
                                 const totalMinutes = totalDayUnitsInMinutes % 60;
+                                
+                                if (dayEntries.length === 0) {
+                                    return (
+                                        <TableRow key={dayString}>
+                                            <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
+                                            <TableCell>{format(day, 'dd-MMM')}</TableCell>
+                                            <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
+                                        </TableRow>
+                                    );
+                                }
                                 
                                 return (
                                     <React.Fragment key={dayString}>

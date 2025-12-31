@@ -41,7 +41,7 @@ export type SavedRecord = {
 type RecordContextType = {
   records: SavedRecord[];
   addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
-  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<void>;
+  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId'>) => Promise<void>;
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
@@ -151,7 +151,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>) => {
         if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
@@ -161,7 +161,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const q = query(
             recordsCollection, 
             where('fileName', '==', recordData.fileName), 
-            where('employeeId', '==', currentUser.uid)
+            where('employeeId', '==', recordData.employeeId)
         );
 
         const querySnapshot = await getDocs(q);
@@ -169,7 +169,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         if (!querySnapshot.empty) {
             // Update existing record
             const existingDoc = querySnapshot.docs[0];
-            await updateRecord(existingDoc.id, recordData);
+            await updateRecord(existingDoc.id, {
+                ...recordData,
+                data: recordData.data, // Make sure data is part of the update
+            });
         } else {
             // Add new record
             await addRecord(recordData);
@@ -210,7 +213,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const projectManualItems = useMemo(() => {
     const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
     return allFileNames
-        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Site Visit Proforma', 'Site Survey Report', 'Site Survey'].includes(name))
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File'].includes(name))
         .map(name => {
             const url = getFormUrlFromFileName(name, dashboardPrefix);
             return {

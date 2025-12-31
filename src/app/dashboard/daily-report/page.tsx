@@ -219,6 +219,10 @@ export default function DailyReportPage() {
   }, [dateInterval, entriesByDate]);
 
   const addEntry = (date: string) => {
+    if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only add entries to your own report."});
+        return;
+    }
     setEntries([
       ...entries,
       {
@@ -240,11 +244,19 @@ export default function DailyReportPage() {
   };
 
   const removeEntry = (id: number) => {
+       if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only remove entries from your own report."});
+        return;
+    }
       setEntries(entries.filter(entry => entry.id !== id));
   };
   
   const handleSave = async (date: string) => {
     if(!currentUser || !selectedEmployeeId) return;
+    if (!isAdmin && currentUser.uid !== selectedEmployeeId) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
+        return;
+    }
     
     await addOrUpdateRecord({
         employeeId: selectedEmployeeId,
@@ -646,3 +658,4 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
