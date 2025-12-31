@@ -37,7 +37,7 @@ export default function LeaveApplicationPageContent() {
     employeeNumber: '',
     department: '',
     position: '',
-    status: 'Full-time',
+    status: '',
     leaveFrom: '',
     leaveTo: '',
     returnDate: '',
@@ -73,7 +73,7 @@ export default function LeaveApplicationPageContent() {
                 employeeNumber: employeeInfo['Employee Number'] || '',
                 department: employeeInfo['Department'] || '',
                 position: employeeInfo['Position'] || '',
-                status: employeeInfo['Status'] || 'Full-time',
+                status: employeeInfo['Status'] || '',
                 leaveFrom: leaveDetails['Leave From'] || '',
                 leaveTo: leaveDetails['Leave To'] || '',
                 returnDate: leaveDetails['Return Date'] || '',
@@ -108,10 +108,6 @@ export default function LeaveApplicationPageContent() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormState(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleStatusCheckboxChange = (status: 'Full-time' | 'Part-time') => {
-    setFormState(prev => ({ ...prev, status }));
   };
 
   const handleReasonCheckboxChange = (reason: string, checked: boolean) => {
@@ -177,7 +173,7 @@ export default function LeaveApplicationPageContent() {
             employeeNumber: '',
             department: '',
             position: '',
-            status: 'Full-time', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
+            status: '', leaveFrom: '', leaveTo: '', returnDate: '', reasonForRequested: [], reason: ''
         });
 
     } catch (serverError) {
@@ -286,17 +282,8 @@ export default function LeaveApplicationPageContent() {
                         </div>
                     </div>
                      <div className="space-y-2">
-                        <Label>Status (select one)</Label>
-                         <div className="flex items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                               <Checkbox id="status_full" checked={formState.status === 'Full-time'} onCheckedChange={(checked) => checked && handleStatusCheckboxChange('Full-time')} />
-                                <Label htmlFor="status_full">Full-time</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="status_part" checked={formState.status === 'Part-time'} onCheckedChange={(checked) => checked && handleStatusCheckboxChange('Part-time')} />
-                                <Label htmlFor="status_part">Part-time</Label>
-                            </div>
-                        </div>
+                        <Label htmlFor="status">Status</Label>
+                        <Input id="status" name="status" value={formState.status} onChange={handleInputChange} placeholder="e.g. Full-time, Part-time" />
                     </div>
                 </div>
                  <div className="p-4 border rounded-lg space-y-4">
@@ -375,3 +362,4 @@ export default function LeaveApplicationPageContent() {
   );
 }
 
+    
