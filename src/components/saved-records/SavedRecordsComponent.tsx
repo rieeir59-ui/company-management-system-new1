@@ -40,276 +40,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { type ProjectRow } from '@/lib/projects-data';
+import { generatePdfForRecord } from '@/lib/pdf-generator';
 import { Compass } from 'lucide-react';
 import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
 
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
+  autoTable: (options: any) => void;
+  lastAutoTable: {
+    finalY: number;
+  };
 }
-
-const generatePdfForRecord = (record: SavedRecord) => {
-    const doc = new jsPDF({ orientation: 'portrait' }) as jsPDFWithAutoTable;
-    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-    let yPos = 15;
-    const primaryColor = [45, 95, 51];
-    const margin = 14;
-
-    const addDefaultHeader = (title: string, subtitle: string) => {
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text(title, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 8;
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.text(subtitle, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 12;
-
-        doc.setFontSize(9);
-        doc.text(`Record ID: ${record.id}`, 14, yPos);
-        doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
-        yPos += 10;
-        doc.setLineWidth(0.5);
-        doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
-    };
-
-    const addFooter = () => {
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
-    };
-    
-    if (record.fileName === 'Project Information') {
-        const dataSections = Array.isArray(record.data) ? record.data : [record.data];
-
-        const getSectionData = (category: string) => {
-            const section = dataSections.find((d: any) => d.category === category);
-            return section?.items || {};
-        };
-        
-        const info = getSectionData('Project Information');
-        const consultants = getSectionData('Consultants');
-        const requirements = getSectionData('Requirements');
-
-        addDefaultHeader(record.fileName, record.projectName);
-
-        const addSection = (title: string, data: Record<string, any>) => {
-             const entries = Object.entries(data).filter(([, value]) => value && typeof value !== 'boolean' && typeof value !== 'object' && value !== 'undefined' && value !== 'null' && !['specialConfidential', 'miscNotes'].includes(value as string));
-             if (entries.length === 0) return;
-
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(title, margin, yPos);
-            yPos += 8;
-            
-            doc.autoTable({
-                startY: yPos,
-                body: entries.map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), String(value)]),
-                theme: 'grid',
-                styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                head: [['Field', 'Value']],
-                showHead: false,
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
-                didDrawPage: (data) => {
-                  yPos = data.cursor?.y ?? 20;
-                }
-            });
-            yPos = doc.autoTable.previous.finalY + 10;
-        };
-
-        const addTextAreaSection = (title: string, content: string) => {
-            if (!content || !content.trim() || content === 'undefined') return null;
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
-            addSection(title, {'Details': content});
-        }
-        
-        addSection("Project Information", {
-            'project': info.project, 'address': info.address, 'projectNo': info.projectNo,
-            'preparedBy': info.preparedBy, 'preparedDate': info.preparedDate,
-        });
-
-        addSection("About Owner", {
-            'ownerFullName': info.ownerFullName, 'ownerOfficeAddress': info.ownerOfficeAddress,
-            'ownerResAddress': info.ownerResAddress, 'ownerOfficePhone': info.ownerOfficePhone,
-            'ownerResPhone': info.ownerResPhone,
-        });
-        
-        addSection("Owner's Project Representative", {
-            'repName': info.repName, 'repOfficeAddress': info.repOfficeAddress,
-            'repResAddress': info.repResAddress, 'repOfficePhone': info.repOfficePhone,
-            'repResPhone': info.repResPhone,
-        });
-
-        if(yPos > 200) {doc.addPage(); yPos = 20;}
-
-        if (consultants && Object.keys(consultants).length > 0) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text("Consultants", margin, yPos);
-            yPos += 8;
-            doc.autoTable({
-                startY: yPos,
-                head: [['Type', 'Within Fee', 'Additional Fee', 'By Architect', 'By Owner']],
-                body: Object.entries(consultants).map(([type, values]: [string, any]) => [type, values.withinFee, values.additionalFee, values.architect, values.owner]),
-                theme: 'grid',
-                headStyles: { fillColor: primaryColor }
-            });
-            yPos = doc.autoTable.previous.finalY + 10;
-        }
-        
-        if(yPos > 200) {doc.addPage(); yPos = 20;}
-        
-        if (requirements && Object.keys(requirements).length > 0) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text("Requirements", margin, yPos);
-            yPos += 8;
-            doc.autoTable({
-                startY: yPos,
-                head: [['Description', 'Nos.', 'Remarks']],
-                body: Object.entries(requirements).map(([req, values]: [string, any]) => [req, values.nos, values.remarks]),
-                theme: 'grid',
-                headStyles: { fillColor: primaryColor }
-            });
-            yPos = doc.autoTable.previous.finalY + 10;
-        }
-
-        addTextAreaSection('Special Confidential Requirements', info.specialConfidential);
-        addTextAreaSection('Miscellaneous Notes', info.miscNotes);
-
-    } else if (record.fileName === 'Daily Work Report') {
-        addDefaultHeader(record.fileName, record.projectName);
-
-        const entries = record.data[0]?.items || [];
-        if (!Array.isArray(entries)) {
-            doc.text('Could not display record data.', 14, yPos);
-        } else {
-            const calculateTotalUnits = (startTime: string, endTime: string): string => {
-                if (!startTime || !endTime) return '0:00';
-                const start = new Date(`1970-01-01T${startTime}`);
-                const end = new Date(`1970-01-01T${endTime}`);
-                if (!isValid(start) || !isValid(end) || end < start) return '0:00';
-                const diff = differenceInMinutes(end, start);
-                const hours = Math.floor(diff / 60);
-                const minutes = diff % 60;
-                return `${hours}:${String(minutes).padStart(2, '0')}`;
-            };
-    
-            const entriesByDate = entries.reduce((acc, entry) => {
-                if (entry.date) {
-                    (acc[entry.date] = acc[entry.date] || []).push(entry);
-                }
-                return acc;
-            }, {} as Record<string, typeof entries>);
-    
-            const sortedDates = Object.keys(entriesByDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
-
-            sortedDates.forEach(date => {
-                if (yPos > pageHeight - 60) { doc.addPage(); yPos = 20; }
-                
-                const body = entriesByDate[date].map(entry => [
-                    format(parseISO(entry.date), 'EEEE'),
-                    format(parseISO(entry.date), 'dd-MMM'),
-                    entry.startTime, 
-                    entry.endTime,
-                    entry.customerJobNumber,
-                    entry.projectName,
-                    entry.designType,
-                    entry.projectType,
-                    entry.description,
-                    calculateTotalUnits(entry.startTime, entry.endTime)
-                ]);
-
-                doc.autoTable({
-                    startY: yPos,
-                    head: [['DAY', 'DATE', 'START', 'END', 'CUSTOMER JOB', 'PROJECT NAME', 'DESIGN TYPE', 'PROJECT TYPE', 'DESCRIPTION', 'TOTAL UNITS']],
-                    body: body,
-                    theme: 'grid',
-                    headStyles: { fillColor: [240, 240, 240], textColor: 0, fontSize: 8 },
-                    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' }
-                });
-                yPos = doc.autoTable.previous.finalY + 10;
-
-                const dayTotalMinutes = entriesByDate[date].reduce((acc: number, entry: any) => {
-                    const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
-                    return acc + (hours * 60) + minutes;
-                }, 0);
-                const totalHours = Math.floor(dayTotalMinutes / 60);
-                const totalMinutes = dayTotalMinutes % 60;
-                
-                doc.setFont('helvetica', 'bold');
-                doc.text(`TOTAL UNITS: ${totalHours}:${String(totalMinutes).padStart(2, '0')}`, pageWidth - margin, yPos, {align: 'right'});
-                yPos += 15;
-            });
-        }
-    } else {
-        addDefaultHeader(record.fileName, record.projectName);
-        
-        const dataSections = Array.isArray(record.data) ? record.data : [record.data];
-
-        dataSections.forEach((section: any) => {
-            if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return;
-
-            if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.text(section.category, 14, yPos);
-            yPos += 8;
-            doc.setTextColor(0,0,0);
-
-            let firstItem = section.items[0];
-            if (typeof firstItem === 'string') {
-                try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
-            }
-            
-            const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
-            
-            if (isTable) {
-                const headers = Object.keys(firstItem).filter(key => key !== 'id');
-                const body = section.items.map((item: any) => {
-                    let parsedItem = item;
-                    if(typeof item === 'string') try {parsedItem = JSON.parse(item)} catch(e){return headers.map(() => '');}
-                    return headers.map(header => String(parsedItem[header] ?? ''));
-                });
-                doc.autoTable({
-                    startY: yPos,
-                    head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
-                    body: body,
-                    theme: 'grid',
-                    styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                    headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
-                });
-            } else {
-                 const body = section.items.map((item: any) => {
-                    if (typeof item === 'object' && item.label) return [item.label, String(item.value)];
-                    if (typeof item === 'string') {
-                        const parts = item.split(/:(.*)/s);
-                        return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                    }
-                    return [JSON.stringify(item), ''];
-                });
-                doc.autoTable({ startY: yPos, body: body, theme: 'plain', styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: 'bold' } } });
-            }
-            yPos = doc.autoTable.previous.finalY + 10;
-        });
-    }
-
-    addFooter();
-    doc.save(`${record.projectName}_${record.fileName}.pdf`);
-};
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
@@ -588,7 +328,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                                         {records.map(record => (
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
-                                                                <TableCell>{record.fileName}</TableCell>
+                                                                <TableCell>
+                                                                    {record.fileName === 'My Projects' ? `${record.fileName} (${record.employeeName})` : record.fileName}
+                                                                </TableCell>
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                                 <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                                 <TableCell className="text-right">
@@ -654,3 +396,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
