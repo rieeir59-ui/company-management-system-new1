@@ -19,6 +19,8 @@ import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
+import { addDays, subDays, differenceInDays } from 'date-fns';
+
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
 
@@ -55,7 +57,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [editingRowId, setEditingRowId] = useState<number | null>(null);
 
     const handleGenerateTimeline = async () => {
         if (!genProjectName || !genArea) {
@@ -125,13 +126,37 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
-        setProjectRows(projectRows.map(row => row.id === id ? { ...row, [field]: value } : row));
+        setProjectRows(currentTasks => {
+            const newTasks = [...currentTasks];
+            const taskIndex = newTasks.findIndex(t => t.id === id);
+            if (taskIndex === -1) return currentTasks;
+
+            const updatedTask = { ...newTasks[taskIndex], [field]: value };
+
+            if (field === 'duration' || field === 'start') {
+                const duration = parseInt(updatedTask.duration, 10);
+                const start = updatedTask.start ? parseISO(updatedTask.start) : null;
+                if (!isNaN(duration) && start && isValid(start)) {
+                    updatedTask.finish = format(addDays(start, duration), 'yyyy-MM-dd');
+                }
+            } else if (field === 'finish') {
+                const start = updatedTask.start ? parseISO(updatedTask.start) : null;
+                const finish = updatedTask.finish ? parseISO(updatedTask.finish) : null;
+                if (start && finish && isValid(start) && isValid(finish)) {
+                     const diff = differenceInDays(finish, start);
+                     updatedTask.duration = diff >= 0 ? String(diff) : '0';
+                }
+            }
+            
+            newTasks[taskIndex] = updatedTask;
+            return newTasks;
+        });
     };
     
     const DateInput = ({ value, onChange }: { value: string, onChange: (value: string) => void}) => {
         let dateValue: Date | undefined = undefined;
         let displayValue: string = '';
-
+    
         if (value && isValid(parseISO(value))) {
             dateValue = parseISO(value);
             displayValue = format(dateValue, "dd-MMM-yy");
@@ -175,7 +200,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
         }]);
-        setEditingRowId(newId);
     };
     
     const removeProjectRow = (id: number) => {
@@ -193,7 +217,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
-        setEditingRowId(null);
+        toast({ title: 'Saved', description: `Timeline for ${formattedBankName} has been saved.` });
     };
 
     const handleDownload = () => {
@@ -311,7 +335,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <table className="w-full border-collapse text-xs">
                         <thead className="sticky top-0 bg-primary/20 z-10">
                             <tr>
-                                {tableHeaders.map((header, index) => (
+                                {tableHeaders.map((header) => (
                                      <th key={header} className="border p-1 align-bottom" colSpan={['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header) ? 2 : 1} rowSpan={['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header) ? 1 : 2}>{header}</th>
                                 ))}
                             </tr>
@@ -327,10 +351,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <tbody>
                             {projectRows.map(row => (
                                 <tr key={row.id}>
-                                    <td className="border text-center p-1"><Input type="text" value={row.srNo} onChange={e => handleProjectChange(row.id, 'srNo', e.target.value)} disabled={editingRowId !== row.id} className="w-12 text-center" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} disabled={editingRowId !== row.id} className="min-w-[200px]" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} disabled={editingRowId !== row.id} className="w-32" /></td>
+                                    <td className="border text-center p-1"><Input type="text" value={row.srNo} onChange={e => handleProjectChange(row.id, 'srNo', e.target.value)} className="w-12 text-center" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
@@ -348,21 +372,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.tenderMepEnd} onChange={v => handleProjectChange(row.id, 'tenderMepEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
-                                    <td className="border p-1"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
-                                    <td className="border p-1"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
-                                            {editingRowId === row.id ? (
-                                                <Button variant="ghost" size="icon" onClick={() => { setEditingRowId(null); handleSave(); }}><Save className="h-4 w-4 text-green-600" /></Button>
-                                            ) : (
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingRowId(row.id)}><Edit className="h-4 w-4" /></Button>
-                                            )}
+                                            <Button variant="ghost" size="icon" onClick={handleSave}><Save className="h-4 w-4 text-green-600" /></Button>
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </div>
                                     </td>
