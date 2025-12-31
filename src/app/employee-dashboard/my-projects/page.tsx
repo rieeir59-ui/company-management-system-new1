@@ -372,13 +372,13 @@ function MyProjectsComponent() {
       doc.setFontSize(10);
       doc.text(`Employee: ${displayUser?.name}`, 14, 30);
 
-      const body = combinedSchedule.map(item => [item.projectName, item.detail, item.status, item.startDate, item.endDate]);
+      const body = combinedSchedule.map(item => [item.projectName, item.detail, item.taskDescription, item.status, item.startDate, item.endDate]);
 
       (doc as any).autoTable({
           startY: 42,
-          head: [['Project Name', 'Detail', 'Status', 'Start Date', 'End Date']],
+          head: [['Project Name', 'Detail', 'Description', 'Status', 'Start Date', 'End Date']],
           body: body,
-          headStyles: { fillColor: [22, 163, 74] },
+          headStyles: { fillColor: [22, 163, 74] }, // Tailwind's `bg-primary` color
       });
       
       let finalY = (doc as any).lastAutoTable.finalY + 10;
