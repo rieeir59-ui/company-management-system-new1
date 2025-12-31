@@ -129,6 +129,19 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const DateInput = ({ value, onChange }: { value: string, onChange: (value: string) => void}) => {
+        let dateValue: Date | undefined = undefined;
+        let displayValue: string = '';
+
+        if (value && isValid(parseISO(value))) {
+            dateValue = parseISO(value);
+            displayValue = format(dateValue, "dd-MMM-yy");
+        } else if (!value) {
+            displayValue = "Pick a date";
+        } else {
+            // Handle non-date strings gracefully
+            displayValue = value;
+        }
+
         return (
             <Popover>
                 <PopoverTrigger asChild>
@@ -137,13 +150,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         className={cn("w-full justify-start text-left font-normal text-xs h-8", !value && "text-muted-foreground")}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {value ? format(parseISO(value), "dd-MMM-yy") : <span>Pick a date</span>}
+                        {displayValue}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                     <Calendar
                         mode="single"
-                        selected={value ? parseISO(value) : undefined}
+                        selected={dateValue}
                         onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
                         initialFocus
                     />
@@ -318,13 +331,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} disabled={editingRowId !== row.id} className="min-w-[200px]" /></td>
                                     <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} disabled={editingRowId !== row.id} className="w-24" /></td>
                                     <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} disabled={editingRowId !== row.id} className="w-32" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} disabled={editingRowId !== row.id} /></td>
+                                    <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.contractStart} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.contactEnd} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.headCountStart} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.headCountEnd} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.contractStart || ''} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.contactEnd || ''} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
