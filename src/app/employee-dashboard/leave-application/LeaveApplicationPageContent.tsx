@@ -321,10 +321,10 @@ export default function LeaveApplicationPageContent() {
         yPos += 15;
         
         addSectionHeader('HR Department Approval:');
-        drawCheckbox(14, yPos, hrApprovalState.approved);
+        drawCheckbox(doc, 14, yPos, hrApprovalState.approved);
         doc.text('LEAVE APPROVED', 20, yPos);
         yPos += 7;
-        drawCheckbox(14, yPos, hrApprovalState.denied);
+        drawCheckbox(doc, 14, yPos, hrApprovalState.denied);
         doc.text('LEAVE DENIED', 20, yPos);
         yPos += 10;
         
@@ -340,9 +340,9 @@ export default function LeaveApplicationPageContent() {
         doc.text(`Date: ${hrApprovalState.approvalDate || '______________'}`, 14, yPos);
         yPos += 10;
         
-        drawCheckbox(14, yPos, hrApprovalState.paid);
+        drawCheckbox(doc, 14, yPos, hrApprovalState.paid);
         doc.text('PAID LEAVE', 20, yPos);
-        drawCheckbox(60, yPos, hrApprovalState.unpaid);
+        drawCheckbox(doc, 60, yPos, hrApprovalState.unpaid);
         doc.text('UNPAID LEAVE', 66, yPos);
         yPos += 20;
 

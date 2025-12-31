@@ -43,7 +43,7 @@ service cloud.firestore {
     // LEAVE REQUESTS collection
     match /leaveRequests/{leaveId} {
       allow read: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
-      allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
+      allow create: if (isLoggedIn() && request.resource.data.employeeId == request.auth.uid) || isAdmin();
       allow update, delete: if isAdmin();
     }
 
