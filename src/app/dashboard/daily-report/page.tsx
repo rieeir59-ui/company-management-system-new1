@@ -107,23 +107,23 @@ function DailyReportPageComponent() {
   const searchParams = useSearchParams();
   const employeeIdFromUrl = searchParams.get('employeeId');
   
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || undefined);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || currentUser?.uid);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
-  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
   
   const selectedEmployee = useMemo(() => {
-    return employees.find(e => e.uid === selectedEmployeeId) || null;
-  }, [selectedEmployeeId, employees]);
+    return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
+  }, [selectedEmployeeId, employees, currentUser]);
 
 
   useEffect(() => {
-    if(isAdmin && employees.length > 0 && !selectedEmployeeId) {
-        setSelectedEmployeeId(employees[0].uid);
-    } else if (!isAdmin && currentUser && !selectedEmployeeId) {
+    if (!employeeIdFromUrl && !isAdmin && currentUser) {
       setSelectedEmployeeId(currentUser.uid);
+    } else if (employeeIdFromUrl) {
+      setSelectedEmployeeId(employeeIdFromUrl);
     }
-  }, [isAdmin, employees, currentUser, selectedEmployeeId]);
+  }, [isAdmin, employees, currentUser, employeeIdFromUrl]);
 
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -137,12 +137,12 @@ function DailyReportPageComponent() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!selectedEmployeeId || !records) {
+    if (!selectedEmployee) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee?.record);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee.uid);
     
     if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
@@ -152,7 +152,7 @@ function DailyReportPageComponent() {
         }
     }
     setEntries([]);
-  }, [records, selectedEmployeeId, selectedEmployee]);
+  }, [records, selectedEmployee]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -267,7 +267,7 @@ function DailyReportPageComponent() {
     }
     
     await addOrUpdateRecord({
-        employeeId: employeeToSaveFor.record,
+        employeeId: employeeToSaveFor.uid,
         employeeName: employeeToSaveFor.name,
         fileName: 'Daily Work Report',
         projectName: `Work Report for ${employeeToSaveFor.name}`,
@@ -431,8 +431,8 @@ function DailyReportPageComponent() {
                             aria-expanded={comboboxOpen}
                             className="w-full justify-between mt-2"
                             >
-                            {selectedEmployeeId
-                                ? employees.find((employee) => employee.uid === selectedEmployeeId)?.name
+                            {selectedEmployee
+                                ? selectedEmployee.name
                                 : "Select an employee"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -512,7 +512,7 @@ function DailyReportPageComponent() {
                 <DialogHeader>
                     <DialogTitle>Weekly Work Report</DialogTitle>
                     <DialogDescription>
-                        Preview of the report for {selectedEmployee?.name || currentUser?.name}.
+                        Preview of the report for {selectedEmployee?.name}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto p-1">
@@ -521,8 +521,8 @@ function DailyReportPageComponent() {
                         <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
                     </div>
                      <div className="flex justify-between text-sm px-4 pb-2">
-                        <span><b>EMPLOYEE NAME:</b> {selectedEmployee?.name || currentUser?.name}</span>
-                        <span><b>EMPLOYEE POSITION:</b> {selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ')}</span>
+                        <span><b>EMPLOYEE NAME:</b> {selectedEmployee?.name}</span>
+                        <span><b>EMPLOYEE POSITION:</b> {selectedEmployee?.departments.join(', ')}</span>
                     </div>
                     <div className="flex justify-between text-sm px-4 pb-4">
                         <span><b>DATE FROM:</b> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</span>
