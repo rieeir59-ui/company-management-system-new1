@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Download, ArrowLeft, Save } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
-import { bankTimelineCategories, bankProjectsMap, type ProjectRow as BankProjectRow } from '@/lib/projects-data';
+import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,39 +41,37 @@ export default function RunningProjectsSummaryPage() {
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        // Find the single summary record from all records
-        const summaryRecord = records.find(r => r.fileName === 'Running Projects Summary');
+        const savedSummaryRecord = records.find(r => r.fileName === "Running Projects Summary");
         const savedRemarksMap: Record<string, string> = {};
 
-        // If a summary record exists, load its data
-        if (summaryRecord) {
-            const summaryCategory = summaryRecord.data?.find((d: any) => d.category === 'Summary');
-            if (summaryCategory && Array.isArray(summaryCategory.items)) {
-                summaryCategory.items.forEach((item: SummaryRow) => {
+        if (savedSummaryRecord && savedSummaryRecord.data) {
+            const summaryItems = savedSummaryRecord.data.find((d: any) => d.category === 'Summary')?.items || [];
+            if (Array.isArray(summaryItems)) {
+                summaryItems.forEach((item: SummaryRow) => {
                     savedRemarksMap[item.project] = item.remarks;
                 });
             }
-            const statusData = summaryRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
-            const savedOverallStatus = statusData.find((i: any) => i.label === 'Overall Status')?.value;
-            const savedRemarks = statusData.find((i: any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-            const savedDate = statusData.find((i: any) => i.label === 'Date')?.value;
             
-            if (savedOverallStatus) setOverallStatus(savedOverallStatus);
-            if (savedRemarks) setRemarks(savedRemarks);
-            if (savedDate) setRemarksDate(savedDate);
+            const statusAndRemarksItems = savedSummaryRecord.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+             if(Array.isArray(statusAndRemarksItems)) {
+                const savedOverallStatus = statusAndRemarksItems.find((i: any) => i.label === 'Overall Status')?.value;
+                const savedRemarks = statusAndRemarksItems.find((i: any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+                const savedDate = statusAndRemarksItems.find((i: any) => i.label === 'Date')?.value;
+                
+                if (savedOverallStatus) setOverallStatus(savedOverallStatus);
+                if (savedRemarks) setRemarks(savedRemarks);
+                if (savedDate) setRemarksDate(savedDate);
+             }
         }
-
-        // Generate the summary data for display, combining saved records with initial data
+        
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
             const bankRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
             let projectCount = 0;
 
             if (bankRecord && bankRecord.data) {
-                // If a saved record for the bank exists, count projects from it
                 const projects = bankRecord.data.find((d: any) => d.category === 'Projects')?.items || [];
                 projectCount = projects.length;
             } else {
-                // Otherwise, fall back to the initial data from the projects-data.ts file
                 projectCount = (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []).length;
             }
             
@@ -194,15 +191,10 @@ export default function RunningProjectsSummaryPage() {
                                 <TableCell>{row.srNo}</TableCell>
                                 <TableCell>{row.project}</TableCell>
                                 <TableCell>
-                                    <Input 
-                                        type="number"
-                                        value={row.count}
-                                        readOnly // The count is now derived, not editable.
-                                        className="w-24 border-0 bg-transparent"
-                                    />
+                                    <p className="px-3 py-2">{row.count}</p>
                                 </TableCell>
                                 <TableCell>
-                                    <Input 
+                                    <Textarea 
                                         value={row.remarks}
                                         onChange={(e) => handleRemarkChange(row.srNo, e.target.value)}
                                         placeholder="Add remarks..."
