@@ -199,8 +199,15 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const removeProjectRow = (id: number) => {
-        const updatedRows = projectRows.filter(row => row.id !== id);
+        let updatedRows = projectRows.filter(row => row.id !== id);
+        // Re-index the srNo
+        updatedRows = updatedRows.map((row, index) => ({
+            ...row,
+            srNo: String(index + 1)
+        }));
+
         setProjectRows(updatedRows);
+        
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
