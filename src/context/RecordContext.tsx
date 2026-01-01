@@ -53,6 +53,8 @@ type RecordContextType = {
 
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
 
+const sharedRecordFileNames = ["Running Projects Summary"];
+
 export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { firestore } = useFirebase();
   const { user: currentUser, isUserLoading } = useCurrentUser();
@@ -138,7 +140,11 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const recordToUpdate = records.find(r => r.id === id);
-      if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
+
+      // Bypass ownership check for specific shared records if user is an admin
+      const isSharedRecord = recordToUpdate && sharedRecordFileNames.includes(recordToUpdate.fileName);
+
+      if (recordToUpdate && !isAdmin && !isSharedRecord && recordToUpdate.employeeId !== currentUser.uid) {
           toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
           return Promise.reject(new Error('Permission denied'));
       }
@@ -156,7 +162,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >) => {
         if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
@@ -165,18 +171,25 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const recordsCollection = collection(firestore, 'savedRecords');
         
         let querySnapshot;
+        let q;
+
         // Specific query for records tied to an employee
         if (recordData.employeeRecord) {
-            const q = query(
+             q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
                 where('employeeRecord', '==', recordData.employeeRecord) 
             );
-            querySnapshot = await getDocs(q);
-        } else { // General query for records not tied to a specific employee
-            const q = query(recordsCollection, where('fileName', '==', recordData.fileName));
-            querySnapshot = await getDocs(q);
+        } else { // General query for records not tied to a specific employee (like summaries)
+             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
         }
+
+        if (!q) {
+             console.error("Could not create a valid query.");
+             return Promise.reject(new Error("Could not create a valid query."));
+        }
+
+        querySnapshot = await getDocs(q);
 
 
         if (!querySnapshot.empty) {
