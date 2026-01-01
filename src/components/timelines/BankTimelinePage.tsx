@@ -117,7 +117,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                     proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
                     tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
+                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
                 };
                 newRow = updateRowWithAITimeline(newRow);
                 setProjectRows(prevRows => [...prevRows, newRow]);
@@ -209,7 +209,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
         };
         const updatedRows = [...projectRows, newRow];
         setProjectRows(updatedRows);
@@ -250,18 +250,18 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.\nNo', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area\nin Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', span: 1 }, { content: 'Head Count / Requirement', span: 1 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count / Requirement', rowSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
-                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
+                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', rowSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
                 'Start', 'End',
                 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End',
             ]
         ];
         
@@ -276,7 +276,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
             p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
+            p.siteVisit, 
             p.finalBill, p.projectClosure
         ]);
 
@@ -338,7 +338,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "Contract", span: 1 }, { name: "Head Count / Requirement", span: 1 },
         { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
         { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
-        { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 2 },
+        { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 1 },
         { name: "Final Bill", span: 1 }, { name: "Project Closure", span: 1 }, { name: "Action", span: 1 }
     ];
 
@@ -414,8 +414,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
+                                    <td className="border p-1"><Input type="text" value={row.siteVisit || ''} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="min-w-[150px]" /></td>
                                     <td className="border p-1"><Input type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
