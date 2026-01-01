@@ -41,7 +41,7 @@ export type SavedRecord = {
 type RecordContextType = {
   records: SavedRecord[];
   addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
-  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId'>) => Promise<void>;
+  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' >) => Promise<void>;
   updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
@@ -87,8 +87,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         setError(null);
       },
       (err: FirestoreError) => {
+        if (err.code === 'permission-denied') {
+            setError('You do not have permission to view these records.');
+        } else {
+            setError('Failed to fetch records.');
+        }
         console.error('Error fetching records:', err);
-        setError('Failed to fetch records. You may not have permission.');
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'list' }));
       }
     );
@@ -170,12 +174,15 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             // Update existing record
             const existingDoc = querySnapshot.docs[0];
             await updateRecord(existingDoc.id, {
-                ...recordData,
-                data: recordData.data, // Make sure data is part of the update
+                projectName: recordData.projectName,
+                data: recordData.data,
             });
         } else {
             // Add new record
-            await addRecord(recordData);
+            await addRecord({
+                ...recordData,
+                employeeName: currentUser.name
+            });
         }
     },
     [firestore, currentUser, toast, addRecord, updateRecord]

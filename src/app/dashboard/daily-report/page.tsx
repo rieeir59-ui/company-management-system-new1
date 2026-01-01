@@ -253,21 +253,26 @@ export default function DailyReportPage() {
   };
   
   const handleSave = async (date: string) => {
-    if(!currentUser || !selectedEmployeeId) return;
-    if (!isAdmin && currentUser.uid !== selectedEmployeeId) {
+    if (!currentUser) return;
+    
+    const employeeToSaveFor = selectedEmployee || currentUser;
+    if (!employeeToSaveFor) return;
+
+    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
         toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
         return;
     }
     
     await addOrUpdateRecord({
-        employeeId: selectedEmployeeId,
+        employeeId: employeeToSaveFor.uid,
+        employeeName: employeeToSaveFor.name,
         fileName: 'Daily Work Report',
-        projectName: `Work Report for ${selectedEmployee?.name || currentUser.name}`,
+        projectName: `Work Report for ${employeeToSaveFor.name}`,
         data: [{
             category: 'Work Entries',
             items: entries,
         }],
-    });
+    } as any);
   };
   
   const handleDownload = () => {
