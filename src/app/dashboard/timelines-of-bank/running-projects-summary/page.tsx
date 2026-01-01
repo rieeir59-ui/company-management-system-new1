@@ -62,8 +62,8 @@ export default function RunningProjectsSummaryPage() {
     const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
-    const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
-    const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
+    const [overallStatus, setOverallStatus] = useState('');
+    const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
@@ -138,11 +138,8 @@ export default function RunningProjectsSummaryPage() {
                     ]
                 }
             ],
-        } as any);
+        } as any, showToast);
 
-        if (showToast) {
-            toast({ title: 'Saved', description: `Summary has been saved.` });
-        }
     }, [addOrUpdateRecord, isAdmin, toast, summaryData, overallStatus, remarks, remarksDate, currentUser]);
 
     const debouncedSave = useDebounce(handleSave, 2000);

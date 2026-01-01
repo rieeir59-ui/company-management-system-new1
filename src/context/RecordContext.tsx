@@ -42,8 +42,8 @@ export type SavedRecord = {
 type RecordContextType = {
   records: SavedRecord[];
   addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
-  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' >) => Promise<void>;
-  updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
+  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast?: boolean) => Promise<void>;
+  updateRecord: (id: string, updatedData: Partial<SavedRecord>, showToast?: boolean) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
   projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
@@ -133,9 +133,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   
   // Update record
   const updateRecord = useCallback(
-    async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>) => {
+    async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>, showToast = true) => {
       if (!firestore || !currentUser) {
-          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
+          if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
           return Promise.reject(new Error('User not authenticated'));
       }
       
@@ -144,14 +144,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       if (recordToUpdate && !isAdmin) {
           // If the user is not an admin, they can only update their own records.
           if (recordToUpdate.employeeId !== currentUser.uid) {
-              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
+              if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
               return Promise.reject(new Error('Permission denied'));
           }
       }
 
       try {
         await updateDoc(doc(firestore, 'savedRecords', id), updatedData);
-        toast({ title: 'Record Updated', description: 'Record successfully updated.' });
+        if(showToast) toast({ title: 'Record Updated', description: 'Record successfully updated.' });
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'update', requestResourceData: updatedData }));
@@ -162,9 +162,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
         if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
+            if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
         }
 
@@ -173,30 +173,29 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         let querySnapshot;
         let q;
 
-        if (recordData.employeeRecord) {
+        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName);
+
+        if (isSharedRecord) {
+            q = query(recordsCollection, where('fileName', '==', recordData.fileName));
+        } else if (currentUser.record) {
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
-                where('employeeRecord', '==', recordData.employeeRecord) 
+                where('employeeRecord', '==', currentUser.record) 
             );
         } else {
-             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
-        }
-
-        if (!q) {
              console.error("Could not create a valid query.");
              return Promise.reject(new Error("Could not create a valid query."));
         }
 
         querySnapshot = await getDocs(q);
 
-
         if (!querySnapshot.empty) {
             const existingDoc = querySnapshot.docs[0];
             await updateRecord(existingDoc.id, {
                 projectName: recordData.projectName,
                 data: recordData.data,
-            });
+            }, showToast);
         } else {
             await addRecord(recordData);
         }
@@ -272,3 +271,4 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
+
