@@ -142,7 +142,7 @@ function DailyReportPageComponent() {
         return;
     }
     
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployeeId);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee?.record);
     
     if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
@@ -152,7 +152,7 @@ function DailyReportPageComponent() {
         }
     }
     setEntries([]);
-  }, [records, selectedEmployeeId]);
+  }, [records, selectedEmployeeId, selectedEmployee]);
 
   const dateInterval = useMemo(() => {
     try {

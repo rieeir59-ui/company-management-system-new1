@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -103,12 +104,12 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!currentUser?.uid) {
+    if (!currentUser?.record) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.uid);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeRecord === currentUser.record);
     
     if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
@@ -217,13 +218,14 @@ export default function DailyReportPage() {
     if (!currentUser) return;
     
     await addOrUpdateRecord({
+        employeeId: currentUser.record,
         fileName: 'Daily Work Report',
         projectName: `Work Report for ${currentUser.name}`,
         data: [{
             category: 'Work Entries',
             items: entries,
         }],
-    });
+    } as any);
   };
   
   const handleDownload = () => {

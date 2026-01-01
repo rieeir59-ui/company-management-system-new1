@@ -155,7 +155,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeName' > & {employeeId: string}) => {
         if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
@@ -165,13 +165,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const q = query(
             recordsCollection, 
             where('fileName', '==', recordData.fileName),
-            where('employeeId', '==', currentUser.uid) // Match by user ID for user-specific records like Daily Report
+            where('employeeRecord', '==', recordData.employeeId) 
         );
 
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            // Update existing record
             const existingDoc = querySnapshot.docs[0];
             await updateRecord(existingDoc.id, {
                 projectName: recordData.projectName,
@@ -181,7 +180,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             // Add new record
             await addRecord({
                 ...recordData,
-                employeeName: currentUser.name
+                employeeId: recordData.employeeId, 
             });
         }
     },
