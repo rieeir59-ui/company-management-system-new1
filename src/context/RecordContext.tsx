@@ -36,6 +36,7 @@ export type SavedRecord = {
   projectName: string;
   createdAt: Date;
   data: any;
+  employeeRecord?: string;
 };
 
 type RecordContextType = {
@@ -155,20 +156,28 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeName' > & {employeeId: string}) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>) => {
         if (!firestore || !currentUser) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
         }
 
         const recordsCollection = collection(firestore, 'savedRecords');
-        const q = query(
-            recordsCollection, 
-            where('fileName', '==', recordData.fileName),
-            where('employeeRecord', '==', recordData.employeeId) 
-        );
+        
+        let querySnapshot;
+        // Specific query for records tied to an employee
+        if (recordData.employeeRecord) {
+            const q = query(
+                recordsCollection, 
+                where('fileName', '==', recordData.fileName),
+                where('employeeRecord', '==', recordData.employeeRecord) 
+            );
+            querySnapshot = await getDocs(q);
+        } else { // General query for records not tied to a specific employee
+            const q = query(recordsCollection, where('fileName', '==', recordData.fileName));
+            querySnapshot = await getDocs(q);
+        }
 
-        const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
             const existingDoc = querySnapshot.docs[0];
@@ -178,10 +187,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             });
         } else {
             // Add new record
-            await addRecord({
-                ...recordData,
-                employeeId: recordData.employeeId, 
-            });
+            await addRecord(recordData);
         }
     },
     [firestore, currentUser, toast, addRecord, updateRecord]
