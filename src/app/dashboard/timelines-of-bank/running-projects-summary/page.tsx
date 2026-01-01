@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,30 +30,41 @@ const projectOrder = bankTimelineCategories.map(name => ({
 }));
 
 // Debounce hook
-function useDebounce(callback: (...args: any[]) => void, delay: number) {
+function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  return (...args: any[]) => {
+  const debouncedCallback = useCallback((...args: Parameters<T>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
       callback(...args);
     }, delay);
-  };
+  }, [callback, delay]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback;
 }
+
 
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
     const { records, addOrUpdateRecord } = useRecords();
     const { user: currentUser } = useCurrentUser();
-    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
+    const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
-    
     const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
     const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const savedSummaryRecord = records.find(r => r.fileName === "Running Projects Summary");
@@ -100,26 +111,10 @@ export default function RunningProjectsSummaryPage() {
         });
         
         setSummaryData(data);
+        setIsInitialLoad(false);
     }, [records]);
     
-    const debouncedSave = useDebounce((data, status, rem, date) => {
-        handleSave(data, status, rem, date, false); // Don't show toast on auto-save
-    }, 1500);
-
-    useEffect(() => {
-        debouncedSave(summaryData, overallStatus, remarks, remarksDate);
-    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave]);
-
-
-    const totalProjects = useMemo(() => {
-        return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
-    }, [summaryData]);
-    
-    const handleRemarkChange = (srNo: number, value: string) => {
-        setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
-    };
-
-    const handleSave = (currentData = summaryData, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
+    const handleSave = useCallback((currentData = summaryData, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!isAdmin) {
              if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
              return;
@@ -147,6 +142,23 @@ export default function RunningProjectsSummaryPage() {
         if (showToast) {
             toast({ title: 'Saved', description: `Summary has been saved.` });
         }
+    }, [addOrUpdateRecord, isAdmin, toast, summaryData, overallStatus, remarks, remarksDate]);
+
+    const debouncedSave = useDebounce(handleSave, 2000);
+
+    useEffect(() => {
+        if (!isInitialLoad) {
+            debouncedSave(summaryData, overallStatus, remarks, remarksDate, false);
+        }
+    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad]);
+
+
+    const totalProjects = useMemo(() => {
+        return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
+    }, [summaryData]);
+    
+    const handleRemarkChange = (srNo: number, value: string) => {
+        setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
     };
 
     const handleDownload = () => {
@@ -274,3 +286,4 @@ export default function RunningProjectsSummaryPage() {
         </Card>
     );
 }
+
