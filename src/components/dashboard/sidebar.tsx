@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -46,6 +47,7 @@ const topLevelItems = [
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
     { href: '/dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
     { href: '/dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
+    { href: '/dashboard/leave-report', label: 'Leave Report', icon: ClipboardList, roles: ['admin', 'ceo', 'software-engineer', 'hr'] },
     { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
