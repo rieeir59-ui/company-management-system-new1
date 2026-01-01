@@ -70,6 +70,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         if (formattedBankName === 'Bank Alfalah') {
             return "Dolmen mall currency exchange Construction completed.\nMinor modifications are requested by the Bank on 12 Dec.2025, Will deliver on 25 Dec.2025.\nShahdin manzil branch revised layout shared.";
         }
+        if (['Bank Al Habib', 'UBL', 'DIB'].includes(formattedBankName)) {
+            return "PROPOSAL STAGE - No response from Bank.";
+        }
         return 'All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.';
     }, [formattedBankName]);
 
@@ -414,7 +417,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
+                    {isAdmin && <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>}
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
@@ -426,7 +429,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardContent className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="flex-1 w-full"><Input placeholder="Project Name" value={genProjectName} onChange={(e) => setGenProjectName(e.target.value)} /></div>
                         <div className="flex-1 w-full"><Input placeholder="Area in sft" value={genArea} onChange={(e) => setGenArea(e.target.value)} /></div>
-                        <Button onClick={handleGenerateTimeline} disabled={isGenerating} className="w-full md:w-auto">
+                        <Button onClick={handleGenerateTimeline} disabled={isGenerating || !isAdmin} className="w-full md:w-auto">
                             {isGenerating ? 'Generating...' : 'Generate Timeline'}
                         </Button>
                     </CardContent>
@@ -530,3 +533,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    
