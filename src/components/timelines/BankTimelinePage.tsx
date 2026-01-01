@@ -30,14 +30,24 @@ type DashboardType = 'dashboard' | 'employee-dashboard';
 function useDebounce(callback: (...args: any[]) => void, delay: number) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  return (...args: any[]) => {
+  const debouncedCallback = useCallback((...args: Parameters<typeof callback>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     timeoutRef.current = setTimeout(() => {
       callback(...args);
     }, delay);
-  };
+  }, [callback, delay]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback;
 }
 
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
