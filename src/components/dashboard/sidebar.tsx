@@ -45,7 +45,7 @@ import { useTasks } from '@/hooks/use-tasks';
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
-    { href: '/dashboard/daily-report', label: 'Daily Record', icon: ClipboardList },
+    { href: '/dashboard/daily-report', label: 'Daily Record', icon: ClipboardList, roles: ['admin', 'ceo', 'software-engineer'] },
     { href: '/dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/dashboard/leave-report', label: 'Leave Report', icon: ClipboardList, roles: ['admin', 'ceo', 'software-engineer', 'hr'] },
     { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },

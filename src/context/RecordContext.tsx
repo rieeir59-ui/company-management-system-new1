@@ -110,6 +110,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       const dataToSave = {
         ...recordData,
         employeeId: currentUser.uid,
+        employeeRecord: currentUser.record,
         employeeName: currentUser.name,
         createdAt: serverTimestamp(),
       };
@@ -163,7 +164,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const recordsCollection = collection(firestore, 'savedRecords');
         const q = query(
             recordsCollection, 
-            where('fileName', '==', recordData.fileName)
+            where('fileName', '==', recordData.fileName),
+            where('employeeId', '==', currentUser.uid) // Match by user ID for user-specific records like Daily Report
         );
 
         const querySnapshot = await getDocs(q);
