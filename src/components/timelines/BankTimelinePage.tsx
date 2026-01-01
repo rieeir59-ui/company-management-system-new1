@@ -199,25 +199,28 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const removeProjectRow = (id: number) => {
-        const updatedRows = projectRows
-            .filter(row => row.id !== id)
-            .map((row, index) => ({
-                ...row,
-                srNo: String(index + 1)
-            }));
-        
-        setProjectRows(updatedRows);
-        
-        addOrUpdateRecord({
-            fileName: `${formattedBankName} Timeline`,
-            projectName: `${formattedBankName} Projects`,
-            data: [
-                { category: 'Projects', items: updatedRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
-            ]
-        } as any);
+        setProjectRows(prevRows => {
+            const updatedRows = prevRows
+                .filter(row => row.id !== id)
+                .map((row, index) => ({
+                    ...row,
+                    srNo: String(index + 1)
+                }));
+            
+            // Immediately call save logic after state update
+            addOrUpdateRecord({
+                fileName: `${formattedBankName} Timeline`,
+                projectName: `${formattedBankName} Projects`,
+                data: [
+                    { category: 'Projects', items: updatedRows },
+                    { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                ]
+            } as any);
 
-        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
+            toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
+
+            return updatedRows;
+        });
     };
     
     const handleSave = () => {
@@ -249,9 +252,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date'
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End'
             ]
         ];
         
@@ -435,5 +438,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
-
-    
