@@ -44,6 +44,7 @@ import { generatePdfForRecord } from '@/lib/pdf-generator';
 import { Compass } from 'lucide-react';
 import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
 import { StatusBadge } from '../ui/badge';
+import jsPDF from 'jspdf';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -143,6 +144,46 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     
 const renderRecordContent = () => {
     if (!viewingRecord) return null;
+
+     if (viewingRecord.fileName === 'Running Projects Summary') {
+        const summaryData = viewingRecord.data?.find((d: any) => d.category === 'Summary')?.items || [];
+        const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+        
+        const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+        const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+        const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+        const totalProjects = summaryData.reduce((acc: number, curr: any) => acc + Number(curr.count || 0), 0);
+
+        return (
+            <div className="space-y-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Sr.No</TableHead>
+                            <TableHead>Projects</TableHead>
+                            <TableHead>Nos of project</TableHead>
+                            <TableHead>Remarks</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {summaryData.map((row: any) => (
+                            <TableRow key={row.srNo}>
+                                <TableCell>{row.srNo}</TableCell>
+                                <TableCell>{row.project}</TableCell>
+                                <TableCell>{row.count}</TableCell>
+                                <TableCell>{row.remarks}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <div className="mt-4 space-y-2">
+                    {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                    {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                    {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
+                </div>
+            </div>
+        )
+    }
 
     if (viewingRecord.fileName.includes('Timeline')) {
         const projectsData = viewingRecord.data?.find((d: any) => d.category === 'Projects')?.items || [];
@@ -605,3 +646,4 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
