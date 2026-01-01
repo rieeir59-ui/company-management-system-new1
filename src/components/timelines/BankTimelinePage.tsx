@@ -13,7 +13,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { bankProjectsMap, type ProjectRow, deleteProject, bankTimelineCategories } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -199,9 +199,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const removeProjectRow = (id: number) => {
-        setProjectRows(projectRows.filter(row => row.id !== id));
-        deleteProject(bankName, id);
-        toast({ title: 'Project Deleted', description: 'The project has been removed from the timeline.' });
+        const updatedRows = projectRows.filter(row => row.id !== id);
+        setProjectRows(updatedRows);
+        addOrUpdateRecord({
+            fileName: `${formattedBankName} Timeline`,
+            projectName: `${formattedBankName} Projects`,
+            data: [
+                { category: 'Projects', items: updatedRows },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        } as any);
+        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been saved.' });
     };
     
     const handleSave = () => {

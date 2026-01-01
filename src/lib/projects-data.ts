@@ -171,16 +171,3 @@ export const bankTimelineCategories = [
     "Commercial",
     "Residential"
 ];
-
-export const deleteProject = (category: string, projectId: number) => {
-    const key = category.toLowerCase().replace(/ /g, '-');
-    if (bankProjectsMap[key]) {
-      let projects = bankProjectsMap[key];
-      const projectIndex = projects.findIndex(p => p.id === projectId);
-      if (projectIndex > -1) {
-        projects.splice(projectIndex, 1);
-        return true;
-      }
-    }
-    return false;
-}
