@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -64,8 +65,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     const mainCategories = useMemo(() => [
-        { name: 'Banks', icon: Landmark, files: (bankTimelineCategories || []).map(b => `${b} Timeline`) },
-        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File'].includes(name)) },
+        { name: 'Banks', icon: Landmark, files: [...(bankTimelineCategories || []).map(b => `${b} Timeline`), "Running Projects Summary"] },
+        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name)) },
         { name: 'Employee Documents', icon: Users, files: ['My Projects', 'Task Assignment', 'Leave Request Form', 'Daily Work Report'] }
     ], [bankTimelineCategories]);
     
