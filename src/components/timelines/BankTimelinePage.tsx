@@ -73,6 +73,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         if (['Bank Al Habib', 'UBL', 'DIB'].includes(formattedBankName)) {
             return "PROPOSAL STAGE - No response from Bank.";
         }
+        if (formattedBankName === 'Commercial') {
+            return "Enertech Projects: Furniture BOQ & Lights BOQ in Progress.\nBestway Tower: EXTERIOR 3D IN REVISION.\nDIN Tower: Final payment RECEIVED.\nMr Nadeem Riaz Office: Everything has been sent. QUERIES ONLY.\nBAMSOL: Proposal shared and minor revisions in proposal.\nFrench Club, Mr Brad Office, Aghaz Housing: All drawings sent.";
+        }
         return 'All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.';
     }, [formattedBankName]);
 
@@ -112,9 +115,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     }, [bankName, initialData, records, formattedBankName, defaultOverallStatus]);
     
      const handleSave = useCallback((rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
-        if (!currentUser) {
-            if (showToast) toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to save.' });
-            return;
+        if (!isAdmin || !currentUser) {
+             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
+             return;
         }
 
         addOrUpdateRecord({
@@ -125,7 +128,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
             ]
         } as any, showToast);
-    }, [addOrUpdateRecord, toast, formattedBankName, currentUser]);
+
+    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser]);
 
     const debouncedSave = useDebounce((rows, status, rem, date) => {
         if (!currentUser) return;
@@ -533,5 +537,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
-
-    
