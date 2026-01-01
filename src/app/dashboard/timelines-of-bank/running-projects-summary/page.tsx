@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -10,11 +11,11 @@ import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useCurrentUser } from '@/context/UserContext';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface SummaryRow {
   srNo: number;
@@ -47,8 +48,11 @@ export default function RunningProjectsSummaryPage() {
         if (savedSummaryRecord && savedSummaryRecord.data) {
             const summaryItems = savedSummaryRecord.data.find((d: any) => d.category === 'Summary')?.items || [];
             if (Array.isArray(summaryItems)) {
-                summaryItems.forEach((item: SummaryRow) => {
-                    savedRemarksMap[item.project] = item.remarks;
+                 summaryItems.forEach((item: any) => { // Use 'any' to be flexible with old/new format
+                    const projectName = item.project || item.Projects; // Handle old property name
+                    if(projectName) {
+                        savedRemarksMap[projectName] = item.remarks || item.Remarks || '';
+                    }
                 });
             }
             
@@ -145,14 +149,14 @@ export default function RunningProjectsSummaryPage() {
         yPos += 7;
         doc.setFont('helvetica', 'normal');
         doc.text(doc.splitTextToSize(overallStatus, 180), 14, yPos);
-        yPos += doc.getTextDimensions(overallStatus, {maxWidth: 180}).h + 10;
+        yPos += doc.getTextDimensions(overallStatus, { maxWidth: 180 }).h + 10;
 
         doc.setFont('helvetica', 'bold');
         doc.text('Maam Isbah Remarks & Order:', 14, yPos);
         yPos += 7;
         doc.setFont('helvetica', 'normal');
         doc.text(doc.splitTextToSize(remarks, 180), 14, yPos);
-        yPos += doc.getTextDimensions(remarks, {maxWidth: 180}).h + 10;
+        yPos += doc.getTextDimensions(remarks, { maxWidth: 180 }).h + 10;
         
         doc.setFont('helvetica', 'bold');
         doc.text(`Date: ${remarksDate}`, 14, yPos);
@@ -178,27 +182,27 @@ export default function RunningProjectsSummaryPage() {
             <CardContent>
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[100px]">Sr.No</TableHead>
-                            <TableHead>Projects</TableHead>
-                            <TableHead>Nos of project</TableHead>
-                            <TableHead>Remarks</TableHead>
+                        <TableRow className="border-b border-gray-300">
+                            <TableHead className="w-[100px] text-lg font-semibold">Sr.No</TableHead>
+                            <TableHead className="text-lg font-semibold">Projects</TableHead>
+                            <TableHead className="text-lg font-semibold">Nos of project</TableHead>
+                            <TableHead className="text-lg font-semibold">Remarks</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {summaryData.map((row) => (
-                            <TableRow key={row.srNo}>
-                                <TableCell>{row.srNo}</TableCell>
-                                <TableCell>{row.project}</TableCell>
-                                <TableCell>
-                                    <p className="px-3 py-2">{row.count}</p>
+                            <TableRow key={row.srNo} className="border-0">
+                                <TableCell className="text-base">{row.srNo}</TableCell>
+                                <TableCell className="text-base">{row.project}</TableCell>
+                                <TableCell className="text-base">
+                                    {row.count}
                                 </TableCell>
                                 <TableCell>
                                     <Textarea 
                                         value={row.remarks}
                                         onChange={(e) => handleRemarkChange(row.srNo, e.target.value)}
                                         placeholder="Add remarks..."
-                                        className="border-0 focus-visible:ring-1"
+                                        className="bg-accent/30 border-gray-300 focus-visible:ring-primary h-10"
                                         disabled={!isAdmin}
                                     />
                                 </TableCell>
@@ -207,42 +211,45 @@ export default function RunningProjectsSummaryPage() {
                     </TableBody>
                 </Table>
             </CardContent>
-            <CardFooter className="flex-col items-start gap-4 pt-6">
+            <CardFooter className="flex-col items-start gap-4 pt-6 border-t mt-4">
                 <div className="w-full">
-                    <Label htmlFor="overall_status" className="font-bold">Overall Status</Label>
+                    <Label htmlFor="overall_status" className="font-bold text-lg">Overall Status</Label>
                     <Textarea 
                         id="overall_status"
                         value={overallStatus}
                         onChange={e => setOverallStatus(e.target.value)}
                         rows={4}
                         disabled={!isAdmin}
+                        className="mt-2"
                     />
                 </div>
                 <div className="w-full">
-                    <Label htmlFor="remarks" className="font-bold">Maam Isbah Remarks & Order</Label>
+                    <Label htmlFor="remarks" className="font-bold text-lg">Maam Isbah Remarks & Order</Label>
                     <Textarea 
                         id="remarks"
                         value={remarks}
                         onChange={e => setRemarks(e.target.value)}
                         rows={3}
                         disabled={!isAdmin}
+                        className="mt-2"
                     />
                 </div>
                  <div className="w-full">
-                    <Label htmlFor="remarks_date" className="font-bold">Date</Label>
+                    <Label htmlFor="remarks_date" className="font-bold text-lg">Date</Label>
                     <Input 
                         id="remarks_date"
                         type="date"
                         value={remarksDate}
                         onChange={e => setRemarksDate(e.target.value)}
-                        className="w-fit"
+                        className="w-fit mt-2"
                         disabled={!isAdmin}
                     />
                 </div>
-                <div className="w-full text-right font-bold text-lg p-2 bg-muted rounded-md">
+                <div className="w-full text-right font-bold text-xl p-3 bg-muted rounded-md mt-4">
                     Total Projects: {totalProjects}
                 </div>
             </CardFooter>
         </Card>
     );
 }
+
