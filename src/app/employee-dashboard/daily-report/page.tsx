@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import {
   Trash2,
   Calendar as CalendarIcon,
   Eye,
+  Loader2
 } from 'lucide-react';
 import {
     Dialog,
@@ -87,8 +88,7 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
     return `${hours}:${String(minutes).padStart(2, '0')}`;
 };
 
-
-export default function DailyReportPage() {
+function DailyReportPageComponent() {
   const { toast } = useToast();
   const { user: currentUser } = useCurrentUser();
   const { addOrUpdateRecord, records } = useRecords();
@@ -104,12 +104,12 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    if (!currentUser?.record) {
+    if (!currentUser?.uid) {
         setEntries([]);
         return;
     }
     
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeRecord === currentUser.record);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === currentUser.uid);
     
     if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
@@ -218,7 +218,7 @@ export default function DailyReportPage() {
     if (!currentUser) return;
     
     await addOrUpdateRecord({
-        employeeId: currentUser.record,
+        employeeId: currentUser.uid,
         fileName: 'Daily Work Report',
         projectName: `Work Report for ${currentUser.name}`,
         data: [{
@@ -563,4 +563,15 @@ export default function DailyReportPage() {
       </CardContent>
     </Card>
   );
+}
+
+export default function DailyReportPageWrapper() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-4">Loading Report...</span>
+          </div>}>
+          <DailyReportPageComponent />
+        </Suspense>
+      )
 }

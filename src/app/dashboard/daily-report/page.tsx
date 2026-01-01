@@ -118,7 +118,7 @@ function DailyReportPageComponent() {
 
 
   useEffect(() => {
-    if (!employeeIdFromUrl && !isAdmin && currentUser) {
+    if (!employeeIdFromUrl && isAdmin && currentUser) {
       setSelectedEmployeeId(currentUser.uid);
     } else if (employeeIdFromUrl) {
       setSelectedEmployeeId(employeeIdFromUrl);
