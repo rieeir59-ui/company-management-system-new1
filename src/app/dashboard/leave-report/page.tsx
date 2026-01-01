@@ -5,17 +5,27 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2, Check, X } from 'lucide-react';
+import { Download, Loader2, Check, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useLeaveRequests, type LeaveRequest } from '@/hooks/use-leave-requests';
 import { useFirebase } from '@/firebase/provider';
-import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -27,6 +37,9 @@ export default function LeaveReportPage() {
     const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
     const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d));
+
+    const [requestToDelete, setRequestToDelete] = useState<LeaveRequest | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const handleStatusChange = async (requestId: string, newStatus: 'approved' | 'denied') => {
         if (!firestore || !isAdmin) {
@@ -65,6 +78,30 @@ export default function LeaveReportPage() {
             }));
         }
     };
+    
+    const openDeleteDialog = (request: LeaveRequest) => {
+        setRequestToDelete(request);
+        setIsDeleteDialogOpen(true);
+    };
+    
+    const confirmDelete = () => {
+        if (!requestToDelete || !firestore || !isAdmin) return;
+        
+        deleteDoc(doc(firestore, 'leaveRequests', requestToDelete.id))
+            .then(() => {
+                toast({ title: 'Request Deleted', description: 'The leave request has been permanently deleted.' });
+                setIsDeleteDialogOpen(false);
+            })
+            .catch(error => {
+                console.error("Error deleting leave request:", error);
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: `leaveRequests/${requestToDelete.id}`,
+                    operation: 'delete'
+                }));
+                 setIsDeleteDialogOpen(false);
+            })
+    };
+
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
@@ -115,72 +152,93 @@ export default function LeaveReportPage() {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="font-headline text-3xl text-primary">Leave Application Report</CardTitle>
-                        <CardDescription>A summary of all employee leave requests.</CardDescription>
+        <>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="font-headline text-3xl text-primary">Leave Application Report</CardTitle>
+                            <CardDescription>A summary of all employee leave requests.</CardDescription>
+                        </div>
+                        <Button onClick={handleDownloadPdf} disabled={isLoading || leaveRequests.length === 0}>
+                            <Download className="mr-2 h-4 w-4" /> Download PDF
+                        </Button>
                     </div>
-                    <Button onClick={handleDownloadPdf} disabled={isLoading || leaveRequests.length === 0}>
-                        <Download className="mr-2 h-4 w-4" /> Download PDF
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                        <p className="ml-4">Loading leave records...</p>
-                    </div>
-                ) : leaveRequests.length === 0 ? (
-                    <div className="text-center py-10 text-muted-foreground">
-                        <p>No leave requests found.</p>
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Employee Name</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead>From</TableHead>
-                                <TableHead>To</TableHead>
-                                <TableHead>Total Days</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Status</TableHead>
-                                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {leaveRequests.map((request) => (
-                                <TableRow key={request.id}>
-                                    <TableCell className="font-medium">{request.employeeName}</TableCell>
-                                    <TableCell>{request.department}</TableCell>
-                                    <TableCell>{request.leaveFrom}</TableCell>
-                                    <TableCell>{request.leaveTo}</TableCell>
-                                    <TableCell>{request.totalDays}</TableCell>
-                                    <TableCell>{request.leaveType}</TableCell>
-                                    <TableCell>{getStatusBadge(request.requestStatus)}</TableCell>
-                                    {isAdmin && (
-                                        <TableCell className="text-right">
-                                            {request.requestStatus === 'pending' && (
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <p className="ml-4">Loading leave records...</p>
+                        </div>
+                    ) : leaveRequests.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <p>No leave requests found.</p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Employee Name</TableHead>
+                                    <TableHead>Department</TableHead>
+                                    <TableHead>From</TableHead>
+                                    <TableHead>To</TableHead>
+                                    <TableHead>Total Days</TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {leaveRequests.map((request) => (
+                                    <TableRow key={request.id}>
+                                        <TableCell className="font-medium">{request.employeeName}</TableCell>
+                                        <TableCell>{request.department}</TableCell>
+                                        <TableCell>{request.leaveFrom}</TableCell>
+                                        <TableCell>{request.leaveTo}</TableCell>
+                                        <TableCell>{request.totalDays}</TableCell>
+                                        <TableCell>{request.leaveType}</TableCell>
+                                        <TableCell>{getStatusBadge(request.requestStatus)}</TableCell>
+                                        {isAdmin && (
+                                            <TableCell className="text-right">
                                                 <div className="flex gap-2 justify-end">
-                                                    <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => handleStatusChange(request.id, 'approved')}>
-                                                        <Check className="mr-1 h-4 w-4" /> Approve
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleStatusChange(request.id, 'denied')}>
-                                                        <X className="mr-1 h-4 w-4" /> Deny
+                                                    {request.requestStatus === 'pending' && (
+                                                        <>
+                                                            <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => handleStatusChange(request.id, 'approved')}>
+                                                                <Check className="mr-1 h-4 w-4" /> Approve
+                                                            </Button>
+                                                            <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleStatusChange(request.id, 'denied')}>
+                                                                <X className="mr-1 h-4 w-4" /> Deny
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(request)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
                                                     </Button>
                                                 </div>
-                                            )}
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                )}
-            </CardContent>
-        </Card>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the leave request for "{requestToDelete?.employeeName}". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
