@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +70,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 type ReportEntry = {
   id: number;
@@ -98,13 +100,14 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
     return `${hours}:${String(minutes).padStart(2, '0')}`;
 };
 
-
-export default function DailyReportPage() {
+function DailyReportPageComponent() {
   const { toast } = useToast();
   const { user: currentUser, employees } = useCurrentUser();
   const { addOrUpdateRecord, records } = useRecords();
+  const searchParams = useSearchParams();
+  const employeeIdFromUrl = searchParams.get('employeeId');
   
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || undefined);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
@@ -264,7 +267,7 @@ export default function DailyReportPage() {
     }
     
     await addOrUpdateRecord({
-        employeeId: employeeToSaveFor.uid,
+        employeeId: employeeToSaveFor.record,
         employeeName: employeeToSaveFor.name,
         fileName: 'Daily Work Report',
         projectName: `Work Report for ${employeeToSaveFor.name}`,
@@ -668,4 +671,12 @@ export default function DailyReportPage() {
       </CardContent>
     </Card>
   );
+}
+
+export default function DailyReportPage() {
+    return (
+        <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin" />}>
+            <DailyReportPageComponent />
+        </Suspense>
+    )
 }
