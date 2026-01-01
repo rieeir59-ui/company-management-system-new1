@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -70,7 +71,11 @@ function Calendar({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => props.onSelect?.(undefined, new Date(), {})}
+            onClick={(e) => {
+              e.preventDefault();
+              props.onSelect?.(undefined, new Date(), { reason: 'input' });
+              if (onClear) onClear();
+            }}
           >
             Clear
           </Button>
