@@ -66,21 +66,22 @@ function Calendar({
           <ChevronRight className={cn("h-4 w-4", className)} {...props} />
         ),
       }}
-       footer={
-        <div className="mt-4 flex justify-end">
+      footer={
+        onClear && props.mode === 'single' ? (
+        <div className="mt-2 flex justify-end">
           <Button
             variant="ghost"
             size="sm"
             onClick={(e) => {
               e.preventDefault();
-              props.onSelect?.(undefined, new Date(), { reason: 'input' });
-              if (onClear) onClear();
+              onClear();
             }}
           >
             Clear
           </Button>
         </div>
-      }
+      ) : null
+    }
       {...props}
     />
   )
