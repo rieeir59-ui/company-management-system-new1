@@ -28,10 +28,12 @@ import { formatDistanceToNow } from 'date-fns';
 
 type Notification = {
   id: string;
-  type: 'leave_request';
+  type: 'leave_request' | 'leave_status';
   message: string;
   relatedId: string;
   status: 'read' | 'unread';
+  recipientRole?: 'admin';
+  recipientId?: string;
   createdAt: Timestamp;
 };
 
@@ -39,18 +41,32 @@ export function Notifications() {
   const { firestore } = useFirebase();
   const { user } = useCurrentUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const isAdmin = useMemo(() => user?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [user]);
+  const isAdmin = useMemo(() => user?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [user]);
 
   useEffect(() => {
-    if (!firestore || !isAdmin) return;
+    if (!firestore || !user) return;
 
+    let q;
     const notificationsRef = collection(firestore, 'notifications');
-    const q = query(
-      notificationsRef,
-      where('recipientRole', '==', 'admin'),
-      orderBy('createdAt', 'desc'),
-      limit(20)
-    );
+    
+    // Admins see admin-role notifications
+    if (isAdmin) {
+        q = query(
+            notificationsRef,
+            where('recipientRole', '==', 'admin'),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+        );
+    } 
+    // All users see notifications targeted to their UID
+    else {
+         q = query(
+            notificationsRef,
+            where('recipientId', '==', user.uid),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+        );
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedNotifications = snapshot.docs.map(doc => ({
@@ -61,7 +77,7 @@ export function Notifications() {
     });
 
     return () => unsubscribe();
-  }, [firestore, isAdmin]);
+  }, [firestore, user, isAdmin]);
 
   const unreadCount = useMemo(() => {
     return notifications.filter(n => n.status === 'unread').length;
@@ -78,7 +94,7 @@ export function Notifications() {
   };
 
 
-  if (!isAdmin) return null;
+  if (!user) return null;
 
   return (
     <Popover>

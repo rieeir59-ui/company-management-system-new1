@@ -5,11 +5,17 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useLeaveRequests, type LeaveRequest } from '@/hooks/use-leave-requests';
+import { useFirebase } from '@/firebase/provider';
+import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useCurrentUser } from '@/context/UserContext';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { Badge } from '@/components/ui/badge';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -18,6 +24,47 @@ interface jsPDFWithAutoTable extends jsPDF {
 export default function LeaveReportPage() {
     const { leaveRequests, isLoading } = useLeaveRequests();
     const { toast } = useToast();
+    const { firestore } = useFirebase();
+    const { user: currentUser } = useCurrentUser();
+    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d));
+
+    const handleStatusChange = async (requestId: string, newStatus: 'approved' | 'denied') => {
+        if (!firestore || !isAdmin) {
+            toast({ variant: 'destructive', title: 'Permission Denied' });
+            return;
+        }
+
+        const requestRef = doc(firestore, 'leaveRequests', requestId);
+        const request = leaveRequests.find(r => r.id === requestId);
+
+        try {
+            await updateDoc(requestRef, { requestStatus: newStatus });
+
+            // Send notification to the employee
+            if (request) {
+                 await addDoc(collection(firestore, 'notifications'), {
+                    type: 'leave_status',
+                    message: `Your leave request for ${request.leaveFrom} has been ${newStatus}.`,
+                    relatedId: requestId,
+                    recipientId: request.employeeId, // Target the specific employee
+                    status: 'unread',
+                    createdAt: serverTimestamp(),
+                });
+            }
+
+            toast({
+                title: `Request ${newStatus}`,
+                description: `The leave request has been ${newStatus}.`,
+            });
+        } catch (error) {
+            console.error("Error updating leave request:", error);
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `leaveRequests/${requestId}`,
+                operation: 'update',
+                requestResourceData: { requestStatus: newStatus }
+            }));
+        }
+    };
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
@@ -54,6 +101,19 @@ export default function LeaveReportPage() {
         toast({ title: 'Download Started', description: 'Your Leave Report PDF is being generated.' });
     };
 
+    const getStatusBadge = (status: LeaveRequest['requestStatus']) => {
+        switch (status) {
+            case 'approved':
+                return <Badge variant="default" className="bg-green-500">Approved</Badge>;
+            case 'denied':
+                return <Badge variant="destructive">Denied</Badge>;
+            case 'pending':
+                return <Badge variant="secondary">Pending</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -88,6 +148,7 @@ export default function LeaveReportPage() {
                                 <TableHead>Total Days</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Status</TableHead>
+                                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -99,7 +160,21 @@ export default function LeaveReportPage() {
                                     <TableCell>{request.leaveTo}</TableCell>
                                     <TableCell>{request.totalDays}</TableCell>
                                     <TableCell>{request.leaveType}</TableCell>
-                                    <TableCell>{request.requestStatus}</TableCell>
+                                    <TableCell>{getStatusBadge(request.requestStatus)}</TableCell>
+                                    {isAdmin && (
+                                        <TableCell className="text-right">
+                                            {request.requestStatus === 'pending' && (
+                                                <div className="flex gap-2 justify-end">
+                                                    <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50" onClick={() => handleStatusChange(request.id, 'approved')}>
+                                                        <Check className="mr-1 h-4 w-4" /> Approve
+                                                    </Button>
+                                                    <Button size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50" onClick={() => handleStatusChange(request.id, 'denied')}>
+                                                        <X className="mr-1 h-4 w-4" /> Deny
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>
