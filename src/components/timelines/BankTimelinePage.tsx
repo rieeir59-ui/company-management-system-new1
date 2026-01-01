@@ -319,7 +319,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const tableHeaders = [
         { name: "Sr.No", span: 1 }, { name: "Project Name", span: 1 }, { name: "Area in Sft", span: 1 },
         { name: "Project Holder", span: 1 }, { name: "Allocation Date / RFP", span: 1 }, { name: "Site Survey", span: 2 },
-        { name: "Contract", span: 2 }, { name: "Head Count / Requirement", span: 2 },
+        { name: "Contract", span: 1 }, { name: "Head Count / Requirement", span: 1 },
         { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
         { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
         { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 2 },
@@ -366,7 +366,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                             <tr className="bg-primary/10">
                                 {tableHeaders.flatMap(header => {
                                     if (header.span > 1) {
-                                        return [<th key={`${header.name}-start`} className="border p-1">Start Date</th>, <th key={`${header.name}-end`} className="border p-1">End Date</th>]
+                                        return [<th key={`${header.name}-start`} className="border p-1">Start</th>, <th key={`${header.name}-end`} className="border p-1">End</th>]
                                     }
                                     return [];
                                 })}
@@ -382,10 +382,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.contractStart || ''} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.contactEnd || ''} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
+                                    <td className="border p-1"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-32" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
