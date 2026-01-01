@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, PlusCircle, Trash2, Bot, ArrowLeft, Edit, CalendarIcon } from 'lucide-react';
+import { Save, Download, PlusCircle, Trash2, Bot, ArrowLeft, Edit, CalendarIcon, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -164,25 +164,40 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         }
 
         return (
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant={"outline"}
-                        className={cn("w-full justify-start text-left font-normal text-xs h-8", !value && "text-muted-foreground")}
+            <div className="relative">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn("w-full justify-start text-left font-normal text-xs h-8 pr-8", !value && "text-muted-foreground")}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {displayValue}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="single"
+                            selected={dateValue}
+                            onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                            initialFocus
+                        />
+                    </PopoverContent>
+                </Popover>
+                {value && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onChange('');
+                        }}
                     >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {displayValue}
+                        <X className="h-3 w-3 text-muted-foreground" />
                     </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Calendar
-                        mode="single"
-                        selected={dateValue}
-                        onSelect={(date) => onChange(date ? format(date, 'yyyy-MM-dd') : '')}
-                        initialFocus
-                    />
-                </PopoverContent>
-            </Popover>
+                )}
+            </div>
         )
     }
 
@@ -235,7 +250,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.\nNo', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area\nin Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count / Requirement', colSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', span: 1 }, { content: 'Head Count / Requirement', span: 1 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
@@ -243,17 +258,18 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
+                'Start', 'End',
+                'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End'
             ]
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, 
-            p.contractStart || '', p.contactEnd || '',
-            p.headCountStart || '', p.headCountEnd || '',
+            p.contract || '',
+            p.headCount || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd,
@@ -360,7 +376,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <thead className="sticky top-0 bg-primary/20 z-10">
                             <tr>
                                 {tableHeaders.map((header) => (
-                                     <th key={header.name} className="border p-1 align-bottom" colSpan={header.span} rowSpan={header.span === 2 ? 1 : 2}>{header.name}</th>
+                                     <th key={header.name} className="border p-1 align-bottom" colSpan={header.span} rowSpan={header.span > 1 ? 1 : 2}>{header.name}</th>
                                 ))}
                             </tr>
                             <tr className="bg-primary/10">
@@ -382,8 +398,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-32" /></td>
-                                    <td className="border p-1"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} className="w-32" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.contract || ''} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.headCount || ''} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
