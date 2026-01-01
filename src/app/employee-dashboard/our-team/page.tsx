@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +62,7 @@ export default function TeamPage() {
     const softwareEngineers = employeesByDepartment['software-engineer'] || [];
     const quantityManagement = employeesByDepartment['quantity-management'] || [];
     const visualizer = employeesByDepartment['3d-visualizer'] || [];
-    const drafting = employeesByDepartment['draftman'] || [];
+    const drafting = employeesByDepartment['draftpersons'] || [];
 
   return (
     <div className="space-y-12">
@@ -79,7 +80,7 @@ export default function TeamPage() {
                     <h2 className="text-3xl font-headline font-bold text-primary">Chief Executive Officer</h2>
                  </div>
                  <div className="flex justify-center">
-                    <div className="w-64"><TeamMemberCard name={ceo.name} role="CEO" /></div>
+                     <div className="w-64"><TeamMemberCard name={ceo.name} role="CEO" /></div>
                  </div>
             </div>
         )}
@@ -87,7 +88,7 @@ export default function TeamPage() {
         <div className="border-t border-dashed border-primary/50 my-8"></div>
 
         <div className="space-y-10">
-             <DepartmentSection title="Admin" icon={<Users className="w-5 h-5" />}>
+            <DepartmentSection title="Admin" icon={<Users className="w-5 h-5" />}>
                 {admin.map(e => <TeamMemberCard key={e.record} name={e.name} role="Admin" />)}
             </DepartmentSection>
 
@@ -127,7 +128,7 @@ export default function TeamPage() {
             </DepartmentSection>
 
             <DepartmentSection title="Drafting" icon={<Users className="w-5 h-5" />}>
-                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsman" />)}
+                {drafting.map(e => <TeamMemberCard key={e.record} name={e.name} role="Draftsperson" />)}
             </DepartmentSection>
         </div>
     </div>

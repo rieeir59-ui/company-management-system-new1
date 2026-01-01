@@ -307,27 +307,25 @@ function MyProjectsComponent() {
 
     const confirmDelete = () => {
         if (deletingEntry) {
-            removeManualEntry(deletingEntry.id);
-            setDeletingEntry(null);
+            setManualEntries(prev => prev.filter(e => e.id !== deletingEntry.id));
             toast({title: 'Entry Removed', description: 'Manual project entry has been removed.'});
         }
         if (taskToDelete && firestore) {
             if (!isAdmin) {
                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
-                setIsDeleteDialogOpen(false);
-                return;
+            } else {
+                 deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
+                    .then(() => {
+                        toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
+                    })
+                    .catch(serverError => {
+                        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskToDelete.id}`, operation: 'delete' }));
+                    });
             }
-             deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
-                .then(() => {
-                    toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
-                    setTaskToDelete(null);
-                })
-                .catch(serverError => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskToDelete.id}`, operation: 'delete' }));
-                    setTaskToDelete(null);
-                });
         }
         setIsDeleteDialogOpen(false);
+        setDeletingEntry(null);
+        setTaskToDelete(null);
     };
     
     
@@ -344,10 +342,6 @@ function MyProjectsComponent() {
 
     const handleManualEntryChange = (id: number, field: keyof ManualEntry, value: string) => {
         setManualEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
-    };
-
-    const removeManualEntry = (id: number) => {
-        setManualEntries(prev => prev.filter(e => e.id !== id));
     };
 
     const handleSaveSchedule = async () => {
@@ -547,10 +541,10 @@ function MyProjectsComponent() {
                                     <div className="flex gap-1 justify-end">
                                         {canEdit && (
                                             <>
-                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item as ManualEntry)}>
+                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item as ManualEntry)}>
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item)}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </>
