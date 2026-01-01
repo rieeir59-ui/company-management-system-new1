@@ -28,10 +28,10 @@ import { useCurrentUser } from '@/context/UserContext';
 type DashboardType = 'dashboard' | 'employee-dashboard';
 
 // Debounce hook
-function useDebounce(callback: (...args: any[]) => void, delay: number) {
+function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const debouncedCallback = useCallback((...args: Parameters<typeof callback>) => {
+  const debouncedCallback = useCallback((...args: Parameters<T>) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -69,6 +69,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
@@ -101,8 +102,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     
      const handleSave = useCallback((rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!currentUser) {
-             if(showToast) toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to save.' });
-             return;
+            if (showToast) toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to save.' });
+            return;
         }
 
         addOrUpdateRecord({
