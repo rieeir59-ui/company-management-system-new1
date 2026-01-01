@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { allProjects } from '@/lib/projects-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, Clock, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { differenceInDays, parse, isValid } from 'date-fns';
@@ -218,3 +218,4 @@ export default function ProjectDetailPage() {
     </div>
   );
 }
+

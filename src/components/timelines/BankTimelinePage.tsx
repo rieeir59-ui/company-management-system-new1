@@ -22,6 +22,7 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { addDays, subDays, differenceInDays } from 'date-fns';
 import { Label } from '../ui/label';
+import { useCurrentUser } from '@/context/UserContext';
 
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
@@ -61,11 +62,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
 
     const { toast } = useToast();
+    const { user: currentUser } = useCurrentUser();
     const { addOrUpdateRecord, records } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
     const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
     const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
@@ -90,15 +93,37 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         } else {
             setProjectRows(initialData);
         }
+        setIsInitialLoad(false);
     }, [bankName, initialData, records, formattedBankName]);
     
+     const handleSave = useCallback((rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
+        if (!currentUser) {
+            if(showToast) toast({ variant: 'destructive', title: 'Not Logged In', description: 'You must be logged in to save.' });
+            return;
+        }
+
+        addOrUpdateRecord({
+            fileName: `${formattedBankName} Timeline`,
+            projectName: `${formattedBankName} Projects`,
+            data: [
+                { category: 'Projects', items: rowsToSave },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
+            ]
+        } as any);
+        if (showToast) {
+            toast({ title: 'Saved', description: `Timeline for ${formattedBankName} has been saved.` });
+        }
+    }, [addOrUpdateRecord, toast, formattedBankName, currentUser]);
+
     const debouncedSave = useDebounce((rows, status, rem, date) => {
         handleSave(rows, status, rem, date, false); // Don't show toast on auto-save
     }, 1500); // 1.5 second delay
 
     useEffect(() => {
-        debouncedSave(projectRows, overallStatus, remarks, remarksDate);
-    }, [projectRows, overallStatus, remarks, remarksDate, debouncedSave]);
+        if (!isInitialLoad && currentUser) {
+            debouncedSave(projectRows, overallStatus, remarks, remarksDate);
+        }
+    }, [projectRows, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad, currentUser]);
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -262,20 +287,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         setProjectRows(updatedRows);
         handleSave(updatedRows); // Auto-save on delete
         toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
-    };
-    
-    const handleSave = (rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
-        addOrUpdateRecord({
-            fileName: `${formattedBankName} Timeline`,
-            projectName: `${formattedBankName} Projects`,
-            data: [
-                { category: 'Projects', items: rowsToSave },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
-            ]
-        } as any);
-        if (showToast) {
-            toast({ title: 'Saved', description: `Timeline for ${formattedBankName} has been saved.` });
-        }
     };
 
     const handleDownload = () => {

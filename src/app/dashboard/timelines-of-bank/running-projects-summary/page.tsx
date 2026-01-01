@@ -116,7 +116,7 @@ export default function RunningProjectsSummaryPage() {
     }, [records]);
     
     const handleSave = useCallback((currentData = summaryData, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
-        if (!isAdmin) {
+        if (!isAdmin || !currentUser) {
              if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
              return;
         }
@@ -143,15 +143,15 @@ export default function RunningProjectsSummaryPage() {
         if (showToast) {
             toast({ title: 'Saved', description: `Summary has been saved.` });
         }
-    }, [addOrUpdateRecord, isAdmin, toast, summaryData, overallStatus, remarks, remarksDate]);
+    }, [addOrUpdateRecord, isAdmin, toast, summaryData, overallStatus, remarks, remarksDate, currentUser]);
 
     const debouncedSave = useDebounce(handleSave, 2000);
 
     useEffect(() => {
-        if (!isInitialLoad) {
+        if (!isInitialLoad && currentUser) {
             debouncedSave(summaryData, overallStatus, remarks, remarksDate, false);
         }
-    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad]);
+    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad, currentUser]);
 
 
     const totalProjects = useMemo(() => {
