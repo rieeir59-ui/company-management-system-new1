@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -53,6 +52,7 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  isSunday,
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -228,8 +228,8 @@ export default function DailyReportPage() {
       {
         id: Date.now() + Math.random(),
         date: date,
-        startTime: '',
-        endTime: '',
+        startTime: '09:30',
+        endTime: '18:00',
         customerJobNumber: 'IHA-J000-0000',
         projectName: 'C-B-D',
         designType: 'EXTERIOR',
@@ -591,6 +591,7 @@ export default function DailyReportPage() {
         <Accordion type="multiple" defaultValue={dateInterval.map(d => format(d, 'yyyy-MM-dd'))} className="w-full space-y-2">
             {dateInterval.map(day => {
                 const dayString = format(day, 'yyyy-MM-dd');
+                const isDaySunday = isSunday(day);
                 const dayEntries = entriesByDate[dayString] || [];
                  const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
@@ -602,9 +603,12 @@ export default function DailyReportPage() {
                 return (
                     <AccordionItem value={dayString} key={dayString}>
                         <AccordionTrigger className="bg-primary/10 px-4 rounded-md font-bold">
-                            {format(day, 'EEEE, dd MMM yyyy')}
+                            {isDaySunday ? `${format(day, 'EEEE, dd MMM yyyy')} (OFF)` : format(day, 'EEEE, dd MMM yyyy')}
                         </AccordionTrigger>
                         <AccordionContent className="p-4 border rounded-b-md">
+                        {isDaySunday ? (
+                             <div className="text-center text-muted-foreground py-8">Sunday is an off day.</div>
+                        ) : (
                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -642,9 +646,10 @@ export default function DailyReportPage() {
                                 </TableBody>
                             </Table>
                            </div>
+                        )}
                            <div className="flex justify-between items-center mt-4">
-                                <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>
-                                <div className="flex items-center gap-4">
+                                {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
+                                <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
                                     <Button onClick={() => handleSave(dayString)} size="sm" variant="outline"><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
