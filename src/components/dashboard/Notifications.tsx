@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -46,41 +45,58 @@ export function Notifications() {
   useEffect(() => {
     if (!firestore || !user) return;
 
-    let q;
     const notificationsRef = collection(firestore, 'notifications');
-    
-    // Admins see admin-role notifications
+    let queries;
+
+    // Admins see role-based notifications AND notifications sent to their specific ID
     if (isAdmin) {
-        q = query(
-            notificationsRef,
-            where('recipientRole', '==', 'admin'),
-            orderBy('createdAt', 'desc'),
-            limit(20)
-        );
+       queries = [
+         query(notificationsRef, where('recipientRole', '==', 'admin'), orderBy('createdAt', 'desc'), limit(10)),
+         query(notificationsRef, where('recipientId', '==', user.uid), orderBy('createdAt', 'desc'), limit(10))
+       ];
     } 
-    // All users see notifications targeted to their UID
+    // Regular users only see notifications targeted to their UID
     else {
-         q = query(
-            notificationsRef,
-            where('recipientId', '==', user.uid),
-            orderBy('createdAt', 'desc'),
-            limit(20)
-        );
+         queries = [query(notificationsRef, where('recipientId', '==', user.uid), orderBy('createdAt', 'desc'), limit(20))];
     }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedNotifications = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as Notification));
-      setNotifications(fetchedNotifications);
-    });
+    const unsubscribes = queries.map(q => 
+      onSnapshot(q, (snapshot) => {
+        const fetchedNotifications = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Notification));
+        
+        setNotifications(prev => {
+          const newNotifications = [...prev];
+          fetchedNotifications.forEach(newNotif => {
+            const index = newNotifications.findIndex(n => n.id === newNotif.id);
+            if (index > -1) {
+              newNotifications[index] = newNotif; // Update existing
+            } else {
+              newNotifications.push(newNotif); // Add new
+            }
+          });
+          // Sort and limit the combined list
+          return newNotifications
+            .sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())
+            .slice(0, 20);
+        });
+      })
+    );
 
-    return () => unsubscribe();
+    return () => unsubscribes.forEach(unsub => unsub());
   }, [firestore, user, isAdmin]);
 
   const unreadCount = useMemo(() => {
-    return notifications.filter(n => n.status === 'unread').length;
+    // Use a Set to count unique unread notifications
+    const unreadIds = new Set<string>();
+    notifications.forEach(n => {
+        if (n.status === 'unread') {
+            unreadIds.add(n.id);
+        }
+    });
+    return unreadIds.size;
   }, [notifications]);
   
   const handleMarkAsRead = async (id: string) => {
@@ -121,7 +137,9 @@ export function Notifications() {
             {notifications.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-8">No notifications</p>
             ) : (
-                notifications.map(notification => (
+                [...new Map(notifications.map(item => [item.id, item])).values()]
+                  .sort((a,b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())
+                  .map(notification => (
                      <div key={notification.id} className={cn("p-4 border-b", notification.status === 'unread' ? 'bg-primary/10' : '')}>
                         <div className="flex justify-between items-start">
                             <p className="text-sm pr-2">{notification.message}</p>
