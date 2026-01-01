@@ -98,7 +98,8 @@ export default function RunningProjectsSummaryPage() {
             const bankTimelineRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
             let projectCount = 0;
             if (bankTimelineRecord) {
-                projectCount = bankTimelineRecord.data.find((d: any) => d.category === 'Projects')?.items.length || 0;
+                const projects = bankTimelineRecord.data.find((d: any) => d.category === 'Projects')?.items;
+                projectCount = Array.isArray(projects) ? projects.length : 0;
             } else {
                 projectCount = (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []).length;
             }
