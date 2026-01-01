@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -40,12 +41,15 @@ export default function RunningProjectsSummaryPage() {
     const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
 
-
     useEffect(() => {
         const summaryRecord = records.find(r => r.fileName === 'Running Projects Summary');
         let savedSummaryItems: SummaryRow[] = [];
         if (summaryRecord) {
-            savedSummaryItems = summaryRecord.data?.find((d: any) => d.category === 'Summary')?.items || [];
+            const summaryCategory = summaryRecord.data?.find((d: any) => d.category === 'Summary');
+            if (summaryCategory && Array.isArray(summaryCategory.items)) {
+                savedSummaryItems = summaryCategory.items;
+            }
+
             const statusData = summaryRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             const savedOverallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
             const savedRemarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
@@ -56,16 +60,20 @@ export default function RunningProjectsSummaryPage() {
         }
 
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
+            const savedRow = savedSummaryItems.find(s => s.project === proj.name);
+            
+            if (savedRow) {
+                return { ...savedRow, srNo: index + 1 };
+            }
+            
             const timelineRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
             const projects = timelineRecord?.data?.find((d: any) => d.category === 'Projects')?.items || [];
             
-            const savedRow = savedSummaryItems.find(s => s.project === proj.name);
-
             return {
                 srNo: index + 1,
                 project: proj.name,
-                count: savedRow?.count ?? projects.length, // Use saved count, fallback to live count
-                remarks: savedRow?.remarks || ''
+                count: projects.length,
+                remarks: ''
             };
         });
         
