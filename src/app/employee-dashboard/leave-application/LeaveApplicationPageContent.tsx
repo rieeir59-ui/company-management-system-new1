@@ -101,9 +101,19 @@ export default function LeaveApplicationPageContent() {
                 approvalDate: hrInfo['Approval Date'] || '',
             });
         }
+    } else if (currentUser) {
+        // Pre-fill form with current user's data if not editing a record
+        setFormState(prev => ({
+            ...prev,
+            employeeName: currentUser.name,
+            employeeNumber: currentUser.record,
+            department: currentUser.departments.join(', '),
+            position: '', // Position might need to be sourced differently if available
+            status: 'Full-time' // Default status, can be adjusted
+        }));
     }
     setIsRecordLoading(false);
-  }, [recordId, getRecordById]);
+  }, [recordId, getRecordById, currentUser]);
 
 
   const totalDays = useMemo(() => {
@@ -254,7 +264,7 @@ export default function LeaveApplicationPageContent() {
         const doc = new jsPDF() as jsPDFWithAutoTable;
         let yPos = 15;
 
-        const drawCheckbox = (x: number, y: number, checked: boolean) => {
+        const drawCheckbox = (doc: jsPDF, x: number, y: number, checked: boolean) => {
             doc.setLineWidth(0.2);
             doc.rect(x, y - 3.5, 4, 4);
             if (checked) {
@@ -301,13 +311,13 @@ export default function LeaveApplicationPageContent() {
         yPos += 10;
         
         addSectionHeader('Reason for Requested:');
-        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Sick Leave'));
+        drawCheckbox(doc, 14, yPos, formState.reasonForRequested.includes('Sick Leave'));
         doc.text('SICK LEAVE', 20, yPos);
         yPos += 7;
-        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Casual Leave'));
+        drawCheckbox(doc, 14, yPos, formState.reasonForRequested.includes('Casual Leave'));
         doc.text('CASUAL LEAVE', 20, yPos);
         yPos += 7;
-        drawCheckbox(14, yPos, formState.reasonForRequested.includes('Annual Leave'));
+        drawCheckbox(doc, 14, yPos, formState.reasonForRequested.includes('Annual Leave'));
         doc.text('ANNUAL LEAVE', 20, yPos);
         yPos += 10;
         
