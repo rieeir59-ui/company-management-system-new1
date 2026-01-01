@@ -65,8 +65,16 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const { user: currentUser } = useCurrentUser();
     const { addOrUpdateRecord, records } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
-    const [overallStatus, setOverallStatus] = useState('');
-    const [remarks, setRemarks] = useState('');
+
+    const defaultOverallStatus = useMemo(() => {
+        if (formattedBankName === 'Bank Alfalah') {
+            return "Dolmen mall currency exchange Construction completed.\nMinor modifications are requested by the Bank on 12 Dec.2025, Will deliver on 25 Dec.2025.\nShahdin manzil branch revised layout shared.";
+        }
+        return 'All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.';
+    }, [formattedBankName]);
+
+    const [overallStatus, setOverallStatus] = useState(defaultOverallStatus);
+    const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
@@ -87,18 +95,18 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
             const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
 
-            if (savedOverallStatus) setOverallStatus(savedOverallStatus);
+            setOverallStatus(savedOverallStatus || defaultOverallStatus);
             if (savedRemarks) setRemarks(savedRemarks);
             if (savedDate) setRemarksDate(savedDate);
             
         } else {
             setProjectRows(initialData);
-            setOverallStatus('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
+            setOverallStatus(defaultOverallStatus);
             setRemarks('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
             setRemarksDate(new Date().toISOString().split('T')[0]);
         }
         setIsInitialLoad(false);
-    }, [bankName, initialData, records, formattedBankName]);
+    }, [bankName, initialData, records, formattedBankName, defaultOverallStatus]);
     
      const handleSave = useCallback((rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!currentUser) {
@@ -232,6 +240,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <Button
                             variant={"outline"}
                             className={cn("w-full justify-start text-left font-normal text-xs h-8 pr-8 border-0 bg-transparent hover:bg-accent/50 focus-visible:ring-1 focus-visible:ring-primary", !value && "text-muted-foreground")}
+                            disabled={!isAdmin}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {displayValue}
@@ -255,6 +264,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                             e.stopPropagation();
                             onChange('');
                         }}
+                        disabled={!isAdmin}
                     >
                         <X className="h-3 w-3 text-muted-foreground" />
                     </Button>
@@ -391,7 +401,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     ];
 
     const StyledInput = (props: React.ComponentProps<typeof Input>) => (
-        <Input className="border-0 bg-transparent h-8 p-1 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background" {...props} />
+        <Input className="border-0 bg-transparent h-8 p-1 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background" disabled={!isAdmin} {...props} />
     )
 
     return (
@@ -470,7 +480,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)} disabled={!isAdmin}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -479,7 +489,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     </table>
                 </div>
                  <div className="flex justify-start mt-4">
-                    <Button onClick={addProjectRow} variant="outline"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
+                    <Button onClick={addProjectRow} variant="outline" disabled={!isAdmin}><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 pt-6 border-t mt-4">
@@ -491,6 +501,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         onChange={e => setOverallStatus(e.target.value)}
                         rows={4}
                         className="mt-2"
+                        disabled={!isAdmin}
                     />
                 </div>
                 <div className="w-full">
@@ -501,6 +512,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         onChange={e => setRemarks(e.target.value)}
                         rows={3}
                         className="mt-2"
+                        disabled={!isAdmin}
                     />
                 </div>
                  <div className="w-full">
@@ -511,6 +523,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         value={remarksDate}
                         onChange={e => setRemarksDate(e.target.value)}
                         className="w-fit mt-2"
+                        disabled={!isAdmin}
                     />
                 </div>
             </CardFooter>
