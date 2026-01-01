@@ -12,8 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useRecords } from '@/context/RecordContext';
 
 interface SummaryRow {
@@ -30,7 +30,7 @@ const projectOrder = bankTimelineCategories.map(name => ({
 
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { records, addOrUpdateRecord } = useRecords();
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
     
     const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
@@ -40,19 +40,30 @@ export default function RunningProjectsSummaryPage() {
 
     useEffect(() => {
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
-            // This logic will run only on the client side
-            const savedData = localStorage.getItem(`${proj.key}Projects`);
-            const projects = savedData ? JSON.parse(savedData) : (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []);
+            const record = records.find(r => r.fileName === `${proj.name} Timeline`);
+            const projects = record?.data?.find((d: any) => d.category === 'Projects')?.items || [];
             return {
                 srNo: index + 1,
                 project: proj.name,
                 count: projects.length,
-                remarks: ''
+                remarks: '' // Remarks are user-editable, so we start fresh.
             };
         });
         
         setSummaryData(data);
-    }, []);
+
+        // Load overall status and remarks if they exist
+        const summaryRecord = records.find(r => r.fileName === 'Running Projects Summary');
+        if (summaryRecord) {
+            const statusData = summaryRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+            const savedOverallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+            const savedRemarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const savedDate = statusData.find((i:any) => i.label === 'Date')?.value;
+            if (savedOverallStatus) setOverallStatus(savedOverallStatus);
+            if (savedRemarks) setRemarks(savedRemarks);
+            if (savedDate) setRemarksDate(savedDate);
+        }
+    }, [records]);
 
 
     const totalProjects = useMemo(() => {
@@ -73,9 +84,10 @@ export default function RunningProjectsSummaryPage() {
     };
 
     const handleSave = () => {
-        addRecord({
+        addOrUpdateRecord({
             fileName: "Running Projects Summary",
             projectName: "Running Projects Summary",
+            employeeId: '', // employeeId is not relevant for a general summary
             data: [
                 {
                     category: "Summary",
@@ -110,7 +122,7 @@ export default function RunningProjectsSummaryPage() {
             foot: [['', 'Total', totalProjects, '']],
             footStyles: { fontStyle: 'bold' }
         });
-        yPos = (doc as any).lastAutoTable.finalY + 10;
+        yPos = (doc as any).autoTable.previous.finalY + 10;
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
