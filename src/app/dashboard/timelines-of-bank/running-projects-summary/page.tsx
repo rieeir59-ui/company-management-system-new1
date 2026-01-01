@@ -9,12 +9,12 @@ import { Download, ArrowLeft, Save } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
-import { bankTimelineCategories, bankProjectsMap } from '@/lib/projects-data';
+import { bankTimelineCategories, bankProjectsMap, type ProjectRow as BankProjectRow } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useRecords } from '@/context/RecordContext';
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import { useCurrentUser } from '@/context/UserContext';
 
 interface SummaryRow {
@@ -42,7 +42,6 @@ export default function RunningProjectsSummaryPage() {
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        // This effect runs once on mount and whenever records change to load saved remarks.
         const summaryRecord = records.find(r => r.fileName === 'Running Projects Summary');
         
         let savedRemarksMap: Record<string, string> = {};
@@ -63,14 +62,15 @@ export default function RunningProjectsSummaryPage() {
             if (savedDate) setRemarksDate(savedDate);
         }
 
-        // The source of truth for the count is now always bankProjectsMap.
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
-            const projects = bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || [];
+            const bankRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
+            const projects: BankProjectRow[] = bankRecord ? (bankRecord.data?.find((d: any) => d.category === 'Projects')?.items || []) : (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []);
+            
             return {
                 srNo: index + 1,
                 project: proj.name,
-                count: projects.length, // Always use live count from the map
-                remarks: savedRemarksMap[proj.name] || '' // Use saved remarks if available
+                count: projects.length,
+                remarks: savedRemarksMap[proj.name] || ''
             };
         });
         
@@ -98,7 +98,7 @@ export default function RunningProjectsSummaryPage() {
             data: [
                 {
                     category: "Summary",
-                    items: summaryData // Save the current state which includes updated remarks
+                    items: summaryData 
                 },
                 {
                     category: "Status & Remarks",

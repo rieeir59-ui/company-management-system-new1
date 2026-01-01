@@ -199,28 +199,26 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const removeProjectRow = (id: number) => {
-        setProjectRows(prevRows => {
-            const updatedRows = prevRows
-                .filter(row => row.id !== id)
-                .map((row, index) => ({
-                    ...row,
-                    srNo: String(index + 1)
-                }));
-            
-            // Immediately call save logic after state update
-            addOrUpdateRecord({
-                fileName: `${formattedBankName} Timeline`,
-                projectName: `${formattedBankName} Projects`,
-                data: [
-                    { category: 'Projects', items: updatedRows },
-                    { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
-                ]
-            } as any);
+        const updatedRows = projectRows
+            .filter(row => row.id !== id)
+            .map((row, index) => ({
+                ...row,
+                srNo: String(index + 1)
+            }));
 
-            toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
+        setProjectRows(updatedRows);
+        
+        // Immediately save after state update
+        addOrUpdateRecord({
+            fileName: `${formattedBankName} Timeline`,
+            projectName: `${formattedBankName} Projects`,
+            data: [
+                { category: 'Projects', items: updatedRows },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+            ]
+        } as any);
 
-            return updatedRows;
-        });
+        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
     };
     
     const handleSave = () => {
