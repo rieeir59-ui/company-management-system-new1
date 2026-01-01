@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, ArrowLeft, Save } from 'lucide-react';
@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
-import { useRecords, type SavedRecord } from '@/context/RecordContext';
+import { useRecords } from '@/context/RecordContext';
 import { useCurrentUser } from '@/context/UserContext';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -48,10 +48,10 @@ export default function RunningProjectsSummaryPage() {
         if (savedSummaryRecord && savedSummaryRecord.data) {
             const summaryItems = savedSummaryRecord.data.find((d: any) => d.category === 'Summary')?.items || [];
             if (Array.isArray(summaryItems)) {
-                 summaryItems.forEach((item: any) => { // Use 'any' to be flexible with old/new format
-                    const projectName = item.project || item.Projects; // Handle old property name
+                 summaryItems.forEach((item: any) => {
+                    const projectName = item.project;
                     if(projectName) {
-                        savedRemarksMap[projectName] = item.remarks || item.Remarks || '';
+                        savedRemarksMap[projectName] = item.remarks || '';
                     }
                 });
             }
@@ -182,27 +182,25 @@ export default function RunningProjectsSummaryPage() {
             <CardContent>
                 <Table>
                     <TableHeader>
-                        <TableRow className="border-b border-gray-300">
-                            <TableHead className="w-[100px] text-lg font-semibold">Sr.No</TableHead>
-                            <TableHead className="text-lg font-semibold">Projects</TableHead>
-                            <TableHead className="text-lg font-semibold">Nos of project</TableHead>
-                            <TableHead className="text-lg font-semibold">Remarks</TableHead>
+                        <TableRow className="border-b-2 border-primary/20 hover:bg-transparent">
+                            <TableHead className="w-[100px] text-lg font-semibold text-foreground">Sr.No</TableHead>
+                            <TableHead className="text-lg font-semibold text-foreground">Projects</TableHead>
+                            <TableHead className="text-lg font-semibold text-foreground">Nos of project</TableHead>
+                            <TableHead className="text-lg font-semibold text-foreground">Remarks</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {summaryData.map((row) => (
                             <TableRow key={row.srNo} className="border-0">
-                                <TableCell className="text-base">{row.srNo}</TableCell>
-                                <TableCell className="text-base">{row.project}</TableCell>
-                                <TableCell className="text-base">
-                                    {row.count}
-                                </TableCell>
+                                <TableCell className="text-base font-medium text-muted-foreground">{row.srNo}</TableCell>
+                                <TableCell className="text-base font-medium">{row.project}</TableCell>
+                                <TableCell className="text-base font-medium">{row.count}</TableCell>
                                 <TableCell>
                                     <Textarea 
                                         value={row.remarks}
                                         onChange={(e) => handleRemarkChange(row.srNo, e.target.value)}
                                         placeholder="Add remarks..."
-                                        className="bg-accent/30 border-gray-300 focus-visible:ring-primary h-10"
+                                        className="bg-accent/30 border-input focus-visible:ring-primary h-10"
                                         disabled={!isAdmin}
                                     />
                                 </TableCell>
@@ -253,3 +251,4 @@ export default function RunningProjectsSummaryPage() {
     );
 }
 
+    
