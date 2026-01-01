@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -41,12 +42,16 @@ export default function RunningProjectsSummaryPage() {
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
+        // This effect runs once on mount and whenever records change to load saved remarks.
         const summaryRecord = records.find(r => r.fileName === 'Running Projects Summary');
-        let savedSummaryItems: SummaryRow[] = [];
+        
+        let savedRemarksMap: Record<string, string> = {};
         if (summaryRecord) {
             const summaryCategory = summaryRecord.data?.find((d: any) => d.category === 'Summary');
             if (summaryCategory && Array.isArray(summaryCategory.items)) {
-                savedSummaryItems = summaryCategory.items;
+                summaryCategory.items.forEach((item: SummaryRow) => {
+                    savedRemarksMap[item.project] = item.remarks;
+                });
             }
 
             const statusData = summaryRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
@@ -58,22 +63,14 @@ export default function RunningProjectsSummaryPage() {
             if (savedDate) setRemarksDate(savedDate);
         }
 
+        // The source of truth for the count is now always bankProjectsMap.
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
-            const savedRow = savedSummaryItems.find(s => s.project === proj.name);
-            
-            // Check for timeline record for this specific bank
-            const timelineRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
-            const liveProjects = timelineRecord?.data?.find((d: any) => d.category === 'Projects')?.items || [];
-            
-            // If timeline record exists, use its length. Otherwise, fallback to initial data.
-            const liveCount = liveProjects.length > 0 ? liveProjects.length : (bankProjectsMap[proj.key]?.length || 0);
-
-            // Use saved remarks if available, otherwise default to empty
+            const projects = bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || [];
             return {
                 srNo: index + 1,
                 project: proj.name,
-                count: savedRow ? savedRow.count : liveCount, // Prefer saved count, fallback to live count
-                remarks: savedRow ? savedRow.remarks : ''
+                count: projects.length, // Always use live count from the map
+                remarks: savedRemarksMap[proj.name] || '' // Use saved remarks if available
             };
         });
         
@@ -84,15 +81,6 @@ export default function RunningProjectsSummaryPage() {
     const totalProjects = useMemo(() => {
         return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
     }, [summaryData]);
-
-    const handleCountChange = (srNo: number, value: string) => {
-        const newCount = parseInt(value, 10);
-        if (!isNaN(newCount)) {
-            setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: newCount } : row));
-        } else if (value === '') {
-            setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, count: 0 } : row));
-        }
-    };
     
     const handleRemarkChange = (srNo: number, value: string) => {
         setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
@@ -110,7 +98,7 @@ export default function RunningProjectsSummaryPage() {
             data: [
                 {
                     category: "Summary",
-                    items: summaryData
+                    items: summaryData // Save the current state which includes updated remarks
                 },
                 {
                     category: "Status & Remarks",
@@ -197,9 +185,8 @@ export default function RunningProjectsSummaryPage() {
                                     <Input 
                                         type="number"
                                         value={row.count}
-                                        onChange={(e) => handleCountChange(row.srNo, e.target.value)}
-                                        className="w-24 border-0 bg-transparent focus-visible:ring-1"
-                                        disabled={!isAdmin}
+                                        readOnly // The count is now derived, not editable.
+                                        className="w-24 border-0 bg-transparent"
                                     />
                                 </TableCell>
                                 <TableCell>
