@@ -6,13 +6,17 @@ import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { Button } from "./button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  onClear?: () => void;
+}
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  onClear,
   ...props
 }: CalendarProps) {
   return (
@@ -61,6 +65,17 @@ function Calendar({
           <ChevronRight className={cn("h-4 w-4", className)} {...props} />
         ),
       }}
+       footer={
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => props.onSelect?.(undefined, new Date(), {})}
+          >
+            Clear
+          </Button>
+        </div>
+      }
       {...props}
     />
   )
