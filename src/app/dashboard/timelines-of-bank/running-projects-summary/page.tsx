@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, ArrowLeft, Save } from 'lucide-react';
@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { bankProjectsMap, bankTimelineCategories } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useRecords } from '@/context/RecordContext';
 
 interface SummaryRow {
@@ -31,6 +33,11 @@ export default function RunningProjectsSummaryPage() {
     const { addRecord } = useRecords();
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
     
+    const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
+    const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
+    const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
+
+
     useEffect(() => {
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
             // This logic will run only on the client side
@@ -73,6 +80,14 @@ export default function RunningProjectsSummaryPage() {
                 {
                     category: "Summary",
                     items: summaryData
+                },
+                {
+                    category: "Status & Remarks",
+                    items: [
+                        { label: 'Overall Status', value: overallStatus },
+                        { label: 'Maam Isbah Remarks & Order', value: remarks },
+                        { label: 'Date', value: remarksDate },
+                    ]
                 }
             ],
         } as any);
@@ -81,18 +96,40 @@ export default function RunningProjectsSummaryPage() {
 
     const handleDownload = () => {
         const doc = new jsPDF();
+        let yPos = 20;
+
         doc.setFontSize(16);
-        doc.text('Running Projects Summary', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+        doc.text('Running Projects Summary', doc.internal.pageSize.getWidth() / 2, yPos, { align: 'center' });
+        yPos += 15;
 
         (doc as any).autoTable({
             head: [['Sr.No', 'Projects', 'Nos of project', 'Remarks']],
             body: summaryData.map(row => [row.srNo, row.project, row.count, row.remarks]),
-            startY: 30,
+            startY: yPos,
             theme: 'grid',
             foot: [['', 'Total', totalProjects, '']],
             footStyles: { fontStyle: 'bold' }
         });
+        yPos = (doc as any).lastAutoTable.finalY + 10;
         
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Overall Status:', 14, yPos);
+        yPos += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(doc.splitTextToSize(overallStatus, 180), 14, yPos);
+        yPos += doc.getTextDimensions(overallStatus, {maxWidth: 180}).h + 10;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Maam Isbah Remarks & Order:', 14, yPos);
+        yPos += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.text(doc.splitTextToSize(remarks, 180), 14, yPos);
+        yPos += doc.getTextDimensions(remarks, {maxWidth: 180}).h + 10;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Date: ${remarksDate}`, 14, yPos);
+
         doc.save('running_projects_summary.pdf');
         toast({ title: 'Download Complete', description: 'The summary has been downloaded as a PDF.' });
     };
@@ -144,14 +181,42 @@ export default function RunningProjectsSummaryPage() {
                                 </TableCell>
                             </TableRow>
                         ))}
-                         <TableRow className="font-bold bg-muted">
-                            <TableCell colSpan={2} className="text-right">Total</TableCell>
-                            <TableCell>{totalProjects}</TableCell>
-                            <TableCell></TableCell>
-                        </TableRow>
                     </TableBody>
                 </Table>
             </CardContent>
+            <CardFooter className="flex-col items-start gap-4 pt-6">
+                <div className="w-full">
+                    <Label htmlFor="overall_status" className="font-bold">Overall Status</Label>
+                    <Textarea 
+                        id="overall_status"
+                        value={overallStatus}
+                        onChange={e => setOverallStatus(e.target.value)}
+                        rows={4}
+                    />
+                </div>
+                <div className="w-full">
+                    <Label htmlFor="remarks" className="font-bold">Maam Isbah Remarks & Order</Label>
+                    <Textarea 
+                        id="remarks"
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        rows={3}
+                    />
+                </div>
+                 <div className="w-full">
+                    <Label htmlFor="remarks_date" className="font-bold">Date</Label>
+                    <Input 
+                        id="remarks_date"
+                        type="date"
+                        value={remarksDate}
+                        onChange={e => setRemarksDate(e.target.value)}
+                        className="w-fit"
+                    />
+                </div>
+                <div className="w-full text-right font-bold text-lg p-2 bg-muted rounded-md">
+                    Total Projects: {totalProjects}
+                </div>
+            </CardFooter>
         </Card>
     );
 }
