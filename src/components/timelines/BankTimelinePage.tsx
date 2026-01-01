@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { addDays, subDays, differenceInDays } from 'date-fns';
+import { Label } from '../ui/label';
 
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
@@ -383,7 +384,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 </div>
                 <div className="flex gap-2">
                     <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
-                    <Button onClick={addProjectRow}><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
@@ -457,21 +457,42 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         </tbody>
                     </table>
                 </div>
-                
-                 <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Overall Status</h3>
-                    <Textarea value={overallStatus} onChange={e => setOverallStatus(e.target.value)} rows={4} placeholder="Enter overall status..."/>
-                </div>
-
-                <div className="mt-8">
-                    <h3 className="font-bold text-lg mb-2">Maam Isbah Remarks & Order</h3>
-                    <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
-                    <Input type="date" value={remarksDate} onChange={e => setRemarksDate(e.target.value)} className="mt-2 w-fit" />
+                 <div className="flex justify-start mt-4">
+                    <Button onClick={addProjectRow} variant="outline"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 </div>
             </CardContent>
+            <CardFooter className="flex-col items-start gap-4 pt-6 border-t mt-4">
+                 <div className="w-full">
+                    <Label htmlFor="overall_status" className="font-bold text-lg">Overall Status</Label>
+                    <Textarea 
+                        id="overall_status"
+                        value={overallStatus}
+                        onChange={e => setOverallStatus(e.target.value)}
+                        rows={4}
+                        className="mt-2"
+                    />
+                </div>
+                <div className="w-full">
+                    <Label htmlFor="remarks" className="font-bold text-lg">Maam Isbah Remarks & Order</Label>
+                    <Textarea 
+                        id="remarks"
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        rows={3}
+                        className="mt-2"
+                    />
+                </div>
+                 <div className="w-full">
+                    <Label htmlFor="remarks_date" className="font-bold text-lg">Date</Label>
+                    <Input 
+                        id="remarks_date"
+                        type="date"
+                        value={remarksDate}
+                        onChange={e => setRemarksDate(e.target.value)}
+                        className="w-fit mt-2"
+                    />
+                </div>
+            </CardFooter>
         </Card>
     );
 }
-
-    
-      
