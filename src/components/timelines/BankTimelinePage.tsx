@@ -199,11 +199,15 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const removeProjectRow = (id: number) => {
-        const updatedRows = projectRows.filter(row => row.id !== id).map((row, index) => ({
-            ...row,
-            srNo: String(index + 1)
-        }));
+        const updatedRows = projectRows
+            .filter(row => row.id !== id)
+            .map((row, index) => ({
+                ...row,
+                srNo: String(index + 1)
+            }));
+        
         setProjectRows(updatedRows);
+        
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
@@ -212,7 +216,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
-        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been saved.' });
+
+        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
     };
     
     const handleSave = () => {
@@ -236,7 +241,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.\nNo', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area\nin Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count / Requirement', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count / Requirement', colSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
@@ -245,13 +250,16 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             ],
             [
                 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
-                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date'
+                'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date', 'Start Date', 'End Date',
+                'Start Date', 'End Date', 'Start Date', 'End Date'
             ]
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, 
+            p.contractStart || '', p.contactEnd || '',
+            p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd,
@@ -427,3 +435,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    
