@@ -63,7 +63,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
   // Fetch records
   useEffect(() => {
@@ -141,12 +141,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       
       const recordToUpdate = records.find(r => r.id === id);
 
-      // Bypass ownership check for specific shared records if user is an admin
-      const isSharedRecord = recordToUpdate && sharedRecordFileNames.includes(recordToUpdate.fileName);
-
-      if (recordToUpdate && !isAdmin && !isSharedRecord && recordToUpdate.employeeId !== currentUser.uid) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
-          return Promise.reject(new Error('Permission denied'));
+      if (recordToUpdate && !isAdmin) {
+          // If the user is not an admin, they can only update their own records.
+          if (recordToUpdate.employeeId !== currentUser.uid) {
+              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
+              return Promise.reject(new Error('Permission denied'));
+          }
       }
 
       try {
@@ -173,14 +173,13 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         let querySnapshot;
         let q;
 
-        // Specific query for records tied to an employee
         if (recordData.employeeRecord) {
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
                 where('employeeRecord', '==', recordData.employeeRecord) 
             );
-        } else { // General query for records not tied to a specific employee (like summaries)
+        } else {
              q = query(recordsCollection, where('fileName', '==', recordData.fileName));
         }
 
@@ -199,7 +198,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
                 data: recordData.data,
             });
         } else {
-            // Add new record
             await addRecord(recordData);
         }
     },
