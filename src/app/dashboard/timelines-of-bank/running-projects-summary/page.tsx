@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -65,7 +64,7 @@ export default function RunningProjectsSummaryPage() {
             return {
                 srNo: index + 1,
                 project: proj.name,
-                count: projects.length,
+                count: savedRow?.count ?? projects.length, // Use saved count, fallback to live count
                 remarks: savedRow?.remarks || ''
             };
         });
