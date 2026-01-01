@@ -66,7 +66,7 @@ const topLevelItems = [
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Briefcase },
+    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports / Transmittal Letter / Minutes of Meetings', icon: Briefcase },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
@@ -429,3 +429,5 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
+
+    
