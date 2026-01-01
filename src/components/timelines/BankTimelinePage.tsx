@@ -32,7 +32,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
     }, [bankName]);
 
-    const initialData = useMemo(() => bankProjectsMap[bankName] || [], [bankName]);
+    const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
 
     const { toast } = useToast();
     const { addOrUpdateRecord, records } = useRecords();
@@ -189,13 +189,16 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
-        setProjectRows([...projectRows, {
+        const newRow = {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
-        }]);
+        };
+        const updatedRows = [...projectRows, newRow];
+        setProjectRows(updatedRows);
+        handleSave(updatedRows); // Auto-save on add
     };
     
     const removeProjectRow = (id: number) => {
@@ -207,26 +210,16 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             }));
 
         setProjectRows(updatedRows);
-        
-        // Immediately save after state update
-        addOrUpdateRecord({
-            fileName: `${formattedBankName} Timeline`,
-            projectName: `${formattedBankName} Projects`,
-            data: [
-                { category: 'Projects', items: updatedRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
-            ]
-        } as any);
-
+        handleSave(updatedRows); // Auto-save on delete
         toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
     };
     
-    const handleSave = () => {
+    const handleSave = (rowsToSave = projectRows) => {
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
             data: [
-                { category: 'Projects', items: projectRows },
+                { category: 'Projects', items: rowsToSave },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any);
@@ -343,7 +336,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
+                    <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
                     <Button onClick={addProjectRow}><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
