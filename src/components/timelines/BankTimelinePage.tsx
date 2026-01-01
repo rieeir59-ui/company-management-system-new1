@@ -35,24 +35,36 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const initialData = useMemo(() => bankProjectsMap[bankName] || [], [bankName]);
 
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { addOrUpdateRecord, records } = useRecords();
     const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
-    const [overallStatus, setOverallStatus] = useState('');
-    const [remarks, setRemarks] = useState('');
-    const [remarksDate, setRemarksDate] = useState('');
+    const [overallStatus, setOverallStatus] = useState('All timelines are being followed, and there are no current blockers. Coordination between architectural, MEP, and structural teams is proceeding as planned. Client feedback loops are active, with regular meetings ensuring alignment on design and progress milestones. Procurement for long-lead items has been initiated for critical projects to mitigate potential delays. Resource allocation is optimized across all running projects.');
+    const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
+    const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
-        const savedData = localStorage.getItem(`${bankName}Projects`);
-        if (savedData) {
-            setProjectRows(JSON.parse(savedData));
+        const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
+        if (record && record.data) {
+            const projects = record.data.find(d => d.category === 'Projects')?.items || [];
+            const statusAndRemarks = record.data.find(d => d.category === 'Status & Remarks')?.items || [];
+            
+            if (projects.length > 0) {
+                setProjectRows(projects);
+            } else {
+                setProjectRows(initialData);
+            }
+            
+            const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
+            const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
+
+            if (savedOverallStatus) setOverallStatus(savedOverallStatus);
+            if (savedRemarks) setRemarks(savedRemarks);
+            if (savedDate) setRemarksDate(savedDate);
+            
         } else {
             setProjectRows(initialData);
         }
-    }, [bankName, initialData]);
-
-    useEffect(() => {
-        localStorage.setItem(`${bankName}Projects`, JSON.stringify(projectRows));
-    }, [projectRows, bankName]);
+    }, [bankName, initialData, records, formattedBankName]);
 
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
@@ -193,7 +205,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     };
     
     const handleSave = () => {
-        addRecord({
+        addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
             data: [
@@ -335,7 +347,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <thead className="sticky top-0 bg-primary/20 z-10">
                             <tr>
                                 {tableHeaders.map((header) => (
-                                     <th key={header.name} className="border p-1 align-bottom" colSpan={header.span} rowSpan={header.span > 1 ? 1 : 2}>{header.name}</th>
+                                     <th key={header.name} className="border p-1 align-bottom" colSpan={header.span} rowSpan={header.name === 'Site Survey' || header.name.includes('Proposal') || header.name.includes('3D') || header.name.includes('Tender') || header.name.includes('BOQ') || header.name.includes('Working Drawings') || header.name.includes('Site Visit') ? 1 : 2}>{header.name}</th>
                                 ))}
                             </tr>
                             <tr className="bg-primary/10">
@@ -379,7 +391,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><Input type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" onClick={handleSave}><Save className="h-4 w-4 text-green-600" /></Button>
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </div>
                                     </td>

@@ -64,9 +64,12 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   // Fetch records
   useEffect(() => {
-    if (isUserLoading || !firestore || !currentUser) { // Wait for user to be available
-      setRecords([]);
+    if (isUserLoading || !firestore) {
       return;
+    }
+    if(!currentUser) {
+        setRecords([]);
+        return;
     }
 
     const recordsCollection = collection(firestore, 'savedRecords');
@@ -87,18 +90,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         setError(null);
       },
       (err: FirestoreError) => {
-        if (err.code === 'permission-denied') {
-            setError('You do not have permission to view these records.');
-        } else {
-            setError('Failed to fetch records.');
-        }
         console.error('Error fetching records:', err);
+        setError('Failed to fetch records. You may not have permission.');
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'list' }));
       }
     );
 
     return () => unsubscribe();
-  }, [firestore, isUserLoading, currentUser]); // Add currentUser to dependency array
+  }, [firestore, isUserLoading, currentUser]);
 
   // Add new record
   const addRecord = useCallback(
@@ -164,8 +163,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const recordsCollection = collection(firestore, 'savedRecords');
         const q = query(
             recordsCollection, 
-            where('fileName', '==', recordData.fileName), 
-            where('employeeId', '==', recordData.employeeId)
+            where('fileName', '==', recordData.fileName)
         );
 
         const querySnapshot = await getDocs(q);
