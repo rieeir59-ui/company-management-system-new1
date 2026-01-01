@@ -1,8 +1,9 @@
 
+      
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, ArrowLeft, Save } from 'lucide-react';
@@ -28,6 +29,20 @@ const projectOrder = bankTimelineCategories.map(name => ({
     name,
     key: `${name.toLowerCase().replace(/ /g, '-')}`
 }));
+
+// Debounce hook
+function useDebounce(callback: (...args: any[]) => void, delay: number) {
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  return (...args: any[]) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+}
 
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
@@ -69,12 +84,10 @@ export default function RunningProjectsSummaryPage() {
         }
         
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
-            const bankRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
+            const bankTimelineRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
             let projectCount = 0;
-
-            if (bankRecord && bankRecord.data) {
-                const projects = bankRecord.data.find((d: any) => d.category === 'Projects')?.items || [];
-                projectCount = projects.length;
+            if (bankTimelineRecord) {
+                projectCount = bankTimelineRecord.data.find((d: any) => d.category === 'Projects')?.items.length || 0;
             } else {
                 projectCount = (bankProjectsMap[proj.key as keyof typeof bankProjectsMap] || []).length;
             }
@@ -89,6 +102,14 @@ export default function RunningProjectsSummaryPage() {
         
         setSummaryData(data);
     }, [records]);
+    
+    const debouncedSave = useDebounce((data, status, rem, date) => {
+        handleSave(data, status, rem, date, false); // Don't show toast on auto-save
+    }, 1500);
+
+    useEffect(() => {
+        debouncedSave(summaryData, overallStatus, remarks, remarksDate);
+    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave]);
 
 
     const totalProjects = useMemo(() => {
@@ -99,9 +120,9 @@ export default function RunningProjectsSummaryPage() {
         setSummaryData(prevData => prevData.map(row => row.srNo === srNo ? { ...row, remarks: value } : row));
     };
 
-    const handleSave = () => {
+    const handleSave = (currentData = summaryData, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!isAdmin) {
-             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
+             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
              return;
         }
 
@@ -111,18 +132,22 @@ export default function RunningProjectsSummaryPage() {
             data: [
                 {
                     category: "Summary",
-                    items: summaryData 
+                    items: currentData 
                 },
                 {
                     category: "Status & Remarks",
                     items: [
-                        { label: 'Overall Status', value: overallStatus },
-                        { label: 'Maam Isbah Remarks & Order', value: remarks },
-                        { label: 'Date', value: remarksDate },
+                        { label: 'Overall Status', value: currentStatus },
+                        { label: 'Maam Isbah Remarks & Order', value: currentRemarks },
+                        { label: 'Date', value: currentDate },
                     ]
                 }
             ],
         } as any);
+
+        if (showToast) {
+            toast({ title: 'Saved', description: `Summary has been saved.` });
+        }
     };
 
     const handleDownload = () => {
@@ -175,7 +200,7 @@ export default function RunningProjectsSummaryPage() {
                     <CardTitle className="font-headline text-3xl text-primary">Running Projects Summary</CardTitle>
                  </div>
                  <div className="flex gap-2">
-                    {isAdmin && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>}
+                    {isAdmin && <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>}
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
@@ -192,15 +217,15 @@ export default function RunningProjectsSummaryPage() {
                     <TableBody>
                         {summaryData.map((row) => (
                             <TableRow key={row.srNo} className="border-0">
-                                <TableCell className="text-base font-medium text-muted-foreground">{row.srNo}</TableCell>
-                                <TableCell className="text-base font-medium">{row.project}</TableCell>
-                                <TableCell className="text-base font-medium">{row.count}</TableCell>
+                                <TableCell className="text-base font-medium text-muted-foreground pt-4">{row.srNo}</TableCell>
+                                <TableCell className="text-base font-medium pt-4">{row.project}</TableCell>
+                                <TableCell className="text-base font-medium pt-4">{row.count}</TableCell>
                                 <TableCell>
                                     <Textarea 
                                         value={row.remarks}
                                         onChange={(e) => handleRemarkChange(row.srNo, e.target.value)}
                                         placeholder="Add remarks..."
-                                        className="bg-accent/30 border-input focus-visible:ring-primary h-10"
+                                        className="bg-transparent border-0 border-b-2 rounded-none focus-visible:ring-0 focus-visible:border-primary"
                                         disabled={!isAdmin}
                                     />
                                 </TableCell>
