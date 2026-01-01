@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Download, ArrowLeft, Save } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
-import { bankTimelineCategories } from '@/lib/projects-data';
+import { bankTimelineCategories, bankProjectsMap } from '@/lib/projects-data';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,18 +61,19 @@ export default function RunningProjectsSummaryPage() {
         const data: SummaryRow[] = projectOrder.map((proj, index) => {
             const savedRow = savedSummaryItems.find(s => s.project === proj.name);
             
-            if (savedRow) {
-                return { ...savedRow, srNo: index + 1 };
-            }
-            
+            // Check for timeline record for this specific bank
             const timelineRecord = records.find(r => r.fileName === `${proj.name} Timeline`);
-            const projects = timelineRecord?.data?.find((d: any) => d.category === 'Projects')?.items || [];
+            const liveProjects = timelineRecord?.data?.find((d: any) => d.category === 'Projects')?.items || [];
             
+            // If timeline record exists, use its length. Otherwise, fallback to initial data.
+            const liveCount = liveProjects.length > 0 ? liveProjects.length : (bankProjectsMap[proj.key]?.length || 0);
+
+            // Use saved remarks if available, otherwise default to empty
             return {
                 srNo: index + 1,
                 project: proj.name,
-                count: projects.length,
-                remarks: ''
+                count: savedRow ? savedRow.count : liveCount, // Prefer saved count, fallback to live count
+                remarks: savedRow ? savedRow.remarks : ''
             };
         });
         
