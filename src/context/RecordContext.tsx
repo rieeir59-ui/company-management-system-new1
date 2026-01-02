@@ -133,7 +133,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   
   // Update record
   const updateRecord = useCallback(
-    async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>, showToast = true) => {
+    async (id: string, updatedData: Partial<SavedRecord>, showToast = true) => {
       if (!firestore || !currentUser) {
           if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
           return Promise.reject(new Error('User not authenticated'));
@@ -141,12 +141,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       
       const recordToUpdate = records.find(r => r.id === id);
 
-      if (recordToUpdate && !isAdmin) {
-          // If the user is not an admin, they can only update their own records.
-          if (recordToUpdate.employeeId !== currentUser.uid) {
-              if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
-              return Promise.reject(new Error('Permission denied'));
-          }
+      if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
+          if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
+          return Promise.reject(new Error('Permission denied'));
       }
 
       try {
@@ -162,7 +159,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>, showToast = true) => {
         if (!firestore || !currentUser) {
             if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
@@ -171,7 +168,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const recordsCollection = collection(firestore, 'savedRecords');
         
         let q;
-        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName);
+        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName) || recordData.fileName.includes('Timeline');
     
         if (isSharedRecord) {
             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
@@ -191,6 +188,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
                 projectName: recordData.projectName,
                 data: recordData.data,
                 employeeId: recordData.employeeId,
+                employeeName: recordData.employeeName,
+                employeeRecord: recordData.employeeRecord,
             };
             await updateRecord(existingDoc.id, dataToUpdate, showToast);
         } else {
@@ -203,7 +202,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             };
 
             try {
-                const docRef = await addDoc(collection(firestore, 'savedRecords'), newRecord);
+                await addDoc(collection(firestore, 'savedRecords'), newRecord);
                 if(showToast) toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
             } catch (err) {
                  console.error(err);
@@ -211,7 +210,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             }
         }
     },
-    [firestore, currentUser, toast, updateRecord, addRecord]
+    [firestore, currentUser, toast, updateRecord]
 );
 
 
@@ -282,4 +281,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
