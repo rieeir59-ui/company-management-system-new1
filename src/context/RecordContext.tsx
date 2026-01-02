@@ -162,7 +162,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>, showToast = true) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
         if (!firestore || !currentUser) {
             if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
@@ -190,17 +190,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             const dataToUpdate: Partial<SavedRecord> = {
                 projectName: recordData.projectName,
                 data: recordData.data,
-                // Ensure we pass the correct employee context when updating
                 employeeId: recordData.employeeId,
-                employeeName: recordData.employeeName,
-                employeeRecord: recordData.employeeRecord,
             };
             await updateRecord(existingDoc.id, dataToUpdate, showToast);
         } else {
-            // For addRecord, we don't need to pass the employeeId, as it will be picked from the currentUser.
-            // But if an admin is creating for someone else, the passed context is important.
-            // addRecord needs to be adapted or we handle it here.
-            // For now, let's create a full object for `addDoc` to ensure correctness
              const newRecord = {
                 ...recordData,
                 employeeId: recordData.employeeId || currentUser.uid,
