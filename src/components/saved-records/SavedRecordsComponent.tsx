@@ -4,16 +4,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-<<<<<<< HEAD
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye, Send, User as UserIcon } from "lucide-react";
+import { 
+    Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye, Send, User as UserIcon, Compass, File as FileIcon, CalendarOff, ClipboardList 
+} from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
-=======
-import { Button } from '@/components/ui/button';
 import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Loader2, Search, Trash2, Edit, Download, Eye, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, Landmark } from 'lucide-react';
->>>>>>> 7c790f5 (Try fixing this error: `Unhandled Runtime Error: ReferenceError: Badge i)
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,10 +32,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -46,12 +39,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
-<<<<<<< HEAD
 import { generatePdfForRecord } from '@/lib/pdf-generator';
-import { Compass } from 'lucide-react';
 import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
 import { StatusBadge } from '../ui/badge';
 import jsPDF from 'jspdf';
+import { getIconForFile } from '@/lib/icons';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
+import { bankTimelineCategories, type ProjectRow } from '@/lib/projects-data';
+
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -59,180 +54,6 @@ interface jsPDFWithAutoTable extends jsPDF {
     finalY: number;
   };
 }
-=======
-import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
-import Link from 'next/link';
-import { useCurrentUser } from '@/context/UserContext';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from '@/components/ui/table';
-import { bankTimelineCategories, ProjectRow } from '@/lib/projects-data';
-
-
-const generatePdfForRecord = (record: SavedRecord) => {
-    const doc = new jsPDF({ orientation: 'portrait' });
-    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
-    let yPos = 20;
-    const primaryColor = [45, 95, 51];
-    const margin = 14;
-
-    const addDefaultHeader = () => {
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 8;
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 12;
-
-        doc.setFontSize(9);
-        doc.text(`Record ID: ${record.id}`, 14, yPos);
-        doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
-        yPos += 10;
-        doc.setLineWidth(0.5);
-        doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
-    };
-
-    const addFooter = () => {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
-    };
-    
-    // Generic PDF generation
-    const generateGenericPdf = () => {
-        addDefaultHeader();
-
-        if (Array.isArray(record.data)) {
-            record.data.forEach((section: any) => {
-                if (typeof section === 'object' && section !== null && section.category) {
-                    if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(11);
-                    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-                    doc.text(section.category, 14, yPos);
-                    yPos += 8;
-                    doc.setTextColor(0,0,0);
-
-                    const body = (Array.isArray(section.items) ? section.items : [section.items]).map((item: any) => {
-                         if (typeof item === 'string') {
-                            const parts = item.split(/:(.*)/s);
-                            return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
-                         } else if (item && item.label && item.value !== undefined) {
-                            return [item.label, String(item.value)];
-                         }
-                         return [JSON.stringify(item), ''];
-                    });
-
-                    (doc as any).autoTable({
-                        startY: yPos,
-                        body: body,
-                        theme: 'striped',
-                        styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-                        headStyles: { fontStyle: 'bold' },
-                        columnStyles: { 0: { fontStyle: 'bold' } }
-                    });
-                     yPos = (doc as any).autoTable.previous.finalY + 10;
-                }
-            });
-        }
-        addFooter();
-        doc.save(`${record.projectName}_${record.fileName}.pdf`);
-    };
-
-    if (record.fileName === 'Project Agreement') {
-        const addText = (text: string, isBold = false, indent = 0, size = 10, spaceAfter = 7) => {
-            if (yPos > 270) { doc.addPage(); yPos = 20; }
-            doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-            doc.setFontSize(size);
-            const splitText = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - 28 - indent);
-            doc.text(splitText, 14 + indent, yPos);
-            yPos += (splitText.length * 4) + spaceAfter;
-        };
-        const addList = (items: { label: string, value: string }[]) => {
-            items.forEach(item => addText(`${item.label} ${item.value}`, false, 5, 10, 5));
-        };
-        
-        addText('COMMERCIAL AGREEMENT', true, 0, 14, 10);
-        const details = record.data.find(d => d.category === 'Agreement Details')?.items || [];
-        addText(`Made as of the day ${details.find((d:any)=>d.label.includes('day'))?.value || '________________'}`);
-        addText(`Between the Owner: ${details.find((d:any)=>d.label.includes('Owner'))?.value || '________________'}`);
-        addText(`For the Design of: ${details.find((d:any)=>d.label.includes('Design'))?.value || '________________'}`);
-        addText(`Address: ${details.find((d:any)=>d.label.includes('Address'))?.value || '________________'}`);
-        
-        const costBody = record.data.find(d => d.category === 'Cost Breakdown')?.items.map((item: any) => [item.label, item.value]) || [];
-        (doc as any).autoTable({ startY: yPos, theme: 'plain', styles: { fontSize: 10 }, body: costBody });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-        
-        addText('PAYMENT SCHEDULE:', true, 0, 12, 8);
-        const paymentBody = record.data.find(d => d.category === 'Payment Schedule')?.items.map((item: any) => [item.label, item.value]) || [];
-        (doc as any).autoTable({ startY: yPos, body: paymentBody, theme: 'plain', styles: { fontSize: 10, cellPadding: 1 } });
-        yPos = (doc as any).autoTable.previous.finalY + 10;
-
-        addText('Project Management', true, 0, 12, 8);
-        addText('Top Supervision:', true, 2, 10, 5);
-        addList(record.data.find(d => d.category === 'Top Supervision')?.items || []);
-
-        addText('Detailed Supervision:', true, 2, 10, 5);
-        addText(record.data.find(d => d.category === 'Detailed Supervision')?.items[0]?.value || '', false, 5);
-
-        addText('Please Note:', true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Notes')?.items || []);
-        addText(record.data.find(d => d.category === 'Extra Services Note')?.items[0]?.value || '', true, 2);
-        
-        doc.addPage(); yPos = 20;
-
-        addText("Architect's Responsibilities", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === "Architect's Responsibilities")?.items || []);
-
-        addText("The Architect will not be responsible for the following things:", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Not Responsible For')?.items || []);
-
-        addText("ARTICLE-1: Termination of the Agreement", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Termination')?.items || []);
-
-        doc.addPage(); yPos = 20;
-
-        addText("ARTICLE-2: Bases of Compensation", true, 0, 12, 8);
-        addList(record.data.find(d => d.category === 'Compensation')?.items || []);
-
-        yPos += 10;
-        if (yPos > 270) { doc.addPage(); yPos = 20; }
-        addText('____________________', false, 0, 10, 2);
-        addText('Architect', false, 0, 10, 15);
-        addText('____________________', false, 0, 10, 2);
-        addText('Client', false, 0, 10, 5);
-
-        addFooter();
-        doc.save('Project-Agreement.pdf');
-    } else {
-        generateGenericPdf();
-    }
-};
-
-const recordCategories = {
-    'Timelines of Bank': bankTimelineCategories,
-    'Project Manual': allFileNames.filter(name => ![...bankTimelineCategories, 'Task Assignment', 'Uploaded File', 'Daily Work Report'].includes(name)),
-    'Task Assignments': ['Task Assignment'],
-    'Uploaded Files': ['Uploaded File', 'Daily Work Report']
-};
-
-
-const mainCategories = [
-    { name: 'Banks', icon: Landmark, files: recordCategories['Timelines of Bank'] },
-    { name: 'Project Manual', icon: BookCopy, files: recordCategories['Project Manual'] },
-    { name: 'Assigned Tasks', icon: ClipboardCheck, files: recordCategories['Task Assignments'] },
-    { name: 'Employee Records', icon: Users, files: recordCategories['Uploaded Files'] }
-];
->>>>>>> 7c790f5 (Try fixing this error: `Unhandled Runtime Error: ReferenceError: Badge i)
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
@@ -333,7 +154,6 @@ const renderRecordContent = () => {
         const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
         const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
         const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
-        const totalProjects = summaryData.reduce((acc: number, curr: any) => acc + Number(curr.count || 0), 0);
 
         return (
             <div className="space-y-4">
@@ -827,7 +647,3 @@ const renderRecordContent = () => {
     </div>
   );
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 7c790f5 (Try fixing this error: `Unhandled Runtime Error: ReferenceError: Badge i)
