@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -82,40 +83,36 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const [remarks, setRemarks] = useState('Continue monitoring the critical path for each project. Ensure that any client-requested changes are documented and their impact on the timeline is assessed immediately. A follow-up meeting is scheduled for next week to review the progress of the tender packages.');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
-    const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
     useEffect(() => {
-        if (isInitialLoad) {
-            const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
-            if (record && record.data) {
-                const projects = record.data.find(d => d.category === 'Projects')?.items || [];
-                const statusAndRemarks = record.data.find(d => d.category === 'Status & Remarks')?.items || [];
-                
-                if (projects.length > 0) {
-                    setProjectRows(projects);
-                } else {
-                    setProjectRows(initialData);
-                }
-                
-                const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
-                const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-                const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
-
-                setOverallStatus(savedOverallStatus || defaultOverallStatus);
-                if (savedRemarks) setRemarks(savedRemarks);
-                if (savedDate) setRemarksDate(savedDate);
-                
+        const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
+        if (record && record.data) {
+            const projects = record.data.find(d => d.category === 'Projects')?.items || [];
+            const statusAndRemarks = record.data.find(d => d.category === 'Status & Remarks')?.items || [];
+            
+            if (projects.length > 0) {
+                setProjectRows(projects);
             } else {
                 setProjectRows(initialData);
             }
-            setIsInitialLoad(false);
+            
+            const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
+            const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
+
+            setOverallStatus(savedOverallStatus || defaultOverallStatus);
+            if (savedRemarks) setRemarks(savedRemarks);
+            if (savedDate) setRemarksDate(savedDate);
+            
+        } else {
+            setProjectRows(initialData);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [bankName, formattedBankName, defaultOverallStatus, initialData, records, isInitialLoad]);
+        setIsInitialLoad(false);
+    }, [bankName, formattedBankName, defaultOverallStatus, initialData, records]);
     
      const handleSave = useCallback((currentData = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
-        if (!isAdmin || !currentUser) {
-             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
+        if (!currentUser) {
+             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
              return;
         }
 
@@ -131,7 +128,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             ]
         } as any, showToast);
 
-    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser, projectRows, overallStatus, remarks, remarksDate]);
+    }, [addOrUpdateRecord, toast, formattedBankName, currentUser, projectRows, overallStatus, remarks, remarksDate]);
 
     const debouncedSave = useDebounce((rows, status, rem, date) => {
         if (!currentUser) return;
@@ -249,7 +246,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <Button
                             variant={"outline"}
                             className={cn("w-full justify-start text-left font-normal text-xs h-8 pr-8 border-0 bg-transparent hover:bg-accent/50 focus-visible:ring-1 focus-visible:ring-primary", !value && "text-muted-foreground")}
-                            disabled={!isAdmin}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {displayValue}
@@ -273,7 +269,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                             e.stopPropagation();
                             onChange('');
                         }}
-                        disabled={!isAdmin}
                     >
                         <X className="h-3 w-3 text-muted-foreground" />
                     </Button>
@@ -410,7 +405,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     ];
 
     const StyledInput = (props: React.ComponentProps<typeof Input>) => (
-        <Input className="border-0 bg-transparent h-8 p-1 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background" disabled={!isAdmin} {...props} />
+        <Input className="border-0 bg-transparent h-8 p-1 focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background" {...props} />
     )
 
     return (
@@ -423,7 +418,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    {isAdmin && <Button onClick={() => handleSave(projectRows, overallStatus, remarks, remarksDate, true)} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>}
+                    <Button onClick={() => handleSave(projectRows, overallStatus, remarks, remarksDate, true)} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
@@ -435,7 +430,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardContent className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="flex-1 w-full"><Input placeholder="Project Name" value={genProjectName} onChange={(e) => setGenProjectName(e.target.value)} /></div>
                         <div className="flex-1 w-full"><Input placeholder="Area in sft" value={genArea} onChange={(e) => setGenArea(e.target.value)} /></div>
-                        <Button onClick={handleGenerateTimeline} disabled={isGenerating || !isAdmin} className="w-full md:w-auto">
+                        <Button onClick={handleGenerateTimeline} disabled={isGenerating} className="w-full md:w-auto">
                             {isGenerating ? 'Generating...' : 'Generate Timeline'}
                         </Button>
                     </CardContent>
@@ -489,7 +484,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)} disabled={!isAdmin}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -498,7 +493,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     </table>
                 </div>
                  <div className="flex justify-start mt-4">
-                    <Button onClick={addProjectRow} variant="outline" disabled={!isAdmin}><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
+                    <Button onClick={addProjectRow} variant="outline"><PlusCircle className="mr-2 h-4 w-4"/>Add Project</Button>
                 </div>
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 pt-6 border-t mt-4">
@@ -510,7 +505,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         onChange={e => setOverallStatus(e.target.value)}
                         rows={4}
                         className="mt-2"
-                        disabled={!isAdmin}
                     />
                 </div>
                 <div className="w-full">
@@ -521,7 +515,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         onChange={e => setRemarks(e.target.value)}
                         rows={3}
                         className="mt-2"
-                        disabled={!isAdmin}
                     />
                 </div>
                  <div className="w-full">
@@ -532,7 +525,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         value={remarksDate}
                         onChange={e => setRemarksDate(e.target.value)}
                         className="w-fit mt-2"
-                        disabled={!isAdmin}
                     />
                 </div>
             </CardFooter>
@@ -540,4 +532,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     );
 }
 
-    
