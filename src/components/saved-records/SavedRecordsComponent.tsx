@@ -92,11 +92,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return categoryRecords.filter(r => 
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
             r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            r.employeeName.toLowerCase().includes(searchQuery.toLowerCase())
+            (r.employeeName && r.employeeName.toLowerCase().includes(searchQuery.toLowerCase()))
         );
     }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
 
     const recordsByFileName = useMemo(() => {
+        if (activeCategory === 'Employee Documents' && !employeeOnly) return {}; // This view is handled by recordsByEmployee
         return filteredRecords.reduce((acc, record) => {
             if (!acc[record.fileName]) {
                 acc[record.fileName] = [];
@@ -104,10 +105,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             acc[record.fileName].push(record);
             return acc;
         }, {} as Record<string, SavedRecord[]>);
-    }, [filteredRecords]);
+    }, [filteredRecords, activeCategory, employeeOnly]);
 
      const recordsByEmployee = useMemo(() => {
-        if (activeCategory !== 'Employee Documents') return {};
+        if (activeCategory !== 'Employee Documents' || employeeOnly) return {};
         return filteredRecords.reduce((acc, record) => {
             const employeeName = record.employeeName || 'Unknown';
             if (!acc[employeeName]) {
@@ -116,7 +117,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
             acc[employeeName].push(record);
             return acc;
         }, {} as Record<string, SavedRecord[]>);
-    }, [filteredRecords, activeCategory]);
+    }, [filteredRecords, activeCategory, employeeOnly]);
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -144,170 +145,170 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
-const renderRecordContent = () => {
-    if (!viewingRecord) return null;
+    const renderRecordContent = () => {
+        if (!viewingRecord) return null;
 
-     if (viewingRecord.fileName === 'Running Projects Summary') {
-        const summaryData = viewingRecord.data?.find((d: any) => d.category === 'Summary')?.items || [];
-        const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
-        
-        const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
-        const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-        const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+        if (viewingRecord.fileName === 'Running Projects Summary') {
+            const summaryData = viewingRecord.data?.find((d: any) => d.category === 'Summary')?.items || [];
+            const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+            
+            const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+            const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
 
-        return (
-            <div className="space-y-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Sr.No</TableHead>
-                            <TableHead>Projects</TableHead>
-                            <TableHead>Nos of project</TableHead>
-                            <TableHead>Remarks</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {summaryData.map((row: any) => (
-                            <TableRow key={row.srNo}>
-                                <TableCell>{row.srNo}</TableCell>
-                                <TableCell>{row.project}</TableCell>
-                                <TableCell>{row.count}</TableCell>
-                                <TableCell>{row.remarks}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <div className="mt-4 space-y-2">
-                    {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
-                    {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
-                    {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
-                </div>
-            </div>
-        )
-    }
-
-    if (viewingRecord.fileName.includes('Timeline')) {
-        const projectsData = viewingRecord.data?.find((d: any) => d.category === 'Projects')?.items || [];
-        const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
-        
-        const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
-        const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-        const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
-
-        const tableHeaders = [
-            "Sr.No", "Project Name", "Area", "Project Holder", "Allocation Date", 
-            "Site Survey", "Contract", "Head Count", "Proposal", "3D's", "Tender Arch", 
-            "Tender MEP", "BOQ", "Tender Status", "Comparative", "Working Drawings", 
-            "Site Visit", "Final Bill", "Project Closure"
-        ];
-        
-        return (
-            <div className="space-y-4">
-                <div className="overflow-x-auto">
-                    <Table className="text-xs">
+            return (
+                <div className="space-y-4">
+                    <Table>
                         <TableHeader>
                             <TableRow>
-                                {tableHeaders.map(header => {
-                                    const isDateRange = ['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header);
-                                    return <TableHead key={header} colSpan={isDateRange ? 2 : 1} rowSpan={isDateRange ? 1 : 2} className="align-bottom p-1 border text-center">{header}</TableHead>
-                                })}
-                            </TableRow>
-                            <TableRow>
-                                {tableHeaders.flatMap(header => {
-                                    if (['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header)) {
-                                        return [<TableHead key={`${header}-start`} className="p-1 border text-center">Start</TableHead>, <TableHead key={`${header}-end`} className="p-1 border text-center">End</TableHead>]
-                                    }
-                                    return [];
-                                })}
+                                <TableHead>Sr.No</TableHead>
+                                <TableHead>Projects</TableHead>
+                                <TableHead>Nos of project</TableHead>
+                                <TableHead>Remarks</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {projectsData.map((p: any, index: number) => (
-                                <TableRow key={p.id || index}>
-                                    <TableCell className="p-1 border">{p.srNo}</TableCell>
-                                    <TableCell className="p-1 border">{p.projectName}</TableCell>
-                                    <TableCell className="p-1 border">{p.area}</TableCell>
-                                    <TableCell className="p-1 border">{p.projectHolder}</TableCell>
-                                    <TableCell className="p-1 border">{p.allocationDate}</TableCell>
-                                    <TableCell className="p-1 border">{p.siteSurveyStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.siteSurveyEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.contractStart || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.contactEnd || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.headCountStart || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.headCountEnd || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.proposalStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.proposalEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.threedStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.threedEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.tenderArchStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.tenderArchEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.tenderMepStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.tenderMepEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.boqStart}</TableCell>
-                                    <TableCell className="p-1 border">{p.boqEnd}</TableCell>
-                                    <TableCell className="p-1 border">{p.tenderStatus}</TableCell>
-                                    <TableCell className="p-1 border">{p.comparative}</TableCell>
-                                    <TableCell className="p-1 border">{p.workingDrawingsStart || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.workingDrawingsEnd || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.siteVisitStart || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.siteVisitEnd || ''}</TableCell>
-                                    <TableCell className="p-1 border">{p.finalBill}</TableCell>
-                                    <TableCell className="p-1 border">{p.projectClosure}</TableCell>
+                            {summaryData.map((row: any) => (
+                                <TableRow key={row.srNo}>
+                                    <TableCell>{row.srNo}</TableCell>
+                                    <TableCell>{row.project}</TableCell>
+                                    <TableCell>{row.count}</TableCell>
+                                    <TableCell>{row.remarks}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
-                </div>
-                <div className="mt-4 space-y-2">
-                    {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
-                    {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
-                    {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
-                </div>
-            </div>
-        )
-    }
-        
-    if(viewingRecord.fileName === 'My Projects') {
-        const scheduleData = viewingRecord.data.find((d: any) => d.category === 'My Project Schedule');
-        const projects = (scheduleData?.items || []).map((item: any) => {
-            const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
-            return project;
-        });
-
-         return (
-            <div className="space-y-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Project Name</TableHead>
-                            <TableHead>Detail</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Start Date</TableHead>
-                            <TableHead>End Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {projects.map((p: any, index: number) => (
-                            <TableRow key={index}>
-                                <TableCell>{p.projectName}</TableCell>
-                                <TableCell>{p.Detail}</TableCell>
-                                <TableCell><StatusBadge status={p.Status?.toLowerCase().replace(' ', '-') || 'not-started'} /></TableCell>
-                                <TableCell>{p.Start}</TableCell>
-                                <TableCell>{p.End}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                {scheduleData?.remarks && (
-                    <div className="mt-4 pt-4 border-t">
-                        <h4 className="font-semibold">Remarks:</h4>
-                        <p className="text-sm text-muted-foreground">{scheduleData.remarks}</p>
+                    <div className="mt-4 space-y-2">
+                        {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                        {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                        {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
                     </div>
-                )}
-            </div>
-        )
-    }
-    
+                </div>
+            )
+        }
+
+        if (viewingRecord.fileName.includes('Timeline')) {
+            const projectsData = viewingRecord.data?.find((d: any) => d.category === 'Projects')?.items || [];
+            const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+            
+            const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+            const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+
+            const tableHeaders = [
+                "Sr.No", "Project Name", "Area", "Project Holder", "Allocation Date", 
+                "Site Survey", "Contract", "Head Count", "Proposal", "3D's", "Tender Arch", 
+                "Tender MEP", "BOQ", "Tender Status", "Comparative", "Working Drawings", 
+                "Site Visit", "Final Bill", "Project Closure"
+            ];
+            
+            return (
+                <div className="space-y-4">
+                    <div className="overflow-x-auto">
+                        <Table className="text-xs">
+                            <TableHeader>
+                                <TableRow>
+                                    {tableHeaders.map(header => {
+                                        const isDateRange = ['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header);
+                                        return <TableHead key={header} colSpan={isDateRange ? 2 : 1} rowSpan={isDateRange ? 1 : 2} className="align-bottom p-1 border text-center">{header}</TableHead>
+                                    })}
+                                </TableRow>
+                                <TableRow>
+                                    {tableHeaders.flatMap(header => {
+                                        if (['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header)) {
+                                            return [<TableHead key={`${header}-start`} className="p-1 border text-center">Start</TableHead>, <TableHead key={`${header}-end`} className="p-1 border text-center">End</TableHead>]
+                                        }
+                                        return [];
+                                    })}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {projectsData.map((p: any, index: number) => (
+                                    <TableRow key={p.id || index}>
+                                        <TableCell className="p-1 border">{p.srNo}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectName}</TableCell>
+                                        <TableCell className="p-1 border">{p.area}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectHolder}</TableCell>
+                                        <TableCell className="p-1 border">{p.allocationDate}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteSurveyStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteSurveyEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.contractStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.contactEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.headCountStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.headCountEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.proposalStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.proposalEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.threedStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.threedEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderArchStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderArchEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderMepStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderMepEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.boqStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.boqEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderStatus}</TableCell>
+                                        <TableCell className="p-1 border">{p.comparative}</TableCell>
+                                        <TableCell className="p-1 border">{p.workingDrawingsStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.workingDrawingsEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteVisitStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteVisitEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.finalBill}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectClosure}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                        {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                        {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
+                    </div>
+                </div>
+            )
+        }
+            
+        if(viewingRecord.fileName === 'My Projects') {
+            const scheduleData = viewingRecord.data.find((d: any) => d.category === 'My Project Schedule');
+            const projects = (scheduleData?.items || []).map((item: any) => {
+                const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
+                return project;
+            });
+
+             return (
+                <div className="space-y-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Detail</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {projects.map((p: any, index: number) => (
+                                <TableRow key={index}>
+                                    <TableCell>{p.projectName}</TableCell>
+                                    <TableCell>{p.Detail}</TableCell>
+                                    <TableCell><StatusBadge status={p.Status?.toLowerCase().replace(' ', '-') || 'not-started'} /></TableCell>
+                                    <TableCell>{p.Start}</TableCell>
+                                    <TableCell>{p.End}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    {scheduleData?.remarks && (
+                        <div className="mt-4 pt-4 border-t">
+                            <h4 className="font-semibold">Remarks:</h4>
+                            <p className="text-sm text-muted-foreground">{scheduleData.remarks}</p>
+                        </div>
+                    )}
+                </div>
+            )
+        }
+        
         if (viewingRecord.fileName === 'Daily Work Report') {
             const entries = viewingRecord.data[0]?.items || [];
             if (!Array.isArray(entries)) return <p>Could not display record data.</p>;
@@ -339,8 +340,8 @@ const renderRecordContent = () => {
                     <TableBody>
                         {entries.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((entry: any, index: number) => (
                             <TableRow key={entry.id || index}>
-                                <TableCell>{format(parseISO(entry.date), 'dd-MMM-yyyy')}</TableCell>
-                                <TableCell>{format(parseISO(entry.date), 'EEEE')}</TableCell>
+                                <TableCell>{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'dd-MMM-yyyy') : 'Invalid Date'}</TableCell>
+                                <TableCell>{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'EEEE') : '-'}</TableCell>
                                 <TableCell>{entry.startTime}</TableCell>
                                 <TableCell>{entry.endTime}</TableCell>
                                 <TableCell>{entry.projectName}</TableCell>
@@ -497,45 +498,6 @@ const renderRecordContent = () => {
                                 if (fileRecords.length === 0) return null;
                                 const Icon = getIconForFile(fileName);
                                 
-                                if (fileName === 'My Projects') {
-                                    return (
-                                        <AccordionItem value={fileName} key={fileName}>
-                                            <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
-                                                <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords.length > 0 ? (fileRecords[0].data.find((d:any) => d.category === 'My Project Schedule')?.items.length || 0) : 0}</Badge></div>
-                                            </AccordionTrigger>
-                                            <AccordionContent className="pt-2">
-                                                <div className="border rounded-b-lg">
-                                                    <Table>
-                                                        <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Employee</TableHead><TableHead>Status</TableHead><TableHead>Start Date</TableHead><TableHead>End Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                                        <TableBody>
-                                                            {fileRecords.map(record => (
-                                                                (record.data.find((d: any) => d.category === 'My Project Schedule')?.items || []).map((item: any, index: number) => {
-                                                                    const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
-                                                                    return (
-                                                                        <TableRow key={`${record.id}-${index}`}>
-                                                                            <TableCell>{project.projectName}</TableCell>
-                                                                            <TableCell>{record.employeeName}</TableCell>
-                                                                            <TableCell><StatusBadge status={project.Status.toLowerCase().replace(' ', '-')} /></TableCell>
-                                                                            <TableCell>{project.Start}</TableCell>
-                                                                            <TableCell>{project.End}</TableCell>
-                                                                            <TableCell className="text-right">
-                                                                                <Button variant="outline" size="sm" onClick={() => openViewDialog(record, project)}>
-                                                                                    <Eye className="h-4 w-4 mr-2" />
-                                                                                    View
-                                                                                </Button>
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    )
-                                                                })
-                                                            ))}
-                                                        </TableBody>
-                                                    </Table>
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    )
-                                }
-                                
                                 return (
                                     <AccordionItem value={fileName} key={fileName}>
                                         <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
@@ -612,3 +574,4 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
