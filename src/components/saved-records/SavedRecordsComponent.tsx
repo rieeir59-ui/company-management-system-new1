@@ -311,7 +311,7 @@ const renderRecordContent = () => {
         if (viewingRecord.fileName === 'Daily Work Report') {
             const entries = viewingRecord.data[0]?.items || [];
             if (!Array.isArray(entries)) return <p>Could not display record data.</p>;
-    
+
             const calculateTotalUnits = (startTime: string, endTime: string): string => {
                 if (!startTime || !endTime) return '0:00';
                 const start = new Date(`1970-01-01T${startTime}`);
@@ -323,48 +323,33 @@ const renderRecordContent = () => {
                 return `${hours}:${String(minutes).padStart(2, '0')}`;
             };
     
-            const entriesByDate = entries.reduce((acc, entry) => {
-                if (entry.date) {
-                    (acc[entry.date] = acc[entry.date] || []).push(entry);
-                }
-                return acc;
-            }, {} as Record<string, typeof entries>);
-    
-            const sortedDates = Object.keys(entriesByDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
-    
             return (
-                <div className="space-y-6">
-                    {sortedDates.map(date => {
-                        const dayEntries = entriesByDate[date];
-                        const totalDayMinutes = dayEntries.reduce((acc: number, entry: any) => {
-                            const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
-                            return acc + (hours * 60) + minutes;
-                        }, 0);
-                        const totalHours = Math.floor(totalDayMinutes / 60);
-                        const totalMinutes = totalDayMinutes % 60;
-
-                        return (
-                            <Card key={date}>
-                                <CardHeader>
-                                    <CardTitle>{format(parseISO(date), 'EEEE, dd MMM yyyy')}</CardTitle>
-                                    <CardDescription>Total Hours: {totalHours}:{String(totalMinutes).padStart(2, '0')}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className="space-y-2">
-                                    {dayEntries.map((entry: any, index: number) => (
-                                        <li key={entry.id || index} className="text-sm p-2 rounded-md border">
-                                            <p><strong>Time:</strong> {entry.startTime} - {entry.endTime} ({calculateTotalUnits(entry.startTime, entry.endTime)})</p>
-                                            <p><strong>Project:</strong> {entry.projectName} ({entry.customerJobNumber})</p>
-                                            <p><strong>Type:</strong> {entry.designType} / {entry.projectType}</p>
-                                            <p><strong>Description:</strong> {entry.description}</p>
-                                        </li>
-                                    ))}
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
-                </div>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Day</TableHead>
+                            <TableHead>Start Time</TableHead>
+                            <TableHead>End Time</TableHead>
+                            <TableHead>Project Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Total Units</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {entries.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((entry: any, index: number) => (
+                            <TableRow key={entry.id || index}>
+                                <TableCell>{format(parseISO(entry.date), 'dd-MMM-yyyy')}</TableCell>
+                                <TableCell>{format(parseISO(entry.date), 'EEEE')}</TableCell>
+                                <TableCell>{entry.startTime}</TableCell>
+                                <TableCell>{entry.endTime}</TableCell>
+                                <TableCell>{entry.projectName}</TableCell>
+                                <TableCell>{entry.description}</TableCell>
+                                <TableCell>{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             )
         }
         
@@ -627,5 +612,3 @@ const renderRecordContent = () => {
     </div>
   );
 }
-
-    
