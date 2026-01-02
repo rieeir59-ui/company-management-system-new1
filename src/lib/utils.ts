@@ -38,6 +38,7 @@ export const allFileNames = [
   "Uploaded File",
   "Daily Work Report",
   "Leave Request Form",
+  "Leave Application",
 ];
 
 const fileNameToUrlMap: Record<string, string> = {

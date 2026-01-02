@@ -646,4 +646,3 @@ const renderRecordContent = () => {
     </div>
   );
 }
-
