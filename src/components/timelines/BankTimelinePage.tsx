@@ -112,9 +112,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             setRemarksDate(new Date().toISOString().split('T')[0]);
         }
         setIsInitialLoad(false);
-    // This effect should only run once when the component mounts or when bankName changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [bankName, initialData, records, formattedBankName]);
+    }, [bankName, records, formattedBankName]);
     
      const handleSave = useCallback((currentData = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!isAdmin || !currentUser) {
@@ -134,7 +133,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             ]
         } as any, showToast);
 
-    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser, projectRows, overallStatus, remarks, remarksDate]);
+    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser]);
 
     const debouncedSave = useDebounce((rows, status, rem, date) => {
         if (!currentUser) return;
@@ -320,7 +319,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.\nNo', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area\nin Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count / Requirement', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count / Requirement', colSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
@@ -330,7 +329,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 'Start', 'End',
                 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End',
+                'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End',
                 'Start', 'End', 'Start', 'End'
             ]
         ];
@@ -338,8 +340,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, 
-            p.contract || '',
-            p.headCount || '',
+            p.contractStart || '', p.contactEnd || '',
+            p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd,
@@ -545,4 +547,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     );
 }
 
-    
