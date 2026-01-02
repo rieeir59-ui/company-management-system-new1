@@ -159,7 +159,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
   const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt'>, showToast = true) => {
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
         if (!firestore || !currentUser) {
             if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
