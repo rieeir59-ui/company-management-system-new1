@@ -54,7 +54,7 @@ export function useTasks(employeeUid?: string, fetchAllForAdmin = false) {
     
     if (isAdmin && fetchAllForAdmin) {
         q = query(tasksCollection);
-    } else if (uidToFetch) {
+    } else if (uidToFetch) { // This check ensures uidToFetch is not undefined
         q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
     } else {
         setTasks([]);
