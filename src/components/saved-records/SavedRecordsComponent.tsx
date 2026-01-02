@@ -46,7 +46,7 @@ import jsPDF from 'jspdf';
 import { getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import { bankTimelineCategories, type ProjectRow } from '@/lib/projects-data';
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => void;
@@ -344,44 +344,24 @@ const renderRecordContent = () => {
                         const totalMinutes = totalDayMinutes % 60;
 
                         return (
-                            <div key={date}>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/30">
-                                            <TableHead>DAY</TableHead>
-                                            <TableHead>DATE</TableHead>
-                                            <TableHead>START</TableHead>
-                                            <TableHead>END</TableHead>
-                                            <TableHead>CUSTOMER JOB</TableHead>
-                                            <TableHead>PROJECT NAME</TableHead>
-                                            <TableHead>DESIGN TYPE</TableHead>
-                                            <TableHead>PROJECT TYPE</TableHead>
-                                            <TableHead>DESCRIPTION</TableHead>
-                                            <TableHead className="text-right">TOTAL UNITS</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {dayEntries.map((entry: any, index: number) => (
-                                            <TableRow key={entry.id || index}>
-                                                <TableCell>{format(parseISO(entry.date), 'EEEE').toUpperCase()}</TableCell>
-                                                <TableCell>{format(parseISO(entry.date), 'dd-MMM')}</TableCell>
-                                                <TableCell>{entry.startTime}</TableCell>
-                                                <TableCell>{entry.endTime}</TableCell>
-                                                <TableCell>{entry.customerJobNumber}</TableCell>
-                                                <TableCell>{entry.projectName}</TableCell>
-                                                <TableCell>{entry.designType}</TableCell>
-                                                <TableCell>{entry.projectType}</TableCell>
-                                                <TableCell>{entry.description}</TableCell>
-                                                <TableCell className="text-right">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                        <TableRow className="font-bold bg-muted/50">
-                                            <TableCell colSpan={9} className="text-right">TOTAL UNITS</TableCell>
-                                            <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
+                            <Card key={date}>
+                                <CardHeader>
+                                    <CardTitle>{format(parseISO(date), 'EEEE, dd MMM yyyy')}</CardTitle>
+                                    <CardDescription>Total Hours: {totalHours}:{String(totalMinutes).padStart(2, '0')}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <ul className="space-y-2">
+                                    {dayEntries.map((entry: any, index: number) => (
+                                        <li key={entry.id || index} className="text-sm p-2 rounded-md border">
+                                            <p><strong>Time:</strong> {entry.startTime} - {entry.endTime} ({calculateTotalUnits(entry.startTime, entry.endTime)})</p>
+                                            <p><strong>Project:</strong> {entry.projectName} ({entry.customerJobNumber})</p>
+                                            <p><strong>Type:</strong> {entry.designType} / {entry.projectType}</p>
+                                            <p><strong>Description:</strong> {entry.description}</p>
+                                        </li>
+                                    ))}
+                                    </ul>
+                                </CardContent>
+                            </Card>
                         )
                     })}
                 </div>
@@ -647,3 +627,5 @@ const renderRecordContent = () => {
     </div>
   );
 }
+
+    
