@@ -138,13 +138,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
           if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
           return Promise.reject(new Error('User not authenticated'));
       }
-      
-      const recordToUpdate = records.find(r => r.id === id);
-
-      if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
-          if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
-          return Promise.reject(new Error('Permission denied'));
-      }
 
       try {
         await updateDoc(doc(firestore, 'savedRecords', id), updatedData);
