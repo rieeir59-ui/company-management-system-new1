@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -114,7 +114,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         setIsInitialLoad(false);
     }, [bankName, initialData, records, formattedBankName, defaultOverallStatus]);
     
-     const handleSave = useCallback((rowsToSave = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
+     const handleSave = useCallback((currentData = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
         if (!isAdmin || !currentUser) {
              if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
              return;
@@ -127,12 +127,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             employeeName: currentUser.name,
             employeeRecord: currentUser.record,
             data: [
-                { category: 'Projects', items: rowsToSave },
+                { category: 'Projects', items: currentData },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
             ]
         } as any, showToast);
 
-    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser]);
+    }, [addOrUpdateRecord, isAdmin, toast, formattedBankName, currentUser, projectRows, overallStatus, remarks, remarksDate]);
 
     const debouncedSave = useDebounce((rows, status, rem, date) => {
         if (!currentUser) return;
