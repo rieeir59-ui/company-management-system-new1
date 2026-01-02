@@ -182,22 +182,24 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     
         const querySnapshot = await getDocs(q);
     
+        const employeeInfo = {
+            employeeId: recordData.employeeId || currentUser.uid,
+            employeeName: recordData.employeeName || currentUser.name,
+            employeeRecord: recordData.employeeRecord || currentUser.record,
+        };
+
         if (!querySnapshot.empty) {
             const existingDoc = querySnapshot.docs[0];
             const dataToUpdate: Partial<SavedRecord> = {
+                ...employeeInfo,
                 projectName: recordData.projectName,
                 data: recordData.data,
-                employeeId: recordData.employeeId,
-                employeeName: recordData.employeeName,
-                employeeRecord: recordData.employeeRecord,
             };
             await updateRecord(existingDoc.id, dataToUpdate, showToast);
         } else {
              const newRecord = {
                 ...recordData,
-                employeeId: recordData.employeeId || currentUser.uid,
-                employeeName: recordData.employeeName || currentUser.name,
-                employeeRecord: recordData.employeeRecord || currentUser.record,
+                ...employeeInfo,
                 createdAt: serverTimestamp()
             };
 
