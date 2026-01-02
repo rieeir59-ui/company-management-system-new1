@@ -123,6 +123,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
+            employeeId: currentUser.uid,
+            employeeName: currentUser.name,
+            employeeRecord: currentUser.record,
             data: [
                 { category: 'Projects', items: rowsToSave },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
@@ -537,3 +540,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    
