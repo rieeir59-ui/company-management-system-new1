@@ -21,9 +21,11 @@ const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const services = useMemo(() => {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const firestore = getFirestore(app);
+    
     return { 
         firebaseApp: app, 
-        firestore: getFirestore(app), 
+        firestore: firestore, 
         auth: getAuth(app), 
         storage: getStorage(app), 
         areServicesAvailable: true 
