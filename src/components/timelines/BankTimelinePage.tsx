@@ -35,8 +35,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
     }, [bankName]);
 
-    const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
-
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
     const { addOrUpdateRecord, records } = useRecords();
@@ -48,28 +46,28 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
+        const initialData = bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [];
+        
         if (record && record.data) {
-            const projects = record.data.find(d => d.category === 'Projects')?.items || [];
-            const statusAndRemarks = record.data.find(d => d.category === 'Status & Remarks')?.items || [];
+            const projects = record.data.find((d: any) => d.category === 'Projects')?.items || [];
+            const statusAndRemarks = record.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             
-            if (projects.length > 0) {
-                setProjectRows(projects);
-            } else {
-                setProjectRows(initialData);
+            setProjectRows(Array.isArray(projects) && projects.length > 0 ? projects : initialData);
+            
+            if (Array.isArray(statusAndRemarks)) {
+                const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
+                const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+                const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
+    
+                setOverallStatus(savedOverallStatus || '');
+                setRemarks(savedRemarks || '');
+                if (savedDate) setRemarksDate(savedDate);
             }
-            
-            const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
-            const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-            const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
-
-            setOverallStatus(savedOverallStatus || '');
-            setRemarks(savedRemarks || '');
-            if (savedDate) setRemarksDate(savedDate);
             
         } else {
             setProjectRows(initialData);
         }
-    }, [bankName, formattedBankName, initialData, records]);
+    }, [bankName, formattedBankName, records]);
     
      const handleSave = (rows = projectRows, status = overallStatus, remarksText = remarks, date = remarksDate, showToast = true) => {
         if (!currentUser) {
@@ -80,9 +78,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
-            employeeId: currentUser.uid,
-            employeeName: currentUser.name,
-            employeeRecord: currentUser.record,
             data: [
                 { category: 'Projects', items: rows },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: status}, {label: 'Maam Isbah Remarks & Order', value: remarksText}, {label: 'Date', value: date}] },
@@ -143,7 +138,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                     proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
                     tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '',
+                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
                 };
                 newRow = updateRowWithAITimeline(newRow);
                 setProjectRows(prevRows => [...prevRows, newRow]);
@@ -246,7 +241,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 ...row,
                 srNo: String(index + 1)
             }));
-
+    
         setProjectRows(updatedRows);
         handleSave(updatedRows, overallStatus, remarks, remarksDate, false);
         toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
@@ -260,8 +255,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         const head = [
             [
                 { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
-                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count / Requirement', rowSpan: 2 },
+                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count\n/ Requirement', rowSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
@@ -269,8 +264,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
-                'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End'
             ]
         ];
@@ -321,7 +315,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
-    if (!initialData.length && !projectRows.length) {
+    if (!projectRows) {
          return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <Card className="w-full max-w-md text-center">
@@ -483,3 +477,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    
