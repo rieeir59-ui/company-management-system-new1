@@ -21,15 +21,15 @@ export default function EmployeeDashboardLayout({
 }) {
   return (
       <SidebarProvider>
+        <Suspense fallback={<DashboardFallback />}>
           <EmployeeDashboardSidebar />
             <SidebarInset>
-              <Suspense fallback={<DashboardFallback />}>
                 <Header />
                 <div className="p-4 sm:p-6 lg:p-8">
                     {children}
                 </div>
-              </Suspense>
             </SidebarInset>
+          </Suspense>
       </SidebarProvider>
   );
 }
