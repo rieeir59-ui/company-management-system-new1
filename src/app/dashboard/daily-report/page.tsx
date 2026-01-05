@@ -122,7 +122,8 @@ function DailyReportPageComponent() {
     if (!employeeIdFromUrl && isAdmin && currentUser) {
       setSelectedEmployeeId(currentUser.uid);
     } else if (employeeIdFromUrl) {
-      setSelectedEmployeeId(employeeIdFromUrl);
+      const employee = employees.find(e => e.record === employeeIdFromUrl);
+      setSelectedEmployeeId(employee?.uid);
     }
   }, [isAdmin, employees, currentUser, employeeIdFromUrl]);
 
@@ -304,9 +305,8 @@ function DailyReportPageComponent() {
         body: [
             [`EMPLOYEE NAME: ${reportForUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${reportForUser?.departments.join(', ') || 'N/A'}`],
             [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
-             [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
-        ],
-        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
+             [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right' } }],
+        ]
     });
 
     yPos = (doc as any).autoTable.previous.finalY + 2;
@@ -344,8 +344,8 @@ function DailyReportPageComponent() {
             }
             
             const rows = dayEntries.map((entry, entryIndex) => [
-                entryIndex === 0 ? { content: format(day, 'EEEE').toUpperCase(), rowSpan: dayEntries.length + 1 } : '',
-                entryIndex === 0 ? { content: format(parseISO(entry.date), 'dd-MMM'), rowSpan: dayEntries.length + 1 } : '',
+                entryIndex === 0 ? { content: format(day, 'EEEE').toUpperCase(), rowSpan: dayEntries.length + 1, styles: { valign: 'middle' } } : '',
+                entryIndex === 0 ? { content: format(parseISO(entry.date), 'dd-MMM'), rowSpan: dayEntries.length + 1, styles: { valign: 'middle' } } : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -357,7 +357,7 @@ function DailyReportPageComponent() {
             ].slice(entryIndex === 0 ? 0 : 2));
             
             rows.push([
-                { content: 'TOTAL UNITS', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: 'TOTAL UNITS', colSpan: 7, styles: { halign: 'right', fontStyle: 'bold' } },
                 { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
             ]);
 
@@ -497,8 +497,8 @@ function DailyReportPageComponent() {
              <div className="space-y-2 p-4 border rounded-md">
                 <Label className="font-semibold">Filter by Date Range</Label>
                  <div className="flex gap-2">
-                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFrom ? format(dateFrom, "PPP") : <span>Date From</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} onClear={() => setDateFrom(undefined)} initialFocus /></PopoverContent></Popover>
-                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateTo ? format(dateTo, "PPP") : <span>To Date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateTo} onSelect={setDateTo} onClear={() => setDateTo(undefined)} initialFocus /></PopoverContent></Popover>
+                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFrom ? format(dateFrom, "PPP") : <span>Date From</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus /></PopoverContent></Popover>
+                    <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateTo ? format(dateTo, "PPP") : <span>To Date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus /></PopoverContent></Popover>
                 </div>
                 <Button onClick={filterByDateRange} className="w-full mt-2" variant={isCustomRange ? "default" : "secondary"} disabled={!dateFrom || !dateTo}>Filter by Date Range</Button>
             </div>
@@ -521,15 +521,17 @@ function DailyReportPageComponent() {
                         <h2 className="font-bold text-lg">ISBAH HASSAN & ASSOCIATES</h2>
                         <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
                     </div>
-                     <div className="flex justify-between text-sm px-4 pb-2">
-                        <span><b>EMPLOYEE NAME:</b> {selectedEmployee?.name}</span>
-                        <span><b>EMPLOYEE POSITION:</b> {selectedEmployee?.departments.join(', ')}</span>
+                     <div className="grid grid-cols-2 text-sm px-4 pb-4">
+                        <div>
+                          <p><strong>EMPLOYEE NAME:</strong> {selectedEmployee?.name}</p>
+                          <p><strong>DATE FROM:</strong> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</p>
+                        </div>
+                        <div className="text-right">
+                          <p><strong>EMPLOYEE POSITION:</strong> {selectedEmployee?.departments.join(', ')}</p>
+                          <p><strong>TO DATE:</strong> {dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}</p>
+                          <p className="font-bold mt-1">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</p>
+                        </div>
                     </div>
-                    <div className="flex justify-between text-sm px-4 pb-4">
-                        <span><b>DATE FROM:</b> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</span>
-                         <span><b>TO DATE:</b> {dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}</span>
-                    </div>
-                    <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted hover:bg-muted text-xs">
@@ -583,7 +585,7 @@ function DailyReportPageComponent() {
                                             </TableRow>
                                         ))}
                                          <TableRow className="bg-muted/50 font-bold">
-                                            <TableCell colSpan={8} className="text-right">TOTAL UNITS</TableCell>
+                                            <TableCell colSpan={7} className="text-right">TOTAL UNITS</TableCell>
                                             <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
                                         </TableRow>
                                     </React.Fragment>
