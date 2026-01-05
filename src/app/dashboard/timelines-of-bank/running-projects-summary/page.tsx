@@ -88,8 +88,8 @@ export default function RunningProjectsSummaryPage() {
                 const savedRemarks = statusAndRemarksItems.find((i: any) => i.label === 'Maam Isbah Remarks & Order')?.value;
                 const savedDate = statusAndRemarksItems.find((i: any) => i.label === 'Date')?.value;
                 
-                if (savedOverallStatus) setOverallStatus(savedOverallStatus);
-                if (savedRemarks) setRemarks(savedRemarks);
+                setOverallStatus(savedOverallStatus || '');
+                setRemarks(savedRemarks || '');
                 if (savedDate) setRemarksDate(savedDate);
              }
         }
