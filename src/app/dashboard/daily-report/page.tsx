@@ -150,10 +150,12 @@ function DailyReportPageComponent() {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
         if (workEntries && Array.isArray(workEntries.items)) {
             setEntries(workEntries.items);
-            return;
+        } else {
+            setEntries([]);
         }
+    } else {
+        setEntries([]);
     }
-    setEntries([]);
   }, [records, selectedEmployee]);
 
   const dateInterval = useMemo(() => {
@@ -573,7 +575,7 @@ function DailyReportPageComponent() {
                                         {dayEntries.map((entry, entryIndex) => (
                                             <TableRow key={entry.id}>
                                                 {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell>}
-                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell>}
+                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="align-top">{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'dd-MMM') : 'Invalid Date'}</TableCell>}
                                                 <TableCell>{entry.startTime}</TableCell>
                                                 <TableCell>{entry.endTime}</TableCell>
                                                 <TableCell>{entry.customerJobNumber}</TableCell>
