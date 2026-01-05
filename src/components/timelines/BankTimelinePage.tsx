@@ -132,7 +132,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 ));
             } else {
                  const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-                 const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+                 const newSrNo = projectRows.length > 0 ? String(projectRows.length + 1) : '1';
                  let newRow: ProjectRow = {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
@@ -222,7 +222,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-        const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+        const newSrNo = projectRows.length > 0 ? String(projectRows.length + 1) : '1';
         const newRow: ProjectRow = {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
@@ -264,7 +264,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End'
             ]
         ];
@@ -477,5 +478,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
-
-    
