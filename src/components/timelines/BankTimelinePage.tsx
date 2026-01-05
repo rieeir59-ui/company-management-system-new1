@@ -27,30 +27,6 @@ import { useCurrentUser } from '@/context/UserContext';
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
 
-// Debounce hook
-function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const debouncedCallback = useCallback((...args: Parameters<T>) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  }, [callback, delay]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return debouncedCallback;
-}
-
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
     const params = useParams();
     const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
@@ -64,12 +40,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
     const { addOrUpdateRecord, records } = useRecords();
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
     
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
@@ -94,12 +69,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         } else {
             setProjectRows(initialData);
         }
-        setIsInitialLoad(false);
     }, [bankName, formattedBankName, initialData, records]);
     
-     const handleSave = useCallback((currentData = projectRows, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
+     const handleSave = () => {
         if (!currentUser) {
-             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
              return;
         }
 
@@ -110,23 +84,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             employeeName: currentUser.name,
             employeeRecord: currentUser.record,
             data: [
-                { category: 'Projects', items: currentData },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: currentStatus}, {label: 'Maam Isbah Remarks & Order', value: currentRemarks}, {label: 'Date', value: currentDate}] },
+                { category: 'Projects', items: projectRows },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
-        } as any, showToast);
+        } as any, true);
 
-    }, [addOrUpdateRecord, toast, formattedBankName, currentUser, projectRows, overallStatus, remarks, remarksDate]);
-
-    const debouncedSave = useDebounce((rows, status, rem, date) => {
-        if (!currentUser) return;
-        handleSave(rows, status, rem, date, false); // Don't show toast on auto-save
-    }, 1500); // 1.5 second delay
-
-    useEffect(() => {
-        if (!isInitialLoad && currentUser) {
-            debouncedSave(projectRows, overallStatus, remarks, remarksDate);
-        }
-    }, [projectRows, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad, currentUser]);
+    };
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -180,7 +143,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                     proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
                     tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
+                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '',
                 };
                 newRow = updateRowWithAITimeline(newRow);
                 setProjectRows(prevRows => [...prevRows, newRow]);
@@ -202,14 +165,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(currentTasks => {
-            const newTasks = [...currentTasks];
-            const taskIndex = newTasks.findIndex(t => t.id === id);
-            if (taskIndex === -1) return currentTasks;
-
-            const updatedTask = { ...newTasks[taskIndex], [field]: value };
-            
-            newTasks[taskIndex] = updatedTask;
-            return newTasks;
+            return currentTasks.map(task => {
+                if (task.id === id) {
+                    return { ...task, [field]: value };
+                }
+                return task;
+            });
         });
     };
     
@@ -272,7 +233,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '',
         };
         const updatedRows = [...projectRows, newRow];
         setProjectRows(updatedRows);
@@ -287,6 +248,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             }));
 
         setProjectRows(updatedRows);
+        handleSave(updatedRows, overallStatus, remarks, remarksDate, false);
         toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
     };
 
@@ -303,12 +265,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
-                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', span: 1 },
+                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
             ],
             [
                 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End'
+                'Start', 'End', 'Start', 'End'
             ]
         ];
         
@@ -323,7 +285,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
             p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisit
+            p.siteVisit, ''
         ]);
 
         (doc as any).autoTable({
@@ -382,7 +344,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     
     const tableHeaders = [
         { name: "Sr.No", span: 1 }, { name: "Project Name", span: 1 }, { name: "Area in Sft", span: 1 },
-        { name: "Project\\nHolder", span: 1 }, { name: "Allocation\\nDate / RFP", span: 1 }, { name: "Site Survey", span: 2 },
+        { name: "Project Holder", span: 1 }, { name: "Allocation Date / RFP", span: 1 }, { name: "Site Survey", span: 2 },
         ...(isBank ? [{ name: "Contract", span: 1 }, { name: "Head Count / Requirement", span: 1 }] : []),
         { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
         { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
@@ -404,7 +366,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={() => handleSave(projectRows, overallStatus, remarks, remarksDate, true)} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
+                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>

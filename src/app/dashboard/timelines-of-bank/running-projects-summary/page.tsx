@@ -30,31 +30,6 @@ const projectOrder = bankTimelineCategories.map(name => ({
     key: `${name.toLowerCase().replace(/ /g, '-')}`
 }));
 
-// Debounce hook
-function useDebounce<T extends (...args: any[]) => any>(callback: T, delay: number) {
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-
-  const debouncedCallback = useCallback((...args: Parameters<T>) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  }, [callback, delay]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return debouncedCallback;
-}
-
-
 export default function RunningProjectsSummaryPage() {
     const { toast } = useToast();
     const { records, addOrUpdateRecord } = useRecords();
@@ -65,7 +40,6 @@ export default function RunningProjectsSummaryPage() {
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const savedSummaryRecord = records.find(r => r.fileName === "Running Projects Summary");
@@ -113,12 +87,11 @@ export default function RunningProjectsSummaryPage() {
         });
         
         setSummaryData(data);
-        setIsInitialLoad(false);
     }, [records]);
     
-    const handleSave = useCallback((currentData = summaryData, currentStatus = overallStatus, currentRemarks = remarks, currentDate = remarksDate, showToast = true) => {
+    const handleSave = () => {
         if (!isAdmin || !currentUser) {
-             if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to save this summary.' });
              return;
         }
 
@@ -128,29 +101,20 @@ export default function RunningProjectsSummaryPage() {
             data: [
                 {
                     category: "Summary",
-                    items: currentData 
+                    items: summaryData 
                 },
                 {
                     category: "Status & Remarks",
                     items: [
-                        { label: 'Overall Status', value: currentStatus },
-                        { label: 'Maam Isbah Remarks & Order', value: currentRemarks },
-                        { label: 'Date', value: currentDate },
+                        { label: 'Overall Status', value: overallStatus },
+                        { label: 'Maam Isbah Remarks & Order', value: remarks },
+                        { label: 'Date', value: remarksDate },
                     ]
                 }
             ],
-        } as any, showToast);
+        } as any, true);
 
-    }, [addOrUpdateRecord, isAdmin, toast, summaryData, overallStatus, remarks, remarksDate, currentUser]);
-
-    const debouncedSave = useDebounce(handleSave, 2000);
-
-    useEffect(() => {
-        if (!isInitialLoad && currentUser) {
-            debouncedSave(summaryData, overallStatus, remarks, remarksDate, false);
-        }
-    }, [summaryData, overallStatus, remarks, remarksDate, debouncedSave, isInitialLoad, currentUser]);
-
+    };
 
     const totalProjects = useMemo(() => {
         return summaryData.reduce((acc, curr) => acc + Number(curr.count || 0), 0);
@@ -210,7 +174,7 @@ export default function RunningProjectsSummaryPage() {
                     <CardTitle className="font-headline text-3xl text-primary">Running Projects Summary</CardTitle>
                  </div>
                  <div className="flex gap-2">
-                    {isAdmin && <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>}
+                    {isAdmin && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>}
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
