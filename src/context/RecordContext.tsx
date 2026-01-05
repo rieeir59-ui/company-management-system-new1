@@ -176,7 +176,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const querySnapshot = await getDocs(q);
     
         const employeeInfo = {
-            employeeId: recordData.employeeId || currentUser.uid,
+            employeeId: currentUser.uid, // Use authenticated user's UID
             employeeName: recordData.employeeName || currentUser.name,
             employeeRecord: recordData.employeeRecord || currentUser.record,
         };
