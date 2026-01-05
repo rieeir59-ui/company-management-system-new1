@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -30,14 +30,14 @@ type DashboardType = 'dashboard' | 'employee-dashboard';
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
     const params = useParams();
     const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
-
-    const formattedBankName = useMemo(() => {
-        return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
-    }, [bankName]);
-
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
-    const { addOrUpdateRecord, records } = useRecords();
+    const { addOrUpdateRecord, records, bankTimelineCategories } = useRecords();
+    
+    const formattedBankName = useMemo(() => {
+        return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
+    }, [bankName, bankTimelineCategories]);
+
     const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
     
     const [overallStatus, setOverallStatus] = useState('');
@@ -52,7 +52,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             const projects = record.data.find((d: any) => d.category === 'Projects')?.items || [];
             const statusAndRemarks = record.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             
-            setProjectRows(Array.isArray(projects) && projects.length > 0 ? projects : initialData);
+            setProjectRows(Array.isArray(projects) && projects.length > 0 ? projects.map((p:any, i:number) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})) : initialData.map((p,i) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})) );
             
             if (Array.isArray(statusAndRemarks)) {
                 const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
@@ -65,7 +65,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             }
             
         } else {
-            setProjectRows(initialData);
+            setProjectRows(initialData.map((p,i) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})));
         }
     }, [bankName, formattedBankName, records]);
     
@@ -255,7 +255,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         const head = [
             [
                 { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
-                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
+                { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count\n/ Requirement', rowSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
@@ -426,9 +426,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteVisit || ''} onChange={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
-                                    <td className="border p-1"><DateInput value={''} onChange={v => {}} /></td>
-                                    <td className="border p-1" colSpan={1}><StyledInput type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
-                                    <td className="border p-1" colSpan={1}><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><DateInput value={''} onChange={() => {}} /></td>
+                                    <td className="border p-1"><StyledInput type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

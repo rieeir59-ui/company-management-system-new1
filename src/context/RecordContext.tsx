@@ -148,7 +148,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return Promise.reject(err);
       }
     },
-    [firestore, toast, currentUser, isAdmin, records]
+    [firestore, toast, currentUser]
   );
   
   const addOrUpdateRecord = useCallback(
