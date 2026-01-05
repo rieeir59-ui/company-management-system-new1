@@ -22,14 +22,14 @@ export default function EmployeeDashboardLayout({
   return (
       <SidebarProvider>
           <EmployeeDashboardSidebar />
-          <SidebarInset>
-              <Header />
-              <div className="p-4 sm:p-6 lg:p-8">
-                  <Suspense fallback={<DashboardFallback />}>
+          <Suspense fallback={<DashboardFallback />}>
+            <SidebarInset>
+                <Header />
+                <div className="p-4 sm:p-6 lg:p-8">
                     {children}
-                  </Suspense>
-              </div>
-          </SidebarInset>
+                </div>
+            </SidebarInset>
+          </Suspense>
       </SidebarProvider>
   );
 }
