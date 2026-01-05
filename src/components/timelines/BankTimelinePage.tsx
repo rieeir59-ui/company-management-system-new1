@@ -71,7 +71,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         }
     }, [bankName, formattedBankName, initialData, records]);
     
-     const handleSave = () => {
+     const handleSave = (rows = projectRows, status = overallStatus, remarksText = remarks, date = remarksDate, showToast = true) => {
         if (!currentUser) {
              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
              return;
@@ -84,10 +84,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             employeeName: currentUser.name,
             employeeRecord: currentUser.record,
             data: [
-                { category: 'Projects', items: projectRows },
-                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                { category: 'Projects', items: rows },
+                { category: 'Status & Remarks', items: [{label: 'Overall Status', value: status}, {label: 'Maam Isbah Remarks & Order', value: remarksText}, {label: 'Date', value: date}] },
             ]
-        } as any, true);
+        } as any, showToast);
 
     };
 
@@ -233,7 +233,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
-            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '',
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
         };
         const updatedRows = [...projectRows, newRow];
         setProjectRows(updatedRows);
@@ -259,13 +259,14 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const head = [
             [
-                { content: 'Sr.\\nNo', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area\\nin Sft', rowSpan: 2 },
-                { content: 'Project\\nHolder', rowSpan: 2 }, { content: 'Allocation\\nDate / RFP', rowSpan: 2 },
+                { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
+                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count / Requirement', rowSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
                 { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
+                { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
             ],
             [
                 'Start', 'End', 'Start', 'End',
@@ -285,7 +286,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
             p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisit, ''
+            p.siteVisit, '',
+            p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -344,11 +346,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     
     const tableHeaders = [
         { name: "Sr.No", span: 1 }, { name: "Project Name", span: 1 }, { name: "Area in Sft", span: 1 },
-        { name: "Project Holder", span: 1 }, { name: "Allocation Date / RFP", span: 1 }, { name: "Site Survey", span: 2 },
-        ...(isBank ? [{ name: "Contract", span: 1 }, { name: "Head Count / Requirement", span: 1 }] : []),
+        { name: "Project\nHolder", span: 1 }, { name: "Allocation\nDate / RFP", span: 1 }, { name: "Site Survey", span: 2 },
+        ...(isBank ? [{ name: "Contract", span: 1 }, { name: "Head Count\n/ Requirement", span: 1 }] : []),
         { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
         { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
-        { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 1 },
+        { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 2 },
+        { name: "Final Bill", span: 1 }, { name: "Project Closure", span: 1 },
         { name: "Action", span: 1 }
     ];
 
@@ -366,7 +369,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
+                    <Button onClick={() => handleSave()} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
@@ -427,7 +430,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
-                                    <td className="border p-1" colSpan={1}><StyledInput type="text" value={row.siteVisit} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisit || ''} onChange={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
+                                    <td className="border p-1"><DateInput value={''} onChange={v => {}} /></td>
+                                    <td className="border p-1" colSpan={1}><StyledInput type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1" colSpan={1}><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

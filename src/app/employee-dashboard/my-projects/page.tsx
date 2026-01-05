@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense, useMemo, useState, useEffect } from 'react';
@@ -66,7 +65,7 @@ type ManualEntry = {
     endDate: string;
 };
 
-function MyProjectsComponent() {
+export default function MyProjectsComponent() {
   const { user: currentUser, employees, isUserLoading } = useCurrentUser();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -425,16 +424,90 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
+                <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
+                <CardDescription>A list of tasks assigned by the administration.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoadingTasks ? (
+                    <div className="flex justify-center items-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="ml-4">Loading tasks...</p>
+                    </div>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="font-semibold">Project Name</TableHead>
+                                <TableHead className="font-semibold">Task</TableHead>
+                                <TableHead className="font-semibold">Assigned By</TableHead>
+                                <TableHead className="font-semibold">Start Date</TableHead>
+                                <TableHead className="font-semibold">End Date</TableHead>
+                                <TableHead className="font-semibold">Status</TableHead>
+                                <TableHead className="font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {allProjects.length === 0 ? (
+                            <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-24">No tasks assigned yet.</TableCell>
+                            </TableRow>
+                            ) : allProjects.map((project) => (
+                                <TableRow key={project.id}>
+                                    <TableCell className="font-medium text-base">{project.projectName}</TableCell>
+                                    <TableCell className="font-medium text-base">{project.taskName}</TableCell>
+                                    <TableCell className="text-base">{project.assignedBy}</TableCell>
+                                    <TableCell className="text-base">{project.startDate || 'N/A'}</TableCell>
+                                    <TableCell className="text-base">{project.endDate || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Select
+                                            value={project.status}
+                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(project, newStatus)}
+                                            disabled={!canEdit || project.status === 'pending-approval'}
+                                        >
+                                            <SelectTrigger className="w-[180px]">
+                                              <StatusBadge status={project.status} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="not-started">Not Started</SelectItem>
+                                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                                <SelectItem value="completed">Completed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex gap-1 justify-end">
+                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(project)}>
+                                                <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(project)} disabled={!canEdit}>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
+                                            {isAdmin && (
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(project)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>A list of all your projects, including assigned tasks and manually added projects.</CardDescription>
+                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Project Name</TableHead>
-                            <TableHead>Detail / Task</TableHead>
-                            <TableHead>Assigned By</TableHead>
+                            <TableHead>Detail</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Start Date</TableHead>
                             <TableHead>End Date</TableHead>
@@ -442,43 +515,23 @@ function MyProjectsComponent() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoadingTasks ? (
-                           <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">
-                                     <div className="flex justify-center items-center">
-                                        <Loader2 className="h-6 w-6 animate-spin" />
-                                        <p className="ml-4">Loading Projects...</p>
-                                    </div>
-                                </TableCell>
-                           </TableRow>
-                        ) : combinedSchedule.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">No projects or tasks yet.</TableCell>
-                            </TableRow>
-                        ) : combinedSchedule.map(item => (
+                        {manualEntries.map(item => (
                              <TableRow key={item.id}>
                                 <TableCell>{item.projectName}</TableCell>
                                 <TableCell>{item.detail}</TableCell>
-                                <TableCell>{item.isManual ? 'Self' : item.assignedBy}</TableCell>
                                 <TableCell>
                                   <Select
                                     value={item.status}
-                                    onValueChange={(val) => {
-                                        if (item.isManual) {
-                                            handleManualEntryChange(item.id, 'status', val);
-                                        } else {
-                                            handleStatusChange(item, val as Task['status']);
-                                        }
-                                    }}
-                                    disabled={!canEdit || (!item.isManual && item.status === 'pending-approval')}
+                                    onValueChange={(val: ManualEntry['status']) => handleManualEntryChange(item.id, 'status', val)}
+                                    disabled={!canEdit}
                                   >
                                     <SelectTrigger className="w-[180px]">
                                       <StatusBadge status={item.status as Task['status']} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value={item.isManual ? 'Not Started' : 'not-started'}>Not Started</SelectItem>
-                                      <SelectItem value={item.isManual ? 'In Progress' : 'in-progress'}>In Progress</SelectItem>
-                                      <SelectItem value={item.isManual ? 'Completed' : 'completed'}>Completed</SelectItem>
+                                      <SelectItem value="Not Started">Not Started</SelectItem>
+                                      <SelectItem value="In Progress">In Progress</SelectItem>
+                                      <SelectItem value="Completed">Completed</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </TableCell>
@@ -486,16 +539,14 @@ function MyProjectsComponent() {
                                 <TableCell>{item.endDate}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end">
-                                       {!item.isManual && (
-                                           <>
-                                            <Button variant="ghost" size="icon" title="View Details" onClick={() => openViewDialog(item as Task)}><Eye className="h-4 w-4"/></Button>
-                                            <Button variant="ghost" size="icon" title="Submit Work" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}><Upload className="h-4 w-4" /></Button>
-                                           </>
-                                       )}
                                         {canEdit && (
                                             <>
-                                                {item.isManual && <Button variant="ghost" size="icon" title="Edit Entry" onClick={() => openEditDialog(item as ManualEntry)}><Edit className="h-4 w-4" /></Button>}
-                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => openDeleteDialog(item)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => openEditDialog(item)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(item)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
                                             </>
                                         )}
                                     </div>
@@ -505,7 +556,7 @@ function MyProjectsComponent() {
                     </TableBody>
                 </Table>
                 {canEdit && (
-                    <Button onClick={addManualEntry} className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Manual Project</Button>
+                    <Button onClick={addManualEntry} className="mt-4"><PlusCircle className="h-4 w-4 mr-2" /> Add Project</Button>
                 )}
                 <div className="mt-4">
                     <Label htmlFor="remarks">Remarks:</Label>
@@ -648,23 +699,3 @@ function MyProjectsComponent() {
     </div>
   );
 }
-
-export default function EmployeeDashboardPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-4">Loading Page...</span>
-      </div>}>
-      <MyProjectsComponent />
-    </Suspense>
-  )
-}
-    
-
-    
-
-    
-
-    
-
-    

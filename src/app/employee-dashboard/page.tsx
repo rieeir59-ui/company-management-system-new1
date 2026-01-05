@@ -1,9 +1,17 @@
+
 'use client';
 
-import MyProjectsPage from "./my-projects/page";
+import { Suspense } from 'react';
+import MyProjectsComponent from '@/app/employee-dashboard/my-projects/page';
+import { Loader2 } from 'lucide-react';
 
 export default function EmployeeDashboardPage() {
-    // This page simply renders the content of the "My Projects" page
-    // as the default view for the employee dashboard.
-    return <MyProjectsPage />;
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-4">Loading Page...</span>
+      </div>}>
+      <MyProjectsComponent />
+    </Suspense>
+  )
 }
