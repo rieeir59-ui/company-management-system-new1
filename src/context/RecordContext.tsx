@@ -25,7 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTimelineCategories as btc } from '@/lib/projects-data';
 import { Building2, Home, Landmark } from 'lucide-react';
 
 export type SavedRecord = {
@@ -64,6 +64,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  const bankTimelineCategories = useMemo(() => btc, []);
 
   // Fetch records
   useEffect(() => {
@@ -261,7 +262,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       error, 
       projectManualItems, 
       bankTimelineCategories
-    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
 
 
   return (
