@@ -148,7 +148,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return Promise.reject(err);
       }
     },
-    [firestore, toast, currentUser, isAdmin, records]
+    [firestore, toast, currentUser]
   );
   
   const addOrUpdateRecord = useCallback(
@@ -259,8 +259,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       deleteRecord, 
       getRecordById, 
       error, 
-      projectManualItems, 
-      bankTimelineCategories 
+      projectManualItems,
+      bankTimelineCategories
     }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
 
 
@@ -276,3 +276,4 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
+
