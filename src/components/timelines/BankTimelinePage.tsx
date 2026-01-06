@@ -44,8 +44,7 @@ const StyledTextarea = ({ initialValue, onBlur }: { initialValue: string, onBlur
     )
 }
 
-const StyledInput = (props: Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange'> & { initialValue: string, onBlur: (value: string) => void }) => {
-    const { initialValue, onBlur, ...rest } = props;
+const StyledInput = React.memo(({ initialValue, onBlur, ...rest }: Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange'> & { initialValue: string, onBlur: (value: string) => void }) => {
     const [value, setValue] = useState(initialValue);
 
     useEffect(() => {
@@ -60,7 +59,9 @@ const StyledInput = (props: Omit<React.ComponentProps<typeof Input>, 'value' | '
             {...rest}
         />
     )
-}
+});
+
+StyledInput.displayName = 'StyledInput';
 
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
     const params = useParams();
@@ -178,7 +179,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                     proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
                     tenderArchStart: '', tenderArchEnd: '',
-                    tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '', comparative: '',
+                    tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
                     workingDrawingsStart: '', workingDrawingsEnd: '',
                     siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
                 };
@@ -270,7 +271,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
             tenderArchStart: '', tenderArchEnd: '',
-            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '', comparative: '',
+            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
             workingDrawingsStart: '', workingDrawingsEnd: '',
             siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
         };
@@ -303,10 +304,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 },
                 { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Design Lock Date', rowSpan: 2 },
-                { content: 'Submission Drawing', colSpan: 2},
-                { content: 'Architecture Working Drawing', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
-                { content: 'BOQ', colSpan: 2 }, { content: 'Interior', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
-                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
+                { content: 'Submission Drawing', colSpan: 2 },
+                { content: 'Tender Package Arch', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
+                { content: 'BOQ', colSpan: 2 }, { content: 'Interior', rowSpan: 2 },
+                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', rowSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 },
                 { content: 'Remarks', rowSpan: 2 }
             ],
@@ -318,7 +319,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         ];
         
         const body = projectRows.map(p => [
-            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate, p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+            p.siteSurveyStart, p.siteSurveyEnd,
+            p.contractStart || '', p.contractEnd || '',
+            p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.designLockDate,
@@ -326,7 +330,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             p.tenderArchStart, p.tenderArchEnd,
             p.tenderMepStart, p.tenderMepEnd,
             p.boqStart, p.boqEnd,
-            p.interior, p.comparative,
+            p.interior,
             p.workingDrawingsStart, p.workingDrawingsEnd,
             p.siteVisit,
             p.finalBill, p.projectClosure,
@@ -392,17 +396,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "Project Holder", span: 1, rowSpan: 2 },
         { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
         { name: "Site Survey", span: 2, rowSpan: 1 },
-        { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Head Count / Requirement", span: 1, rowSpan: 2 },
+        { name: "Contract", span: 2, rowSpan: 1 },
+        { name: "Head Count / Requirement", span: 2, rowSpan: 1 },
         { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
         { name: "3D's", span: 2, rowSpan: 1 },
         { name: "Design Lock Date", span: 1, rowSpan: 2 },
-        { name: "Submission Drawing", span: 2, rowSpan: 1},
-        { name: "Architecture Working Drawing", span: 2, rowSpan: 1 },
+        { name: "Submission Drawing", span: 2, rowSpan: 1 },
+        { name: "Tender Package Arch", span: 2, rowSpan: 1 },
         { name: "Tender Package MEP", span: 2, rowSpan: 1 },
         { name: "BOQ", span: 2, rowSpan: 1 },
         { name: "Interior", span: 1, rowSpan: 2 },
-        { name: "Comparative", span: 1, rowSpan: 2 },
+        { name: "Working Drawings", span: 2, rowSpan: 1 },
         { name: "Site Visit", span: 1, rowSpan: 2 },
         { name: "Final Bill", span: 1, rowSpan: 2 },
         { name: "Project Closure", span: 1, rowSpan: 2 },
@@ -465,8 +469,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="w-24" /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.headCount || ''} onBlur={v => handleProjectChange(row.id, 'headCount', v)} className="w-32" /></td>
+                                    <td className="border p-1"><DateInput value={row.contractStart || ''} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.contractEnd || ''} onChange={v => handleProjectChange(row.id, 'contractEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
@@ -481,9 +487,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.interior} onBlur={v => handleProjectChange(row.id, 'interior', v)} className="w-24" /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.comparative} onBlur={v => handleProjectChange(row.id, 'comparative', v)} className="w-24" /></td>
-                                    <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
-                                    <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsStart} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsEnd} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.siteVisit} onBlur={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.finalBill} onBlur={v => handleProjectChange(row.id, 'finalBill', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.projectClosure} onBlur={v => handleProjectChange(row.id, 'projectClosure', v)} /></td>
