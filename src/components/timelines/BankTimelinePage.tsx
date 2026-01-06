@@ -476,7 +476,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.area} onBlur={v => handleProjectChange(row.id, 'area', v)} className="w-24" /></td>
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.projectHolder} onBlur={v => handleProjectChange(row.id, 'projectHolder', v)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} /></td>
+                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="min-w-[150px]" /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
