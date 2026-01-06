@@ -18,23 +18,24 @@ To check if it was added correctly:
 git remote -v
 ```
 
-### 3. Pull the Latest Changes
-It's good practice to pull before you push.
+### 3. Fetch and Reset to Match Remote (Resolves Rebase/Merge Issues)
+This step will discard your local changes and match your local branch with the remote `main` branch. Use this if you are having trouble with pulling/rebasing.
 ```bash
-git pull origin main --allow-unrelated-histories
+git fetch origin
+git reset --hard origin/main
 ```
 
 ### 4. Add, Commit, and Push Your Code
+Now, re-apply your changes, and then use the following commands.
 ```bash
 git add .
 git commit -m "Initial commit"
 git push origin main
 ```
 
-If you face any errors, you can try forcing the push (use with caution):
+If you still face any errors, you can try forcing the push (use with caution, as it overwrites the remote history):
 ```bash
 git push -u origin main -f
 ```
-
 ---
-By following these steps, you can resolve the connection issue and successfully push your code to GitHub.
+By following these steps, you can resolve connection and rebasing issues and successfully push your code to GitHub.
