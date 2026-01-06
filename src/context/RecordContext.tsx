@@ -25,7 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankTimelineCategories } from '@/lib/projects-data';
+import { bankTimelineCategories as btc } from '@/lib/projects-data';
 
 export type SavedRecord = {
   id: string;
@@ -259,8 +259,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       getRecordById, 
       error, 
       projectManualItems,
-      bankTimelineCategories
-    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
+      bankTimelineCategories: btc,
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
 
 
   return (
