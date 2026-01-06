@@ -506,11 +506,24 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                         <AccordionContent className="pt-2">
                                             <div className="border rounded-b-lg">
                                                 <Table>
+<<<<<<< HEAD
                                                     <TableHeader><TableRow><TableHead>Project Name</TableHead>{!employeeOnly && <TableHead>Created By</TableHead>}<TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+=======
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Project Name</TableHead>
+                                                            <TableHead>File Name</TableHead>
+                                                            {!employeeOnly && <TableHead>Created By</TableHead>}
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead className="text-right">Actions</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+>>>>>>> 6000ad1 (recod is format ma save ho file name project name etcc etc)
                                                     <TableBody>
                                                         {fileRecords.map(record => (
                                                             <TableRow key={record.id}>
                                                                 <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                <TableCell>{record.fileName}</TableCell>
                                                                 {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
                                                                 <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
                                                                 <TableCell className="text-right">
@@ -575,3 +588,4 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
   );
 }
 
+    
