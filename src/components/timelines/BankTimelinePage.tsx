@@ -319,13 +319,14 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Submission Drawing', colSpan: 2 },
                 { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Interior', rowSpan: 2 },
-                { content: 'Site Visit', rowSpan: 2 },
+                { content: 'Site Visit', colSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 },
                 { content: 'Remarks', rowSpan: 2 }
             ],
             [
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End'
+                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
+                'Start', 'End',
             ]
         ];
         
@@ -416,7 +417,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "MEP drawing", span: 2, rowSpan: 1 },
         { name: "BOQ", span: 2, rowSpan: 1 },
         { name: "Interior", span: 1, rowSpan: 2 },
-        { name: "Site Visit", span: 1, rowSpan: 2 },
+        { name: "Site Visit", span: 2, rowSpan: 1 },
         { name: "Final Bill", span: 1, rowSpan: 2 },
         { name: "Project Closure", span: 1, rowSpan: 2 },
         { name: "Remarks", span: 1, rowSpan: 2 },
@@ -452,7 +453,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 </Card>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-xs">
+                    <table className="min-w-max border-collapse text-xs">
                         <thead className="sticky top-0 bg-primary/20 z-10">
                             <tr>
                                 {tableHeaders.map((header) => (
@@ -495,10 +496,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.interior} onBlur={v => handleProjectChange(row.id, 'interior', v)} className="w-24" /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.siteVisit} onBlur={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.finalBill} onBlur={v => handleProjectChange(row.id, 'finalBill', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.projectClosure} onBlur={v => handleProjectChange(row.id, 'projectClosure', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.remarks} onBlur={v => handleProjectChange(row.id, 'remarks', v)} /></td>
+                                    <td className="border p-1"><StyledTextarea initialValue={row.remarks} onBlur={v => handleProjectChange(row.id, 'remarks', v)} className="min-w-[200px]" /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
