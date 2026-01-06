@@ -28,6 +28,12 @@ export interface ProjectRow {
   finalBill: string;
   projectClosure: string;
   remarks: string;
+  comparative?: string;
+  tenderStatus?: string;
+  workingDrawingsStart?: string;
+  workingDrawingsEnd?: string;
+  siteVisitStart?: string;
+  siteVisitEnd?: string;
 }
 
 export let askariBankProjects: ProjectRow[] = [
@@ -96,8 +102,8 @@ export let bankAlfalahProjects: ProjectRow[] = [
 ];
 
 export let bankAlHabibProjects: ProjectRow[] = [
-    { id: 701, srNo: '1', projectName: 'Bank Al Habib CLIFTON BRANCH', area: '5,500.00', projectHolder: '', allocationDate: '2025-10-13', proposalStart: '2025-10-14', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: 'PROPOSAL STAGE - No response from Bank.', finalBill: '', projectClosure: '', remarks: '', siteVisit: '', contract: '', headCount: '' },
-    { id: 702, srNo: '2', projectName: 'Khyaban-e-Hafiz Office and Branch', area: '13,500.00', projectHolder: '', allocationDate: '2025-10-13', proposalStart: '2025-10-14', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: 'PROPOSAL STAGE - No response from Bank.', finalBill: '', projectClosure: '', remarks: '', siteVisit: '', contract: '', headCount: '' }
+    { id: 701, srNo: '1', projectName: 'Bank Al Habib CLIFTON BRANCH', area: '5,500.00', projectHolder: '', allocationDate: '13-Oct-25', proposalStart: '14-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '', finalBill: '', projectClosure: '', remarks: '', siteVisit: '', contract: '', headCount: 'DONE' },
+    { id: 702, srNo: '2', projectName: 'Khyaban-e-Hafiz Office and Branch', area: '13,500.00', projectHolder: '', allocationDate: '13-Oct-25', proposalStart: '14-Oct-25', siteSurveyStart: '', siteSurveyEnd: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '', finalBill: '', projectClosure: '', remarks: '', siteVisit: '', contract: '', headCount: 'DONE' }
 ];
 
 export let cbdProjects: ProjectRow[] = [
@@ -195,3 +201,5 @@ export const deleteProject = (bankKey: string, projectId: number) => {
 };
 
     
+    
+
