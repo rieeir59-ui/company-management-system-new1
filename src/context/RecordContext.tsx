@@ -25,8 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
-import { Building2, Home, Landmark } from 'lucide-react';
+import { bankTimelineCategories } from '@/lib/projects-data';
 
 export type SavedRecord = {
   id: string;
@@ -261,7 +260,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       error, 
       projectManualItems,
       bankTimelineCategories
-    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
 
 
   return (
@@ -276,4 +275,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
