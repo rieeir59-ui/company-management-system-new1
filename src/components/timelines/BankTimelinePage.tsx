@@ -34,11 +34,15 @@ const StyledTextarea = React.memo(({ initialValue, onBlur, ...rest }: Omit<React
         setValue(initialValue);
     }, [initialValue]);
 
+    const handleBlur = () => {
+        onBlur(value);
+    }
+
     return (
         <Textarea 
             value={value}
             onChange={e => setValue(e.target.value)}
-            onBlur={() => onBlur(value)}
+            onBlur={handleBlur}
             {...rest}
         />
     )
@@ -54,11 +58,15 @@ const StyledInput = React.memo(({ initialValue, onBlur, ...rest }: Omit<React.Co
         setValue(initialValue);
     }, [initialValue]);
     
+     const handleBlur = () => {
+        onBlur(value);
+    }
+    
     return (
          <Input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            onBlur={() => onBlur(value)}
+            onBlur={handleBlur}
             {...rest}
         />
     )
@@ -166,8 +174,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 proposalEnd: taskMap['proposaldesigndevelopment']?.end || row.proposalEnd,
                 threedStart: taskMap['3ds']?.start || row.threedStart,
                 threedEnd: taskMap['3ds']?.end || row.threedEnd,
-                tenderArchStart: taskMap['tenderpackagearchitectural']?.start || row.tenderArchStart,
-                tenderArchEnd: taskMap['tenderpackagearchitectural']?.end || row.tenderArchEnd,
+                tenderArchStart: taskMap['architectureworkingdrawing']?.start || row.tenderArchStart,
+                tenderArchEnd: taskMap['architectureworkingdrawing']?.end || row.tenderArchEnd,
+                tenderMepStart: taskMap['mepdrawing']?.start || row.tenderMepStart,
+                tenderMepEnd: taskMap['mepdrawing']?.end || row.tenderMepEnd,
             });
 
             if (projectExists) {
@@ -302,11 +312,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
                 { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 },
+                { content: 'Contract', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 },
                 { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Design Lock Date', rowSpan: 2 },
                 { content: 'Submission Drawing', colSpan: 2 },
-                { content: 'Tender Package Arch', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
+                { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Interior', rowSpan: 2 },
                 { content: 'Site Visit', rowSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 },
@@ -320,8 +331,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd,
             p.contract,
+            p.siteSurveyStart, p.siteSurveyEnd,
             p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
@@ -394,15 +405,15 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "Area in Sft", span: 1, rowSpan: 2 },
         { name: "Project Holder", span: 1, rowSpan: 2 },
         { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Site Survey", span: 2, rowSpan: 1 },
         { name: "Contract", span: 1, rowSpan: 2 },
+        { name: "Site Survey", span: 2, rowSpan: 1 },
         { name: "Head Count / Requirement", span: 2, rowSpan: 1 },
         { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
         { name: "3D's", span: 2, rowSpan: 1 },
         { name: "Design Lock Date", span: 1, rowSpan: 2 },
         { name: "Submission Drawing", span: 2, rowSpan: 1 },
-        { name: "Tender Package Arch", span: 2, rowSpan: 1 },
-        { name: "Tender Package MEP", span: 2, rowSpan: 1 },
+        { name: "Architecture working drawing", span: 2, rowSpan: 1 },
+        { name: "MEP drawing", span: 2, rowSpan: 1 },
         { name: "BOQ", span: 2, rowSpan: 1 },
         { name: "Interior", span: 1, rowSpan: 2 },
         { name: "Site Visit", span: 1, rowSpan: 2 },
@@ -465,9 +476,9 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.area} onBlur={v => handleProjectChange(row.id, 'area', v)} className="w-24" /></td>
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.projectHolder} onBlur={v => handleProjectChange(row.id, 'projectHolder', v)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
+                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
@@ -537,4 +548,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
-
