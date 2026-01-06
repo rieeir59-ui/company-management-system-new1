@@ -59,7 +59,7 @@ export let ublProjects: ProjectRow[] = [
     { id: 201, srNo: '1', projectName: 'UBL Bhowana, Chiniot', area: '7,600.00', projectHolder: 'Adnan Luqman', allocationDate: '2025-05-06', siteSurveyStart: '2025-05-20', siteSurveyEnd: '2025-05-21', contract: 'Done', headCount: '2025-05-06', proposalStart: '2025-07-06', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'on Hold', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: '' },
     { id: 202, srNo: '2', projectName: 'UBL QASIMABAD, HYDERABAD', area: '13,600.00', projectHolder: '', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'Construction in Progress.', comparative: 'Done', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: '' },
     { id: 203, srNo: '3', projectName: 'UBL NELA-GUMBAD LHR', area: '', projectHolder: '', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contract: 'Done', headCount: 'Done', proposalStart: '', proposalEnd: 'Done', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'on Hold', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: '' },
-    { id: 204, srNo: '4', projectName: 'UBL PHASE 6', area: '13,085.00', projectHolder: 'Adnan Haseeb', allocationDate: '2024-04-06', siteSurveyStart: '', siteSurveyEnd: '', contract: 'Done', headCount: 'Done', proposalStart: 'Done', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: 'Sent', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: 'Done', boqEnd: '', tenderStatus: 'Construction in Progress.', comparative: 'In Revision', workingDrawingsStart: '', workingDrawingsEnd: 'In Revision', siteVisit: '', finalBill: '', projectClosure: '' },
+    { id: 204, srNo: '4', projectName: 'UBL PHASE 6', area: '13,085.00', projectHolder: 'Adnan Haseeb', allocationDate: '2024-04-06', siteSurveyStart: '', siteSurveyEnd: '', contract: 'Done', headCount: 'Done', proposalStart: 'Done', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: 'Sent', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: 'Done', boqEnd: '', tenderStatus: 'Construction in Progress.', comparative: 'In Revision', workingDrawingsStart: '', workingDrawingsEnd: 'In Revision', siteVisit: '04-Dec-25', finalBill: '', projectClosure: '' },
     { id: 205, srNo: '5', projectName: 'UBL State Life Society', area: '6,691.00', projectHolder: 'Adnan Haseeb', allocationDate: '2024-03-06', siteSurveyStart: '', siteSurveyEnd: '', contract: 'Done', headCount: 'Done', proposalStart: '', proposalEnd: 'Done', threedStart: '', threedEnd: '', tenderArchStart: 'Sent', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: 'Done', boqEnd: '', tenderStatus: 'Construction in Progress.', comparative: '', workingDrawingsStart: '2024-10-23', workingDrawingsEnd: '2024-12-01', siteVisit: '04-Dec-25', finalBill: '', projectClosure: '' }
 ];
 
@@ -104,8 +104,7 @@ export let bankAlHabibProjects: ProjectRow[] = [
 ];
 
 export let cbdProjects: ProjectRow[] = [
-    { id: 801, srNo: '1', projectName: 'Nawaz sharif Business Hub', area: '25 Kanals', projectHolder: 'ASAD/WALEED/Jabbar', allocationDate: '', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'final drawings has been sent only animation need to amend and resend.', comparative: '', workingDrawingsStart: '', siteVisit: '', finalBill: '', projectClosure: '' },
-    { id: 802, srNo: '2', projectName: 'C-B-D', area: '', projectHolder: 'ASAD/WALEED', allocationDate: '2025-06-16', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '2025-06-16', proposalStart: '2025-06-16', proposalEnd: '', threedStart: '2025-06-16', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'Material Board in Progress', comparative: '', workingDrawingsStart: '', siteVisit: '', finalBill: '', projectClosure: '' }
+    { id: 802, srNo: '1', projectName: 'C-B-D', area: '', projectHolder: 'ASAD/WALEED', allocationDate: '2025-06-16', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '2025-06-16', proposalStart: '2025-06-16', proposalEnd: '', threedStart: '2025-06-16', threedEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: 'Material Board in Progress', comparative: '', workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: '' }
 ];
 
 export let commercialProjects: ProjectRow[] = [
@@ -171,6 +170,8 @@ export const bankTimelineCategories = [
     "Commercial",
     "Residential"
 ];
+
+
 
 
 

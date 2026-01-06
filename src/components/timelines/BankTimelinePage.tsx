@@ -69,7 +69,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         }
     }, [bankName, formattedBankName, records]);
     
-     const handleSave = (rows = projectRows, status = overallStatus, remarksText = remarks, date = remarksDate, showToast = true) => {
+     const handleSave = useCallback((rows = projectRows, status = overallStatus, remarksText = remarks, date = remarksDate, showToast = true) => {
         if (!currentUser) {
              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
              return;
@@ -84,7 +84,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             ]
         } as any, showToast);
 
-    };
+    }, [projectRows, overallStatus, remarks, remarksDate, currentUser, addOrUpdateRecord, formattedBankName, toast]);
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -234,18 +234,20 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         setProjectRows(updatedRows);
     };
     
-    const removeProjectRow = (id: number) => {
-        const updatedRows = projectRows
-            .filter(row => row.id !== id)
-            .map((row, index) => ({
-                ...row,
-                srNo: String(index + 1)
-            }));
-    
-        setProjectRows(updatedRows);
-        handleSave(updatedRows, overallStatus, remarks, remarksDate, false);
-        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
-    };
+    const removeProjectRow = useCallback((id: number) => {
+        setProjectRows(prevRows => {
+            const updatedRows = prevRows
+                .filter(row => row.id !== id)
+                .map((row, index) => ({
+                    ...row,
+                    srNo: String(index + 1)
+                }));
+            
+            handleSave(updatedRows, overallStatus, remarks, remarksDate, false);
+            toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
+            return updatedRows;
+        });
+    }, [handleSave, overallStatus, remarks, remarksDate, toast]);
 
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
@@ -256,7 +258,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 }, { content: 'Head Count\n/ Requirement', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count\n/ Requirement', colSpan: 2 },
                 { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
@@ -273,8 +275,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, 
-            p.contract,
-            p.headCount,
+            p.contractStart || '', p.contactEnd || '',
+            p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd,
@@ -342,7 +344,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const tableHeaders = [
         { name: "Sr.No", span: 1 }, { name: "Project Name", span: 1 }, { name: "Area in Sft", span: 1 },
         { name: "Project\nHolder", span: 1 }, { name: "Allocation\nDate / RFP", span: 1 }, { name: "Site Survey", span: 2 },
-        ...(isBank ? [{ name: "Contract", span: 1 }, { name: "Head Count\n/ Requirement", span: 1 }] : []),
+        ...(isBank ? [{ name: "Contract", span: 2 }, { name: "Head Count\n/ Requirement", span: 2 }] : []),
         { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
         { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
         { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 2 },
@@ -409,8 +411,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    {isBank && <td className="border p-1"><StyledInput type="text" value={row.contract || ''} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-32" /></td>}
-                                    {isBank && <td className="border p-1"><StyledInput type="text" value={row.headCount || ''} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} className="w-32" /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.contractStart || ''} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.contactEnd || ''} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>}
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
