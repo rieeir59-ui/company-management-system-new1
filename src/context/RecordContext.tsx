@@ -260,7 +260,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       getRecordById, 
       error, 
       projectManualItems, 
-      bankTimelineCategories 
+      bankTimelineCategories
     }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
 
 

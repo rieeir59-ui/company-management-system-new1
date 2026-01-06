@@ -431,8 +431,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteVisit || ''} onChange={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
                                     <td className="border p-1"><DateInput value={''} onChange={() => {}} /></td>
-                                    <td className="border p-1"><StyledInput type="text" value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} className="w-24" /></td>
-                                    <td className="border p-1"><StyledInput type="text" value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><DateInput value={row.finalBill || ''} onChange={(v) => handleProjectChange(row.id, 'finalBill', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.projectClosure || ''} onChange={(v) => handleProjectChange(row.id, 'projectClosure', v)} /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -482,3 +482,4 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
