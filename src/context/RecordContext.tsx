@@ -250,6 +250,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         });
   }, [isAdmin]);
   
+  const bankTimelineCategories = btc;
+
   const value = useMemo(() => ({ 
       records, 
       addRecord, 
@@ -259,8 +261,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       getRecordById, 
       error, 
       projectManualItems,
-      bankTimelineCategories: btc,
-    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
+      bankTimelineCategories,
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
 
 
   return (
