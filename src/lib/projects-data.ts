@@ -140,8 +140,8 @@ export const allProjects: ProjectRow[] = [
     ...hblProjects,
     ...ublProjects,
     ...mcbProjects,
-    ...fblProjects,
     ...dibProjects,
+    ...fblProjects,
     ...bankAlfalahProjects,
     ...bankAlHabibProjects,
     ...cbdProjects,
@@ -203,3 +203,5 @@ export const deleteProject = (bankKey: string, projectId: number) => {
 };
 
     
+
+

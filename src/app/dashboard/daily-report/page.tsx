@@ -110,7 +110,7 @@ function DailyReportPageComponent() {
   const searchParams = useSearchParams();
   const employeeIdFromUrl = searchParams.get('employeeId');
   
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || currentUser?.uid);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || 'user10');
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
@@ -128,8 +128,9 @@ function DailyReportPageComponent() {
         if (employeeIdFromUrl) {
             const employee = employees.find(e => e.record === employeeIdFromUrl);
             setSelectedEmployeeId(employee?.uid);
-        } else if (currentUser) {
-            setSelectedEmployeeId(currentUser.uid);
+        } else {
+            const haseeb = employees.find(e => e.name === 'Haseeb');
+            setSelectedEmployeeId(haseeb?.uid || currentUser?.uid);
         }
     } else {
         setSelectedEmployeeId(currentUser?.uid);
@@ -762,4 +763,5 @@ export default function DailyReportPage() {
 }
 
     
+
 
