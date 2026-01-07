@@ -323,14 +323,14 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
                 'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End',
+                'Start', 'End', 'Start', 'End',
             ]
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.contract,
             p.siteSurveyStart, p.siteSurveyEnd,
+            p.contract,
             p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
@@ -401,8 +401,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "Area in Sft", span: 1, rowSpan: 2 },
         { name: "Project Holder", span: 1, rowSpan: 2 },
         { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Contract", span: 1, rowSpan: 2 },
         { name: "Site Survey", span: 2, rowSpan: 1 },
+        { name: "Contract", span: 1, rowSpan: 2 },
         { name: "Head Count / Requirement", span: 2, rowSpan: 1 },
         { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
         { name: "3D's", span: 2, rowSpan: 1 },
@@ -412,7 +412,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "MEP drawing", span: 2, rowSpan: 1 },
         { name: "BOQ", span: 2, rowSpan: 1 },
         { name: "Interior", span: 1, rowSpan: 2 },
-        { name: "Site Visit", span: 1, rowSpan: 2 },
+        { name: "Site Visit", span: 2, rowSpan: 1 },
         { name: "Final Bill", span: 1, rowSpan: 2 },
         { name: "Project Closure", span: 1, rowSpan: 2 },
         { name: "Remarks", span: 1, rowSpan: 2 },
@@ -497,42 +497,54 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.area} onBlur={v => handleProjectChange(row.id, 'area', v)} className="w-24" /></td>
                                     <td className="border p-1"><StyledInput type="text" initialValue={row.projectHolder} onBlur={v => handleProjectChange(row.id, 'projectHolder', v)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="min-w-[200px]" /></td>
+                                    
+                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="min-w-[150px]" /></td>
+                                    
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
+                                    
                                     {isCommercialOrResidential ? <>
                                         <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
                                     </> : <td className="border p-1"><StyledTextarea initialValue={row.headCount || ''} onBlur={v => handleProjectChange(row.id, 'headCount', v)} /></td>}
+
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedEnd} onChange={v => handleProjectChange(row.id, 'threedEnd', v)} /></td>
+                                    
                                     {isCommercialOrResidential && <td className="border p-1"><DateInput value={row.designLockDate} onChange={v => handleProjectChange(row.id, 'designLockDate', v)} /></td>}
                                     {isCommercialOrResidential && <>
                                         <td className="border p-1"><DateInput value={row.submissionDrawingStart} onChange={v => handleProjectChange(row.id, 'submissionDrawingStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.submissionDrawingEnd} onChange={v => handleProjectChange(row.id, 'submissionDrawingEnd', v)} /></td>
                                     </>}
+                                    
                                     <td className="border p-1"><DateInput value={row.tenderArchStart} onChange={v => handleProjectChange(row.id, 'tenderArchStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderArchEnd} onChange={v => handleProjectChange(row.id, 'tenderArchEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderMepStart} onChange={v => handleProjectChange(row.id, 'tenderMepStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderMepEnd} onChange={v => handleProjectChange(row.id, 'tenderMepEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
+                                    
                                     {!isCommercialOrResidential && <>
                                          <td className="border p-1"><StyledInput type="text" initialValue={row.tenderStatus || ''} onBlur={v => handleProjectChange(row.id, 'tenderStatus', v)} className="w-24" /></td>
                                         <td className="border p-1"><StyledInput type="text" initialValue={row.comparative || ''} onBlur={v => handleProjectChange(row.id, 'comparative', v)} className="w-24" /></td>
                                         <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     </>}
+                                    
                                     {isCommercialOrResidential && <td className="border p-1"><StyledInput type="text" initialValue={row.interior} onBlur={v => handleProjectChange(row.id, 'interior', v)} className="w-24" /></td>}
+                                    
                                     {isCommercialOrResidential ? <>
                                         <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
                                     </> : <td className="border p-1"><StyledTextarea initialValue={row.siteVisit || ''} onBlur={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>}
+
                                     <td className="border p-1"><StyledTextarea initialValue={row.finalBill} onBlur={v => handleProjectChange(row.id, 'finalBill', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.projectClosure} onBlur={v => handleProjectChange(row.id, 'projectClosure', v)} /></td>
+                                    
                                     {isCommercialOrResidential && <td className="border p-1"><StyledTextarea initialValue={row.remarks} onBlur={v => handleProjectChange(row.id, 'remarks', v)} className="min-w-[200px]" /></td>}
+                                    
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
