@@ -114,18 +114,25 @@ function DailyReportPageComponent() {
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
   
   const selectedEmployee = useMemo(() => {
+    if (isAdmin && employeeIdFromUrl) {
+        return employees.find(e => e.record === employeeIdFromUrl);
+    }
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
-  }, [selectedEmployeeId, employees, currentUser]);
+  }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
 
 
   useEffect(() => {
-    if (!employeeIdFromUrl && isAdmin && currentUser) {
-      setSelectedEmployeeId(currentUser.uid);
-    } else if (employeeIdFromUrl) {
-      const employee = employees.find(e => e.record === employeeIdFromUrl);
-      setSelectedEmployeeId(employee?.uid);
+    if (isAdmin) {
+        if (employeeIdFromUrl) {
+            const employee = employees.find(e => e.record === employeeIdFromUrl);
+            setSelectedEmployeeId(employee?.uid);
+        } else if (currentUser) {
+            setSelectedEmployeeId(currentUser.uid);
+        }
+    } else {
+        setSelectedEmployeeId(currentUser?.uid);
     }
-  }, [isAdmin, employees, currentUser, employeeIdFromUrl]);
+}, [isAdmin, employees, currentUser, employeeIdFromUrl]);
 
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -149,7 +156,7 @@ function DailyReportPageComponent() {
     if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
         const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
         if (workEntries && Array.isArray(workEntries.items)) {
-            setEntries(workEntries.items);
+            setEntries(workEntries.items.map((item:any) => ({...item, id: item.id || Math.random()})));
         } else {
             setEntries([]);
         }

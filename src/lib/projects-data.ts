@@ -200,4 +200,3 @@ export const deleteProject = (bankKey: string, projectId: number) => {
 };
 
     
-    

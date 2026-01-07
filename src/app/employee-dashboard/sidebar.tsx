@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import React, { memo, useState, useEffect, useMemo } from 'react';
 import {
   Sidebar,
@@ -56,7 +56,7 @@ import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
-    { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
+    { href: '/employee-dashboard/my-projects', label: 'My Projects', icon: LayoutDashboard },
     { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
@@ -65,7 +65,7 @@ const topLevelItems = [
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Briefcase },
+    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports / Transmittal Letter / Minutes of Meetings', icon: Briefcase },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
@@ -82,6 +82,11 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems: any[], projectManualItems: any[] }) => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const employeeId = searchParams.get('employeeId');
+  const { user: currentUser } = useCurrentUser();
+  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
+
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -91,20 +96,32 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
 
   return (
     <SidebarMenu>
-      {menuItems.map((item) => (
-        <SidebarMenuItem key={item.href}>
-          <Link href={item.href} passHref>
-              <SidebarMenuButton
-                  isActive={pathname === item.href}
-                  className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                  tooltip={item.label}
-              >
-                  <item.icon className="size-5" />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-              </SidebarMenuButton>
-          </Link>
-        </SidebarMenuItem>
-      ))}
+      {menuItems.map((item) => {
+        let href = item.href;
+        // If an admin is viewing an employee's dashboard, append the employeeId to the links
+        if (isAdmin && employeeId) {
+            if (item.href === '/employee-dashboard/daily-report') {
+                href = `/dashboard/daily-report?employeeId=${employeeId}`;
+            } else if (item.href.startsWith('/employee-dashboard')) {
+                href = `${item.href}?employeeId=${employeeId}`;
+            }
+        }
+
+        return (
+            <SidebarMenuItem key={item.href}>
+                <Link href={href} passHref>
+                    <SidebarMenuButton
+                        isActive={pathname === item.href}
+                        className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
+                        tooltip={item.label}
+                    >
+                        <item.icon className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+        )
+      })}
 
       {isClient && (
         <>
