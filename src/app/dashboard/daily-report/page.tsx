@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +30,8 @@ import {
   Eye,
   User,
   ChevronsUpDown,
-  Check
+  Check,
+  Printer
 } from 'lucide-react';
 import {
     Dialog,
@@ -73,6 +74,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { type Employee } from '@/lib/employees';
 
 type ReportEntry = {
   id: number;
@@ -103,7 +105,7 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
 
 function DailyReportPageComponent() {
   const { toast } = useToast();
-  const { user: currentUser, employees } = useCurrentUser();
+  const { user: currentUser, employees, employeesByDepartment } = useCurrentUser();
   const { addOrUpdateRecord, records } = useRecords();
   const searchParams = useSearchParams();
   const employeeIdFromUrl = searchParams.get('employeeId');
@@ -266,14 +268,14 @@ function DailyReportPageComponent() {
       setEntries(entries.filter(entry => entry.id !== id));
   };
   
-  const handleSave = async (date: string) => {
+  const handleSave = async (showToast = true) => {
     if (!currentUser) return;
     
     const employeeToSaveFor = selectedEmployee || currentUser;
     if (!employeeToSaveFor) return;
 
     if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
+        if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
         return;
     }
     
@@ -286,18 +288,16 @@ function DailyReportPageComponent() {
             category: 'Work Entries',
             items: entries,
         }],
-    } as any);
+    } as any, showToast);
   };
   
-  const handleDownload = () => {
+  const handleDownload = (reportUser: Employee | null, reportEntries: ReportEntry[]) => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     doc.setFontSize(10);
     let yPos = 15;
-
-    const reportForUser = selectedEmployee || currentUser;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -312,7 +312,7 @@ function DailyReportPageComponent() {
         theme: 'plain',
         styles: { fontSize: 9 },
         body: [
-            [`EMPLOYEE NAME: ${reportForUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${reportForUser?.departments.join(', ') || 'N/A'}`],
+            [`EMPLOYEE NAME: ${reportUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${reportUser?.departments.join(', ') || 'N/A'}`],
             [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
              [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right' } }],
         ]
@@ -336,7 +336,7 @@ function DailyReportPageComponent() {
         ]],
         body: dateInterval.flatMap((day) => {
             const dayString = format(day, 'yyyy-MM-dd');
-            const dayEntries = entriesByDate[dayString] || [];
+            const dayEntries = (reportEntries || []).filter(e => e.date === dayString);
             const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                 const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                 return acc + (hours * 60) + minutes;
@@ -398,7 +398,7 @@ function DailyReportPageComponent() {
         doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
     }
 
-    doc.save('weekly-work-report.pdf');
+    doc.save(`${reportUser?.name || 'employee'}_weekly_report.pdf`);
   };
 
   const years = [2024, 2025, 2026];
@@ -415,13 +415,18 @@ function DailyReportPageComponent() {
     setSelectedEmployeeId(employeeUid);
     setComboboxOpen(false);
   };
+  
+   const hrEmployees = employeesByDepartment['hr'] || [];
+
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="text-center font-headline text-3xl text-primary flex items-center justify-center gap-2">
           <CalendarIcon /> Daily Work Report
         </CardTitle>
+        <CardDescription className="text-center">Manage your daily work entries and generate reports.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {isAdmin && (
@@ -604,7 +609,7 @@ function DailyReportPageComponent() {
                     </Table>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <Button onClick={() => handleDownload(selectedEmployee, entries)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -672,7 +677,7 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSave(dayString)} size="sm" variant="outline"><Save className="mr-2 h-4 w-4" /> Save Day</Button>
+                                    <Button onClick={() => handleSave(true)} size="sm" variant="outline"><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
@@ -682,6 +687,69 @@ function DailyReportPageComponent() {
         </Accordion>
       </CardContent>
     </Card>
+    
+    {isAdmin && hrEmployees.length > 0 && (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-center font-headline text-3xl text-primary">
+                    HR Daily Reports
+                </CardTitle>
+                <CardDescription className="text-center">
+                    A summary of daily reports submitted by the HR department.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="multiple" className="w-full space-y-2">
+                    {hrEmployees.map(employee => {
+                        const employeeReport = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === employee.uid);
+                        const employeeEntries = employeeReport?.data?.find((d: any) => d.category === 'Work Entries')?.items || [];
+
+                        return (
+                             <AccordionItem value={employee.uid} key={employee.uid}>
+                                <AccordionTrigger className="bg-primary/10 px-4 rounded-md font-bold">
+                                    {employee.name}
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 border rounded-b-md">
+                                    {employeeEntries.length > 0 ? (
+                                        <>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Date</TableHead>
+                                                        <TableHead>Project</TableHead>
+                                                        <TableHead>Description</TableHead>
+                                                        <TableHead>Time</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                     {employeeEntries.slice(0, 5).map((entry: any, index: number) => (
+                                                        <TableRow key={index}>
+                                                            <TableCell>{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'dd-MMM-yy') : 'N/A'}</TableCell>
+                                                            <TableCell>{entry.projectName}</TableCell>
+                                                            <TableCell>{entry.description}</TableCell>
+                                                            <TableCell>{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                            <div className="flex justify-end mt-4">
+                                                 <Button onClick={() => handleDownload(employee, employeeEntries)}>
+                                                    <Printer className="mr-2 h-4 w-4" /> Download Full Report
+                                                </Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-center text-muted-foreground py-4">No report entries found for {employee.name}.</p>
+                                    )}
+                                </AccordionContent>
+                             </AccordionItem>
+                        )
+                    })}
+                </Accordion>
+            </CardContent>
+        </Card>
+    )}
+    </>
   );
 }
 
@@ -694,3 +762,4 @@ export default function DailyReportPage() {
 }
 
     
+
