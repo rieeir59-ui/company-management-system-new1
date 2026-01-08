@@ -1,3 +1,5 @@
+# Connect Local Project to GitHub & Manage Changes
+
 Here’s a clear step-by-step guide with commands to **connect a local project to GitHub** and perform `pull`, `commit`, and `push` operations. I’ll assume you already have **Git installed** and a **GitHub account**.
 
 ---
