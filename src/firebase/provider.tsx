@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -48,10 +49,10 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
-  if (!context || !context.areServicesAvailable) {
-    // This check ensures that Firebase services are only accessed on the client-side
-    // where they have been properly initialized.
-    throw new Error('useFirebase must be used within a FirebaseProvider and on the client side.');
+  if (context === undefined) {
+    throw new Error('useFirebase must be used within a FirebaseProvider');
   }
   return context;
 };
+
+  
