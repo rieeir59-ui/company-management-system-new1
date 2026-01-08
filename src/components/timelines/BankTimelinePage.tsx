@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -119,7 +118,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         }
     }, [bankName, formattedBankName, initialData, records]);
     
-     const handleSave = () => {
+    const handleSave = () => {
         if (!currentUser) {
              toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
              return;
@@ -136,7 +135,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
         } as any, true);
-
     };
 
 
@@ -216,14 +214,38 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
         setProjectRows(currentTasks => {
-            return currentTasks.map(task => {
+            const updatedTasks = currentTasks.map(task => {
                 if (task.id === id) {
                     return { ...task, [field]: value };
                 }
                 return task;
             });
+            handleSaveDebounced(updatedTasks);
+            return updatedTasks;
         });
     };
+    
+    const handleSaveDebounced = useCallback(
+        debounce((updatedRows: ProjectRow[]) => {
+            addOrUpdateRecord({
+                fileName: `${formattedBankName} Timeline`,
+                projectName: `${formattedBankName} Projects`,
+                employeeId: currentUser?.uid,
+                data: [
+                    { category: 'Projects', items: updatedRows },
+                    { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
+                ]
+            } as any, false);
+        }, 1000), 
+    [currentUser, formattedBankName, overallStatus, remarks, remarksDate, addOrUpdateRecord]);
+
+    function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
+        let timeout: NodeJS.Timeout;
+        return (...args: Parameters<F>): void => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), waitFor);
+        };
+    }
     
     const DateInput = ({ value, onChange }: { value: string, onChange: (value: string) => void}) => {
         let dateValue: Date | undefined = undefined;
@@ -453,8 +475,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    {currentUser && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save All</Button>}
-                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    {currentUser && <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save All</Button>}
+                    <Button onClick={handleDownload} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
             <CardContent>

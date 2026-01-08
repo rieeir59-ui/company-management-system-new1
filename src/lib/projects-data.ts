@@ -140,8 +140,8 @@ export const allProjects: ProjectRow[] = [
     ...hblProjects,
     ...ublProjects,
     ...mcbProjects,
-    ...dibProjects,
     ...fblProjects,
+    ...dibProjects,
     ...bankAlfalahProjects,
     ...bankAlHabibProjects,
     ...cbdProjects,
@@ -177,45 +177,4 @@ export const bankTimelineCategories = [
     "Residential"
 ];
 
-// Functions to modify the data
-export const addProject = (bankKey: string, project: Omit<ProjectRow, 'id' | 'srNo'>) => {
-  if (bankProjectsMap[bankKey]) {
-    const newId = Date.now();
-    const newSrNo = String(bankProjectsMap[bankKey].length + 1);
-    const newProject = { ...project, id: newId, srNo: newSrNo };
-    bankProjectsMap[bankKey].push(newProject);
-  }
-};
-
-export const updateProject = (bankKey: string, updatedProject: ProjectRow) => {
-  if (bankProjectsMap[bankKey]) {
-    const index = bankProjectsMap[bankKey].findIndex(p => p.id === updatedProject.id);
-    if (index !== -1) {
-      bankProjectsMap[bankKey][index] = updatedProject;
-    }
-  }
-};
-
-export const deleteProject = (bankKey: string, projectId: number) => {
-  if (bankProjectsMap[bankKey]) {
-    bankProjectsMap[bankKey] = bankProjectsMap[bankKey].filter(p => p.id !== projectId);
-  }
-};
-
     
-
-
-
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-
