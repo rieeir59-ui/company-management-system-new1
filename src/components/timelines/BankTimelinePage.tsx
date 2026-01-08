@@ -41,7 +41,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
     const isCommercialOrResidential = useMemo(() => bankName === 'commercial' || bankName === 'residential', [bankName]);
 
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialData);
     
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
@@ -539,3 +539,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    

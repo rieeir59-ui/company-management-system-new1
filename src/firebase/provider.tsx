@@ -15,21 +15,16 @@ type FirebaseServices = {
   storage: FirebaseStorage;
 };
 
-type FirebaseContextType = FirebaseServices & {
-  areServicesAvailable: boolean;
-};
+type FirebaseContextType = FirebaseServices;
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
 
 export const FirebaseProvider = ({ children, services }: { children: ReactNode, services: FirebaseServices }) => {
-  const value = {
-    ...services,
-    areServicesAvailable: !!(services.firebaseApp && services.firestore && services.auth && services.storage),
-  };
+  const areServicesAvailable = !!(services.firebaseApp && services.firestore && services.auth && services.storage);
 
   return (
-    <FirebaseContext.Provider value={value}>
-      {value.areServicesAvailable && <FirebaseErrorListener />}
+    <FirebaseContext.Provider value={services}>
+      {areServicesAvailable && <FirebaseErrorListener />}
       {children}
     </FirebaseContext.Provider>
   );
@@ -40,8 +35,8 @@ export const useFirebase = (): FirebaseContextType => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
-  if (!context.areServicesAvailable) {
-    throw new Error('useFirebase must be used on the client side.');
+  if (!context.firestore) {
+      throw new Error('useFirebase must be used on the client side.');
   }
   return context;
 };

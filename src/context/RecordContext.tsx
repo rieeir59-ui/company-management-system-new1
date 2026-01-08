@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
@@ -183,7 +182,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
         if (!querySnapshot.empty) {
             const existingDoc = querySnapshot.docs[0];
-            const dataToUpdate: Partial<SavedRecord> = {
+            const dataToUpdate = {
                 ...employeeInfo,
                 projectName: recordData.projectName,
                 data: recordData.data,
@@ -265,7 +264,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       projectManualItems,
       bankTimelineCategories
     }
-  }, [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
+  }, [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
 
 
   return (
