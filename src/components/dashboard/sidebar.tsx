@@ -30,20 +30,6 @@ import {
   Users,
   LayoutDashboard,
   Briefcase,
-<<<<<<< HEAD
-  BookCopy,
-  Landmark,
-  Search as SearchIcon,
-  Settings,
-  KeyRound,
-  PlusCircle,
-  Edit,
-  Trash2,
-  ArrowLeft,
-  UploadCloud,
-  Building2,
-  Home,
-=======
   FileUp,
   Search as SearchIcon,
   Settings,
@@ -54,8 +40,10 @@ import {
   Landmark,
   Building2,
   Home,
-  List
->>>>>>> origin/main
+  List,
+  BookCopy,
+  ArrowLeft,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -66,33 +54,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
-<<<<<<< HEAD
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-=======
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { useTasks } from '@/hooks/use-tasks';
->>>>>>> origin/main
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -143,8 +107,6 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelIte
           </Link>
         </SidebarMenuItem>
       ))}
-<<<<<<< HEAD
-=======
       {isClient && (
         <SidebarMenuItem>
           <Collapsible>
@@ -260,7 +222,6 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelIte
           </Collapsible>
         </SidebarMenuItem>
       )}
->>>>>>> origin/main
     </SidebarMenu>
   );
 });
@@ -451,53 +412,9 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-<<<<<<< HEAD
-            <>
-              <MemoizedSidebarMenu 
-                  visibleTopLevelItems={visibleTopLevelItems} 
-                  projectManualItems={projectManualItems || []} 
-                  bankTimelineItems={bankTimelineItems || []} 
-              />
-              <SidebarMenu>
-                 <SidebarMenuItem>
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          className="group-data-[collapsible=icon]:justify-center"
-                          tooltip="Upload"
-                        >
-                          <UploadCloud className="size-5" />
-                          <span className="group-data-[collapsible=icon]:hidden">Upload</span>
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
-                        <SidebarMenuSub>
-                          <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Banks" passHref>
-                              <SidebarMenuSubButton><Landmark className="size-4 mr-2" />Bank</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Commercial" passHref>
-                              <SidebarMenuSubButton><Building2 className="size-4 mr-2" />Commercial</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Residential" passHref>
-                              <SidebarMenuSubButton><Home className="size-4 mr-2" />Residential</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                 </SidebarMenuItem>
-              </SidebarMenu>
-            </>
-=======
             <MemoizedSidebarMenu 
                 visibleTopLevelItems={visibleTopLevelItems}
             />
->>>>>>> origin/main
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">
