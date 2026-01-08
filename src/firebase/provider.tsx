@@ -41,7 +41,9 @@ export const useFirebase = (): FirebaseContextType => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
   if (!context.areServicesAvailable) {
-    throw new Error('useFirebase must be used on the client side.');
+    // This could be triggered in a server component trying to access the context.
+    // We throw a more specific error to guide developers.
+    throw new Error('Firebase services are not available. Ensure useFirebase is called within a client component wrapped by FirebaseProvider.');
   }
   return context;
 };
