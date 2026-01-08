@@ -16,7 +16,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
-    <FirebaseProvider>
+    <FirebaseProvider services={firebaseServices}>
       {children}
     </FirebaseProvider>
   );
