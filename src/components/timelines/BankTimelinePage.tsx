@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -238,21 +239,19 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
             siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
         };
-        const updatedRows = [...projectRows, newRow];
-        setProjectRows(updatedRows);
+        setProjectRows(prevRows => [...prevRows, newRow]);
     };
     
     const removeProjectRow = (id: number) => {
-        const updatedRows = projectRows
-            .filter(row => row.id !== id)
-            .map((row, index) => ({
-                ...row,
-                srNo: String(index + 1)
-            }));
-
-        setProjectRows(updatedRows);
-        handleSave();
-        toast({ title: 'Project Deleted', description: 'The project has been removed and the timeline has been updated.' });
+        setProjectRows(prevRows => {
+            const updatedRows = prevRows
+                .filter(row => row.id !== id)
+                .map((row, index) => ({
+                    ...row,
+                    srNo: String(index + 1)
+                }));
+            return updatedRows;
+        });
     };
 
     const handleDownload = () => {
@@ -540,5 +539,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
-
-    
