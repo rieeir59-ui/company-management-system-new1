@@ -40,10 +40,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
-import { generatePdfForRecord } from '@/lib/pdf-generator';
 import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
 import { StatusBadge } from '../ui/badge';
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { getIconForFile } from '@/lib/icons';
 import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import { bankTimelineCategories, type ProjectRow } from '@/lib/projects-data';
@@ -56,6 +56,103 @@ interface jsPDFWithAutoTable extends jsPDF {
   };
 }
 
+const generatePdfForRecord = (record: SavedRecord) => {
+    const doc = new jsPDF({ orientation: 'portrait' }) as jsPDFWithAutoTable;
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+    let yPos = 20;
+    const primaryColor = [45, 95, 51];
+    const margin = 14;
+
+    const addDefaultHeader = (doc: jsPDF, record: SavedRecord) => {
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.text(record.fileName, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 8;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(record.projectName, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 12;
+
+        doc.setFontSize(9);
+        doc.text(`Record ID: ${record.id}`, 14, yPos);
+        doc.text(`Date: ${record.createdAt.toLocaleDateString()}`, pageWidth - 14, yPos, { align: 'right' });
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(14, yPos - 5, pageWidth - 14, yPos - 5);
+        return yPos;
+    };
+
+    const addFooter = (doc: jsPDF) => {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+    };
+    
+    yPos = addDefaultHeader(doc, record);
+
+    if (Array.isArray(record.data)) {
+        record.data.forEach((section: any) => {
+            if (typeof section === 'object' && section !== null && section.category) {
+                if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                doc.text(section.category, 14, yPos);
+                yPos += 8;
+                doc.setTextColor(0,0,0);
+
+                if (Array.isArray(section.items)) {
+                    let firstItem = section.items[0];
+                    if (typeof firstItem === 'string') {
+                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* not json */ }
+                    }
+                    
+                    const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
+                    const headers = isTable ? Object.keys(firstItem).filter(key => key !== 'id') : [];
+
+                    if (isTable) {
+                        const body = section.items.map((item: any) => {
+                             let parsedItem = item;
+                             if (typeof item === 'string') {
+                                try { parsedItem = JSON.parse(item); } catch (e) { return headers.map(() => item); }
+                             }
+                             return headers.map(header => parsedItem[header] !== undefined ? String(parsedItem[header]) : '');
+                        });
+
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [headers.map(h => h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))],
+                            body: body,
+                            theme: 'striped',
+                            styles: { fontSize: 8, cellPadding: 2 },
+                        });
+
+                    } else { // Fallback for simple arrays or other formats
+                        const body = section.items.map((item: any) => {
+                            if (typeof item === 'object' && item.label && item.value !== undefined) return [item.label, String(item.value)];
+                            if (typeof item === 'string') {
+                                const parts = item.split(/:(.*)/s);
+                                return parts.length > 1 ? [parts[0], parts[1].trim()] : [item, ''];
+                            }
+                            return [JSON.stringify(item), ''];
+                        });
+                        doc.autoTable({ startY: yPos, body: body, theme: 'plain' });
+                    }
+                    yPos = doc.lastAutoTable.finalY + 10;
+                }
+            }
+        });
+    }
+    addFooter(doc);
+    doc.save(`${record.projectName}_${record.fileName}.pdf`);
+};
+
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
     const { user: currentUser } = useCurrentUser();
@@ -64,15 +161,24 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
-    const [viewingRecordItem, setViewingRecordItem] = useState<any>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-    const mainCategories = useMemo(() => [
-        { name: 'Banks', icon: Landmark, files: [...(bankTimelineCategories || []).map(b => `${b} Timeline`), "Running Projects Summary"] },
-        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name)) },
-        { name: 'Employee Documents', icon: Users, files: ['My Projects', 'Task Assignment', 'Leave Request Form', 'Daily Work Report'] }
-    ], [bankTimelineCategories]);
+    const mainCategories = useMemo(() => {
+        const recordCategories = (records || []).reduce((acc, record) => {
+            if (!acc[record.fileName]) {
+                acc[record.fileName] = [];
+            }
+            acc[record.fileName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
+
+        return [
+            { name: 'Banks', icon: Landmark, files: [...(bankTimelineCategories || []).map(b => `${b} Timeline`), "Running Projects Summary"] },
+            { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name)) },
+            { name: 'Employee Documents', icon: Users, files: ['My Projects', 'Task Assignment', 'Leave Request Form', 'Daily Work Report'] }
+        ]
+    }, [records, bankTimelineCategories]);
     
     const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
 
@@ -133,9 +239,8 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setIsDeleteDialogOpen(false);
     };
     
-    const openViewDialog = (record: SavedRecord, item?: any) => {
+    const openViewDialog = (record: SavedRecord) => {
         setViewingRecord(record);
-        setViewingRecordItem(item || null);
         setIsViewDialogOpen(true);
     };
 
@@ -415,7 +520,10 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     {mainCategories.map(({ name, icon: Icon }) => (
                          <Card
                             key={name}
-                            className="p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all"
+                            className={cn(
+                                "p-6 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-accent hover:border-primary transition-all",
+                                "min-h-[180px]"
+                            )}
                             onClick={() => setActiveCategory(name)}
                         >
                             <Icon className="w-12 h-12 text-primary" />
