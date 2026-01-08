@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -541,3 +540,5 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         </Card>
     );
 }
+
+    
