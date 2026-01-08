@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -25,53 +26,6 @@ import { useCurrentUser } from '@/context/UserContext';
 
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
-
-const StyledTextarea = React.memo(({ initialValue, onBlur, ...rest }: Omit<React.ComponentProps<typeof Textarea>, 'value' | 'onChange' | 'onBlur'> & { initialValue: string, onBlur: (value: string) => void }) => {
-    const [value, setValue] = useState(initialValue);
-
-    useEffect(() => {
-        setValue(initialValue);
-    }, [initialValue]);
-
-    const handleBlur = () => {
-        onBlur(value);
-    }
-
-    return (
-        <Textarea 
-            value={value}
-            onChange={e => setValue(e.target.value)}
-            onBlur={handleBlur}
-            {...rest}
-        />
-    )
-});
-
-StyledTextarea.displayName = 'StyledTextarea';
-
-
-const StyledInput = React.memo(({ initialValue, onBlur, ...rest }: Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange' | 'onBlur'> & { initialValue: string, onBlur: (value: string) => void }) => {
-    const [value, setValue] = useState(initialValue);
-
-    useEffect(() => {
-        setValue(initialValue);
-    }, [initialValue]);
-    
-     const handleBlur = () => {
-        onBlur(value);
-    }
-    
-    return (
-         <Input
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={handleBlur}
-            {...rest}
-        />
-    )
-});
-
-StyledInput.displayName = 'StyledInput';
 
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
     const params = useParams();
@@ -211,41 +165,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             setIsGenerating(false);
         }
     };
-
-    const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
-        setProjectRows(currentTasks => {
-            const updatedTasks = currentTasks.map(task => {
-                if (task.id === id) {
-                    return { ...task, [field]: value };
-                }
-                return task;
-            });
-            handleSaveDebounced(updatedTasks);
-            return updatedTasks;
-        });
-    };
     
-    const handleSaveDebounced = useCallback(
-        debounce((updatedRows: ProjectRow[]) => {
-            addOrUpdateRecord({
-                fileName: `${formattedBankName} Timeline`,
-                projectName: `${formattedBankName} Projects`,
-                employeeId: currentUser?.uid,
-                data: [
-                    { category: 'Projects', items: updatedRows },
-                    { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
-                ]
-            } as any, false);
-        }, 1000), 
-    [currentUser, formattedBankName, overallStatus, remarks, remarksDate, addOrUpdateRecord]);
-
-    function debounce<F extends (...args: any[]) => any>(func: F, waitFor: number) {
-        let timeout: NodeJS.Timeout;
-        return (...args: Parameters<F>): void => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), waitFor);
-        };
-    }
+    const handleProjectChange = (id: number, field: keyof ProjectRow, value: string) => {
+      setProjectRows(currentTasks => {
+          return currentTasks.map(task => {
+              if (task.id === id) {
+                  return { ...task, [field]: value };
+              }
+              return task;
+          });
+      });
+    };
     
     const DateInput = ({ value, onChange }: { value: string, onChange: (value: string) => void}) => {
         let dateValue: Date | undefined = undefined;
@@ -513,17 +443,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                         <tbody>
                             {projectRows.map(row => (
                                 <tr key={row.id}>
-                                    <td className="border text-center p-1"><StyledInput type="text" initialValue={row.srNo} onBlur={v => handleProjectChange(row.id, 'srNo', v)} className="w-12 text-center" /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.projectName} onBlur={v => handleProjectChange(row.id, 'projectName', v)} className="min-w-[200px]" /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.area} onBlur={v => handleProjectChange(row.id, 'area', v)} className="w-24" /></td>
-                                    <td className="border p-1"><StyledInput type="text" initialValue={row.projectHolder} onBlur={v => handleProjectChange(row.id, 'projectHolder', v)} className="w-32" /></td>
+                                    <td className="border text-center p-1"><Input type="text" value={row.srNo} onChange={e => handleProjectChange(row.id, 'srNo', e.target.value)} className="w-12 text-center" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} /></td>
                                     
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="min-w-[150px]" /></td>
+                                    <td className="border p-1"><Textarea value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="min-w-[150px]" /></td>
                                     
-                                    {!isCommercialOrResidential && <td className="border p-1"><StyledTextarea initialValue={row.headCount || ''} onBlur={v => handleProjectChange(row.id, 'headCount', v)} /></td>}
+                                    {!isCommercialOrResidential && <td className="border p-1"><Textarea value={row.headCount || ''} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>}
 
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
@@ -544,23 +474,23 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
                                     
                                     {!isCommercialOrResidential && <>
-                                         <td className="border p-1"><StyledInput type="text" initialValue={row.tenderStatus || ''} onBlur={v => handleProjectChange(row.id, 'tenderStatus', v)} className="w-24" /></td>
-                                        <td className="border p-1"><StyledInput type="text" initialValue={row.comparative || ''} onBlur={v => handleProjectChange(row.id, 'comparative', v)} className="w-24" /></td>
+                                         <td className="border p-1"><Input type="text" value={row.tenderStatus || ''} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
+                                        <td className="border p-1"><Input type="text" value={row.comparative || ''} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
                                         <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
                                     </>}
                                     
-                                    {isCommercialOrResidential && <td className="border p-1"><StyledInput type="text" initialValue={row.interior} onBlur={v => handleProjectChange(row.id, 'interior', v)} className="w-24" /></td>}
+                                    {isCommercialOrResidential && <td className="border p-1"><Input type="text" value={row.interior} onChange={e => handleProjectChange(row.id, 'interior', e.target.value)} className="w-24" /></td>}
                                     
                                     {isCommercialOrResidential ? <>
                                         <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
                                         <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
-                                    </> : <td className="border p-1"><StyledTextarea initialValue={row.siteVisit || ''} onBlur={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>}
+                                    </> : <td className="border p-1"><Textarea value={row.siteVisit || ''} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} /></td>}
 
-                                    <td className="border p-1"><StyledTextarea initialValue={row.finalBill} onBlur={v => handleProjectChange(row.id, 'finalBill', v)} /></td>
-                                    <td className="border p-1"><StyledTextarea initialValue={row.projectClosure} onBlur={v => handleProjectChange(row.id, 'projectClosure', v)} /></td>
+                                    <td className="border p-1"><Textarea value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} /></td>
+                                    <td className="border p-1"><Textarea value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} /></td>
                                     
-                                    {isCommercialOrResidential && <td className="border p-1"><StyledTextarea initialValue={row.remarks} onBlur={v => handleProjectChange(row.id, 'remarks', v)} className="min-w-[200px]" /></td>}
+                                    {isCommercialOrResidential && <td className="border p-1"><Textarea value={row.remarks} onChange={e => handleProjectChange(row.id, 'remarks', e.target.value)} className="min-w-[200px]" /></td>}
                                     
                                     <td className="border p-1">
                                         <div className="flex gap-1">
