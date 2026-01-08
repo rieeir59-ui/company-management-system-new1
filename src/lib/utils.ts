@@ -37,12 +37,8 @@ export const allFileNames = [
   "Site Survey",
   "Uploaded File",
   "Daily Work Report",
-<<<<<<< HEAD
-  "Site Survey"
-=======
   "Leave Request Form",
   "Leave Application",
->>>>>>> origin/main
 ];
 
 const fileNameToUrlMap: Record<string, string> = {

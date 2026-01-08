@@ -125,18 +125,13 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return docRef;
       } catch (err) {
         console.error(err);
-<<<<<<< HEAD
         const permissionError = new FirestorePermissionError({
             path: 'savedRecords',
             operation: 'create',
             requestResourceData: dataToSave,
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw err; // Re-throw so calling components can handle it
-=======
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
-        return Promise.reject(err);
->>>>>>> origin/main
+        throw err;
       }
     },
     [firestore, currentUser, toast]
@@ -249,35 +244,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
   const projectManualItems = useMemo(() => {
-<<<<<<< HEAD
-    if (!currentUser) return [];
     const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
     return allFileNames
-      .filter(name => !name.includes('Timeline') && name !== 'Task Assignment' && name !== 'My Projects')
-      .map(name => ({
-        href: getFormUrlFromFileName(name, dashboardPrefix) || `/${dashboardPrefix}`,
-        label: name,
-        icon: getIconForFile(name),
-      }));
-  }, [currentUser, isAdmin]);
-
-  const bankTimelineItems = useMemo(() => {
-    if (!currentUser) return [];
-    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
-    return [
-      { href: `/${dashboardPrefix}/timelines-of-bank/commercial`, label: 'Commercial', icon: Building2 },
-      { href: `/${dashboardPrefix}/timelines-of-bank/residential`, label: 'Residential', icon: Home },
-      ...bankTimelineCategories.map(bank => ({
-        href: `/${dashboardPrefix}/timelines-of-bank/${encodeURIComponent(bank)}`,
-        label: bank,
-        icon: Landmark,
-      }))
-    ];
-  }, [currentUser, isAdmin, bankTimelineCategories]);
-=======
-    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
-    return allFileNames
-        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File'].includes(name))
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name))
         .map(name => {
             const url = getFormUrlFromFileName(name, dashboardPrefix);
             return {
@@ -287,7 +256,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             };
         });
   }, [isAdmin]);
-  
+
   const value = useMemo(() => ({ 
       records, 
       addRecord, 
@@ -299,8 +268,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       projectManualItems, 
       bankTimelineCategories
     }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
-
->>>>>>> origin/main
 
   return (
     <RecordContext.Provider value={value}>
