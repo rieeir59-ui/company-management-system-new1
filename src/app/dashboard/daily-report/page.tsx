@@ -754,4 +754,10 @@ function DailyReportPageComponent() {
   );
 }
 
-    
+export default function DailyReportPage() {
+    return (
+        <Suspense>
+            <DailyReportPageComponent />
+        </Suspense>
+    )
+}
