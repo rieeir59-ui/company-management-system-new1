@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
@@ -150,7 +151,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     [firestore, toast, currentUser]
   );
   
-  const addOrUpdateRecord = useCallback(
+ const addOrUpdateRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
         if (!firestore || !currentUser) {
             if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
@@ -175,7 +176,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         const querySnapshot = await getDocs(q);
     
         const employeeInfo = {
-            employeeId: currentUser.uid, // Use authenticated user's UID
+            employeeId: recordData.employeeId || currentUser.uid,
             employeeName: recordData.employeeName || currentUser.name,
             employeeRecord: recordData.employeeRecord || currentUser.record,
         };
@@ -279,3 +280,5 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
+
+    

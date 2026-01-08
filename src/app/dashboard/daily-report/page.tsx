@@ -754,14 +754,4 @@ function DailyReportPageComponent() {
   );
 }
 
-export default function DailyReportPage() {
-    return (
-        <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin" />}>
-            <DailyReportPageComponent />
-        </Suspense>
-    )
-}
-
     
-
-
