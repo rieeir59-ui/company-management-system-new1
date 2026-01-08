@@ -74,7 +74,6 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
                             <div className="flex items-center gap-1"><Briefcase size={14} /><span>Tasks</span></div>
                             <span>{taskStats.total}</span>
                         </div>
-<<<<<<< HEAD
                         <div className="flex justify-between items-center">
                              <div className="flex items-center gap-1"><XCircle size={14} className="text-red-500" /><span>Overdue</span></div>
                             <span className="text-red-500">{taskStats.overdue}</span>
@@ -90,13 +89,7 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
                     </div>
                 </CardContent>
             </Card>
-             <Link href={`/employee-dashboard?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
-=======
-                    </CardContent>
-                </Card>
-            </Link>
              <Link href={`/employee-dashboard/my-projects?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
->>>>>>> origin/main
                 View Dashboard
             </Link>
 
@@ -196,4 +189,3 @@ export default function AssignTaskPage() {
         </div>
     );
 }
-
