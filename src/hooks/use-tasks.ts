@@ -57,6 +57,7 @@ export function useTasks(employeeUid?: string, fetchAllForAdmin = false) {
     } else if (uidToFetch) { // This check ensures uidToFetch is not undefined
         q = query(tasksCollection, where('assignedTo', '==', uidToFetch));
     } else {
+        // If there's no UID to fetch and not an admin fetching all, do nothing.
         setTasks([]);
         setIsLoading(false);
         return;

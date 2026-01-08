@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore, enableIndexedDbPersistence, terminate, CACHE_SIZE_UNLIMITED } from 'firebase/firestore'
@@ -20,12 +21,15 @@ export function initializeFirebase(): { firebaseApp: FirebaseApp; auth: Auth; fi
   
   if (getApps().length === 0) {
     firebaseApp = initializeApp(firebaseConfig);
-    firestore = getFirestore(firebaseApp);
   } else {
     firebaseApp = getApp();
-    firestore = getFirestore(firebaseApp);
   }
 
+  // Firestore and other services should be initialized after the app.
+  firestore = getFirestore(firebaseApp);
+  auth = getAuth(firebaseApp);
+  storage = getStorage(firebaseApp);
+  
   if (!persistenceEnabled) {
     try {
       enableIndexedDbPersistence(firestore, {
@@ -46,9 +50,6 @@ export function initializeFirebase(): { firebaseApp: FirebaseApp; auth: Auth; fi
       persistenceEnabled = true; // Avoid retrying.
     }
   }
-
-  auth = getAuth(firebaseApp);
-  storage = getStorage(firebaseApp);
 
   return { firebaseApp, auth, firestore, storage };
 }
