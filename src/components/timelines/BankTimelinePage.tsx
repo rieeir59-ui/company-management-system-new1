@@ -403,7 +403,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
         { name: "Site Survey", span: 2, rowSpan: 1 },
         { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Head Count / Requirement", span: 2, rowSpan: 1 },
         { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
         { name: "3D's", span: 2, rowSpan: 1 },
         { name: "Design Lock Date", span: 1, rowSpan: 2 },
@@ -502,10 +501,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
                                     <td className="border p-1"><StyledTextarea initialValue={row.contract} onBlur={v => handleProjectChange(row.id, 'contract', v)} className="min-w-[150px]" /></td>
                                     
-                                    {isCommercialOrResidential ? <>
-                                        <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>
-                                        <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>
-                                    </> : <td className="border p-1"><StyledTextarea initialValue={row.headCount || ''} onBlur={v => handleProjectChange(row.id, 'headCount', v)} /></td>}
+                                    {!isCommercialOrResidential && <td className="border p-1"><StyledTextarea initialValue={row.headCount || ''} onBlur={v => handleProjectChange(row.id, 'headCount', v)} /></td>}
 
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
