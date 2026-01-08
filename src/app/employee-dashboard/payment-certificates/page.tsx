@@ -20,7 +20,7 @@ import { useCurrentUser } from '@/context/UserContext';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDF;
+    autoTable: (options: any) => jsPDF;
 }
 
 const ChangeOrderRow = ({ id, onRemove }: { id: number, onRemove: (id: number) => void }) => (
@@ -115,7 +115,7 @@ export default function Page() {
 
         try {
             await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
+                employeeId: currentUser.uid,
                 employeeName: currentUser.name,
                 fileName: 'Project Application for Payment (CM)',
                 projectName: form1State.project || 'Untitled Payment Certificate',
@@ -302,7 +302,7 @@ export default function Page() {
 
         try {
             await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
+                employeeId: currentUser.uid,
                 employeeName: currentUser.name,
                 fileName: 'Application for Payment (Contractor)',
                 projectName: form2State.project || 'Untitled Payment Certificate',
@@ -312,7 +312,7 @@ export default function Page() {
             toast({ title: 'Record Saved', description: 'The payment application has been saved.' });
         } catch (error) {
             console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create' }));
         }
     };
     const handleDownloadPdf2 = () => {

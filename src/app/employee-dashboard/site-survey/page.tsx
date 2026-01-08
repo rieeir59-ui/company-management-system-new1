@@ -1,22 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
-import DashboardPageHeader from "@/components/dashboard/PageHeader";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Save, Printer } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '@/components/ui/table';
-import { useRecords } from '@/context/RecordContext';
+import { Suspense } from 'react';
+import SiteSurveyComponent from '@/components/dashboard/SiteSurveyComponent';
+import { Loader2 } from 'lucide-react';
 
+<<<<<<< HEAD
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
@@ -467,7 +456,28 @@ export default function ProjectDataPage() {
                     </form>
                 </CardContent>
             </Card>
+=======
+function SiteSurveyFallback() {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span>Loading Form...</span>
+>>>>>>> origin/main
         </div>
     );
 }
 
+<<<<<<< HEAD
+=======
+export default function Page() {
+  return (
+    <Suspense fallback={<SiteSurveyFallback />}>
+      <SiteSurveyComponent />
+    </Suspense>
+  );
+}
+
+    
+
+    
+>>>>>>> origin/main

@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Save, Download, Check, ChevronsUpDown, Loader2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import {
@@ -107,16 +107,16 @@ export default function AssignTaskForm() {
             return;
         }
 
+        const assignedEmployee = employees.find(e => e.uid === assignedTo);
         const taskCoreData = {
+            projectName,
             taskName,
             taskDescription,
             assignedTo,
             startDate,
             endDate,
-            projectName,
             assignedBy: currentUser.name,
             assignedById: currentUser.uid,
-            status: 'not-started',
         };
 
         const recordToSave = {
@@ -124,22 +124,31 @@ export default function AssignTaskForm() {
             projectName: projectName || `Task: ${taskName}`,
             data: [{
                 category: 'Task Assignment',
-                items: Object.entries(taskCoreData).map(([key, value]) => {
-                    if (key === 'assignedTo') {
-                         const assignedEmployee = employees.find(e => e.uid === value);
-                         return { label: key, value: assignedEmployee?.name || value };
-                    }
-                    return { label: key, value };
-                })
+                items: Object.entries(taskCoreData).map(([key, value]) => ({ label: key, value: key === 'assignedTo' ? assignedEmployee?.name || value : value }))
             }],
         };
 
         if (recordId) {
+            // If we are editing a saved record, we might also need to update the original task in 'tasks' collection.
+            // This assumes the recordId is the ID of the document in 'savedRecords'. We need to find the corresponding task.
+            // This logic is complex and depends on how tasks and records are linked. 
+            // For now, we update both the saved record and a corresponding task if a taskId is available.
+            
+            // This is a simplification. A real app would need a more robust way to link saved records to tasks.
+            const taskId = searchParams.get('taskId'); // Assuming taskId could be passed in URL
+            if (taskId) {
+                const taskRef = doc(firestore, 'tasks', taskId);
+                updateDoc(taskRef, taskCoreData).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: taskCoreData }));
+                })
+            }
             updateRecord(recordId, recordToSave);
+            toast({ title: 'Task Updated', description: `Task "${taskName}" has been updated.` });
+
         } else {
              // Save to tasks collection
-            addDoc(collection(firestore, 'tasks'), { ...taskCoreData, createdAt: serverTimestamp() })
-                .then(() => {
+            addDoc(collection(firestore, 'tasks'), { ...taskCoreData, status: 'not-started', createdAt: serverTimestamp() })
+                .then((docRef) => {
                     // Also save to general records
                     addRecord(recordToSave as any);
 
@@ -162,6 +171,7 @@ export default function AssignTaskForm() {
                     errorEmitter.emit('permission-error', permissionError);
                 });
         }
+        setIsSaveOpen(false);
     };
     
     const handleDownloadPdf = async () => {
@@ -298,7 +308,7 @@ export default function AssignTaskForm() {
                 <div className="flex justify-end gap-4 mt-8">
                         <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
                         <DialogTrigger asChild>
-                            <Button><Save className="mr-2 h-4 w-4" /> {recordId ? 'Update & Save' : 'Assign & Save'}</Button>
+                            <Button><Save className="mr-2 h-4 w-4" /> {recordId ? 'Update Record' : 'Assign & Save'}</Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>

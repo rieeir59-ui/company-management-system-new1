@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { allProjects } from '@/lib/projects-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, Clock, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { differenceInDays, parse, isValid } from 'date-fns';
@@ -15,10 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
+  lastAutoTable: {
+    finalY: number;
+  };
 }
 
 const DetailItem = ({ label, value }: { label: string; value?: string | null }) => (
-    <div>
+    <div className="p-4 bg-muted/30 rounded-lg">
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-lg font-semibold">{value || 'N/A'}</p>
     </div>
@@ -27,11 +30,24 @@ const DetailItem = ({ label, value }: { label: string; value?: string | null }) 
 const TimelineRow = ({ label, start, end }: { label: string; start?: string | null; end?: string | null }) => {
     let duration = 'N/A';
     if (start && end) {
-        const startDate = parse(start, 'dd-MMM-yy', new Date());
-        const endDate = parse(end, 'dd-MMM-yy', new Date());
-        if (isValid(startDate) && isValid(endDate)) {
-            const diff = differenceInDays(endDate, startDate);
-            duration = `${diff} day${diff === 1 ? '' : 's'}`;
+        try {
+            const startDate = parse(start, 'yyyy-MM-dd', new Date());
+            const endDate = parse(end, 'yyyy-MM-dd', new Date());
+            if (isValid(startDate) && isValid(endDate)) {
+                const diff = differenceInDays(endDate, startDate);
+                duration = `${diff} day${diff === 1 ? '' : 's'}`;
+            }
+        } catch(e) {
+             try {
+                const startDate = parse(start, 'dd-MMM-yy', new Date());
+                const endDate = parse(end, 'dd-MMM-yy', new Date());
+                if (isValid(startDate) && isValid(endDate)) {
+                    const diff = differenceInDays(endDate, startDate);
+                    duration = `${diff} day${diff === 1 ? '' : 's'}`;
+                }
+            } catch(e2) {
+                // Ignore if parsing fails
+            }
         }
     }
 
@@ -105,10 +121,10 @@ export default function ProjectDetailPage() {
         ["Tender Package Architectural", project.tenderArchStart || 'N/A', project.tenderArchEnd || 'N/A'],
         ["Tender Package MEP", project.tenderMepStart || 'N/A', project.tenderMepEnd || 'N/A'],
         ["BOQ", project.boqStart || 'N/A', project.boqEnd || 'N/A'],
-        ["Working Drawings", project.workingDrawingsStart || 'N/A', project.workingDrawingsEnd || 'N/A'],
-        ["Site Visit", project.siteVisitStart || 'N/A', project.siteVisitEnd || 'N/A'],
         ["Tender Status", project.tenderStatus || 'N/A'],
         ["Comparative", project.comparative || 'N/A'],
+        ["Working Drawings", project.workingDrawingsStart || 'N/A', project.workingDrawingsEnd || 'N/A'],
+        ["Site Visit", project.siteVisit || 'N/A'],
         ["Final Bill", project.finalBill || 'N/A'],
         ["Project Closure", project.projectClosure || 'N/A'],
     ];
@@ -158,7 +174,7 @@ export default function ProjectDetailPage() {
         <CardHeader>
           <CardTitle>Project Details</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <DetailItem label="Serial No." value={project.srNo} />
             <DetailItem label="Area" value={project.area ? `${project.area} sft` : 'N/A'} />
             <DetailItem label="Project Holder" value={project.projectHolder} />
@@ -189,10 +205,10 @@ export default function ProjectDetailPage() {
                     <TimelineRow label="Tender Package Architectural" start={project.tenderArchStart} end={project.tenderArchEnd} />
                     <TimelineRow label="Tender Package MEP" start={project.tenderMepStart} end={project.tenderMepEnd} />
                     <TimelineRow label="BOQ" start={project.boqStart} end={project.boqEnd} />
-                    <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
-                    <TimelineRow label="Site Visit" start={project.siteVisitStart} end={project.siteVisitEnd} />
                     <TimelineRowSingle label="Tender Status" value={project.tenderStatus} />
                     <TimelineRowSingle label="Comparative" value={project.comparative} />
+                    <TimelineRow label="Working Drawings" start={project.workingDrawingsStart} end={project.workingDrawingsEnd} />
+                    <TimelineRowSingle label="Site Visit" value={project.siteVisit} />
                     <TimelineRowSingle label="Final Bill" value={project.finalBill} />
                     <TimelineRowSingle label="Project Closure" value={project.projectClosure} />
                 </TableBody>
@@ -202,3 +218,6 @@ export default function ProjectDetailPage() {
     </div>
   );
 }
+
+
+

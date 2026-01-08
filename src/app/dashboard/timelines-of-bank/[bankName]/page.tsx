@@ -1,5 +1,6 @@
 'use client';
 
+<<<<<<< HEAD
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -306,7 +307,15 @@ function DynamicBankTimelineComponent() {
         </Card>
     );
 }
+=======
+import { Suspense } from 'react';
+import BankTimelinePage from '@/components/timelines/BankTimelinePage';
+>>>>>>> origin/main
 
 export default function Page() {
-  return <DynamicBankTimelineComponent />;
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-64">Loading...</div>}>
+      <BankTimelinePage dashboardType="dashboard" />
+    </Suspense>
+  );
 }

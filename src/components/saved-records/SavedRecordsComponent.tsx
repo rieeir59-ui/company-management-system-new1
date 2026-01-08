@@ -5,9 +5,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
-import { Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye } from "lucide-react";
+import { 
+    Download, Trash2, Edit, Loader2, Landmark, Home, Building, Hotel, ExternalLink, ArrowLeft, Users, Folder, BookCopy, ClipboardCheck, FileSearch, Search, Eye, Send, User as UserIcon, Compass, File as FileIcon, CalendarOff, ClipboardList 
+} from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
+import { useRecords, type SavedRecord } from '@/context/RecordContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,10 +32,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useRecords, type SavedRecord } from '@/context/RecordContext';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getIconForFile } from '@/lib/icons';
-import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -40,10 +39,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from '@/components/ui/badge';
+import { generatePdfForRecord } from '@/lib/pdf-generator';
+import { format, parseISO, isValid, differenceInMinutes } from 'date-fns';
+import { StatusBadge } from '../ui/badge';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { type ProjectRow } from '@/lib/projects-data';
+import { getIconForFile } from '@/lib/icons';
+import { getFormUrlFromFileName, allFileNames } from '@/lib/utils';
+import { bankTimelineCategories, type ProjectRow } from '@/lib/projects-data';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+<<<<<<< HEAD
 const generatePdfForRecord = (record: SavedRecord) => {
     const doc = new jsPDF({ orientation: 'landscape' }) as any;
     const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
@@ -215,6 +220,14 @@ const generatePdfForRecord = (record: SavedRecord) => {
     addFooter();
     doc.save(`${record.projectName}_${record.fileName}.pdf`);
 };
+=======
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => void;
+  lastAutoTable: {
+    finalY: number;
+  };
+}
+>>>>>>> origin/main
 
 export default function SavedRecordsComponent({ employeeOnly = false }: { employeeOnly?: boolean }) {
     const { records, isLoading, error, deleteRecord, bankTimelineCategories } = useRecords();
@@ -225,6 +238,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const [recordToDelete, setRecordToDelete] = useState<SavedRecord | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [viewingRecord, setViewingRecord] = useState<SavedRecord | null>(null);
+    const [viewingRecordItem, setViewingRecordItem] = useState<any>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
@@ -233,6 +247,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setIsClient(true);
     }, []);
 
+<<<<<<< HEAD
     const mainCategories = useMemo(() => {
         const allBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
         const projectManualFiles = (allFileNames || []).filter(name => !allBankFileNames.includes(name) && !['Task Assignment', 'Uploaded File', 'Daily Work Report', 'My Projects'].includes(name));
@@ -246,6 +261,18 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     }, [bankTimelineCategories]);
     
     const userRecords = useMemo(() => {
+=======
+    const mainCategories = useMemo(() => [
+        { name: 'Banks', icon: Landmark, files: [...(bankTimelineCategories || []).map(b => `${b} Timeline`), "Running Projects Summary"] },
+        { name: 'Project Manual', icon: BookCopy, files: allFileNames.filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Leave Request Form', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name)) },
+        { name: 'Employee Documents', icon: Users, files: ['My Projects', 'Task Assignment', 'Leave Request Form', 'Daily Work Report'] }
+    ], [bankTimelineCategories]);
+    
+    const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+
+    const filteredRecords = useMemo(() => {
+        let userRecords = records;
+>>>>>>> origin/main
         if (employeeOnly && currentUser) {
             return records.filter(r => r.employeeId === currentUser.uid);
         }
@@ -258,19 +285,16 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         const categoryInfo = mainCategories.find(c => c.name === activeCategory);
         let categoryFiles = categoryInfo?.files || [];
 
-        if (activeCategory === 'Banks') {
-            const currentBankFileNames = (bankTimelineCategories || []).map(b => `${b} Timeline`);
-            categoryFiles = [...new Set([...categoryFiles, ...currentBankFileNames])];
-        }
-
         const categoryRecords = userRecords.filter(r => categoryFiles.includes(r.fileName));
         
         if (!searchQuery) return categoryRecords;
         
         return categoryRecords.filter(r => 
             r.projectName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            r.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+            r.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (r.employeeName && r.employeeName.toLowerCase().includes(searchQuery.toLowerCase()))
         );
+<<<<<<< HEAD
     }, [userRecords, searchQuery, activeCategory, mainCategories, bankTimelineCategories]);
 
      const filteredRecordsByEmployee = useMemo(() => {
@@ -283,12 +307,20 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     const recordsByFileName = useMemo(() => {
         const recordsToGroup = employeeSearchQuery ? filteredRecordsByEmployee : filteredRecordsByCategory;
         return recordsToGroup.reduce((acc, record) => {
+=======
+    }, [records, employeeOnly, currentUser, searchQuery, activeCategory, mainCategories]);
+
+    const recordsByFileName = useMemo(() => {
+        if (activeCategory === 'Employee Documents' && !employeeOnly) return {}; // This view is handled by recordsByEmployee
+        return filteredRecords.reduce((acc, record) => {
+>>>>>>> origin/main
             if (!acc[record.fileName]) {
                 acc[record.fileName] = [];
             }
             acc[record.fileName].push(record);
             return acc;
         }, {} as Record<string, SavedRecord[]>);
+<<<<<<< HEAD
     }, [filteredRecordsByCategory, filteredRecordsByEmployee, employeeSearchQuery]);
 
     const getAssignedToFromRecord = (record: SavedRecord) => {
@@ -299,6 +331,21 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
       return 'N/A';
     };
 
+=======
+    }, [filteredRecords, activeCategory, employeeOnly]);
+
+     const recordsByEmployee = useMemo(() => {
+        if (activeCategory !== 'Employee Documents' || employeeOnly) return {};
+        return filteredRecords.reduce((acc, record) => {
+            const employeeName = record.employeeName || 'Unknown';
+            if (!acc[employeeName]) {
+                acc[employeeName] = [];
+            }
+            acc[employeeName].push(record);
+            return acc;
+        }, {} as Record<string, SavedRecord[]>);
+    }, [filteredRecords, activeCategory, employeeOnly]);
+>>>>>>> origin/main
 
     const openDeleteDialog = (record: SavedRecord) => {
         setRecordToDelete(record);
@@ -313,8 +360,9 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         setIsDeleteDialogOpen(false);
     };
     
-    const openViewDialog = (record: SavedRecord) => {
+    const openViewDialog = (record: SavedRecord, item?: any) => {
         setViewingRecord(record);
+        setViewingRecordItem(item || null);
         setIsViewDialogOpen(true);
     };
 
@@ -425,12 +473,12 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
 
     const canEditOrDelete = (record: SavedRecord) => {
         if (!currentUser) return false;
-        const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
         return isAdmin || currentUser.uid === record.employeeId;
     };
     
     const renderRecordContent = () => {
         if (!viewingRecord) return null;
+<<<<<<< HEAD
     
         const isTimeline = viewingRecord.fileName.endsWith('Timeline');
         const isMyProjects = viewingRecord.fileName === 'My Projects';
@@ -589,11 +637,219 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
         if (isTimeline) {
             remarksSection = dataAsArray.find((s: any) => s.category === 'Remarks');
             mainDataSections = dataAsArray.filter((s: any) => s.category !== 'Remarks');
+=======
+
+        if (viewingRecord.fileName === 'Running Projects Summary') {
+            const summaryData = viewingRecord.data?.find((d: any) => d.category === 'Summary')?.items || [];
+            const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+            
+            const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+            const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+
+            return (
+                <div className="space-y-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sr.No</TableHead>
+                                <TableHead>Projects</TableHead>
+                                <TableHead>Nos of project</TableHead>
+                                <TableHead>Remarks</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {summaryData.map((row: any) => (
+                                <TableRow key={row.srNo}>
+                                    <TableCell>{row.srNo}</TableCell>
+                                    <TableCell>{row.project}</TableCell>
+                                    <TableCell>{row.count}</TableCell>
+                                    <TableCell>{row.remarks}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    <div className="mt-4 space-y-2">
+                        {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                        {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                        {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
+                    </div>
+                </div>
+            )
+>>>>>>> origin/main
         }
 
+        if (viewingRecord.fileName.includes('Timeline')) {
+            const projectsData = viewingRecord.data?.find((d: any) => d.category === 'Projects')?.items || [];
+            const statusData = viewingRecord.data?.find((d: any) => d.category === 'Status & Remarks')?.items || [];
+            
+            const overallStatus = statusData.find((i:any) => i.label === 'Overall Status')?.value;
+            const remarks = statusData.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const remarksDate = statusData.find((i:any) => i.label === 'Date')?.value;
+
+            const tableHeaders = [
+                "Sr.No", "Project Name", "Area", "Project Holder", "Allocation Date", 
+                "Site Survey", "Contract", "Head Count", "Proposal", "3D's", "Tender Arch", 
+                "Tender MEP", "BOQ", "Tender Status", "Comparative", "Working Drawings", 
+                "Site Visit", "Final Bill", "Project Closure"
+            ];
+            
+            return (
+                <div className="space-y-4">
+                    <div className="overflow-x-auto">
+                        <Table className="text-xs">
+                            <TableHeader>
+                                <TableRow>
+                                    {tableHeaders.map(header => {
+                                        const isDateRange = ['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header);
+                                        return <TableHead key={header} colSpan={isDateRange ? 2 : 1} rowSpan={isDateRange ? 1 : 2} className="align-bottom p-1 border text-center">{header}</TableHead>
+                                    })}
+                                </TableRow>
+                                <TableRow>
+                                    {tableHeaders.flatMap(header => {
+                                        if (['Site Survey', 'Contract', 'Head Count', 'Proposal', "3D's", 'Tender Arch', 'Tender MEP', 'BOQ', 'Working Drawings', 'Site Visit'].includes(header)) {
+                                            return [<TableHead key={`${header}-start`} className="p-1 border text-center">Start</TableHead>, <TableHead key={`${header}-end`} className="p-1 border text-center">End</TableHead>]
+                                        }
+                                        return [];
+                                    })}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {projectsData.map((p: any, index: number) => (
+                                    <TableRow key={p.id || index}>
+                                        <TableCell className="p-1 border">{p.srNo}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectName}</TableCell>
+                                        <TableCell className="p-1 border">{p.area}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectHolder}</TableCell>
+                                        <TableCell className="p-1 border">{p.allocationDate}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteSurveyStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteSurveyEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.contractStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.contactEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.headCountStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.headCountEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.proposalStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.proposalEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.threedStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.threedEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderArchStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderArchEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderMepStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderMepEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.boqStart}</TableCell>
+                                        <TableCell className="p-1 border">{p.boqEnd}</TableCell>
+                                        <TableCell className="p-1 border">{p.tenderStatus}</TableCell>
+                                        <TableCell className="p-1 border">{p.comparative}</TableCell>
+                                        <TableCell className="p-1 border">{p.workingDrawingsStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.workingDrawingsEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteVisitStart || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.siteVisitEnd || ''}</TableCell>
+                                        <TableCell className="p-1 border">{p.finalBill}</TableCell>
+                                        <TableCell className="p-1 border">{p.projectClosure}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                        {overallStatus && <p><strong>Overall Status:</strong> {overallStatus}</p>}
+                        {remarks && <p><strong>Maam Isbah Remarks & Order:</strong> {remarks}</p>}
+                        {remarksDate && <p><strong>Date:</strong> {remarksDate}</p>}
+                    </div>
+                </div>
+            )
+        }
+            
+        if(viewingRecord.fileName === 'My Projects') {
+            const scheduleData = viewingRecord.data.find((d: any) => d.category === 'My Project Schedule');
+            const projects = (scheduleData?.items || []).map((item: any) => {
+                const project = { projectName: item.label.replace('Project: ', ''), ...Object.fromEntries(item.value.split(', ').map((p:string) => p.split(': '))) };
+                return project;
+            });
+
+             return (
+                <div className="space-y-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Project Name</TableHead>
+                                <TableHead>Detail</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Start Date</TableHead>
+                                <TableHead>End Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {projects.map((p: any, index: number) => (
+                                <TableRow key={index}>
+                                    <TableCell>{p.projectName}</TableCell>
+                                    <TableCell>{p.Detail}</TableCell>
+                                    <TableCell><StatusBadge status={p.Status?.toLowerCase().replace(' ', '-') || 'not-started'} /></TableCell>
+                                    <TableCell>{p.Start}</TableCell>
+                                    <TableCell>{p.End}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    {scheduleData?.remarks && (
+                        <div className="mt-4 pt-4 border-t">
+                            <h4 className="font-semibold">Remarks:</h4>
+                            <p className="text-sm text-muted-foreground">{scheduleData.remarks}</p>
+                        </div>
+                    )}
+                </div>
+            )
+        }
+        
+        if (viewingRecord.fileName === 'Daily Work Report') {
+            const entries = viewingRecord.data[0]?.items || [];
+            if (!Array.isArray(entries)) return <p>Could not display record data.</p>;
+
+            const calculateTotalUnits = (startTime: string, endTime: string): string => {
+                if (!startTime || !endTime) return '0:00';
+                const start = new Date(`1970-01-01T${startTime}`);
+                const end = new Date(`1970-01-01T${endTime}`);
+                if (!isValid(start) || !isValid(end) || end < start) return '0:00';
+                const diff = differenceInMinutes(end, start);
+                const hours = Math.floor(diff / 60);
+                const minutes = diff % 60;
+                return `${hours}:${String(minutes).padStart(2, '0')}`;
+            };
+    
+            return (
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Day</TableHead>
+                            <TableHead>Start Time</TableHead>
+                            <TableHead>End Time</TableHead>
+                            <TableHead>Project Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Total Units</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {entries.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((entry: any, index: number) => (
+                            <TableRow key={entry.id || index}>
+                                <TableCell>{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'dd-MMM-yyyy') : 'Invalid Date'}</TableCell>
+                                <TableCell>{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'EEEE') : '-'}</TableCell>
+                                <TableCell>{entry.startTime}</TableCell>
+                                <TableCell>{entry.endTime}</TableCell>
+                                <TableCell>{entry.projectName}</TableCell>
+                                <TableCell>{entry.description}</TableCell>
+                                <TableCell>{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            )
+        }
+        
+        // Fallback for other record types
         return (
             <div className="space-y-4">
-                {mainDataSections.map((section: any, index: number) => {
+                {Array.isArray(viewingRecord.data) && viewingRecord.data.map((section: any, index: number) => {
                     if (typeof section !== 'object' || !section.category || !Array.isArray(section.items)) return null;
 
                     let firstItem = section.items[0];
@@ -601,6 +857,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                         try { firstItem = JSON.parse(firstItem); } catch (e) { /* Not JSON */ }
                     }
                     
+<<<<<<< HEAD
                     const isTimelineProject = isTimeline && section.category === 'Projects';
 
                     const headers = isTimelineProject
@@ -654,26 +911,49 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                 })}
                                 </TableBody>
                             </Table>
+=======
+                    const isTable = typeof firstItem === 'object' && firstItem !== null && !firstItem.label;
+                    const headers = isTable ? Object.keys(firstItem).filter(key => key !== 'id') : [];
+
+                    return (
+                        <div key={index}>
+                            <h3 className="font-bold text-primary mb-2">{section.category}</h3>
+                            {isTable ? (
+                                <Table>
+                                    <TableHeader><TableRow>{headers.map(h => <TableHead key={h}>{h.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</TableHead>)}</TableRow></TableHeader>
+                                    <TableBody>
+                                        {section.items.map((item: any, i: number) => {
+                                            let parsedItem = item;
+                                            if(typeof item === 'string') try {parsedItem = JSON.parse(item)} catch(e){return null}
+                                            return <TableRow key={i}>{headers.map(h => <TableCell key={h}>{String(parsedItem[h] ?? '')}</TableCell>)}</TableRow>
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="space-y-1 text-sm">
+                                    {section.items.map((item: any, i: number) => {
+                                        if(typeof item === 'object' && item.label) return <p key={i}><strong>{item.label}:</strong> {String(item.value)}</p>
+                                        const parts = String(item).split(/:(.*)/s);
+                                        return <p key={i}><strong>{parts[0]}:</strong> {parts[1]?.trim()}</p>
+                                    })}
+                                </div>
+                            )}
+>>>>>>> origin/main
                         </div>
                     );
                 })}
-                {remarksSection && (
-                    <div className="mt-4 pt-4 border-t">
-                        <h3 className="font-bold text-primary mb-2">{remarksSection.category}</h3>
-                        {remarksSection.items.map((remark: {label: string, value: string}, i: number) => (
-                           <p key={i}><strong>{remark.label}:</strong> {remark.value}</p>
-                        ))}
-                    </div>
-                )}
             </div>
         );
     };
 
+<<<<<<< HEAD
     if (!isClient) {
         return (
              <div className="flex items-center justify-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
         );
     }
+=======
+>>>>>>> origin/main
 
     return (
     <div className="space-y-6">
@@ -745,6 +1025,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                     ))}
                 </div>
             ) : (
+<<<<<<< HEAD
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -752,6 +1033,133 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <CardTitle className="text-2xl font-bold">{activeCategory}</CardTitle>
+=======
+                <div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <Button variant="outline" size="icon" onClick={() => setActiveCategory(null)}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <h2 className="text-2xl font-bold">{activeCategory}</h2>
+                    </div>
+                    <div className="relative mb-4">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder={`Search in ${activeCategory}...`}
+                            className="pl-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : error ? (
+                        <div className="text-destructive text-center">{error}</div>
+                    ) : activeCategory === 'Employee Documents' && isAdmin && !employeeOnly ? (
+                         <Accordion type="multiple" className="w-full space-y-2">
+                             {Object.entries(recordsByEmployee).sort(([nameA], [nameB]) => nameA.localeCompare(nameB)).map(([employeeName, employeeRecords]) => {
+                                if (employeeRecords.length === 0) return null;
+                                return (
+                                    <AccordionItem value={employeeName} key={employeeName}>
+                                        <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                            <div className="flex items-center gap-3">
+                                                <UserIcon className="h-5 w-5 text-primary" />
+                                                <span>{employeeName}</span>
+                                                <Badge variant="secondary">{employeeRecords.length}</Badge>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2">
+                                           {Object.entries(employeeRecords.reduce((acc, record) => {
+                                                if (!acc[record.fileName]) acc[record.fileName] = [];
+                                                acc[record.fileName].push(record);
+                                                return acc;
+                                            }, {} as Record<string, SavedRecord[]>)).map(([fileName, fileRecords]) => (
+                                                 <div key={fileName} className="border rounded-lg mb-2">
+                                                    <h4 className="font-semibold p-2 bg-gray-50 text-sm">{fileName}</h4>
+                                                    <Table>
+                                                        <TableHeader><TableRow><TableHead>Project Name</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                                        <TableBody>
+                                                            {fileRecords.map(record => (
+                                                                <TableRow key={record.id}>
+                                                                    <TableCell>{record.projectName}</TableCell>
+                                                                    <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <div className="flex gap-1 justify-end">
+                                                                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                            {canEditOrDelete(record) && <>
+                                                                                <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                                <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                            </>}
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                 </div>
+                                            ))}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                );
+                            })}
+                         </Accordion>
+                    ) : filteredRecords.length > 0 ? (
+                        <Accordion type="multiple" className="w-full space-y-2">
+                             {Object.entries(recordsByFileName).map(([fileName, fileRecords]) => {
+                                if (fileRecords.length === 0) return null;
+                                const Icon = getIconForFile(fileName);
+                                
+                                return (
+                                    <AccordionItem value={fileName} key={fileName}>
+                                        <AccordionTrigger className="bg-muted/50 hover:bg-muted px-4 py-2 rounded-md font-semibold text-lg flex justify-between w-full">
+                                            <div className="flex items-center gap-3"><Icon className="h-5 w-5 text-primary" /><span>{fileName}</span><Badge variant="secondary">{fileRecords.length}</Badge></div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2">
+                                            <div className="border rounded-b-lg">
+                                                <Table>
+<<<<<<< HEAD
+                                                    <TableHeader><TableRow><TableHead>Project Name</TableHead>{!employeeOnly && <TableHead>Created By</TableHead>}<TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+=======
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Project Name</TableHead>
+                                                            <TableHead>File Name</TableHead>
+                                                            {!employeeOnly && <TableHead>Created By</TableHead>}
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead className="text-right">Actions</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+>>>>>>> 6000ad1 (recod is format ma save ho file name project name etcc etc)
+                                                    <TableBody>
+                                                        {fileRecords.map(record => (
+                                                            <TableRow key={record.id}>
+                                                                <TableCell className="font-medium">{record.projectName}</TableCell>
+                                                                <TableCell>{record.fileName}</TableCell>
+                                                                {!employeeOnly && <TableCell>{record.employeeName}</TableCell>}
+                                                                <TableCell>{record.createdAt.toLocaleDateString()}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex gap-1 justify-end">
+                                                                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(record)} title="View"><Eye className="h-4 w-4" /></Button>
+                                                                        {canEditOrDelete(record) && <>
+                                                                            <Link href={`${getFormUrlFromFileName(record.fileName, dashboardPrefix)}?id=${record.id}`}><Button variant="ghost" size="icon" title="Edit"><Edit className="h-4 w-4" /></Button></Link>
+                                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(record)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                                                        </>}
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                );
+                            })}
+                        </Accordion>
+                    ) : (
+                        <div className="text-center py-10">
+                            <p className="text-muted-foreground">No records found for this category.</p>
+>>>>>>> origin/main
                         </div>
                          <div className="relative mt-4">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -855,7 +1263,7 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
                 <DialogHeader>
                     <DialogTitle>{viewingRecord?.fileName}: {viewingRecord?.projectName}</DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[70vh] overflow-y-auto p-1">
+                <div className="max-h-[70vh] overflow-y-auto p-4 border rounded-md my-4">
                     {renderRecordContent()}
                 </div>
                 <DialogFooter>
@@ -867,3 +1275,5 @@ export default function SavedRecordsComponent({ employeeOnly = false }: { employ
     </div>
   );
 }
+
+    

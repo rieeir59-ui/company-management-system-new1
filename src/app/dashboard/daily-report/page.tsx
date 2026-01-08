@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,18 +54,25 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
-  addMonths,
-  subMonths,
+  isSunday,
 } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type Employee } from '@/lib/employees';
+import { useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 type ReportEntry = {
   id: number;
@@ -93,31 +101,31 @@ const calculateTotalUnits = (startTime: string, endTime: string): string => {
     return `${hours}:${String(minutes).padStart(2, '0')}`;
 };
 
-
-export default function DailyReportPage() {
+function DailyReportPageComponent() {
   const { toast } = useToast();
   const { user: currentUser, employees } = useCurrentUser();
-  const { addRecord, records } = useRecords();
-
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(currentUser?.uid);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined | null>(currentUser);
+  const { addOrUpdateRecord, records } = useRecords();
+  const searchParams = useSearchParams();
+  const employeeIdFromUrl = searchParams.get('employeeId');
+  
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || currentUser?.uid);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
-  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
+  
+  const selectedEmployee = useMemo(() => {
+    return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
+  }, [selectedEmployeeId, employees, currentUser]);
+
 
   useEffect(() => {
-    if(currentUser && !selectedEmployeeId) {
-      setSelectedEmployeeId(currentUser?.uid);
-      setSelectedEmployee(currentUser);
+    if (!employeeIdFromUrl && isAdmin && currentUser) {
+      setSelectedEmployeeId(currentUser.uid);
+    } else if (employeeIdFromUrl) {
+      const employee = employees.find(e => e.record === employeeIdFromUrl);
+      setSelectedEmployeeId(employee?.uid);
     }
-  }, [currentUser, selectedEmployeeId]);
-
-  const handleEmployeeChange = (employeeUid: string) => {
-      setSelectedEmployeeId(employeeUid);
-      const employee = employees.find(e => e.uid === employeeUid);
-      setSelectedEmployee(employee);
-      setComboboxOpen(false);
-  };
+  }, [isAdmin, employees, currentUser, employeeIdFromUrl]);
 
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -131,42 +139,24 @@ export default function DailyReportPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
-    if (!targetEmployeeId) {
+    if (!selectedEmployee) {
         setEntries([]);
         return;
     }
-
-    const dailyReportRecords = records.filter(r => r.fileName === 'Daily Work Report' && r.employeeId === targetEmployeeId);
     
-    const loadedEntriesMap = new Map<number, ReportEntry>();
-
-    dailyReportRecords.forEach(record => {
-      if (record.data && Array.isArray(record.data)) {
-        record.data.forEach((dayData: any) => {
-          if (dayData.category === 'Work Entries' && Array.isArray(dayData.items)) {
-            dayData.items.forEach((item: any) => {
-              const entryId = item.id || Date.now() + Math.random();
-              if (!loadedEntriesMap.has(entryId)) {
-                  loadedEntriesMap.set(entryId, {
-                    id: entryId,
-                    date: item.date,
-                    startTime: item.startTime,
-                    endTime: item.endTime,
-                    customerJobNumber: item.customerJobNumber,
-                    projectName: item.projectName,
-                    designType: item.designType,
-                    projectType: item.projectType,
-                    description: item.description,
-                  });
-              }
-            });
-          }
-        });
-      }
-    });
-    setEntries(Array.from(loadedEntriesMap.values()));
-  }, [records, currentUser, selectedEmployeeId, isAdmin]);
+    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee.uid);
+    
+    if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
+        const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
+        if (workEntries && Array.isArray(workEntries.items)) {
+            setEntries(workEntries.items);
+        } else {
+            setEntries([]);
+        }
+    } else {
+        setEntries([]);
+    }
+  }, [records, selectedEmployee]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -180,11 +170,11 @@ export default function DailyReportPage() {
           return eachDayOfInterval({ start: monthStart, end: endOfMonth(currentDate) });
         } else {
           const weekIndex = parseInt(selectedWeek, 10) - 1;
-          let weekStart = startOfWeek(addMonths(monthStart, 0), { weekStartsOn: 1 });
-          weekStart = new Date(weekStart.setDate(weekStart.getDate() + weekIndex * 7));
+          const monthStartDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+          const weekStart = new Date(monthStartDate.setDate(monthStartDate.getDate() + weekIndex * 7));
           
           if(weekStart.getMonth() !== currentDate.getMonth()){
-             weekStart = startOfMonth(currentDate);
+             return [];
           }
 
           let weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
@@ -203,17 +193,22 @@ export default function DailyReportPage() {
   }, [dateFrom, dateTo, isCustomRange, currentDate, selectedWeek]);
   
   const entriesByDate = useMemo(() => {
-      const targetEmployeeId = isAdmin ? selectedEmployeeId : currentUser?.uid;
-      return entries
+    return entries
         .filter(entry => {
-            const entryDate = parseISO(entry.date);
-            return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+            if(!entry.date) return false;
+            try {
+                const entryDate = parseISO(entry.date);
+                if (!isValid(entryDate)) return false;
+                return dateInterval.some(d => format(d, 'yyyy-MM-dd') === format(entryDate, 'yyyy-MM-dd'));
+            } catch (e) {
+                return false;
+            }
         })
         .reduce((acc, entry) => {
           (acc[entry.date] = acc[entry.date] || []).push(entry);
           return acc;
       }, {} as Record<string, ReportEntry[]>);
-  }, [entries, dateInterval, isAdmin, selectedEmployeeId, currentUser]);
+  }, [entries, dateInterval]);
 
   const totalPeriodUnits = useMemo(() => {
     const totalMinutes = dateInterval.reduce((total, day) => {
@@ -232,6 +227,10 @@ export default function DailyReportPage() {
   }, [dateInterval, entriesByDate]);
 
   const addEntry = (date: string) => {
+    if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only add entries to your own report."});
+        return;
+    }
     setEntries([
       ...entries,
       {
@@ -253,22 +252,32 @@ export default function DailyReportPage() {
   };
 
   const removeEntry = (id: number) => {
+       if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only remove entries from your own report."});
+        return;
+    }
       setEntries(entries.filter(entry => entry.id !== id));
   };
   
   const handleSave = async (date: string) => {
-    const dayEntries = entries.filter(e => e.date === date);
-    if (dayEntries.length === 0) {
-        toast({ variant: 'destructive', title: 'No Entries', description: `There are no entries to save for ${date}.`});
+    if (!currentUser) return;
+    
+    const employeeToSaveFor = selectedEmployee || currentUser;
+    if (!employeeToSaveFor) return;
+
+    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
         return;
     }
     
-    await addRecord({
+    await addOrUpdateRecord({
+        employeeId: employeeToSaveFor.uid,
+        employeeName: employeeToSaveFor.name,
         fileName: 'Daily Work Report',
-        projectName: `Work Report for ${date}`,
+        projectName: `Work Report for ${employeeToSaveFor.name}`,
         data: [{
             category: 'Work Entries',
-            items: dayEntries,
+            items: entries,
         }],
     } as any);
   };
@@ -280,6 +289,8 @@ export default function DailyReportPage() {
     const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
     doc.setFontSize(10);
     let yPos = 15;
+
+    const reportForUser = selectedEmployee || currentUser;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
@@ -294,11 +305,10 @@ export default function DailyReportPage() {
         theme: 'plain',
         styles: { fontSize: 9 },
         body: [
-            [`EMPLOYEE NAME: ${selectedEmployee?.name || currentUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ') || 'N/A'}`],
+            [`EMPLOYEE NAME: ${reportForUser?.name || 'N/A'}`, `EMPLOYEE POSITION: ${reportForUser?.departments.join(', ') || 'N/A'}`],
             [`DATE FROM: ${dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}`, `TO DATE: ${dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}`],
-             [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 3, styles: { fontStyle: 'bold' } }],
-        ],
-        columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' } }
+             [{ content: `TOTAL UNITS FOR PERIOD: ${totalPeriodUnits}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right' } }],
+        ]
     });
 
     yPos = (doc as any).autoTable.previous.finalY + 2;
@@ -317,19 +327,27 @@ export default function DailyReportPage() {
             { content: 'DESCRIPTION', styles: { halign: 'center', valign: 'middle' } },
             { content: 'TOTAL UNITS', styles: { halign: 'center', valign: 'middle' } },
         ]],
-        body: dateInterval.flatMap((day, dayIndex) => {
+        body: dateInterval.flatMap((day) => {
             const dayString = format(day, 'yyyy-MM-dd');
             const dayEntries = entriesByDate[dayString] || [];
-             const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+            const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                 const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                 return acc + (hours * 60) + minutes;
             }, 0);
             const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
             const totalMinutes = totalDayUnitsInMinutes % 60;
             
+            if (dayEntries.length === 0) {
+                 return [[
+                    format(day, 'EEEE').toUpperCase(),
+                    format(day, 'dd-MMM'),
+                    { content: 'No entries for this day', colSpan: 8, styles: { halign: 'center', textColor: 150 }}
+                ]];
+            }
+            
             const rows = dayEntries.map((entry, entryIndex) => [
-                entryIndex === 0 ? format(day, 'EEEE').toUpperCase() : '',
-                entryIndex === 0 ? format(parseISO(entry.date), 'dd-MMM') : '',
+                entryIndex === 0 ? { content: format(day, 'EEEE').toUpperCase(), rowSpan: dayEntries.length + 1, styles: { valign: 'middle' } } : '',
+                entryIndex === 0 ? { content: format(parseISO(entry.date), 'dd-MMM'), rowSpan: dayEntries.length + 1, styles: { valign: 'middle' } } : '',
                 entry.startTime, 
                 entry.endTime, 
                 entry.customerJobNumber, 
@@ -338,15 +356,14 @@ export default function DailyReportPage() {
                 entry.projectType, 
                 entry.description,
                 calculateTotalUnits(entry.startTime, entry.endTime)
-            ]);
+            ].slice(entryIndex === 0 ? 0 : 2));
             
-            if (dayEntries.length > 0) {
-                 rows.push([
-                    { content: 'TOTAL UNITS', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
-                    { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
-                ]);
-            }
-            return rows.length > 0 ? rows : [['', format(day, 'dd-MMM'), {content: 'No entries for this day', colSpan: 8, styles: {halign: 'center', textColor: 150}}]];
+            rows.push([
+                { content: 'TOTAL UNITS', colSpan: 7, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `${totalHours}:${String(totalMinutes).padStart(2, '0')}`, styles: { fontStyle: 'bold', halign: 'center' } }
+            ]);
+
+            return rows;
         }),
         theme: 'grid',
         headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0, halign: 'center' },
@@ -387,6 +404,10 @@ export default function DailyReportPage() {
       setDateTo(undefined);
   };
 
+  const handleEmployeeChange = (employeeUid: string) => {
+    setSelectedEmployeeId(employeeUid);
+    setComboboxOpen(false);
+  };
 
   return (
     <Card>
@@ -413,8 +434,8 @@ export default function DailyReportPage() {
                             aria-expanded={comboboxOpen}
                             className="w-full justify-between mt-2"
                             >
-                            {selectedEmployeeId
-                                ? employees.find((employee) => employee.uid === selectedEmployeeId)?.name
+                            {selectedEmployee
+                                ? selectedEmployee.name
                                 : "Select an employee"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -429,13 +450,7 @@ export default function DailyReportPage() {
                                             <CommandItem
                                             key={employee.uid}
                                             value={employee.name}
-                                            onSelect={(currentValue) => {
-                                                const selected = employees.find(e => e.name.toLowerCase() === currentValue.toLowerCase());
-                                                if (selected) {
-                                                    handleEmployeeChange(selected.uid);
-                                                }
-                                                setComboboxOpen(false);
-                                            }}
+                                            onSelect={() => handleEmployeeChange(employee.uid)}
                                             >
                                             <Check
                                                 className={cn(
@@ -500,7 +515,7 @@ export default function DailyReportPage() {
                 <DialogHeader>
                     <DialogTitle>Weekly Work Report</DialogTitle>
                     <DialogDescription>
-                        Preview of the report for {selectedEmployee?.name || currentUser?.name}.
+                        Preview of the report for {selectedEmployee?.name}.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto p-1">
@@ -508,15 +523,17 @@ export default function DailyReportPage() {
                         <h2 className="font-bold text-lg">ISBAH HASSAN & ASSOCIATES</h2>
                         <h3 className="font-semibold">WEEKLY WORK REPORT</h3>
                     </div>
-                     <div className="flex justify-between text-sm px-4 pb-2">
-                        <span><b>EMPLOYEE NAME:</b> {selectedEmployee?.name || currentUser?.name}</span>
-                        <span><b>EMPLOYEE POSITION:</b> {selectedEmployee?.departments.join(', ') || currentUser?.departments.join(', ')}</span>
+                     <div className="grid grid-cols-2 text-sm px-4 pb-4">
+                        <div>
+                          <p><strong>EMPLOYEE NAME:</strong> {selectedEmployee?.name}</p>
+                          <p><strong>DATE FROM:</strong> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</p>
+                        </div>
+                        <div className="text-right">
+                          <p><strong>EMPLOYEE POSITION:</strong> {selectedEmployee?.departments.join(', ')}</p>
+                          <p><strong>TO DATE:</strong> {dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}</p>
+                          <p className="font-bold mt-1">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</p>
+                        </div>
                     </div>
-                    <div className="flex justify-between text-sm px-4 pb-4">
-                        <span><b>DATE FROM:</b> {dateInterval.length > 0 ? format(dateInterval[0], 'yyyy-MM-dd') : ''}</span>
-                         <span><b>TO DATE:</b> {dateInterval.length > 0 ? format(dateInterval[dateInterval.length - 1], 'yyyy-MM-dd') : ''}</span>
-                    </div>
-                    <div className="text-right px-4 pb-2 font-bold">TOTAL UNITS FOR PERIOD: {totalPeriodUnits}</div>
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted hover:bg-muted text-xs">
@@ -536,26 +553,29 @@ export default function DailyReportPage() {
                             {dateInterval.map((day) => {
                                 const dayString = format(day, 'yyyy-MM-dd');
                                 const dayEntries = entriesByDate[dayString] || [];
-                                if (dayEntries.length === 0) return (
-                                    <TableRow key={dayString}>
-                                        <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
-                                        <TableCell>{format(day, 'dd-MMM')}</TableCell>
-                                        <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
-                                    </TableRow>
-                                );
-                                 const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
+                                const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                                     return acc + (hours * 60) + minutes;
                                 }, 0);
                                 const totalHours = Math.floor(totalDayUnitsInMinutes / 60);
                                 const totalMinutes = totalDayUnitsInMinutes % 60;
                                 
+                                if (dayEntries.length === 0) {
+                                    return (
+                                        <TableRow key={dayString}>
+                                            <TableCell className="font-bold">{format(day, 'EEEE').toUpperCase()}</TableCell>
+                                            <TableCell>{format(day, 'dd-MMM')}</TableCell>
+                                            <TableCell colSpan={8} className="text-center text-muted-foreground">No entries for this day</TableCell>
+                                        </TableRow>
+                                    );
+                                }
+                                
                                 return (
                                     <React.Fragment key={dayString}>
                                         {dayEntries.map((entry, entryIndex) => (
                                             <TableRow key={entry.id}>
-                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell> : null}
-                                                {entryIndex === 0 ? <TableCell rowSpan={dayEntries.length + 1} className="align-top">{format(parseISO(entry.date), 'dd-MMM')}</TableCell> : null}
+                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="font-bold align-top">{format(day, 'EEEE').toUpperCase()}</TableCell>}
+                                                {entryIndex === 0 && <TableCell rowSpan={dayEntries.length + 1} className="align-top">{isValid(parseISO(entry.date)) ? format(parseISO(entry.date), 'dd-MMM') : 'Invalid Date'}</TableCell>}
                                                 <TableCell>{entry.startTime}</TableCell>
                                                 <TableCell>{entry.endTime}</TableCell>
                                                 <TableCell>{entry.customerJobNumber}</TableCell>
@@ -567,7 +587,7 @@ export default function DailyReportPage() {
                                             </TableRow>
                                         ))}
                                          <TableRow className="bg-muted/50 font-bold">
-                                            <TableCell colSpan={8} className="text-right">TOTAL UNITS</TableCell>
+                                            <TableCell colSpan={7} className="text-right">TOTAL UNITS</TableCell>
                                             <TableCell className="text-right">{`${totalHours}:${String(totalMinutes).padStart(2, '0')}`}</TableCell>
                                         </TableRow>
                                     </React.Fragment>
@@ -585,6 +605,7 @@ export default function DailyReportPage() {
         <Accordion type="multiple" defaultValue={dateInterval.map(d => format(d, 'yyyy-MM-dd'))} className="w-full space-y-2">
             {dateInterval.map(day => {
                 const dayString = format(day, 'yyyy-MM-dd');
+                const isDaySunday = isSunday(day);
                 const dayEntries = entriesByDate[dayString] || [];
                  const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
@@ -596,9 +617,12 @@ export default function DailyReportPage() {
                 return (
                     <AccordionItem value={dayString} key={dayString}>
                         <AccordionTrigger className="bg-primary/10 px-4 rounded-md font-bold">
-                            {format(day, 'EEEE, dd MMM yyyy')}
+                            {isDaySunday ? `${format(day, 'EEEE, dd MMM yyyy')} (OFF)` : format(day, 'EEEE, dd MMM yyyy')}
                         </AccordionTrigger>
                         <AccordionContent className="p-4 border rounded-b-md">
+                        {isDaySunday ? (
+                             <div className="text-center text-muted-foreground py-8">Sunday is an off day.</div>
+                        ) : (
                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -636,9 +660,10 @@ export default function DailyReportPage() {
                                 </TableBody>
                             </Table>
                            </div>
+                        )}
                            <div className="flex justify-between items-center mt-4">
-                                <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>
-                                <div className="flex items-center gap-4">
+                                {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
+                                <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
                                     <Button onClick={() => handleSave(dayString)} size="sm" variant="outline"><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
@@ -652,3 +677,13 @@ export default function DailyReportPage() {
     </Card>
   );
 }
+
+export default function DailyReportPage() {
+    return (
+        <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin" />}>
+            <DailyReportPageComponent />
+        </Suspense>
+    )
+}
+
+    

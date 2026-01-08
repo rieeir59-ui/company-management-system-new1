@@ -40,7 +40,11 @@ import {
   type LucideIcon,
   FolderOpen,
   ClipboardList,
+<<<<<<< HEAD
   UploadCloud,
+=======
+  CalendarOff,
+>>>>>>> origin/main
 } from 'lucide-react';
 
 export const fileNameToIconMap: Record<string, LucideIcon> = {
@@ -66,25 +70,18 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Rate Analysis": BarChart2,
     "Shop Drawing and Sample Record": FileIcon,
     "Timeline Schedule": Clock,
-    "Commercial Timeline": Building2,
-    "Residential Timeline": Home,
-    "Askari Bank Timeline": Landmark,
-    "Bank Alfalah Timeline": Landmark,
-    "Bank Al Habib Timeline": Landmark,
-    "CBD Timeline": Landmark,
-    "DIB Timeline": Landmark,
-    "FBL Timeline": Landmark,
-    "HBL Timeline": Landmark,
-    "MCB Timeline": Landmark,
-    "UBL Timeline": Landmark,
     "My Projects": Briefcase,
     "Task Assignment": ClipboardCheck,
     "Site Visit Proforma": Eye,
     "Site Survey Report": FileSearch,
     "Uploaded File": FileUp,
     "Daily Work Report": ClipboardList,
+<<<<<<< HEAD
     "Site Survey": Compass,
     "Upload": UploadCloud,
+=======
+    "Leave Request Form": CalendarOff,
+>>>>>>> origin/main
 };
 
 export const getIconForFile = (fileName: string): LucideIcon => {

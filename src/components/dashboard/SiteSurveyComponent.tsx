@@ -1,11 +1,23 @@
 
 'use client';
 
-import { Suspense } from 'react';
-import SiteSurveyComponent from '@/components/dashboard/SiteSurveyComponent';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import DashboardPageHeader from "@/components/dashboard/PageHeader";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Save, Printer, Loader2, Edit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { useRecords } from '@/context/RecordContext';
+import { useSearchParams } from 'next/navigation';
 
-<<<<<<< HEAD
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
 }
@@ -28,13 +40,37 @@ const FormRow = ({ label, children }: { label: React.ReactNode; children: React.
     </TableRow>
 );
 
-export default function ProjectDataPage() {
+export default function SiteSurveyComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'site-survey');
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { addRecord, getRecordById, updateRecord } = useRecords();
+    const searchParams = useSearchParams();
+    const recordId = searchParams.get('id');
+
     const [formState, setFormState] = useState<Record<string, any>>({
         'survey_conducted_by_email': 'Admin@isbahhassan.com'
     });
+    const [isLoading, setIsLoading] = useState(!!recordId);
+
+    useEffect(() => {
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && record.data) {
+                const surveyData = record.data.find((d: any) => d.category === 'Site Survey Data')?.items || [];
+                const loadedState = surveyData.reduce((acc: any, item: { label: string, value: string }) => {
+                    if (item.value === 'true' || item.value === 'false') {
+                        acc[item.label] = item.value === 'true';
+                    } else {
+                        acc[item.label] = item.value;
+                    }
+                    return acc;
+                }, {});
+                setFormState(loadedState);
+            }
+        }
+        setIsLoading(false);
+    }, [recordId, getRecordById]);
+
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormState(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -53,8 +89,12 @@ export default function ProjectDataPage() {
                 items: Object.entries(formState).map(([key, value]) => ({ label: key, value: String(value) }))
             }]
         };
-        
-        addRecord(dataToSave as any);
+
+        if (recordId) {
+            updateRecord(recordId, dataToSave);
+        } else {
+            addRecord(dataToSave as any);
+        }
     }
 
     const handleDownloadPdf = () => {
@@ -273,6 +313,14 @@ export default function ProjectDataPage() {
             description: "Your project data PDF is being generated.",
         });
     }
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
     
     return (
         <div className="space-y-8 project-data-page">
@@ -450,7 +498,9 @@ export default function ProjectDataPage() {
                         </SectionTable>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
-                            <Button type="button" onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Record</Button>
+                            <Button type="button" onClick={handleSave}>
+                                {recordId ? <><Edit className="mr-2 h-4 w-4" /> Update Record</> : <><Save className="mr-2 h-4 w-4" /> Save Record</>}
+                            </Button>
                             <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
@@ -459,25 +509,5 @@ export default function ProjectDataPage() {
         </div>
     );
 }
-=======
-function SiteSurveyFallback() {
-    return (
-        <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span>Loading Form...</span>
-        </div>
-    );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<SiteSurveyFallback />}>
-      <SiteSurveyComponent />
-    </Suspense>
-  );
-}
-
-    
->>>>>>> origin/main
 
     

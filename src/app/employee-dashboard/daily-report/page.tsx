@@ -1,66 +1,12 @@
 
+
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Download,
-  PlusCircle,
-  Save,
-  Trash2,
-  Calendar as CalendarIcon,
-  Eye,
-} from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useCurrentUser } from '@/context/UserContext';
-import { useRecords } from '@/context/RecordContext';
-import {
-  format,
-  eachDayOfInterval,
-  parseISO,
-  differenceInMinutes,
-  isValid,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  addMonths,
-  subMonths,
-} from 'date-fns';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Suspense } from 'react';
+import DailyReportPageComponent from '@/app/dashboard/daily-report/page';
+import { Loader2 } from 'lucide-react';
 
+<<<<<<< HEAD
 type ReportEntry = {
   id: number;
   date: string;
@@ -556,4 +502,15 @@ export default function DailyReportPage() {
       </CardContent>
     </Card>
   );
+=======
+export default function EmployeeDailyReportPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-4">Loading Report...</span>
+          </div>}>
+          <DailyReportPageComponent />
+        </Suspense>
+      )
+>>>>>>> origin/main
 }

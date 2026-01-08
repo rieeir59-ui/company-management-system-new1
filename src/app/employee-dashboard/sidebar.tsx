@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import React, { memo, useState, useEffect, useMemo } from 'react';
 import {
   Sidebar,
@@ -30,34 +29,6 @@ import {
   Users,
   LayoutDashboard,
   Briefcase,
-<<<<<<< HEAD
-  Book,
-  File,
-  ClipboardCheck,
-  Building,
-  FilePlus,
-  Compass,
-  FileSearch,
-  BookUser,
-  FileSignature,
-  FileKey,
-  Scroll,
-  BarChart2,
-  Calendar,
-  Wallet,
-  CheckSquare,
-  FileX,
-  FilePen,
-  File as FileIcon,
-  CircleDollarSign,
-  Clipboard,
-  Presentation,
-  Package,
-  ListChecks,
-  Palette,
-  Clock,
-=======
->>>>>>> origin/main
   BookCopy,
   Landmark,
   Search as SearchIcon,
@@ -69,15 +40,8 @@ import {
   FileSearch,
   Eye,
   ClipboardList,
-<<<<<<< HEAD
-  Edit,
-  Trash2,
-  PlusCircle,
-  UploadCloud,
-=======
   FileUp,
   CalendarOff,
->>>>>>> origin/main
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -101,12 +65,8 @@ const topLevelItems = [
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
-<<<<<<< HEAD
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Presentation },
-=======
-    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports / Transmittal Letter / Minutes of Meetings', icon: Briefcase },
+    { href: '/employee-dashboard/field-reports-meetings', label: 'Field Reports/Meetings', icon: Briefcase },
     { href: '/employee-dashboard/upload-files', label: 'Upload Files', icon: FileUp },
->>>>>>> origin/main
     { href: '/employee-dashboard/saved-records', label: 'My Saved Records', icon: Database },
 ];
 
@@ -122,11 +82,6 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems: any[], projectManualItems: any[] }) => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const employeeId = searchParams.get('employeeId');
-  const { user: currentUser } = useCurrentUser();
-  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
-
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -136,33 +91,20 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
 
   return (
     <SidebarMenu>
-      {menuItems.map((item) => {
-        let href = item.href;
-        // If an admin is viewing an employee's dashboard, append the employeeId to the links
-        if (isAdmin && employeeId && !item.href.includes('/dashboard')) {
-            // Special case for daily report to go to the admin page
-             if (item.href === '/employee-dashboard/daily-report') {
-                href = `/dashboard/daily-report?employeeId=${employeeId}`;
-             } else if (item.href.startsWith('/employee-dashboard')) {
-                href = `${item.href}?employeeId=${employeeId}`;
-            }
-        }
-
-        return (
-            <SidebarMenuItem key={item.href}>
-                <Link href={href} passHref>
-                    <SidebarMenuButton
-                        isActive={pathname === item.href}
-                        className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                        tooltip={item.label}
-                    >
-                        <item.icon className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-        )
-      })}
+      {menuItems.map((item) => (
+        <SidebarMenuItem key={item.href}>
+          <Link href={item.href} passHref>
+              <SidebarMenuButton
+                  isActive={pathname === item.href}
+                  className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
+                  tooltip={item.label}
+              >
+                  <item.icon className="size-5" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+              </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      ))}
 
       {isClient && (
         <>
@@ -448,54 +390,10 @@ export default function EmployeeDashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-<<<<<<< HEAD
-            <>
-              <MemoizedSidebarMenu 
-                  menuItems={topLevelItems} 
-                  projectManualItems={projectManualItems || []}
-                  bankTimelineItems={bankTimelineItems || []}
-              />
-              <SidebarMenu>
-                 <SidebarMenuItem>
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          className="group-data-[collapsible=icon]:justify-center"
-                          tooltip="Upload"
-                        >
-                          <UploadCloud className="size-5" />
-                          <span className="group-data-[collapsible=icon]:hidden">Upload</span>
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
-                        <SidebarMenuSub>
-                          <SidebarMenuSubItem>
-                            <Link href="/employee-dashboard/upload-files?category=Banks" passHref>
-                              <SidebarMenuSubButton><Landmark className="size-4 mr-2" />Bank</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <Link href="/employee-dashboard/upload-files?category=Commercial" passHref>
-                              <SidebarMenuSubButton><Building2 className="size-4 mr-2" />Commercial</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                            <Link href="/employee-dashboard/upload-files?category=Residential" passHref>
-                              <SidebarMenuSubButton><Home className="size-4 mr-2" />Residential</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                 </SidebarMenuItem>
-              </SidebarMenu>
-            </>
-=======
             <MemoizedSidebarMenu 
                 menuItems={topLevelItems} 
                 projectManualItems={projectManualItems || []}
             />
->>>>>>> origin/main
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">

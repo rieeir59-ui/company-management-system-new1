@@ -20,7 +20,13 @@ const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const services = useMemo(() => {
+    // This check is to ensure we are on the client side.
+    if (typeof window === 'undefined') {
+      // @ts-ignore
+      return { areServicesAvailable: false };
+    }
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    
     return { 
         firebaseApp: app, 
         firestore: getFirestore(app), 
@@ -32,7 +38,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <FirebaseContext.Provider
-      value={services}
+      value={services as FirebaseContextType}
     >
       {services.areServicesAvailable && <FirebaseErrorListener />}
       {children}
@@ -42,8 +48,10 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
-  if (!context || !context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+  if (!context || !context.areServicesAvailable) {
+    // This check ensures that Firebase services are only accessed on the client-side
+    // where they have been properly initialized.
+    throw new Error('useFirebase must be used within a FirebaseProvider and on the client side.');
   }
   return context;
 };

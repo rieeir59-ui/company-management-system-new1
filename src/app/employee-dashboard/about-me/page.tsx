@@ -8,8 +8,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Image from 'next/image';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
-export default function AboutMePage() {
+function AboutMeContent() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
@@ -103,4 +105,13 @@ export default function AboutMePage() {
       </main>
     </div>
   );
+}
+
+
+export default function AboutMePage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <AboutMeContent />
+        </Suspense>
+    )
 }

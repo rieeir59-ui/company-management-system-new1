@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -13,15 +12,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarSeparator,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem
 } from '@/components/ui/sidebar';
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@/components/ui/collapsible';
 import {
   LogOut,
   User,
@@ -30,32 +21,11 @@ import {
   Users,
   LayoutDashboard,
   Briefcase,
-<<<<<<< HEAD
-  BookCopy,
-  Landmark,
-  Search as SearchIcon,
-  Settings,
-  KeyRound,
-  PlusCircle,
-  Edit,
-  Trash2,
-  ArrowLeft,
-  UploadCloud,
-  Building2,
-  Home,
-=======
   FileUp,
   Search as SearchIcon,
   Settings,
   KeyRound,
   CalendarOff,
-  ClipboardList,
-  Clock,
-  Landmark,
-  Building2,
-  Home,
-  List
->>>>>>> origin/main
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -66,40 +36,14 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { allProjects } from '@/lib/projects-data';
 import { useRecords } from '@/context/RecordContext';
-<<<<<<< HEAD
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-=======
 import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 import { useTasks } from '@/hooks/use-tasks';
->>>>>>> origin/main
 
 const topLevelItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/assign-task', label: 'Assign Task', icon: Briefcase },
-    { href: '/dashboard/daily-report', label: 'Daily Record', icon: ClipboardList, roles: ['admin', 'ceo', 'software-engineer'] },
     { href: '/dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
-    { href: '/dashboard/leave-report', label: 'Leave Report', icon: ClipboardList, roles: ['admin', 'ceo', 'software-engineer', 'hr'] },
     { href: '/dashboard/employee', label: 'Employees', icon: Users, roles: ['software-engineer', 'admin', 'ceo'] },
     { href: '/dashboard/team', label: 'Our Team', icon: Users },
     { href: '/dashboard/about-me', label: 'About Me', icon: User },
@@ -121,11 +65,6 @@ const getInitials = (name: string) => {
 // Memoized Menu to prevent re-renders on path changes
 const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelItems: typeof topLevelItems }) => {
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   return (
     <SidebarMenu>
@@ -143,124 +82,6 @@ const MemoizedSidebarMenu = memo(({ visibleTopLevelItems }: { visibleTopLevelIte
           </Link>
         </SidebarMenuItem>
       ))}
-<<<<<<< HEAD
-=======
-      {isClient && (
-        <SidebarMenuItem>
-          <Collapsible>
-            <CollapsibleTrigger asChild>
-              <SidebarMenuButton
-                className="group-data-[collapsible=icon]:justify-center"
-                tooltip="Timeline of Projects"
-              >
-                <Clock className="size-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Timeline of Projects</span>
-              </SidebarMenuButton>
-            </CollapsibleTrigger>
-            <CollapsibleContent asChild>
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/running-projects-summary" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/running-projects-summary')}>
-                      <List className="size-4 mr-2" />
-                      Running Projects Summary
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/askari-bank" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
-                      <Landmark className="size-4 mr-2" />
-                      Askari Bank
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/bank-al-falah" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-falah')}>
-                      <Landmark className="size-4 mr-2" />
-                      Bank Al-Falah
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/bank-al-habib" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-habib')}>
-                      <Landmark className="size-4 mr-2" />
-                      Bank Al-Habib
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/cbd" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/cbd')}>
-                      <Landmark className="size-4 mr-2" />
-                      CBD
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/dib" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/dib')}>
-                      <Landmark className="size-4 mr-2" />
-                      DIB
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/faysal-bank" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/faysal-bank')}>
-                      <Landmark className="size-4 mr-2" />
-                      Faysal Bank
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/hbl" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/hbl')}>
-                      <Landmark className="size-4 mr-2" />
-                      HBL
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/mcb" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/mcb')}>
-                      <Landmark className="size-4 mr-2" />
-                      MCB
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/ubl" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/ubl')}>
-                      <Landmark className="size-4 mr-2" />
-                      UBL
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/commercial" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/commercial')}>
-                      <Building2 className="size-4 mr-2" />
-                      Commercial
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <Link href="/dashboard/timelines-of-bank/residential" passHref>
-                    <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/residential')}>
-                      <Home className="size-4 mr-2" />
-                      Residential
-                    </SidebarMenuSubButton>
-                  </Link>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarMenuItem>
-      )}
->>>>>>> origin/main
     </SidebarMenu>
   );
 });
@@ -353,12 +174,6 @@ export default function DashboardSidebar() {
                     </AvatarFallback>
                 </Avatar>
                 <p className="font-semibold text-sidebar-foreground">{currentUser.name}</p>
-                 <Button asChild variant="link" className="text-xs h-auto p-0 mt-1 text-sidebar-foreground/70 hover:text-primary">
-                  <Link href="/employee-dashboard">
-                      <ArrowLeft className="h-3 w-3 mr-1"/>
-                      Switch to Employee View
-                  </Link>
-              </Button>
               </div>
             </>
           )}
@@ -451,53 +266,9 @@ export default function DashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-<<<<<<< HEAD
-            <>
-              <MemoizedSidebarMenu 
-                  visibleTopLevelItems={visibleTopLevelItems} 
-                  projectManualItems={projectManualItems || []} 
-                  bankTimelineItems={bankTimelineItems || []} 
-              />
-              <SidebarMenu>
-                 <SidebarMenuItem>
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          className="group-data-[collapsible=icon]:justify-center"
-                          tooltip="Upload"
-                        >
-                          <UploadCloud className="size-5" />
-                          <span className="group-data-[collapsible=icon]:hidden">Upload</span>
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
-                        <SidebarMenuSub>
-                          <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Banks" passHref>
-                              <SidebarMenuSubButton><Landmark className="size-4 mr-2" />Bank</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                          <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Commercial" passHref>
-                              <SidebarMenuSubButton><Building2 className="size-4 mr-2" />Commercial</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                           <SidebarMenuSubItem>
-                            <Link href="/dashboard/upload-files?category=Residential" passHref>
-                              <SidebarMenuSubButton><Home className="size-4 mr-2" />Residential</SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                 </SidebarMenuItem>
-              </SidebarMenu>
-            </>
-=======
             <MemoizedSidebarMenu 
                 visibleTopLevelItems={visibleTopLevelItems}
             />
->>>>>>> origin/main
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">

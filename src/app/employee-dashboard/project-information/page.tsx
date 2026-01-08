@@ -10,18 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Save, Download, Loader2, Printer } from 'lucide-react';
+import { Save, Download, Loader2, Printer, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useSearchParams } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDF;
@@ -36,10 +33,10 @@ const Section = ({ title, children, className }: { title: string; children: Reac
     </div>
 );
 
-const InputRow = ({ label, id, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, placeholder?: string, type?:string }) => (
+const InputRow = ({ label, id, name, value, onChange, placeholder = '', type = 'text' }: { label: string, id: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, placeholder?: string, type?:string }) => (
     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
         <Label htmlFor={id} className="md:text-right">{label}</Label>
-        <Input id={id} name={id} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
+        <Input id={id} name={name} value={value} onChange={onChange} placeholder={placeholder} type={type} className="md:col-span-2" />
     </div>
 );
 
@@ -60,8 +57,7 @@ const residenceRequirements = [
 function ProjectInformationComponent() {
     const image = PlaceHolderImages.find(p => p.id === 'project-information');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord, getRecordById, updateRecord } = useRecords();
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
 
@@ -149,70 +145,24 @@ function ProjectInformationComponent() {
     );
 
      useEffect(() => {
-        if (recordId && firestore) {
-            const fetchRecord = async () => {
-                setIsLoading(true);
-                try {
-                    const docRef = doc(firestore, 'savedRecords', recordId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const record = docSnap.data();
-                        
-                        const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items.reduce((acc: any, item: string) => {
-                            const [key, ...value] = item.split(':');
-                            acc[key.trim()] = value.join(':').trim();
-                            return acc;
-                        }, {}) || {};
+        if (recordId) {
+            const record = getRecordById(recordId);
+            if (record && Array.isArray(record.data)) {
+                 const mainData = record.data.find((d: any) => d.category === 'Project Information')?.items || {};
+                 setFormState(prev => ({...prev, ...mainData}));
 
-                        const loadedFormState: any = {};
-                        for (const key in formState) {
-                          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                          if (mainData[formattedKey] !== undefined) {
-                            if (typeof formState[key as keyof typeof formState] === 'boolean') {
-                                loadedFormState[key] = mainData[formattedKey] === 'true';
-                            } else {
-                                loadedFormState[key] = mainData[formattedKey];
-                            }
-                          }
-                        }
-                        setFormState(s => ({...s, ...loadedFormState}));
-                        
-                        const loadedConsultants = JSON.parse(JSON.stringify(consultants));
-                        const consultantData = record.data.find((d: any) => d.category === 'Consultants')?.items || [];
-                        consultantData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedConsultants[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
-                        });
-                        setConsultants(loadedConsultants);
+                const loadedConsultants = record.data.find((d: any) => d.category === 'Consultants')?.items || {};
+                setConsultants(loadedConsultants);
 
-                        const loadedRequirements = JSON.parse(JSON.stringify(requirements));
-                        const requirementsData = record.data.find((d: any) => d.category === 'Requirements')?.items || [];
-                        requirementsData.forEach((item: string) => {
-                            const [key, ...value] = item.split(':');
-                            try {
-                                loadedRequirements[key.trim()] = JSON.parse(value.join(':').trim());
-                            } catch {}
-                        });
-                        setRequirements(loadedRequirements);
-                        
+                const loadedRequirements = record.data.find((d: any) => d.category === 'Requirements')?.items || {};
+                setRequirements(loadedRequirements);
 
-                    } else {
-                        toast({ variant: "destructive", title: "Error", description: "Record not found."});
-                    }
-                } catch (e) {
-                     toast({ variant: "destructive", title: "Error", description: "Failed to load record."});
-                     console.error("Error fetching document:", e);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            fetchRecord();
-        } else {
-          setIsLoading(false);
+            } else if(recordId) {
+                toast({ variant: "destructive", title: "Error", description: "Record not found."});
+            }
         }
-    }, [recordId, firestore, toast]);
+        setIsLoading(false);
+    }, [recordId, getRecordById, toast]);
 
     const handleRequirementChange = (item: string, field: 'nos' | 'remarks', value: string) => {
         setRequirements(prev => ({
@@ -242,51 +192,20 @@ function ProjectInformationComponent() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
             fileName: "Project Information",
             projectName: formState.project || 'Untitled Project Information',
-            data: [{
-                category: 'Project Information',
-                items: Object.entries(formState).map(([key, value]) => `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`)
-            }, {
-                category: 'Consultants',
-                items: Object.entries(consultants).map(([type, values]) => `${type}: ${JSON.stringify(values)}`)
-            },
-            {
-                category: 'Requirements',
-                items: Object.entries(requirements).map(([req, values]) => `${req}: ${JSON.stringify(values)}`)
-            }],
+            data: [
+                { category: 'Project Information', items: formState },
+                { category: 'Consultants', items: consultants },
+                { category: 'Requirements', items: requirements },
+            ]
         };
 
-        try {
-            if (recordId) {
-                const docRef = doc(firestore, 'savedRecords', recordId);
-                await updateDoc(docRef, {
-                    projectName: dataToSave.projectName,
-                    data: dataToSave.data,
-                });
-                toast({ title: 'Record Updated', description: "The project information has been updated." });
-            } else {
-                await addDoc(collection(firestore, 'savedRecords'), {
-                    employeeId: currentUser.record,
-                    employeeName: currentUser.name,
-                    ...dataToSave,
-                    createdAt: serverTimestamp(),
-                });
-                toast({ title: 'Record Saved', description: "The project information has been saved." });
-            }
-        } catch (serverError) {
-             const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: recordId ? 'update' : 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+        if (recordId) {
+            await updateRecord(recordId, dataToSave);
+        } else {
+            await addRecord(dataToSave as any);
         }
     };
     
@@ -297,11 +216,10 @@ function ProjectInformationComponent() {
       const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
       let yPos = 15;
       const primaryColor = [45, 95, 51];
-      const headingFillColor = [240, 240, 240];
       const margin = 14;
 
       const addSectionTitle = (title: string) => {
-          if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
+          if (yPos > 260) { doc.addPage(); yPos = 20; }
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
           doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -316,17 +234,22 @@ function ProjectInformationComponent() {
               body: body,
               theme: 'grid',
               styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } },
+              head: [['Field', 'Value']],
+              showHead: false,
+              columnStyles: { 0: { fontStyle: 'bold', cellWidth: 70 } },
+              didDrawPage: (data) => {
+                  yPos = data.cursor?.y ?? 20;
+              }
           });
           yPos = doc.autoTable.previous.finalY + 10;
       };
 
       const drawCheckbox = (x: number, y: number, checked: boolean) => {
           doc.setLineWidth(0.2);
-          doc.rect(x, y - 3.5, 4, 4); // Draw the box outline
+          doc.rect(x, y - 3.5, 4, 4); 
           if (checked) {
-              doc.setFillColor(0, 0, 0); // Set fill color to black
-              doc.rect(x + 0.5, y - 3, 3, 3, 'F'); // Draw a filled rectangle
+              doc.setFillColor(0, 0, 0); 
+              doc.rect(x + 0.5, y - 3, 3, 3, 'F');
           }
       };
 
@@ -477,13 +400,14 @@ function ProjectInformationComponent() {
           consultants[type]?.additionalFee || '',
           consultants[type]?.architect || '',
           consultants[type]?.owner || '',
-      ]).filter(row => row[0] || row[1] || row[2] || row[3] || row[4]);
+      ]).filter(row => row.some(cell => cell));
       
       doc.autoTable({
         startY: yPos,
         head: [['Type', 'Within Basic Fee', 'Additional Fee', 'By Architect', 'By Owner']],
         body: consultantBody,
-        theme: 'grid'
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor }
       });
       yPos = doc.autoTable.previous.finalY + 10;
       
@@ -495,21 +419,24 @@ function ProjectInformationComponent() {
           req,
           requirements[req]?.nos || '',
           requirements[req]?.remarks || '',
-      ]);
+      ]).filter(row => row.some(cell => cell));
       doc.autoTable({
         startY: yPos,
         head: [['Description', 'Nos.', 'Remarks']],
         body: reqsBody,
-        theme: 'grid'
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor }
       });
       yPos = doc.autoTable.previous.finalY + 10;
 
-      addSectionTitle("Special Confidential Requirements");
-      doc.text(doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2), margin, yPos);
-      yPos += doc.splitTextToSize(formState.specialConfidential, pageWidth - margin * 2).length * 5 + 10;
+      const addTextAreaSection = (title: string, content: string) => {
+        if (!content || !content.trim() || content === 'undefined') return;
+        if (yPos > 260) { doc.addPage(); yPos = 20; }
+        addSection(title, {'Details': content});
+      }
       
-      addSectionTitle("Miscellaneous Notes");
-      doc.text(doc.splitTextToSize(formState.miscNotes, pageWidth - margin * 2), margin, yPos);
+      addTextAreaSection("Special Confidential Requirements", formState.specialConfidential);
+      addTextAreaSection("Miscellaneous Notes", formState.miscNotes);
       
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
@@ -547,31 +474,31 @@ function ProjectInformationComponent() {
                 <CardContent className="max-w-3xl mx-auto">
                     <form className="space-y-8">
                         <div className="space-y-4">
-                            <InputRow label="Project:" id="project" value={formState.project} onChange={handleChange} />
-                            <InputRow label="Address:" id="address" value={formState.address} onChange={handleChange} />
-                            <InputRow label="Project No:" id="projectNo" value={formState.projectNo} onChange={handleChange} />
-                            <InputRow label="Prepared By:" id="preparedBy" value={formState.preparedBy} onChange={handleChange} />
-                            <InputRow label="Prepared Date:" id="preparedDate" value={formState.preparedDate} onChange={handleChange} type="date" />
+                            <InputRow label="Project:" id="project" name="project" value={formState.project} onChange={handleChange} />
+                            <InputRow label="Address:" id="address" name="address" value={formState.address} onChange={handleChange} />
+                            <InputRow label="Project No:" id="projectNo" name="projectNo" value={formState.projectNo} onChange={handleChange} />
+                            <InputRow label="Prepared By:" id="preparedBy" name="preparedBy" value={formState.preparedBy} onChange={handleChange} />
+                            <InputRow label="Prepared Date:" id="preparedDate" name="preparedDate" value={formState.preparedDate} onChange={handleChange} type="date" />
                         </div>
                         
                         <Section title="About Owner">
-                            <InputRow label="Full Name:" id="ownerFullName" value={formState.ownerFullName} onChange={handleChange} />
-                            <InputRow label="Address (Office):" id="ownerOfficeAddress" value={formState.ownerOfficeAddress} onChange={handleChange} />
-                            <InputRow label="Address (Res.):" id="ownerResAddress" value={formState.ownerResAddress} onChange={handleChange} />
-                            <InputRow label="Phone (Office):" id="ownerOfficePhone" value={formState.ownerOfficePhone} onChange={handleChange} />
-                            <InputRow label="Phone (Res.):" id="ownerResPhone" value={formState.ownerResPhone} onChange={handleChange} />
+                            <InputRow label="Full Name:" id="ownerFullName" name="ownerFullName" value={formState.ownerFullName} onChange={handleChange} />
+                            <InputRow label="Address (Office):" id="ownerOfficeAddress" name="ownerOfficeAddress" value={formState.ownerOfficeAddress} onChange={handleChange} />
+                            <InputRow label="Address (Res.):" id="ownerResAddress" name="ownerResAddress" value={formState.ownerResAddress} onChange={handleChange} />
+                            <InputRow label="Phone (Office):" id="ownerOfficePhone" name="ownerOfficePhone" value={formState.ownerOfficePhone} onChange={handleChange} />
+                            <InputRow label="Phone (Res.):" id="ownerResPhone" name="ownerResPhone" value={formState.ownerResPhone} onChange={handleChange} />
                         </Section>
 
                         <Section title="Owner's Project Representative">
-                             <InputRow label="Name:" id="repName" value={formState.repName} onChange={handleChange} />
-                            <InputRow label="Address (Office):" id="repOfficeAddress" value={formState.repOfficeAddress} onChange={handleChange} />
-                            <InputRow label="Address (Res.):" id="repResAddress" value={formState.repResAddress} onChange={handleChange} />
-                            <InputRow label="Phone (Office):" id="repOfficePhone" value={formState.repOfficePhone} onChange={handleChange} />
-                            <InputRow label="Phone (Res.):" id="repResPhone" value={formState.repResPhone} onChange={handleChange} />
+                             <InputRow label="Name:" id="repName" name="repName" value={formState.repName} onChange={handleChange} />
+                            <InputRow label="Address (Office):" id="repOfficeAddress" name="repOfficeAddress" value={formState.repOfficeAddress} onChange={handleChange} />
+                            <InputRow label="Address (Res.):" id="repResAddress" name="repResAddress" value={formState.repResAddress} onChange={handleChange} />
+                            <InputRow label="Phone (Office):" id="repOfficePhone" name="repOfficePhone" value={formState.repOfficePhone} onChange={handleChange} />
+                            <InputRow label="Phone (Res.):" id="repResPhone" name="repResPhone" value={formState.repResPhone} onChange={handleChange} />
                         </Section>
 
                         <Section title="About Project">
-                            <InputRow label="Address:" id="projectAboutAddress" value={formState.projectAboutAddress} onChange={handleChange} />
+                            <InputRow label="Address:" id="projectAboutAddress" name="projectAboutAddress" value={formState.projectAboutAddress} onChange={handleChange} />
                              <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-2">
                                 <Label className="md:text-right font-bold mt-2">Project Reqt.</Label>
                                 <div className="md:col-span-2 space-y-3">
@@ -604,7 +531,7 @@ function ProjectInformationComponent() {
                               <div className="flex items-center space-x-2"><RadioGroupItem value="renovation" id="status_reno" /><Label htmlFor="status_reno">Rehabilitation/Renovation</Label></div>
                             </RadioGroup>
                           </div>
-                          <InputRow label="Project Area:" id="projectArea" value={formState.projectArea} onChange={handleChange} />
+                          <InputRow label="Project Area:" id="projectArea" name="projectArea" value={formState.projectArea} onChange={handleChange} />
                           <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-2">
                             <Label htmlFor="specialRequirements" className="md:text-right">Special Requirements of Project:</Label>
                             <Textarea id="specialRequirements" name="specialRequirements" value={formState.specialRequirements} onChange={handleChange} className="md:col-span-2" />
@@ -612,44 +539,44 @@ function ProjectInformationComponent() {
                         </Section>
                         
                         <Section title="Project's Cost">
-                          <InputRow label="i. Architectural Designing" id="costArchitectural" value={formState.costArchitectural} onChange={handleChange} />
-                          <InputRow label="ii. Interior Decoration" id="costInterior" value={formState.costInterior} onChange={handleChange} />
-                          <InputRow label="iii. Landscaping" id="costLandscaping" value={formState.costLandscaping} onChange={handleChange} />
-                          <InputRow label="iv. Construction" id="costConstruction" value={formState.costConstruction} onChange={handleChange} />
-                          <InputRow label="v. Turnkey" id="costTurnkey" value={formState.costTurnkey} onChange={handleChange} />
-                          <InputRow label="vi. Other" id="costOther" value={formState.costOther} onChange={handleChange} />
+                          <InputRow label="i. Architectural Designing" id="costArchitectural" name="costArchitectural" value={formState.costArchitectural} onChange={handleChange} />
+                          <InputRow label="ii. Interior Decoration" id="costInterior" name="costInterior" value={formState.costInterior} onChange={handleChange} />
+                          <InputRow label="iii. Landscaping" id="costLandscaping" name="costLandscaping" value={formState.costLandscaping} onChange={handleChange} />
+                          <InputRow label="iv. Construction" id="costConstruction" name="costConstruction" value={formState.costConstruction} onChange={handleChange} />
+                          <InputRow label="v. Turnkey" id="costTurnkey" name="costTurnkey" value={formState.costTurnkey} onChange={handleChange} />
+                          <InputRow label="vi. Other" id="costOther" name="costOther" value={formState.costOther} onChange={handleChange} />
                         </Section>
                         
                         <Section title="Dates Concerned with Project">
-                          <InputRow label="First Information about Project:" id="dateFirstInfo" value={formState.dateFirstInfo} onChange={handleChange} type="date" />
-                          <InputRow label="First Meeting:" id="dateFirstMeeting" value={formState.dateFirstMeeting} onChange={handleChange} type="date" />
-                          <InputRow label="First Working on Project:" id="dateFirstWorking" value={formState.dateFirstWorking} onChange={handleChange} type="date" />
+                          <InputRow label="First Information about Project:" id="dateFirstInfo" name="dateFirstInfo" value={formState.dateFirstInfo} onChange={handleChange} type="date" />
+                          <InputRow label="First Meeting:" id="dateFirstMeeting" name="dateFirstMeeting" value={formState.dateFirstMeeting} onChange={handleChange} type="date" />
+                          <InputRow label="First Working on Project:" id="dateFirstWorking" name="dateFirstWorking" value={formState.dateFirstWorking} onChange={handleChange} type="date" />
                           <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">First Proposal:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateFirstProposalStart" value={formState.dateFirstProposalStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateFirstProposalEnd" value={formState.dateFirstProposalEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateFirstProposalStart" name="dateFirstProposalStart" value={formState.dateFirstProposalStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateFirstProposalEnd" name="dateFirstProposalEnd" value={formState.dateFirstProposalEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">Second Proposal:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateSecondProposalStart" value={formState.dateSecondProposalStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateSecondProposalEnd" value={formState.dateSecondProposalEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateSecondProposalStart" name="dateSecondProposalStart" value={formState.dateSecondProposalStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateSecondProposalEnd" name="dateSecondProposalEnd" value={formState.dateSecondProposalEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
-                          <InputRow label="First Information:" id="dateFirstInfo2" value={formState.dateFirstInfo2} onChange={handleChange} type="date" />
-                          <InputRow label="Working on Finalized Proposal:" id="dateWorkingFinalized" value={formState.dateWorkingFinalized} onChange={handleChange} type="date" />
-                          <InputRow label="Revised Presentation:" id="dateRevisedPresentation" value={formState.dateRevisedPresentation} onChange={handleChange} type="date" />
-                          <InputRow label="Quotation:" id="dateQuotation" value={formState.dateQuotation} onChange={handleChange} type="date" />
+                          <InputRow label="First Information:" id="dateFirstInfo2" name="dateFirstInfo2" value={formState.dateFirstInfo2} onChange={handleChange} type="date" />
+                          <InputRow label="Working on Finalized Proposal:" id="dateWorkingFinalized" name="dateWorkingFinalized" value={formState.dateWorkingFinalized} onChange={handleChange} type="date" />
+                          <InputRow label="Revised Presentation:" id="dateRevisedPresentation" name="dateRevisedPresentation" value={formState.dateRevisedPresentation} onChange={handleChange} type="date" />
+                          <InputRow label="Quotation:" id="dateQuotation" name="dateQuotation" value={formState.dateQuotation} onChange={handleChange} type="date" />
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                              <Label className="md:text-right">Drawings:</Label>
                             <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                              <InputRow label="i. Start" id="dateDrawingsStart" value={formState.dateDrawingsStart} onChange={handleChange} type="date" />
-                              <InputRow label="ii. Completion" id="dateDrawingsEnd" value={formState.dateDrawingsEnd} onChange={handleChange} type="date" />
+                              <InputRow label="i. Start" id="dateDrawingsStart" name="dateDrawingsStart" value={formState.dateDrawingsStart} onChange={handleChange} type="date" />
+                              <InputRow label="ii. Completion" id="dateDrawingsEnd" name="dateDrawingsEnd" value={formState.dateDrawingsEnd} onChange={handleChange} type="date" />
                             </div>
                           </div>
-                          <InputRow label="Other Major Projects Milestone Dates:" id="dateOtherMilestones" value={formState.dateOtherMilestones} onChange={handleChange} type="date" />
+                          <InputRow label="Other Major Projects Milestone Dates:" id="dateOtherMilestones" name="dateOtherMilestones" value={formState.dateOtherMilestones} onChange={handleChange} type="date" />
                         </Section>
                         
                         <Section title="Provided by Owner">
@@ -662,21 +589,21 @@ function ProjectInformationComponent() {
                         </Section>
 
                         <Section title="Compensation">
-                           <InputRow label="Initial Payment:" id="compInitialPayment" value={formState.compInitialPayment} onChange={handleChange} />
-                           <InputRow label="Basic Services (% of Cost of Construction):" id="compBasicServices" value={formState.compBasicServices} onChange={handleChange} />
+                           <InputRow label="Initial Payment:" id="compInitialPayment" name="compInitialPayment" value={formState.compInitialPayment} onChange={handleChange} />
+                           <InputRow label="Basic Services (% of Cost of Construction):" id="compBasicServices" name="compBasicServices" value={formState.compBasicServices} onChange={handleChange} />
                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-2">
                             <Label className="md:text-right font-bold">Breakdown by Phase:</Label>
                             <div className="md:col-span-2 space-y-2">
-                              <InputRow label="Schematic Design (%):" id="compSchematic" value={formState.compSchematic} onChange={handleChange} />
-                              <InputRow label="Design Development (%):" id="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
-                              <InputRow label="Construction Doc's (%):" id="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
-                              <InputRow label="Bidding / Negotiation (%):" id="compBidding" value={formState.compBidding} onChange={handleChange} />
-                              <InputRow label="Construction Contract Admin (%):" id="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
+                              <InputRow label="Schematic Design (%):" id="compSchematic" name="compSchematic" value={formState.compSchematic} onChange={handleChange} />
+                              <InputRow label="Design Development (%):" id="compDesignDev" name="compDesignDev" value={formState.compDesignDev} onChange={handleChange} />
+                              <InputRow label="Construction Doc's (%):" id="compConstructionDocs" name="compConstructionDocs" value={formState.compConstructionDocs} onChange={handleChange} />
+                              <InputRow label="Bidding / Negotiation (%):" id="compBidding" name="compBidding" value={formState.compBidding} onChange={handleChange} />
+                              <InputRow label="Construction Contract Admin (%):" id="compConstructionAdmin" name="compConstructionAdmin" value={formState.compConstructionAdmin} onChange={handleChange} />
                             </div>
                            </div>
-                           <InputRow label="Additional Services (Multiple of):" id="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
-                           <InputRow label="Reimbursable Expenses:" id="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
-                           <InputRow label="Other:" id="compOther" value={formState.compOther} onChange={handleChange} />
+                           <InputRow label="Additional Services (Multiple of):" id="compAdditionalServices" name="compAdditionalServices" value={formState.compAdditionalServices} onChange={handleChange} />
+                           <InputRow label="Reimbursable Expenses:" id="compReimbursable" name="compReimbursable" value={formState.compReimbursable} onChange={handleChange} />
+                           <InputRow label="Other:" id="compOther" name="compOther" value={formState.compOther} onChange={handleChange} />
                         </Section>
                         
                         <Section title="Consultants:">
@@ -722,8 +649,8 @@ function ProjectInformationComponent() {
                                     {residenceRequirements.map((req, index) => (
                                         <TableRow key={req}>
                                             <TableCell><Label>{`${index + 1}. ${req}`}</Label></TableCell>
-                                            <TableCell><Input value={requirements[req].nos} onChange={(e) => handleRequirementChange(req, 'nos', e.target.value)} /></TableCell>
-                                            <TableCell><Input value={requirements[req].remarks} onChange={(e) => handleRequirementChange(req, 'remarks', e.target.value)} /></TableCell>
+                                            <TableCell><Input value={requirements[req]?.nos || ''} onChange={(e) => handleRequirementChange(req, 'nos', e.target.value)} /></TableCell>
+                                            <TableCell><Input value={requirements[req]?.remarks || ''} onChange={(e) => handleRequirementChange(req, 'remarks', e.target.value)} /></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -739,8 +666,10 @@ function ProjectInformationComponent() {
                         </Section>
 
                         <div className="flex justify-end gap-4 mt-12 no-print">
-                            <Button type="button" onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                            <Button type="button" onClick={handleDownloadPdf}><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
+                            <Button type="button" onClick={handleSave}>
+                                {recordId ? <><Edit className="mr-2 h-4 w-4" /> Update Record</> : <><Save className="mr-2 h-4 w-4" /> Save Record</>}
+                            </Button>
+                            <Button type="button" onClick={handleDownloadPdf} variant="outline"><Printer className="mr-2 h-4 w-4" /> Download PDF</Button>
                         </div>
                     </form>
                 </CardContent>

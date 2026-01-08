@@ -8,6 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const allFileNames = [
   "Architect's Supplemental Instructions",
+  "Architect's Field Report",
   "Bill of Quantity",
   "Change Order",
   "Consent of Surety (Retainage)",
@@ -29,28 +30,24 @@ export const allFileNames = [
   "Rate Analysis",
   "Shop Drawing and Sample Record",
   "Timeline Schedule",
-  "Commercial Timeline",
-  "Residential Timeline",
-  "Askari Bank Timeline",
-  "Bank Alfalah Timeline",
-  "Bank Al Habib Timeline",
-  "CBD Timeline",
-  "DIB Timeline",
-  "FBL Timeline",
-  "HBL Timeline",
-  "MCB Timeline",
-  "UBL Timeline",
   "My Projects",
   "Task Assignment",
   "Site Visit Proforma",
   "Site Survey Report",
+  "Site Survey",
   "Uploaded File",
   "Daily Work Report",
+<<<<<<< HEAD
   "Site Survey"
+=======
+  "Leave Request Form",
+  "Leave Application",
+>>>>>>> origin/main
 ];
 
 const fileNameToUrlMap: Record<string, string> = {
   "Architect's Supplemental Instructions": "architects-instructions",
+  "Architect's Field Report": "field-reports-meetings/architects-field-report",
   "Bill of Quantity": "bill-of-quantity",
   "Change Order": "change-order",
   "Consent of Surety (Retainage)": "consent-of-surety",
@@ -72,24 +69,15 @@ const fileNameToUrlMap: Record<string, string> = {
   "Rate Analysis": "rate-analysis",
   "Shop Drawing and Sample Record": "shop-drawings-record",
   "Timeline Schedule": "time-line-schedule",
-  "Commercial Timeline": "timelines-of-bank/commercial",
-  "Residential Timeline": "timelines-of-bank/residential",
-  "Askari Bank Timeline": "timelines-of-bank/askari-bank",
-  "Bank Alfalah Timeline": "timelines-of-bank/bank-alfalah",
-  "Bank Al Habib Timeline": "timelines-of-bank/bank-al-habib",
-  "CBD Timeline": "timelines-of-bank/cbd",
-  "DIB Timeline": "timelines-of-bank/dib",
-  "FBL Timeline": "timelines-of-bank/fbl",
-  "HBL Timeline": "timelines-of-bank/hbl",
-  "MCB Timeline": "timelines-of-bank/mcb",
-  "UBL Timeline": "timelines-of-bank/ubl",
   "My Projects": "my-projects",
   "Task Assignment": "assign-task/form",
   "Site Visit Proforma": "site-visit",
   "Site Survey Report": "site-survey-report",
   "Site Survey": "site-survey",
   "Uploaded File": "files-record",
-  "Daily Work Report": "daily-report"
+  "Daily Work Report": "daily-report",
+  "Leave Request Form": "leave-application",
+  "Leave Application": "leave-application",
 };
 
 export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashboard' | 'employee-dashboard'): string | null {
@@ -97,5 +85,11 @@ export function getFormUrlFromFileName(fileName: string, dashboardPrefix: 'dashb
   if (slug) {
     return `/${dashboardPrefix}/${slug}`;
   }
+  
+  if (fileName.endsWith(" Timeline")) {
+    const bankKey = fileName.replace(" Timeline", "").toLowerCase().replace(/ /g, '-');
+    return `/${dashboardPrefix}/timelines-of-bank/${bankKey}`;
+  }
+  
   return null;
 }

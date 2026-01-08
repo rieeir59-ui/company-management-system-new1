@@ -299,7 +299,7 @@ export default function AssignTaskForm() {
                        {isAdmin && (
                         <Dialog open={isSaveOpen} onOpenChange={setIsSaveOpen}>
                             <DialogTrigger asChild>
-                                <Button><Save className="mr-2 h-4 w-4" />{recordId ? 'Update & Save' : 'Assign & Save'}</Button>
+                                <Button><Save className="mr-2 h-4 w-4" />{recordId ? 'Update Record' : 'Assign & Save'}</Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>

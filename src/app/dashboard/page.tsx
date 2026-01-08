@@ -1,17 +1,17 @@
 
 'use client';
+
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Users, Crown } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useCurrentUser } from '@/context/UserContext';
-
+import { type Employee } from '@/lib/employees';
+import React from 'react';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -24,65 +24,79 @@ const departments = [
     { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
 ];
 
-export default function DashboardPage() {
-    const { employeesByDepartment } = useCurrentUser();
-    const [departmentCounts, setDepartmentCounts] = useState<Record<string, number>>({});
+const DepartmentCard = ({ name, count, slug }: { name: string, count: number, slug: string }) => (
+    <Link href={`/dashboard/department/${slug}`} key={name}>
+        <Card className="bg-black text-white border-2 border-primary shadow-lg h-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/50 cursor-pointer">
+        <CardHeader>
+            <CardTitle className="text-primary font-bold uppercase tracking-wider">{name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="flex items-center space-x-2 text-muted-foreground">
+            <Users className="h-5 w-5" />
+            <span className="font-semibold">{count} Employees</span>
+            </div>
+        </CardContent>
+        </Card>
+    </Link>
+);
 
-    useEffect(() => {
-        const counts: Record<string, number> = {};
-        for (const dept of departments) {
-            counts[dept.slug] = employeesByDepartment[dept.slug as keyof typeof employeesByDepartment]?.length || 0;
-        }
-        setDepartmentCounts(counts);
-    }, [employeesByDepartment]);
-
-
-  return (
-    <div className="animate-in fade-in-50 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to Dashboard</h1>
-        <p className="text-muted-foreground">You can manage departments from here.</p>
-      </div>
-
-       <div>
-        <h2 className="text-2xl font-headline font-bold mb-4 mt-8 flex items-center gap-2"><Crown className="text-primary"/> CEO</h2>
-         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <Link href={`/dashboard/department/ceo`}>
-                <Card className="bg-primary/10 text-primary-foreground border-2 border-primary shadow-lg h-full transition-transform hover:scale-105 hover:shadow-xl hover:shadow-primary/20 cursor-pointer">
-                <CardHeader>
-                    <CardTitle className="text-primary font-bold uppercase">Isbah Hassan</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center space-x-2 text-primary/80">
+const CeoCard = ({ ceo }: { ceo: Employee }) => (
+    <Link href={`/dashboard/department/ceo`}>
+        <Card className="bg-primary/10 border-2 border-primary shadow-lg h-full transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/20 cursor-pointer">
+            <CardHeader>
+                <CardTitle className="text-primary font-bold">{ceo.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center space-x-2 text-muted-foreground">
                     <Users className="h-5 w-5" />
                     <span className="font-semibold">Chief Executive Officer</span>
-                    </div>
-                </CardContent>
-                </Card>
-            </Link>
-        </div>
-      </div>
+                </div>
+            </CardContent>
+        </Card>
+    </Link>
+);
+
+
+export default function DashboardPage() {
+    const { employeesByDepartment } = useCurrentUser();
+    const ceo = employeesByDepartment['ceo']?.[0];
+
+    return (
+        <div className="animate-in fade-in-50 space-y-12">
+            <div>
+                <h1 className="text-4xl font-headline font-bold tracking-tight text-primary">Welcome to the Dashboard</h1>
+                <p className="text-lg text-muted-foreground mt-2">Manage departments, employees, and projects from one central hub.</p>
+            </div>
       
-      <div>
-        <h2 className="text-2xl font-headline font-bold mb-4 mt-8">DEPARTMENTS</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {departments.map((dept) => (
-            <Link href={`/dashboard/department/${dept.slug}`} key={dept.name}>
-                <Card className="bg-sidebar text-sidebar-foreground border-2 border-primary/80 shadow-lg h-full transition-transform hover:scale-105 hover:shadow-xl hover:shadow-primary/20 cursor-pointer">
-                <CardHeader>
-                    <CardTitle className="text-primary font-bold uppercase">{dept.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center space-x-2 text-sidebar-foreground/80">
-                    <Users className="h-5 w-5" />
-                    <span className="font-semibold">{departmentCounts[dept.slug] || 0} Employees</span>
+            {ceo && (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <Crown className="h-7 w-7 text-primary" />
+                        <h2 className="text-2xl font-headline font-bold text-primary">OFFICE OF THE CEO</h2>
                     </div>
-                </CardContent>
-                </Card>
-            </Link>
-          ))}
+                     <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4">
+                        <CeoCard ceo={ceo} />
+                    </div>
+                </div>
+            )}
+            
+            <div className="border-t border-dashed mt-8 pt-8">
+                <h2 className="text-2xl font-headline font-bold mb-6">DEPARTMENTS</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {departments.map((dept) => {
+                        const count = employeesByDepartment[dept.slug]?.length || 0;
+                        if(dept.slug === 'ceo' && count > 0) return null;
+                        return (
+                            <DepartmentCard 
+                                key={dept.slug}
+                                name={dept.name}
+                                slug={dept.slug}
+                                count={count}
+                            />
+                        )
+                    })}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }

@@ -15,7 +15,7 @@ import {
   serverTimestamp,
   orderBy,
   where,
-  getDoc,
+  getDocs,
   type DocumentReference,
   type Timestamp,
   type FirestoreError
@@ -25,7 +25,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTimelineCategories as btc } from '@/lib/projects-data';
 import { Building2, Home, Landmark } from 'lucide-react';
 
 export type SavedRecord = {
@@ -36,26 +36,24 @@ export type SavedRecord = {
   projectName: string;
   createdAt: Date;
   data: any;
+  employeeRecord?: string;
 };
 
 type RecordContextType = {
   records: SavedRecord[];
   addRecord: (record: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>) => Promise<DocumentReference | undefined>;
-  updateRecord: (id: string, updatedData: Partial<SavedRecord>) => Promise<void>;
+  addOrUpdateRecord: (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast?: boolean) => Promise<void>;
+  updateRecord: (id: string, updatedData: Partial<SavedRecord>, showToast?: boolean) => Promise<void>;
   deleteRecord: (id: string) => Promise<void>;
   getRecordById: (id: string) => SavedRecord | undefined;
-  updateTaskStatus: (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => Promise<void>;
   projectManualItems: { href: string; label: string; icon: React.ElementType; }[];
-  bankTimelineItems: { href: string; label: string; icon: React.ElementType; }[];
-  addBank: (bankName: string) => void;
-  updateBank: (oldName: string, newName: string) => void;
-  deleteBank: (bankName: string) => void;
-  getBankProjects: (bankName: string) => ProjectRow[];
   error: string | null;
   bankTimelineCategories: string[];
 };
 
 const RecordContext = createContext<RecordContextType | undefined>(undefined);
+
+const sharedRecordFileNames = ["Running Projects Summary"];
 
 export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { firestore } = useFirebase();
@@ -64,27 +62,22 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [bankTimelineCategories, setBankTimelineCategories] = useState<string[]>([]);
-
-
-  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
+  
+  const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  const bankTimelineCategories = useMemo(() => btc, []);
 
   // Fetch records
   useEffect(() => {
-    if (isUserLoading || !currentUser || !firestore) {
-      setRecords([]);
+    if (isUserLoading || !firestore) {
       return;
+    }
+    if(!currentUser) {
+        setRecords([]);
+        return;
     }
 
     const recordsCollection = collection(firestore, 'savedRecords');
-    let q;
-
-    if (isAdmin) {
-      q = query(recordsCollection, orderBy('createdAt', 'desc')); // Admin sees all
-    } else {
-      q = query(recordsCollection, where('employeeId', '==', currentUser.uid), orderBy('createdAt', 'desc')); // Employee sees own
-    }
-
+    const q = query(recordsCollection, orderBy('createdAt', 'desc')); 
 
     const unsubscribe = onSnapshot(
       q,
@@ -98,17 +91,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
           } as SavedRecord;
         });
         setRecords(fetched);
-        
-        const banks = new Set(fetched
-            .filter(r => r.fileName.endsWith('Timeline'))
-            .map(r => r.fileName.replace(' Timeline', ''))
-            .filter(name => !['Commercial', 'Residential'].includes(name))
-        );
-        const uniqueBanks = Array.from(banks);
-        if(uniqueBanks.length !== bankTimelineCategories.length || uniqueBanks.some(b => !bankTimelineCategories.includes(b))) {
-           setBankTimelineCategories(uniqueBanks);
-        }
-
         setError(null);
       },
       (err: FirestoreError) => {
@@ -119,19 +101,20 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     );
 
     return () => unsubscribe();
-  }, [firestore, currentUser, isUserLoading, isAdmin]);
+  }, [firestore, isUserLoading, currentUser]);
 
   // Add new record
   const addRecord = useCallback(
     async (recordData: Omit<SavedRecord, 'id' | 'createdAt' | 'employeeId' | 'employeeName'>): Promise<DocumentReference | undefined> => {
       if (!firestore || !currentUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-        throw new Error('User not authenticated');
+        return Promise.reject(new Error('User not authenticated'));
       }
 
       const dataToSave = {
         ...recordData,
         employeeId: currentUser.uid,
+        employeeRecord: currentUser.record,
         employeeName: currentUser.name,
         createdAt: serverTimestamp(),
       };
@@ -142,6 +125,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return docRef;
       } catch (err) {
         console.error(err);
+<<<<<<< HEAD
         const permissionError = new FirestorePermissionError({
             path: 'savedRecords',
             operation: 'create',
@@ -149,42 +133,105 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         });
         errorEmitter.emit('permission-error', permissionError);
         throw err; // Re-throw so calling components can handle it
+=======
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
+        return Promise.reject(err);
+>>>>>>> origin/main
       }
     },
     [firestore, currentUser, toast]
   );
-
+  
   // Update record
   const updateRecord = useCallback(
-    async (id: string, updatedData: Partial<Omit<SavedRecord, 'id' | 'employeeId' | 'employeeName' | 'createdAt'>>) => {
-      if (!firestore || !currentUser) return;
-      
-      const recordToUpdate = records.find(r => r.id === id);
-      if (recordToUpdate && !isAdmin && recordToUpdate.employeeId !== currentUser.uid) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot edit this record.' });
-          return;
+    async (id: string, updatedData: Partial<SavedRecord>, showToast = true) => {
+      if (!firestore || !currentUser) {
+          if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to update records.' });
+          return Promise.reject(new Error('User not authenticated'));
       }
 
       try {
         await updateDoc(doc(firestore, 'savedRecords', id), updatedData);
-        toast({ title: 'Record Updated', description: 'Record successfully updated.' });
+        if(showToast) toast({ title: 'Record Updated', description: 'Record successfully updated.' });
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'update', requestResourceData: updatedData }));
+        return Promise.reject(err);
       }
     },
-    [firestore, toast, currentUser, isAdmin, records]
+    [firestore, toast, currentUser]
   );
+  
+  const addOrUpdateRecord = useCallback(
+    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
+        if (!firestore || !currentUser) {
+            if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
+            return Promise.reject(new Error('User not authenticated'));
+        }
+    
+        const recordsCollection = collection(firestore, 'savedRecords');
+        
+        let q;
+        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName) || recordData.fileName.includes('Timeline');
+    
+        if (isSharedRecord) {
+            q = query(recordsCollection, where('fileName', '==', recordData.fileName));
+        } else {
+             q = query(
+                recordsCollection, 
+                where('fileName', '==', recordData.fileName),
+                where('employeeId', '==', recordData.employeeId)
+            );
+        }
+    
+        const querySnapshot = await getDocs(q);
+    
+        const employeeInfo = {
+            employeeId: currentUser.uid, // Use authenticated user's UID
+            employeeName: recordData.employeeName || currentUser.name,
+            employeeRecord: recordData.employeeRecord || currentUser.record,
+        };
+
+        if (!querySnapshot.empty) {
+            const existingDoc = querySnapshot.docs[0];
+            const dataToUpdate: Partial<SavedRecord> = {
+                ...employeeInfo,
+                projectName: recordData.projectName,
+                data: recordData.data,
+            };
+            await updateRecord(existingDoc.id, dataToUpdate, showToast);
+        } else {
+             const newRecord = {
+                ...recordData,
+                ...employeeInfo,
+                createdAt: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(firestore, 'savedRecords'), newRecord);
+                if(showToast) toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
+            } catch (err) {
+                 console.error(err);
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: newRecord }));
+            }
+        }
+    },
+    [firestore, currentUser, toast, updateRecord]
+);
+
 
   // Delete record
   const deleteRecord = useCallback(
     async (id: string) => {
-      if (!firestore || !currentUser) return;
+      if (!firestore || !currentUser) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to delete records.' });
+          return Promise.reject(new Error('User not authenticated'));
+      }
       
       const recordToDelete = records.find(r => r.id === id);
       if (recordToDelete && !isAdmin && recordToDelete.employeeId !== currentUser.uid) {
           toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot delete this record.' });
-          return;
+          return Promise.reject(new Error('Permission denied'));
       }
 
       try {
@@ -193,62 +240,16 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error(err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `savedRecords/${id}`, operation: 'delete' }));
+        return Promise.reject(err);
       }
     },
     [firestore, toast, currentUser, isAdmin, records]
   );
 
-  const getBankProjects = useCallback((bankName: string) => {
-    return bankProjectsMap[bankName.toLowerCase()] || [];
-  }, []);
-  
-  const addBank = (bankName: string) => {
-    if (!bankTimelineCategories.includes(bankName)) {
-      setBankTimelineCategories(prev => [...prev, bankName]);
-    }
-  };
-
-  const updateBank = (oldName: string, newName: string) => {
-    setBankTimelineCategories(prev => prev.map(b => (b === oldName ? newName : b)));
-    // Here you would also update any records in Firestore
-    // For now, we just update the local state
-    toast({ title: 'Bank Updated', description: `Renamed '${oldName}' to '${newName}'.` });
-  };
-  
-  const deleteBank = (bankName: string) => {
-    setBankTimelineCategories(prev => prev.filter(b => b !== bankName));
-    // Here you would also delete records in Firestore
-    toast({ title: 'Bank Deleted', description: `Timeline for '${bankName}' has been removed.` });
-  };
-
-
-  // Update task status (admin or assigned employee)
-  const updateTaskStatus = useCallback(
-    async (taskId: string, newStatus: 'not-started' | 'in-progress' | 'completed') => {
-      if (!firestore || !currentUser) return;
-
-      const taskRef = doc(firestore, 'tasks', taskId);
-      try {
-        const taskSnap = await getDoc(taskRef);
-        if (!taskSnap.exists()) return;
-        const taskData = taskSnap.data() as { assignedTo: string };
-        if (!(isAdmin || taskData.assignedTo === currentUser.uid)) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You cannot update this task.' });
-          return;
-        }
-        await updateDoc(taskRef, { status: newStatus });
-        toast({ title: 'Task Updated', description: `Task status changed to "${newStatus}".` });
-      } catch (err) {
-        console.error(err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${taskId}`, operation: 'update', requestResourceData: { status: newStatus } }));
-      }
-    },
-    [firestore, currentUser, isAdmin, toast]
-  );
-
   const getRecordById = useCallback((id: string) => records.find(r => r.id === id), [records]);
   
   const projectManualItems = useMemo(() => {
+<<<<<<< HEAD
     if (!currentUser) return [];
     const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
     return allFileNames
@@ -273,9 +274,36 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       }))
     ];
   }, [currentUser, isAdmin, bankTimelineCategories]);
+=======
+    const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
+    return allFileNames
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File'].includes(name))
+        .map(name => {
+            const url = getFormUrlFromFileName(name, dashboardPrefix);
+            return {
+                href: url,
+                label: name,
+                icon: getIconForFile(name),
+            };
+        });
+  }, [isAdmin]);
+  
+  const value = useMemo(() => ({ 
+      records, 
+      addRecord, 
+      addOrUpdateRecord, 
+      updateRecord, 
+      deleteRecord, 
+      getRecordById, 
+      error, 
+      projectManualItems, 
+      bankTimelineCategories
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
+
+>>>>>>> origin/main
 
   return (
-    <RecordContext.Provider value={{ records, addRecord, updateRecord, deleteRecord, getRecordById, updateTaskStatus, error, projectManualItems, bankTimelineItems, addBank, updateBank, deleteBank, getBankProjects, bankTimelineCategories }}>
+    <RecordContext.Provider value={value}>
       {children}
     </RecordContext.Provider>
   );

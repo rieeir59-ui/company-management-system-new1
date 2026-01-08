@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -12,7 +13,7 @@ import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useFirebase } from '@/firebase/provider';
 import { collection, onSnapshot, query, where, doc, deleteDoc, type Timestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +32,7 @@ import {
 import { useCurrentUser } from '@/context/UserContext';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Loader2 } from 'lucide-react';
 
 const departments = [
     { name: 'ADMIN', slug: 'admin' },
@@ -112,7 +114,7 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
     );
 }
 
-export default function AssignTaskPage() {
+function AssignTaskContent() {
     const { user: currentUser, employees, employeesByDepartment, isUserLoading } = useCurrentUser();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
     const { firestore } = useFirebase();
@@ -282,4 +284,12 @@ export default function AssignTaskPage() {
             </AlertDialog>
         </div>
     );
+}
+
+export default function AssignTaskPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <AssignTaskContent />
+        </Suspense>
+    )
 }
