@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
@@ -159,18 +160,14 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
         const recordsCollection = collection(firestore, 'savedRecords');
         
-        let q;
         const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName!) || recordData.fileName!.includes('Timeline');
         
-        // Use the provided employeeId if it exists, otherwise fallback to the current user's UID.
-        // This is crucial for admins editing on behalf of others.
         const targetEmployeeId = recordData.employeeId || currentUser.uid;
 
+        let q;
         if (isSharedRecord) {
-            // Shared records are uniquely identified by their file name across all users.
             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
         } else {
-             // Non-shared records are unique per user per file name.
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
@@ -189,7 +186,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         };
 
         if (!querySnapshot.empty) {
-            // Document exists, update it
             const existingDoc = querySnapshot.docs[0];
             const dataToUpdate = {
                 ...employeeInfo,
@@ -198,7 +194,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             };
             await updateRecord(existingDoc.id, dataToUpdate, showToast);
         } else {
-            // Document does not exist, create a new one
              const newRecord = {
                 ...recordData,
                 ...employeeInfo,

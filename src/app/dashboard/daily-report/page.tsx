@@ -168,24 +168,23 @@ function DailyReportPageComponent() {
       return;
     }
 
-    if (entries.length === 0) {
-        toast({ variant: 'destructive', title: 'No entries', description: 'There are no entries to save.' });
+    const dayEntries = entries.filter(e => e.date === day);
+    if (dayEntries.length === 0) {
+        toast({ variant: 'destructive', title: 'No entries', description: 'There are no entries for this day to save.' });
         return;
     }
     
-    const recordToSave = {
-        employeeId: selectedEmployee.uid,
-        employeeName: selectedEmployee.name,
-        employeeRecord: selectedEmployee.record,
+    await addOrUpdateRecord({
         fileName: 'Daily Work Report',
         projectName: `Work Report for ${selectedEmployee.name}`,
+        employeeId: selectedEmployee.uid,
+        employeeRecord: selectedEmployee.record,
+        employeeName: selectedEmployee.name,
         data: [{
             category: 'Work Entries',
-            items: entries, // Save all current entries
+            items: entries, // Save all current entries for the user
         }],
-    };
-    
-    await addOrUpdateRecord(recordToSave as any, true);
+    } as any, true);
     
   }, [addOrUpdateRecord, canEdit, selectedEmployee, entries, toast]);
 
@@ -621,10 +620,10 @@ function DailyReportPageComponent() {
                            </div>
                         )}
                            <div className="flex justify-between items-center mt-4">
-                                {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm" disabled={!canEdit}><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
+                                {!isDaySunday && canEdit && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday || !canEdit}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
+                                    {canEdit && <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday}><Save className="mr-2 h-4 w-4" /> Save Day</Button>}
                                 </div>
                            </div>
                         </AccordionContent>
