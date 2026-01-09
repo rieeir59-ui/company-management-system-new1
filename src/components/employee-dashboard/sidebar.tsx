@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -56,12 +57,12 @@ import { getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
 
 const topLevelItems = [
-    { href: '/employee-dashboard/my-projects', label: 'My Projects', icon: LayoutDashboard },
+    { href: '/employee-dashboard', label: 'My Projects', icon: LayoutDashboard },
     { href: '/employee-dashboard/leave-application', label: 'Leave Application', icon: CalendarOff },
     { href: '/employee-dashboard/our-team', label: 'Our Team', icon: Users },
     { href: '/employee-dashboard/about-me', label: 'About Me', icon: User },
     { href: '/employee-dashboard/services', label: 'Services', icon: FileText },
-    { href: '/employee-dashboard/daily-report', label: 'Daily Report', icon: ClipboardList },
+    { href: '/employee-dashboard/daily-record', label: 'Daily Record', icon: ClipboardList },
     { href: '/employee-dashboard/site-visit', label: 'Site Visit', icon: Eye },
     { href: '/employee-dashboard/site-survey-report', label: 'Site Survey Report', icon: FileSearch },
     { href: '/employee-dashboard/site-survey', label: 'Site Survey', icon: Compass },
@@ -102,7 +103,7 @@ const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems
         if (isAdmin && employeeId && !item.href.includes('/dashboard')) {
             // Special case for daily report to go to the admin page
              if (item.href === '/employee-dashboard/daily-report') {
-                href = `/dashboard/daily-report?employeeId=${employeeId}`;
+                href = `/dashboard/daily-record?employeeId=${employeeId}`;
              } else if (item.href.startsWith('/employee-dashboard')) {
                 href = `${item.href}?employeeId=${employeeId}`;
             }
@@ -428,5 +429,3 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
-
-    
