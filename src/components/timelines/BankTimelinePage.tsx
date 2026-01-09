@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -144,7 +145,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                  const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
                  const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
                  let newRow: ProjectRow = {
-                    id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
+                    id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', contact: '', allocationDate: '',
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                     proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
                     tenderArchStart: '', tenderArchEnd: '',
@@ -238,7 +239,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             const newId = prevRows.length > 0 ? Math.max(...prevRows.map(r => r.id)) + 1 : 1;
             const newSrNo = prevRows.length > 0 ? String(parseInt(prevRows[prevRows.length - 1].srNo) + 1) : '1';
             const newRow: ProjectRow = {
-                id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
+                id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', contact: '', allocationDate: '',
                 siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
                 proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
                 tenderArchStart: '', tenderArchEnd: '',
@@ -270,7 +271,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         const head = [
             [
                 { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
-                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
+                { content: 'Project Holder', rowSpan: 2 }, { content: 'Contact', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: isCommercialOrResidential ? 2 : 1, rowSpan: isCommercialOrResidential ? 1 : 2 },
                 { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, 
@@ -299,7 +300,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const body = projectRows.map(p => {
              const row = [
-                p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+                p.srNo, p.projectName, p.area, p.projectHolder, p.contact || '', p.allocationDate,
                 p.siteSurveyStart, p.siteSurveyEnd,
                 ...(isCommercialOrResidential ? [p.contractStart || '', p.contractEnd || ''] : [p.contract]),
                 p.headCountStart || '', p.headCountEnd || '',
@@ -424,6 +425,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     <td className="border p-1"><Input type="text" value={row.projectName} onChange={e => handleProjectChange(row.id, 'projectName', e.target.value)} className="min-w-[200px]" disabled={!isAdmin} /></td>
                                     <td className="border p-1"><Input type="text" value={row.area} onChange={e => handleProjectChange(row.id, 'area', e.target.value)} className="w-24" disabled={!isAdmin} /></td>
                                     <td className="border p-1"><Input type="text" value={row.projectHolder} onChange={e => handleProjectChange(row.id, 'projectHolder', e.target.value)} className="w-32" disabled={!isAdmin} /></td>
+                                    <td className="border p-1"><Input type="text" value={row.contact || ''} onChange={e => handleProjectChange(row.id, 'contact', e.target.value)} className="w-32" disabled={!isAdmin} /></td>
                                     <td className="border p-1"><DateInput value={row.allocationDate} onChange={v => handleProjectChange(row.id, 'allocationDate', v)} disabled={!isAdmin} /></td>
                                     
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} disabled={!isAdmin} /></td>
