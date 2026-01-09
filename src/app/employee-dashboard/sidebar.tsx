@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { memo, useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -79,205 +80,16 @@ const getInitials = (name: string) => {
     return name[0] ? name[0].toUpperCase() : '';
 }
 
-// Memoized Menu to prevent re-renders on path changes
-const MemoizedSidebarMenu = memo(({ menuItems, projectManualItems }: { menuItems: any[], projectManualItems: any[] }) => {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const employeeId = searchParams.get('employeeId');
-  const { user: currentUser } = useCurrentUser();
-  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
-
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-
-  return (
-    <SidebarMenu>
-      {menuItems.map((item) => {
-        let href = item.href;
-        // If an admin is viewing an employee's dashboard, append the employeeId to the links
-        if (isAdmin && employeeId) {
-            if (item.href === '/employee-dashboard/daily-report') {
-                href = `/dashboard/daily-report?employeeId=${employeeId}`;
-            } else if (item.href.startsWith('/employee-dashboard')) {
-                href = `${item.href}?employeeId=${employeeId}`;
-            }
-        }
-
-        return (
-            <SidebarMenuItem key={item.href}>
-                <Link href={href} passHref>
-                    <SidebarMenuButton
-                        isActive={pathname === item.href}
-                        className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
-                        tooltip={item.label}
-                    >
-                        <item.icon className="size-5" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-        )
-      })}
-
-      {isClient && (
-        <>
-            <SidebarMenuItem>
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Project Manual"
-                  >
-                    <BookCopy className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                  <SidebarMenuSub>
-                    {(projectManualItems || []).map((item) => (
-                      <SidebarMenuSubItem key={item.href}>
-                        <Link href={item.href} passHref>
-                          <SidebarMenuSubButton isActive={pathname === item.href}>
-                            <item.icon className="size-4 mr-2" />
-                            {item.label}
-                          </SidebarMenuSubButton>
-                        </Link>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <Collapsible>
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    className="group-data-[collapsible=icon]:justify-center"
-                    tooltip="Timeline of Projects"
-                  >
-                    <Clock className="size-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">Timeline of Projects</span>
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/running-projects-summary" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/running-projects-summary')}>
-                          <List className="size-4 mr-2" />
-                          Running Projects Summary
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/askari-bank" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/askari-bank')}>
-                          <Landmark className="size-4 mr-2" />
-                          Askari Bank
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/bank-al-falah" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-falah')}>
-                          <Landmark className="size-4 mr-2" />
-                          Bank Al-Falah
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/bank-al-habib" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/bank-al-habib')}>
-                          <Landmark className="size-4 mr-2" />
-                          Bank Al-Habib
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/cbd" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/cbd')}>
-                          <Landmark className="size-4 mr-2" />
-                          CBD
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/dib" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/dib')}>
-                          <Landmark className="size-4 mr-2" />
-                          DIB
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/faysal-bank" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/faysal-bank')}>
-                          <Landmark className="size-4 mr-2" />
-                          Faysal Bank
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/hbl" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/hbl')}>
-                          <Landmark className="size-4 mr-2" />
-                          HBL
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/mcb" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/mcb')}>
-                          <Landmark className="size-4 mr-2" />
-                          MCB
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/ubl" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/ubl')}>
-                          <Landmark className="size-4 mr-2" />
-                          UBL
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <Link href="/employee-dashboard/timelines-of-bank/commercial" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/commercial')}>
-                           <Building2 className="size-4 mr-2" />
-                          Commercial
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                       <Link href="/employee-dashboard/timelines-of-bank/residential" passHref>
-                        <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/residential')}>
-                           <Home className="size-4 mr-2" />
-                          Residential
-                        </SidebarMenuSubButton>
-                      </Link>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-        </>
-      )}
-    </SidebarMenu>
-  );
-});
-MemoizedSidebarMenu.displayName = 'MemoizedSidebarMenu';
-
 export default function EmployeeDashboardSidebar() {
   const { toast } = useToast();
   const router = useRouter();
   const { user: currentUser, logout } = useCurrentUser();
   const { projectManualItems, records } = useRecords();
   const [searchQuery, setSearchQuery] = useState('');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const employeeId = searchParams.get('employeeId');
+  const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
   const handleLogout = React.useCallback(() => {
     logout();
@@ -407,10 +219,113 @@ export default function EmployeeDashboardSidebar() {
                 )}
              </SidebarMenu>
           ) : (
-            <MemoizedSidebarMenu 
-                menuItems={topLevelItems} 
-                projectManualItems={projectManualItems || []}
-            />
+             <SidebarMenu>
+              {topLevelItems.map((item) => {
+                let href = item.href;
+                // If an admin is viewing an employee's dashboard, append the employeeId to the links
+                if (isAdmin && employeeId) {
+                    if (item.href === '/employee-dashboard/daily-report') {
+                        href = `/dashboard/daily-report?employeeId=${employeeId}`;
+                    } else if(item.href.startsWith('/employee-dashboard')) {
+                        href = `${item.href}?employeeId=${employeeId}`;
+                    }
+                }
+        
+                return (
+                    <SidebarMenuItem key={item.href}>
+                        <Link href={href} passHref>
+                            <SidebarMenuButton
+                                isActive={pathname === item.href}
+                                className={cn(pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground', 'group-data-[collapsible=icon]:justify-center')}
+                                tooltip={item.label}
+                            >
+                                <item.icon className="size-5" />
+                                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                )
+              })}
+        
+              <SidebarMenuItem>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        className="group-data-[collapsible=icon]:justify-center"
+                        tooltip="Project Manual"
+                      >
+                        <BookCopy className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">Project Manual</span>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                      <SidebarMenuSub>
+                        {(projectManualItems || []).map((item) => (
+                          <SidebarMenuSubItem key={item.href}>
+                            <Link href={item.href} passHref>
+                              <SidebarMenuSubButton isActive={pathname === item.href}>
+                                <item.icon className="size-4 mr-2" />
+                                {item.label}
+                              </SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        className="group-data-[collapsible=icon]:justify-center"
+                        tooltip="Timeline of Projects"
+                      >
+                        <Clock className="size-5" />
+                        <span className="group-data-[collapsible=icon]:hidden">Timeline of Projects</span>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <Link href="/employee-dashboard/timelines-of-bank/running-projects-summary" passHref>
+                            <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/running-projects-summary')}>
+                              <List className="size-4 mr-2" />
+                              Running Projects Summary
+                            </SidebarMenuSubButton>
+                          </Link>
+                        </SidebarMenuSubItem>
+                        {bankTimelineCategories.map(bank => (
+                            <SidebarMenuSubItem key={bank}>
+                                <Link href={`/employee-dashboard/timelines-of-bank/${bank.toLowerCase().replace(/ /g, '-')}`} passHref>
+                                <SidebarMenuSubButton isActive={pathname.includes(`/timelines-of-bank/${bank.toLowerCase().replace(/ /g, '-')}`)}>
+                                    <Landmark className="size-4 mr-2" />
+                                    {bank}
+                                </SidebarMenuSubButton>
+                                </Link>
+                            </SidebarMenuSubItem>
+                        ))}
+                        <SidebarMenuSubItem>
+                          <Link href="/employee-dashboard/timelines-of-bank/commercial" passHref>
+                            <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/commercial')}>
+                               <Building2 className="size-4 mr-2" />
+                              Commercial
+                            </SidebarMenuSubButton>
+                          </Link>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                           <Link href="/employee-dashboard/timelines-of-bank/residential" passHref>
+                            <SidebarMenuSubButton isActive={pathname.includes('/timelines-of-bank/residential')}>
+                               <Home className="size-4 mr-2" />
+                              Residential
+                            </SidebarMenuSubButton>
+                          </Link>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+            </SidebarMenu>
           )}
         </SidebarContent>
         <SidebarFooter className="p-2">
@@ -427,3 +342,5 @@ export default function EmployeeDashboardSidebar() {
       </Sidebar>
   );
 }
+
+    
