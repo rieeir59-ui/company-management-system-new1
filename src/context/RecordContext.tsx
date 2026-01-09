@@ -279,5 +279,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
-    
