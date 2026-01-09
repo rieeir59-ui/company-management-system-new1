@@ -116,7 +116,9 @@ function DailyReportPageComponent() {
   
   const selectedEmployee = useMemo(() => {
     if (isAdmin && employeeIdFromUrl) {
-        return employees.find(e => e.record === employeeIdFromUrl);
+        const found = employees.find(e => e.record === employeeIdFromUrl);
+        if(found) setSelectedEmployeeId(found.uid);
+        return found;
     }
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
   }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
@@ -125,7 +127,6 @@ function DailyReportPageComponent() {
 
   useEffect(() => {
       if (!selectedEmployee) return;
-
       const dailyReportRecord = records.find(r => 
         r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee.uid
       );
@@ -134,6 +135,8 @@ function DailyReportPageComponent() {
           const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
           if (workEntries && Array.isArray(workEntries.items)) {
               setEntries(workEntries.items.map((item:any) => ({...item, id: item.id || Math.random()})));
+          } else {
+            setEntries([]);
           }
       } else {
         setEntries([]);
@@ -155,17 +158,19 @@ function DailyReportPageComponent() {
           toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
           return;
       }
-
-      await addOrUpdateRecord({
+      
+      const recordToSave = {
           employeeId: selectedEmployee.uid,
           employeeName: selectedEmployee.name,
+          employeeRecord: selectedEmployee.record,
           fileName: 'Daily Work Report',
           projectName: `Work Report for ${selectedEmployee.name}`,
           data: [{
               category: 'Work Entries',
               items: entries,
           }],
-      } as any, true);
+      };
+      await addOrUpdateRecord(recordToSave as any);
   }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries, toast]);
 
   const dateInterval = useMemo(() => {
