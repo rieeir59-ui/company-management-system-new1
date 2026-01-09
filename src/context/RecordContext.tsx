@@ -192,11 +192,10 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
              const newRecord = {
                 ...recordData,
                 ...employeeInfo,
-                createdAt: serverTimestamp()
             };
 
             try {
-                await addDoc(collection(firestore, 'savedRecords'), newRecord);
+                await addRecord(newRecord as any);
                 if(showToast) toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
             } catch (err) {
                  console.error(err);
@@ -204,7 +203,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             }
         }
     },
-    [firestore, currentUser, toast, updateRecord]
+    [firestore, currentUser, toast, updateRecord, addRecord]
 );
 
 
@@ -279,3 +278,5 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
+
+    
