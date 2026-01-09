@@ -111,9 +111,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
 
       const dataToSave = {
         ...recordData,
-        employeeId: currentUser.uid,
-        employeeRecord: currentUser.record,
-        employeeName: currentUser.name,
+        employeeId: recordData.employeeId || currentUser.uid,
+        employeeRecord: recordData.employeeRecord || currentUser.record,
+        employeeName: recordData.employeeName || currentUser.name,
         createdAt: serverTimestamp(),
       };
 
@@ -162,13 +162,15 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         let q;
         const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName!) || recordData.fileName!.includes('Timeline');
         
-        // Determine which user's info to use for the query and potential new record
+        // Use the provided employeeId if it exists, otherwise fallback to the current user's UID.
+        // This is crucial for admins editing on behalf of others.
         const targetEmployeeId = recordData.employeeId || currentUser.uid;
 
         if (isSharedRecord) {
-            // Shared records are identified only by their unique file name
+            // Shared records are uniquely identified by their file name across all users.
             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
         } else {
+             // Non-shared records are unique per user per file name.
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
@@ -178,7 +180,6 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
     
         const querySnapshot = await getDocs(q);
         
-        // Find the employee details for the target user (either the provided one or the current user)
         const targetEmployee = employees.find(e => e.uid === targetEmployeeId);
 
         const employeeInfo = {
@@ -202,15 +203,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
                 ...recordData,
                 ...employeeInfo,
             };
-
-            try {
-                // We cast to any to satisfy the addRecord function signature which expects a more complete type
-                // but the logic here ensures all necessary fields are present.
-                await addRecord(newRecord as any);
-                if(showToast) toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
-            } catch (err) {
-                 console.error(err);
-            }
+            await addRecord(newRecord as any);
         }
     },
     [firestore, currentUser, employees, toast, updateRecord, addRecord]
