@@ -27,6 +27,52 @@ import { useCurrentUser } from '@/context/UserContext';
 
 type DashboardType = 'dashboard' | 'employee-dashboard';
 
+const bankTableHeaders = [
+    { name: 'Sr.No', span: 1, rowSpan: 2 },
+    { name: 'Project Name', span: 1, rowSpan: 2 },
+    { name: 'Area in Sft', span: 1, rowSpan: 2 },
+    { name: 'Project Holder', span: 1, rowSpan: 2 },
+    { name: 'Allocation Date / RFP', span: 1, rowSpan: 2 },
+    { name: 'Site Survey', span: 2, rowSpan: 1 },
+    { name: 'Contract', span: 1, rowSpan: 2 },
+    { name: 'Head Count / Requirement', span: 1, rowSpan: 2 },
+    { name: 'Proposal / Design Development', span: 2, rowSpan: 1 },
+    { name: "3D's", span: 2, rowSpan: 1 },
+    { name: 'Architecture working drawing', span: 2, rowSpan: 1 },
+    { name: 'MEP drawing', span: 2, rowSpan: 1 },
+    { name: 'BOQ', span: 2, rowSpan: 1 },
+    { name: 'Tender Status', span: 1, rowSpan: 2 },
+    { name: 'Comparative', span: 1, rowSpan: 2 },
+    { name: 'Working Drawings', span: 2, rowSpan: 1 },
+    { name: 'Site Visit', span: 1, rowSpan: 2 },
+    { name: 'Final Bill', span: 1, rowSpan: 2 },
+    { name: 'Project Closure', span: 1, rowSpan: 2 },
+    { name: 'Action', span: 1, rowSpan: 2 }
+];
+
+const tableHeaders = [
+    { name: 'Sr.No', span: 1, rowSpan: 2 },
+    { name: 'Project Name', span: 1, rowSpan: 2 },
+    { name: 'Area in Sft', span: 1, rowSpan: 2 },
+    { name: 'Project Holder', span: 1, rowSpan: 2 },
+    { name: 'Allocation Date / RFP', span: 1, rowSpan: 2 },
+    { name: 'Site Survey', span: 2, rowSpan: 1 },
+    { name: 'Contract', span: 2, rowSpan: 1 },
+    { name: 'Proposal / Design Development', span: 2, rowSpan: 1 },
+    { name: "3D's", span: 2, rowSpan: 1 },
+    { name: 'Design Lock Date', span: 1, rowSpan: 2 },
+    { name: 'Submission Drawing', span: 2, rowSpan: 1 },
+    { name: 'Architecture working drawing', span: 2, rowSpan: 1 },
+    { name: 'MEP drawing', span: 2, rowSpan: 1 },
+    { name: 'BOQ', span: 2, rowSpan: 1 },
+    { name: 'Interior', span: 1, rowSpan: 2 },
+    { name: 'Site Visit', span: 2, rowSpan: 1 },
+    { name: 'Project Closure', span: 1, rowSpan: 2 },
+    { name: 'Remarks', span: 1, rowSpan: 2 },
+    { name: 'Action', span: 1, rowSpan: 2 }
+];
+
+
 export default function BankTimelinePage({ dashboardType }: { dashboardType: DashboardType }) {
     const params = useParams();
     const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
