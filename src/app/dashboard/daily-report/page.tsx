@@ -149,7 +149,7 @@ function DailyReportPageComponent() {
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const handleSaveDay = useCallback(async (dateToSave: string, dayEntries: ReportEntry[]) => {
+  const handleSaveDay = useCallback(async () => {
       if (!currentUser || !selectedEmployee) return;
       if (!isAdmin && currentUser.uid !== selectedEmployee.uid) {
           toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
@@ -597,7 +597,7 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSaveDay(dayString, dayEntries)} variant="outline" size="sm" disabled={isDaySunday || dayEntries.length === 0}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
+                                    <Button onClick={() => handleSaveDay()} variant="outline" size="sm" disabled={isDaySunday || dayEntries.length === 0}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
@@ -680,5 +680,3 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
-
-    
