@@ -41,6 +41,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogClose,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/context/UserContext';
@@ -153,30 +154,33 @@ function DailyReportPageComponent() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const handleSaveDay = useCallback(async (day: string) => {
-      if (!currentUser || !selectedEmployee) return;
-      if (!isAdmin && currentUser.uid !== selectedEmployee.uid) {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
-          return;
-      }
+    if (!currentUser || !selectedEmployee) return;
+    if (!isAdmin && currentUser.uid !== selectedEmployee.uid) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
+        return;
+    }
 
-      const dayEntries = entries.filter(e => e.date === day);
-      if (dayEntries.length === 0) {
-          toast({ variant: 'destructive', title: 'No entries', description: 'No entries to save for this day.' });
-          return;
-      }
-      
-      const recordToSave = {
-          employeeId: selectedEmployee.uid,
-          employeeName: selectedEmployee.name,
-          employeeRecord: selectedEmployee.record,
-          fileName: 'Daily Work Report',
-          projectName: `Work Report for ${selectedEmployee.name}`,
-          data: [{
-              category: 'Work Entries',
-              items: entries,
-          }],
-      };
-      await addOrUpdateRecord(recordToSave as any);
+    // Save the entire state of entries, not just for one day
+    if (entries.length === 0) {
+        toast({ variant: 'destructive', title: 'No entries', description: 'There are no entries to save.' });
+        return;
+    }
+    
+    const recordToSave = {
+        employeeId: selectedEmployee.uid,
+        employeeName: selectedEmployee.name,
+        employeeRecord: selectedEmployee.record,
+        fileName: 'Daily Work Report',
+        projectName: `Work Report for ${selectedEmployee.name}`,
+        data: [{
+            category: 'Work Entries',
+            items: entries, // Save all current entries
+        }],
+    };
+    
+    // The `true` flag will update if exists, or create if not.
+    await addOrUpdateRecord(recordToSave as any, true);
+    
   }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries, toast]);
 
   const dateInterval = useMemo(() => {
@@ -540,7 +544,9 @@ function DailyReportPageComponent() {
                     </Table>
                 </div>
                 <DialogFooter>
-                    <Button onClick={() => handleDownload(selectedEmployee, entries)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    <DialogClose asChild>
+                      <Button onClick={() => handleDownload(selectedEmployee, entries)}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -608,7 +614,7 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday || dayEntries.length === 0}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
+                                    <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
@@ -691,5 +697,7 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
+
+    
 
     
