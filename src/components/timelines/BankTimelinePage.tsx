@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { bankProjectsMap, type ProjectRow, bankTableHeaders as initialBankTableHeaders, tableHeaders as initialTableHeaders } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTableHeaders, tableHeaders } from '@/lib/projects-data';
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -32,8 +32,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
     const { addOrUpdateRecord, records, bankTimelineCategories } = useRecords();
-    const [bankTableHeaders, setBankTableHeaders] = useState(initialBankTableHeaders);
-    const [tableHeaders, setTableHeaders] = useState(initialTableHeaders);
 
     const formattedBankName = useMemo(() => {
         return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
@@ -59,8 +57,14 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             const statusAndRemarks = record.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             
             if (projects.length > 0) {
-                setProjectRows(projects);
-            } else {
+                // Only set project rows if they are different to avoid overwriting local changes
+                setProjectRows(currentRows => {
+                    if (JSON.stringify(currentRows) !== JSON.stringify(projects)) {
+                        return projects;
+                    }
+                    return currentRows;
+                });
+            } else if(isInitialLoad) {
                 setProjectRows(initialData);
             }
             
@@ -71,11 +75,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             setOverallStatus(savedOverallStatus || '');
             setRemarks(savedRemarks || '');
             if (savedDate) setRemarksDate(savedDate);
-        } else {
+        } else if (isInitialLoad) {
             setProjectRows(initialData);
         }
         setIsInitialLoad(false);
-    }, [bankName, formattedBankName, initialData, records]);
+    }, [formattedBankName, initialData, records, isInitialLoad]);
     
     const handleSave = useCallback(() => {
         if (!currentUser || !isAdmin) return;
@@ -242,17 +246,19 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     const addProjectRow = () => {
         if (!isAdmin) return;
-        const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-        const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
-        const newRow: ProjectRow = {
-            id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
-            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
-            tenderArchStart: '', tenderArchEnd: '',
-            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
-            siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
-        };
-        setProjectRows(prevRows => [...prevRows, newRow]);
+        setProjectRows(prevRows => {
+            const newId = prevRows.length > 0 ? Math.max(...prevRows.map(r => r.id)) + 1 : 1;
+            const newSrNo = prevRows.length > 0 ? String(parseInt(prevRows[prevRows.length - 1].srNo) + 1) : '1';
+            const newRow: ProjectRow = {
+                id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
+                siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+                proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
+                tenderArchStart: '', tenderArchEnd: '',
+                tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
+                siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
+            };
+            return [...prevRows, newRow];
+        });
     };
     
     const removeProjectRow = (id: number) => {
@@ -280,7 +286,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: isCommercialOrResidential ? 2 : 1, rowSpan: isCommercialOrResidential ? 1 : 2 },
                 { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
                 { content: "3D's", colSpan: 2 }, 
-                ...(isCommercialOrResidential ? [{ content: 'Design Lock Date', span: 1, rowSpan: 2 }, { content: 'Submission Drawing', span: 2, rowSpan: 1 }] : []),
+                ...(isCommercialOrResidential ? [{ content: 'Design Lock Date', rowSpan: 2 }, { content: 'Submission Drawing', colSpan: 2 }] : []),
                 { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 },
                 ...(isCommercialOrResidential ? [] : [{ content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 }]),
@@ -534,4 +540,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     );
 }
 
-    
