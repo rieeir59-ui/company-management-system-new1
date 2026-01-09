@@ -32,11 +32,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
-    const { addOrUpdateRecord, records } = useRecords();
+    const { addOrUpdateRecord, records, bankTimelineCategories } = useRecords();
 
     const formattedBankName = useMemo(() => {
         return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
-    }, [bankName]);
+    }, [bankName, bankTimelineCategories]);
 
     const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
     const isCommercialOrResidential = useMemo(() => bankName === 'commercial' || bankName === 'residential', [bankName]);
@@ -362,7 +362,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         { name: "BOQ", span: 2, rowSpan: 1 },
         { name: "Interior", span: 1, rowSpan: 2 },
         { name: "Site Visit", span: 2, rowSpan: 1 },
-        { name: "Final Bill", span: 1, rowSpan: 2 },
         { name: "Project Closure", span: 1, rowSpan: 2 },
         { name: "Remarks", span: 1, rowSpan: 2 },
         { name: "Action", span: 1, rowSpan: 2 }
@@ -485,7 +484,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                         <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
                                     </> : <td className="border p-1"><Textarea value={row.siteVisit || ''} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} /></td>}
 
-                                    <td className="border p-1"><Textarea value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} /></td>
+                                    {!isCommercialOrResidential && <td className="border p-1"><Textarea value={row.finalBill || ''} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} /></td>}
+
                                     <td className="border p-1"><Textarea value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} /></td>
                                     
                                     {isCommercialOrResidential && <td className="border p-1"><Textarea value={row.remarks} onChange={e => handleProjectChange(row.id, 'remarks', e.target.value)} className="min-w-[200px]" /></td>}
@@ -540,4 +540,3 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     );
 }
 
-    
