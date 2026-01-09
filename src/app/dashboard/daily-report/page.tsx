@@ -110,9 +110,8 @@ function DailyReportPageComponent() {
   const searchParams = useSearchParams();
   const employeeIdFromUrl = searchParams.get('employeeId');
   
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || 'user10');
-  const [comboboxOpen, setComboboxOpen] = useState(false);
-
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || currentUser?.uid);
+  
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
   
   const selectedEmployee = useMemo(() => {
@@ -121,24 +120,26 @@ function DailyReportPageComponent() {
     }
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
   }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
-
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  const [entries, setEntries] = useState<ReportEntry[]>([]);
 
   useEffect(() => {
-    if (isAdmin) {
-        if (employeeIdFromUrl) {
-            const employee = employees.find(e => e.record === employeeIdFromUrl);
-            setSelectedEmployeeId(employee?.uid);
-        } else {
-            const haseeb = employees.find(e => e.name === 'Haseeb');
-            setSelectedEmployeeId(haseeb?.uid || currentUser?.uid);
-        }
-    } else {
-        setSelectedEmployeeId(currentUser?.uid);
-    }
-}, [isAdmin, employees, currentUser, employeeIdFromUrl]);
+      if (!selectedEmployee) return;
 
-
+      const dailyReportRecord = records.find(r => 
+        r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee.uid
+      );
+      
+      if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
+          const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
+          if (workEntries && Array.isArray(workEntries.items)) {
+              setEntries(workEntries.items.map((item:any) => ({...item, id: item.id || Math.random()})));
+          }
+      } else {
+        setEntries([]);
+      }
+  }, [records, selectedEmployee]);
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedWeek, setSelectedWeek] = useState('all');
   
@@ -146,62 +147,26 @@ function DailyReportPageComponent() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [isCustomRange, setIsCustomRange] = useState(false);
   
-  const [entries, setEntries] = useState<ReportEntry[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const handleSave = useCallback(async (showToast = true) => {
-    if (!currentUser) return;
-    
-    const employeeToSaveFor = selectedEmployee || currentUser;
-    if (!employeeToSaveFor) return;
+  const handleSaveDay = useCallback(async (dateToSave: string, dayEntries: ReportEntry[]) => {
+      if (!currentUser || !selectedEmployee) return;
+      if (!isAdmin && currentUser.uid !== selectedEmployee.uid) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
+          return;
+      }
 
-    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
-        if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
-        return;
-    }
-    
-    await addOrUpdateRecord({
-        employeeId: employeeToSaveFor.uid,
-        employeeName: employeeToSaveFor.name,
-        fileName: 'Daily Work Report',
-        projectName: `Work Report for ${employeeToSaveFor.name}`,
-        data: [{
-            category: 'Work Entries',
-            items: entries,
-        }],
-    } as any, showToast);
-  }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries]);
-
-  useEffect(() => {
-    if (!selectedEmployee || isInitialLoad) {
-        setEntries([]);
-        return;
-    }
-    
-    const dailyReportRecord = records.find(r => r.fileName === 'Daily Work Report' && r.employeeId === selectedEmployee.uid);
-    
-    if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
-        const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
-        if (workEntries && Array.isArray(workEntries.items)) {
-            setEntries(workEntries.items.map((item:any) => ({...item, id: item.id || Math.random()})));
-        } else {
-            setEntries([]);
-        }
-    } else {
-        setEntries([]);
-    }
-    setIsInitialLoad(false);
-  }, [records, selectedEmployee, isInitialLoad]);
-
-  useEffect(() => {
-      if(isInitialLoad) return;
-      const timer = setTimeout(() => {
-          handleSave(false); // auto-save without toast
-      }, 3000);
-
-      return () => clearTimeout(timer);
-  }, [entries, handleSave, isInitialLoad]);
-
+      await addOrUpdateRecord({
+          employeeId: selectedEmployee.uid,
+          employeeName: selectedEmployee.name,
+          fileName: 'Daily Work Report',
+          projectName: `Work Report for ${selectedEmployee.name}`,
+          data: [{
+              category: 'Work Entries',
+              items: entries,
+          }],
+      } as any, true);
+  }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries, toast]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -423,14 +388,8 @@ function DailyReportPageComponent() {
       setDateFrom(undefined);
       setDateTo(undefined);
   };
-
-  const handleEmployeeChange = (employeeUid: string) => {
-    setSelectedEmployeeId(employeeUid);
-    setComboboxOpen(false);
-  };
   
    const hrEmployees = employeesByDepartment['hr'] || [];
-
 
   return (
     <>
@@ -579,7 +538,7 @@ function DailyReportPageComponent() {
             {dateInterval.map(day => {
                 const dayString = format(day, 'yyyy-MM-dd');
                 const isDaySunday = isSunday(day);
-                const dayEntries = entriesByDate[dayString] || [];
+                const dayEntries = entries.filter(e => e.date === dayString);
                  const totalDayUnitsInMinutes = dayEntries.reduce((acc, entry) => {
                     const [hours, minutes] = calculateTotalUnits(entry.startTime, entry.endTime).split(':').map(Number);
                     return acc + (hours * 60) + minutes;
@@ -638,6 +597,7 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
+                                    <Button onClick={() => handleSaveDay(dayString, dayEntries)} variant="outline" size="sm" disabled={isDaySunday || dayEntries.length === 0}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
@@ -720,3 +680,5 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
+
+    
