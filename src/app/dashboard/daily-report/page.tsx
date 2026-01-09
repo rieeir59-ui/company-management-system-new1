@@ -111,18 +111,22 @@ function DailyReportPageComponent() {
   const searchParams = useSearchParams();
   const employeeIdFromUrl = searchParams.get('employeeId');
   
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(employeeIdFromUrl || currentUser?.uid);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined);
+  
+  useEffect(() => {
+    if (employeeIdFromUrl) {
+      const employee = employees.find(e => e.record === employeeIdFromUrl);
+      setSelectedEmployeeId(employee?.uid);
+    } else if (currentUser) {
+      setSelectedEmployeeId(currentUser.uid);
+    }
+  }, [employeeIdFromUrl, currentUser, employees]);
   
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer', 'hr'].includes(d)), [currentUser]);
   
   const selectedEmployee = useMemo(() => {
-    if (isAdmin && employeeIdFromUrl) {
-        const found = employees.find(e => e.record === employeeIdFromUrl);
-        if(found) setSelectedEmployeeId(found.uid);
-        return found;
-    }
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
-  }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
+  }, [selectedEmployeeId, employees, currentUser]);
   
   const [entries, setEntries] = useState<ReportEntry[]>([]);
 
@@ -153,14 +157,17 @@ function DailyReportPageComponent() {
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const canEdit = useMemo(() => {
+    if (!currentUser || !selectedEmployee) return false;
+    return isAdmin || currentUser.uid === selectedEmployee.uid;
+  }, [currentUser, selectedEmployee, isAdmin]);
+
   const handleSaveDay = useCallback(async (day: string) => {
-    if (!currentUser || !selectedEmployee) return;
-    if (!isAdmin && currentUser.uid !== selectedEmployee.uid) {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report." });
-        return;
+    if (!canEdit) {
+      toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save this report." });
+      return;
     }
 
-    // Save the entire state of entries, not just for one day
     if (entries.length === 0) {
         toast({ variant: 'destructive', title: 'No entries', description: 'There are no entries to save.' });
         return;
@@ -178,10 +185,9 @@ function DailyReportPageComponent() {
         }],
     };
     
-    // The `true` flag will update if exists, or create if not.
     await addOrUpdateRecord(recordToSave as any, true);
     
-  }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries, toast]);
+  }, [addOrUpdateRecord, canEdit, selectedEmployee, entries, toast]);
 
   const dateInterval = useMemo(() => {
     try {
@@ -252,8 +258,8 @@ function DailyReportPageComponent() {
   }, [dateInterval, entriesByDate]);
 
   const addEntry = (date: string) => {
-    if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
-        toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only add entries to your own report."});
+    if (!canEdit) {
+        toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot add entries to this report."});
         return;
     }
     setEntries([
@@ -273,11 +279,15 @@ function DailyReportPageComponent() {
   };
   
   const handleEntryChange = (id: number, field: keyof ReportEntry, value: string) => {
+      if (!canEdit) {
+          toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot edit this report."});
+          return;
+      }
       setEntries(entries.map(entry => (entry.id === id ? { ...entry, [field]: value } : entry)));
   };
 
   const removeEntry = (id: number) => {
-       if (!isAdmin && currentUser?.uid !== selectedEmployeeId) {
+       if (!canEdit) {
         toast({ variant: 'destructive', title: 'Permission Denied', description: "You can only remove entries from your own report."});
         return;
     }
@@ -589,21 +599,21 @@ function DailyReportPageComponent() {
                                         <TableRow key={entry.id}>
                                             <TableCell className="min-w-[200px]">
                                                 <div className="flex gap-2">
-                                                    <Input type="time" value={entry.startTime} onChange={e => handleEntryChange(entry.id, 'startTime', e.target.value)} />
-                                                    <Input type="time" value={entry.endTime} onChange={e => handleEntryChange(entry.id, 'endTime', e.target.value)} />
+                                                    <Input type="time" value={entry.startTime} onChange={e => handleEntryChange(entry.id, 'startTime', e.target.value)} disabled={!canEdit} />
+                                                    <Input type="time" value={entry.endTime} onChange={e => handleEntryChange(entry.id, 'endTime', e.target.value)} disabled={!canEdit} />
                                                 </div>
                                             </TableCell>
                                             <TableCell className="min-w-[200px]">
-                                                <Input placeholder="Job Number" value={entry.customerJobNumber} onChange={e => handleEntryChange(entry.id, 'customerJobNumber', e.target.value)} />
-                                                <Input placeholder="Project Name" value={entry.projectName} onChange={e => handleEntryChange(entry.id, 'projectName', e.target.value)} className="mt-1" />
+                                                <Input placeholder="Job Number" value={entry.customerJobNumber} onChange={e => handleEntryChange(entry.id, 'customerJobNumber', e.target.value)} disabled={!canEdit} />
+                                                <Input placeholder="Project Name" value={entry.projectName} onChange={e => handleEntryChange(entry.id, 'projectName', e.target.value)} className="mt-1" disabled={!canEdit} />
                                             </TableCell>
                                             <TableCell className="min-w-[200px]">
-                                                <Input placeholder="Design Type" value={entry.designType} onChange={e => handleEntryChange(entry.id, 'designType', e.target.value)} />
-                                                <Input placeholder="Project Type" value={entry.projectType} onChange={e => handleEntryChange(entry.id, 'projectType', e.target.value)} className="mt-1" />
+                                                <Input placeholder="Design Type" value={entry.designType} onChange={e => handleEntryChange(entry.id, 'designType', e.target.value)} disabled={!canEdit} />
+                                                <Input placeholder="Project Type" value={entry.projectType} onChange={e => handleEntryChange(entry.id, 'projectType', e.target.value)} className="mt-1" disabled={!canEdit} />
                                             </TableCell>
-                                            <TableCell className="min-w-[250px]"><Textarea value={entry.description} onChange={e => handleEntryChange(entry.id, 'description', e.target.value)} /></TableCell>
+                                            <TableCell className="min-w-[250px]"><Textarea value={entry.description} onChange={e => handleEntryChange(entry.id, 'description', e.target.value)} disabled={!canEdit} /></TableCell>
                                             <TableCell className="font-semibold text-center">{calculateTotalUnits(entry.startTime, entry.endTime)}</TableCell>
-                                            <TableCell><Button variant="ghost" size="icon" onClick={() => removeEntry(entry.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                                            <TableCell><Button variant="ghost" size="icon" onClick={() => removeEntry(entry.id)} disabled={!canEdit}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -611,10 +621,10 @@ function DailyReportPageComponent() {
                            </div>
                         )}
                            <div className="flex justify-between items-center mt-4">
-                                {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
+                                {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm" disabled={!canEdit}><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
+                                    <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday || !canEdit}><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
