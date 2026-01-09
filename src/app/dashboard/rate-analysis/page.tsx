@@ -13,9 +13,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface MaterialRow {
     id: number;
@@ -32,8 +30,7 @@ interface LabourRow {
 export default function RateAnalysisPage() {
     const image = PlaceHolderImages.find(p => p.id === 'rate-analysis');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [description, setDescription] = useState('');
     const [itemNo, setItemNo] = useState('');
@@ -83,49 +80,40 @@ export default function RateAnalysisPage() {
     const compositeRatePerQty = useMemo(() => qty > 0 ? (materialTotal + labourTotal) / qty : 0, [materialTotal, labourTotal, qty]);
     
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
-        const data = {
-            category: 'Rate Analysis',
-            items: [
-                `Description: ${description}`,
-                `Item No: ${itemNo}`,
-                `Specification: ${specification}`,
-                '--- Materials ---',
-                ...materials.map(m => `${m.description}: ${m.amount}`),
-                `Material Subtotal: ${materialSubtotal}`,
-                `Material Profit %: ${materialProfitPercent}`,
-                `Material Tax %: ${materialTaxPercent}`,
-                `Material Total: ${materialTotal}`,
-                '--- Labour ---',
-                ...labours.map(l => `${l.description}: ${l.amount}`),
-                 `Labour Subtotal: ${labourSubtotal}`,
-                `Labour Profit %: ${labourProfitPercent}`,
-                `Labour Tax %: ${labourTaxPercent}`,
-                `Labour Total: ${labourTotal}`,
-                '--- Rates ---',
-                `Qty: ${qty}`,
-                `Labour Rate per ${qty}: ${labourRatePerQty}`,
-                `Composite Rate per ${qty}: ${compositeRatePerQty}`,
-            ],
+        const dataToSave = {
+            fileName: 'Rate Analysis',
+            projectName: description || 'Untitled Analysis',
+            data: [{
+                category: 'Rate Analysis',
+                items: [
+                    `Description: ${description}`,
+                    `Item No: ${itemNo}`,
+                    `Specification: ${specification}`,
+                    '--- Materials ---',
+                    ...materials.map(m => `${m.description}: ${m.amount}`),
+                    `Material Subtotal: ${materialSubtotal}`,
+                    `Material Profit %: ${materialProfitPercent}`,
+                    `Material Tax %: ${materialTaxPercent}`,
+                    `Material Total: ${materialTotal}`,
+                    '--- Labour ---',
+                    ...labours.map(l => `${l.description}: ${l.amount}`),
+                     `Labour Subtotal: ${labourSubtotal}`,
+                    `Labour Profit %: ${labourProfitPercent}`,
+                    `Labour Tax %: ${labourTaxPercent}`,
+                    `Labour Total: ${labourTotal}`,
+                    '--- Rates ---',
+                    `Qty: ${qty}`,
+                    `Labour Rate per ${qty}: ${labourRatePerQty}`,
+                    `Composite Rate per ${qty}: ${compositeRatePerQty}`,
+                ],
+            }],
         };
 
         try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Rate Analysis',
-                projectName: description || 'Untitled Analysis',
-                data: [data],
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The rate analysis has been saved.' });
-        } catch(e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save record.' });
+            await addRecord(dataToSave as any);
+        } catch (error) {
+            // Error is handled by the context's toast
+            console.error("Save failed in component:", error);
         }
     };
 
@@ -138,7 +126,7 @@ export default function RateAnalysisPage() {
         y += 10;
         
         doc.setFontSize(10);
-        doc.autoTable({
+        (doc as any).autoTable({
             startY: y,
             theme: 'plain',
             body: [
@@ -153,7 +141,7 @@ export default function RateAnalysisPage() {
         materialBody.push([`Contractor's Profit, & Overheads @ ${materialProfitPercent}%`, materialProfit.toFixed(2)]);
         materialBody.push([`Tax @ ${materialTaxPercent}%`, materialTax.toFixed(2)]);
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['MATERIAL', 'Amount (Rs.)']],
             body: materialBody,
             foot: [['Total', materialTotal.toFixed(2)]],
@@ -166,7 +154,7 @@ export default function RateAnalysisPage() {
         labourBody.push([`Contractor's Profit' & Overheads @ ${labourProfitPercent}%`, labourProfit.toFixed(2)]);
         labourBody.push([`Income Tax @ ${labourTaxPercent}%`, labourTax.toFixed(2)]);
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['LABOUR', 'Amount (Rs.)']],
             body: labourBody,
             foot: [['Total', labourTotal.toFixed(2)]],
@@ -175,11 +163,11 @@ export default function RateAnalysisPage() {
         });
         y = (doc as any).autoTable.previous.finalY + 10;
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [['ITEM RATES', '']],
             body: [
                 [`Labour rate per ${qty} Cft / Sft`, `Rs. ${labourTotal.toFixed(2)} Say ${Math.round(labourTotal)}`],
-                [`Composite rate per ${qty} Cft / Sft`, `Rs. ${compositeRatePerQty.toFixed(2)} Say ${Math.round(compositeRatePerQty)}`],
+                [`Composite rate per ${qty} Cft / Sft`, `Rs. ${(materialTotal + labourTotal).toFixed(2)} Say ${Math.round(materialTotal + labourTotal)}`],
                 [`Rate Per Unit`, `Rs. ${(compositeRatePerQty).toFixed(2)}`],
                 [`Rate Per Sft/Cft`, `Rs. ${(compositeRatePerQty).toFixed(2)}`],
             ],
@@ -327,4 +315,3 @@ export default function RateAnalysisPage() {
         </div>
     );
 }
-

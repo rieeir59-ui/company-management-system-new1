@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -32,14 +32,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
     const { toast } = useToast();
     const { user: currentUser } = useCurrentUser();
-    const { addOrUpdateRecord, records } = useRecords();
-
+    const { addOrUpdateRecord, records, bankTimelineCategories } = useRecords();
+    
     const formattedBankName = useMemo(() => {
         return bankTimelineCategories.find(b => b.toLowerCase().replace(/ /g, '-') === bankName) || bankName;
-    }, [bankName]);
-
-    const initialData = useMemo(() => bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [], [bankName]);
-    const isCommercialOrResidential = useMemo(() => bankName === 'commercial' || bankName === 'residential', [bankName]);
+    }, [bankName, bankTimelineCategories]);
 
     const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
     
@@ -49,28 +46,28 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
+        const initialData = bankProjectsMap[bankName as keyof typeof bankProjectsMap] || [];
+        
         if (record && record.data) {
             const projects = record.data.find((d: any) => d.category === 'Projects')?.items || [];
             const statusAndRemarks = record.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             
-            if (projects.length > 0) {
-                setProjectRows(projects);
-            } else {
-                setProjectRows(initialData);
+            setProjectRows(Array.isArray(projects) && projects.length > 0 ? projects.map((p:any, i:number) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})) : initialData.map((p,i) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})) );
+            
+            if (Array.isArray(statusAndRemarks)) {
+                const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
+                const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+                const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
+    
+                setOverallStatus(savedOverallStatus || '');
+                setRemarks(savedRemarks || '');
+                if (savedDate) setRemarksDate(savedDate);
             }
             
-            const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
-            const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
-            const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
-
-            setOverallStatus(savedOverallStatus || '');
-            setRemarks(savedRemarks || '');
-            if (savedDate) setRemarksDate(savedDate);
-            
         } else {
-            setProjectRows(initialData);
+            setProjectRows(initialData.map((p,i) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})));
         }
-    }, [bankName, formattedBankName, initialData, records]);
+    }, [bankName, formattedBankName, records]);
     
     const handleSave = () => {
         if (!currentUser) {
@@ -81,9 +78,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
             projectName: `${formattedBankName} Projects`,
-            employeeId: currentUser.uid,
-            employeeName: currentUser.name,
-            employeeRecord: currentUser.record,
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
@@ -139,14 +133,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 ));
             } else {
                  const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-                 const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+                 const newSrNo = projectRows.length > 0 ? String(projectRows.length + 1) : '1';
                  let newRow: ProjectRow = {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
-                    proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
-                    tenderArchStart: '', tenderArchEnd: '',
-                    tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
-                    siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
+                    proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
+                    tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
+                    workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
                 };
                 newRow = updateRowWithAITimeline(newRow);
                 setProjectRows(prevRows => [...prevRows, newRow]);
@@ -230,14 +223,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
 
     const addProjectRow = () => {
         const newId = projectRows.length > 0 ? Math.max(...projectRows.map(r => r.id)) + 1 : 1;
-        const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
+        const newSrNo = projectRows.length > 0 ? String(projectRows.length + 1) : '1';
         const newRow: ProjectRow = {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
             siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
-            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '',
-            tenderArchStart: '', tenderArchEnd: '',
-            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '',
-            siteVisit: '', finalBill: '', projectClosure: '', remarks: ''
+            proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
+            tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
+            workingDrawingsStart: '', workingDrawingsEnd: '', siteVisit: '', finalBill: '', projectClosure: ''
         };
         setProjectRows(prevRows => [...prevRows, newRow]);
     };
@@ -261,11 +253,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const head = [
             [
-                { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
-                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 },
-                { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
-                { content: "3D's", colSpan: 2 }, { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
+                { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
+                { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 }, { content: 'Head Count\n/ Requirement', colSpan: 2 },
+                { content: 'Proposal / Design Development', colSpan: 2 },
+                { content: "3D's", colSpan: 2 }, { content: 'Tender Package Architectural', colSpan: 2 }, { content: 'Tender Package MEP', colSpan: 2 },
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
                 { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
@@ -279,17 +271,16 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd,
-            p.contract,
+            p.siteSurveyStart, p.siteSurveyEnd, 
+            p.contractStart || '', p.contactEnd || '',
             p.headCountStart || '', p.headCountEnd || '',
             p.proposalStart, p.proposalEnd,
             p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd,
             p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd,
-            p.tenderStatus, p.comparative,
-            p.workingDrawingsStart || '', p.workingDrawingsEnd || '',
-            p.siteVisit,
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
+            p.workingDrawingsStart, p.workingDrawingsEnd, 
+            p.siteVisit, '',
             p.finalBill, p.projectClosure
         ]);
 
@@ -324,7 +315,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
-    if (!initialData.length && !projectRows.length) {
+    if (!projectRows) {
          return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <Card className="w-full max-w-md text-center">
@@ -344,54 +335,19 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             </div>
         );
     }
-        
-    const tableHeaders = [
-        { name: "Sr.No", span: 1, rowSpan: 2 },
-        { name: "Project Name", span: 1, rowSpan: 2 },
-        { name: "Area in Sft", span: 1, rowSpan: 2 },
-        { name: "Project Holder", span: 1, rowSpan: 2 },
-        { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Site Survey", span: 2, rowSpan: 1 },
-        { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
-        { name: "3D's", span: 2, rowSpan: 1 },
-        { name: "Design Lock Date", span: 1, rowSpan: 2 },
-        { name: "Submission Drawing", span: 2, rowSpan: 1 },
-        { name: "Architecture working drawing", span: 2, rowSpan: 1 },
-        { name: "MEP drawing", span: 2, rowSpan: 1 },
-        { name: "BOQ", span: 2, rowSpan: 1 },
-        { name: "Interior", span: 1, rowSpan: 2 },
-        { name: "Site Visit", span: 2, rowSpan: 1 },
-        { name: "Final Bill", span: 1, rowSpan: 2 },
-        { name: "Project Closure", span: 1, rowSpan: 2 },
-        { name: "Remarks", span: 1, rowSpan: 2 },
-        { name: "Action", span: 1, rowSpan: 2 }
-    ];
-
-    const bankTableHeaders = [
-        { name: "Sr.No", span: 1, rowSpan: 2 },
-        { name: "Project Name", span: 1, rowSpan: 2 },
-        { name: "Area in Sft", span: 1, rowSpan: 2 },
-        { name: "Project Holder", span: 1, rowSpan: 2 },
-        { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Site Survey", span: 2, rowSpan: 1 },
-        { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Head Count / Requirement", span: 1, rowSpan: 2 },
-        { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
-        { name: "3D's", span: 2, rowSpan: 1 },
-        { name: "Architecture working drawing", span: 2, rowSpan: 1 },
-        { name: "MEP drawing", span: 2, rowSpan: 1 },
-        { name: "BOQ", span: 2, rowSpan: 1 },
-        { name: "Tender Status", span: 1, rowSpan: 2 },
-        { name: "Comparative", span: 1, rowSpan: 2 },
-        { name: "Working Drawings", span: 2, rowSpan: 1 },
-        { name: "Site Visit", span: 1, rowSpan: 2 },
-        { name: "Final Bill", span: 1, rowSpan: 2 },
-        { name: "Project Closure", span: 1, rowSpan: 2 },
-        { name: "Action", span: 1, rowSpan: 2 }
-    ];
     
-    const displayHeaders = isCommercialOrResidential ? tableHeaders : bankTableHeaders;
+    const isBank = !['commercial', 'residential'].includes(bankName);
+    
+    const tableHeaders = [
+        { name: "Sr.No", span: 1 }, { name: "Project Name", span: 1 }, { name: "Area in Sft", span: 1 },
+        { name: "Project\nHolder", span: 1 }, { name: "Allocation\nDate / RFP", span: 1 }, { name: "Site Survey", span: 2 },
+        ...(isBank ? [{ name: "Contract", span: 2 }, { name: "Head Count\n/ Requirement", span: 2 }] : []),
+        { name: "Proposal / Design Development", span: 2 }, { name: "3D's", span: 2 }, { name: "Tender Package Architectural", span: 2 },
+        { name: "Tender Package MEP", span: 2 }, { name: "BOQ", span: 2 }, { name: "Tender Status", span: 1 },
+        { name: "Comparative", span: 1 }, { name: "Working Drawings", span: 2 }, { name: "Site Visit", span: 2 },
+        { name: "Final Bill", span: 1 }, { name: "Project Closure", span: 1 },
+        { name: "Action", span: 1 }
+    ];
 
     return (
         <Card>
@@ -425,12 +381,12 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <table className="min-w-max border-collapse text-xs">
                         <thead className="sticky top-0 bg-primary/20 z-10">
                             <tr>
-                                {displayHeaders.map((header) => (
-                                     <th key={header.name} className="border p-1 align-bottom whitespace-nowrap" colSpan={header.span} rowSpan={header.rowSpan}>{header.name}</th>
+                                {tableHeaders.map((header) => (
+                                     <th key={header.name} className="border p-1 align-bottom whitespace-nowrap" colSpan={header.span} rowSpan={header.span > 1 ? 1 : 2}>{header.name}</th>
                                 ))}
                             </tr>
                             <tr className="bg-primary/10">
-                                {displayHeaders.flatMap(header => {
+                                {tableHeaders.flatMap(header => {
                                     if (header.span > 1) {
                                         return [<th key={`${header.name}-start`} className="border p-1">Start</th>, <th key={`${header.name}-end`} className="border p-1">End</th>]
                                     }
@@ -449,47 +405,30 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                                     
                                     <td className="border p-1"><DateInput value={row.siteSurveyStart} onChange={v => handleProjectChange(row.id, 'siteSurveyStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.siteSurveyEnd} onChange={v => handleProjectChange(row.id, 'siteSurveyEnd', v)} /></td>
-                                    <td className="border p-1"><Textarea value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="min-w-[150px]" /></td>
                                     
-                                    {!isCommercialOrResidential && <td className="border p-1"><Textarea value={row.headCount || ''} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.contractStart || ''} onChange={v => handleProjectChange(row.id, 'contractStart', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.contactEnd || ''} onChange={v => handleProjectChange(row.id, 'contactEnd', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.headCountStart || ''} onChange={v => handleProjectChange(row.id, 'headCountStart', v)} /></td>}
+                                    {isBank && <td className="border p-1"><DateInput value={row.headCountEnd || ''} onChange={v => handleProjectChange(row.id, 'headCountEnd', v)} /></td>}
 
                                     <td className="border p-1"><DateInput value={row.proposalStart} onChange={v => handleProjectChange(row.id, 'proposalStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.proposalEnd} onChange={v => handleProjectChange(row.id, 'proposalEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedStart} onChange={v => handleProjectChange(row.id, 'threedStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.threedEnd} onChange={v => handleProjectChange(row.id, 'threedEnd', v)} /></td>
-                                    
-                                    {isCommercialOrResidential && <td className="border p-1"><DateInput value={row.designLockDate} onChange={v => handleProjectChange(row.id, 'designLockDate', v)} /></td>}
-                                    {isCommercialOrResidential && <>
-                                        <td className="border p-1"><DateInput value={row.submissionDrawingStart} onChange={v => handleProjectChange(row.id, 'submissionDrawingStart', v)} /></td>
-                                        <td className="border p-1"><DateInput value={row.submissionDrawingEnd} onChange={v => handleProjectChange(row.id, 'submissionDrawingEnd', v)} /></td>
-                                    </>}
-                                    
                                     <td className="border p-1"><DateInput value={row.tenderArchStart} onChange={v => handleProjectChange(row.id, 'tenderArchStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderArchEnd} onChange={v => handleProjectChange(row.id, 'tenderArchEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderMepStart} onChange={v => handleProjectChange(row.id, 'tenderMepStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.tenderMepEnd} onChange={v => handleProjectChange(row.id, 'tenderMepEnd', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqStart} onChange={v => handleProjectChange(row.id, 'boqStart', v)} /></td>
                                     <td className="border p-1"><DateInput value={row.boqEnd} onChange={v => handleProjectChange(row.id, 'boqEnd', v)} /></td>
-                                    
-                                    {!isCommercialOrResidential && <>
-                                         <td className="border p-1"><Input type="text" value={row.tenderStatus || ''} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
-                                        <td className="border p-1"><Input type="text" value={row.comparative || ''} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
-                                        <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
-                                        <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
-                                    </>}
-                                    
-                                    {isCommercialOrResidential && <td className="border p-1"><Input type="text" value={row.interior} onChange={e => handleProjectChange(row.id, 'interior', e.target.value)} className="w-24" /></td>}
-                                    
-                                    {isCommercialOrResidential ? <>
-                                        <td className="border p-1"><DateInput value={row.siteVisitStart || ''} onChange={v => handleProjectChange(row.id, 'siteVisitStart', v)} /></td>
-                                        <td className="border p-1"><DateInput value={row.siteVisitEnd || ''} onChange={v => handleProjectChange(row.id, 'siteVisitEnd', v)} /></td>
-                                    </> : <td className="border p-1"><Textarea value={row.siteVisit || ''} onChange={e => handleProjectChange(row.id, 'siteVisit', e.target.value)} /></td>}
-
-                                    <td className="border p-1"><Textarea value={row.finalBill} onChange={e => handleProjectChange(row.id, 'finalBill', e.target.value)} /></td>
-                                    <td className="border p-1"><Textarea value={row.projectClosure} onChange={e => handleProjectChange(row.id, 'projectClosure', e.target.value)} /></td>
-                                    
-                                    {isCommercialOrResidential && <td className="border p-1"><Textarea value={row.remarks} onChange={e => handleProjectChange(row.id, 'remarks', e.target.value)} className="min-w-[200px]" /></td>}
-                                    
+                                    <td className="border p-1"><Input type="text" value={row.tenderStatus} onChange={e => handleProjectChange(row.id, 'tenderStatus', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><Input type="text" value={row.comparative} onChange={e => handleProjectChange(row.id, 'comparative', e.target.value)} className="w-24" /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsStart || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsStart', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.workingDrawingsEnd || ''} onChange={v => handleProjectChange(row.id, 'workingDrawingsEnd', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.siteVisit || ''} onChange={v => handleProjectChange(row.id, 'siteVisit', v)} /></td>
+                                    <td className="border p-1"><DateInput value={''} onChange={() => {}} /></td>
+                                    <td className="border p-1"><DateInput value={row.finalBill || ''} onChange={(v) => handleProjectChange(row.id, 'finalBill', v)} /></td>
+                                    <td className="border p-1"><DateInput value={row.projectClosure || ''} onChange={(v) => handleProjectChange(row.id, 'projectClosure', v)} /></td>
                                     <td className="border p-1">
                                         <div className="flex gap-1">
                                             <Button variant="ghost" size="icon" onClick={() => removeProjectRow(row.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

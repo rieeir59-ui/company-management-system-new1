@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -36,6 +37,7 @@ const initialRow: Omit<ContractorRow, 'id'> = {
 export default function ListOfContractorsPage() {
     const image = PlaceHolderImages.find(p => p.id === 'list-of-contractors');
     const { toast } = useToast();
+    const { records, addRecord, updateRecord } = useRecords();
     
     const [projectName, setProjectName] = useState('');
     const [projectAddress, setProjectAddress] = useState('');
@@ -60,14 +62,23 @@ export default function ListOfContractorsPage() {
     };
 
     const handleSave = () => {
-        // Here you would typically save to a database.
-        // For this example, we'll just show a toast.
-        console.log({
-            recordName,
-            projectName, projectAddress, architect, architectsProjectNo, date, toContractor,
-            rows
-        });
-        toast({ title: 'Record Saved', description: `The list of contractors has been saved as "${recordName}".` });
+        const dataToSave = {
+            fileName: 'List of Contractors',
+            projectName: recordName || 'Untitled Contractor List',
+            data: {
+                category: 'List of Contractors',
+                header: { projectName, projectAddress, architect, architectsProjectNo, date, toContractor },
+                items: rows,
+            },
+        };
+
+        const existingRecord = records.find(r => r.fileName === 'List of Contractors' && r.projectName === dataToSave.projectName);
+
+        if (existingRecord) {
+            updateRecord(existingRecord.id, dataToSave);
+        } else {
+            addRecord(dataToSave as any);
+        }
         setIsSaveOpen(false);
     };
 
@@ -210,7 +221,7 @@ export default function ListOfContractorsPage() {
                                     <DialogHeader>
                                         <DialogTitle>Save Record</DialogTitle>
                                         <DialogDescription>
-                                            Please provide a name for this record.
+                                            Provide a name for this record. This will update an existing record with the same name or create a new one.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-2">

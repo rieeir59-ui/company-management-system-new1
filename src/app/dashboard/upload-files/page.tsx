@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import DashboardPageHeader from "@/components/dashboard/PageHeader";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,8 @@ import { CreatableSelect } from '@/components/ui/creatable-select';
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { useFileRecords } from "@/context/FileContext";
+import { useRecords } from "@/context/RecordContext";
+import { useCurrentUser } from "@/context/UserContext";
 
 type FileUpload = {
   id: number;
@@ -39,9 +42,11 @@ const UploadForm = ({ category }: { category: string }) => {
     const [banks, setBanks] = useState<string[]>(initialBanks);
     const { toast } = useToast();
     const { addFileRecord } = useFileRecords();
+    const { addRecord } = useRecords();
+    const { user: currentUser } = useCurrentUser();
 
     const handleUpload = useCallback(async (upload: FileUpload) => {
-        if (!upload.file || !upload.customName) {
+        if (!upload.file || !upload.customName || !currentUser) {
             toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a custom name and choose a file.' });
             return;
         }
@@ -52,24 +57,42 @@ const UploadForm = ({ category }: { category: string }) => {
         
         setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress: 0, error: undefined } : up));
 
-        const recordData = {
-            category: category,
-            bankName: upload.bankName,
-            customName: upload.customName,
-            originalName: upload.file.name,
-            fileType: upload.file.type,
-            size: upload.file.size,
-        };
-        
         try {
-            await addFileRecord(recordData, upload.file, (progress) => {
+            const fileRecordData = {
+                category: category,
+                bankName: upload.bankName,
+                customName: upload.customName,
+                originalName: upload.file.name,
+                fileType: upload.file.type,
+                size: upload.file.size,
+            };
+
+            const savedDocRef = await addFileRecord(fileRecordData, upload.file, (progress) => {
                 setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, progress } : up));
             });
-            
-            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
-            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded.` });
 
-            // Automatically remove the completed upload row after a short delay
+            if (savedDocRef) {
+                await addRecord({
+                  fileName: 'Uploaded File',
+                  projectName: upload.customName,
+                  data: [{
+                    category: 'File Upload Details',
+                    items: [
+                      { label: 'File ID', value: savedDocRef.id },
+                      { label: 'Category', value: category },
+                      ...(category === 'Banks' ? [{ label: 'Bank', value: upload.bankName }] : []),
+                      { label: 'Custom Name', value: upload.customName },
+                      { label: 'Original Name', value: upload.file.name },
+                      { label: 'File Type', value: upload.file.type },
+                      { label: 'Size (Bytes)', value: upload.file.size.toString() },
+                    ]
+                  }]
+                } as any);
+            }
+
+            setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true } : up));
+            toast({ title: 'File Uploaded', description: `"${upload.customName}" has been successfully uploaded and recorded.` });
+
             setTimeout(() => {
                 setUploads(prev => {
                     const remaining = prev.filter(up => up.id !== upload.id);
@@ -79,13 +102,13 @@ const UploadForm = ({ category }: { category: string }) => {
         } catch (error) {
              setUploads(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed. Check console & permissions.' } : up));
         }
-    }, [category, addFileRecord, toast]);
+    }, [category, addFileRecord, addRecord, toast, currentUser]);
 
 
     const handleFileChange = (id: number, event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
-            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name, error: undefined } : up));
+            setUploads(prev => prev.map(up => up.id === id ? { ...up, file, customName: up.customName || file.name.split('.').slice(0, -1).join('.'), error: undefined } : up));
         }
     };
 
@@ -167,9 +190,18 @@ const UploadForm = ({ category }: { category: string }) => {
     );
 };
 
-export default function UploadFilesPage() {
+function UploadFilesPageContent() {
     const image = PlaceHolderImages.find(p => p.id === 'upload-files');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Banks');
+    const searchParams = useSearchParams();
+    const initialCategory = searchParams.get('category');
+    
+    const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'Banks');
+
+    useEffect(() => {
+        if (initialCategory) {
+            setSelectedCategory(initialCategory);
+        }
+    }, [initialCategory]);
 
     return (
         <div className="space-y-8">
@@ -211,4 +243,12 @@ export default function UploadFilesPage() {
             </Card>
         </div>
     );
+}
+
+export default function UploadFilesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UploadFilesPageContent />
+    </Suspense>
+  )
 }

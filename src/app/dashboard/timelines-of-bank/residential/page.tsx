@@ -1,7 +1,6 @@
 'use client';
 
-<<<<<<< HEAD
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,31 +10,19 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
-import { type ProjectRow } from '@/lib/projects-data';
-import { useParams } from 'next/navigation';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
+import { residentialProjects as initialProjectRowsData, type ProjectRow } from '@/lib/projects-data';
 
-function DynamicBankTimelineComponent() {
+function ResidentialTimelineComponent() {
     const { toast } = useToast();
-    const { addRecord, getBankProjects } = useRecords();
-    const params = useParams();
-    const bankName = Array.isArray(params.bankName) ? params.bankName[0] : params.bankName;
-
-    const [projectRows, setProjectRows] = useState<ProjectRow[]>([]);
+    const { addRecord } = useRecords();
+    const [projectRows, setProjectRows] = useState<ProjectRow[]>(initialProjectRowsData);
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState('');
 
     const [genProjectName, setGenProjectName] = useState('');
     const [genArea, setGenArea] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
-
-    useEffect(() => {
-        if(bankName) {
-            const decodedBankName = decodeURIComponent(bankName);
-            const projects = getBankProjects(decodedBankName);
-            setProjectRows(projects);
-        }
-    }, [bankName, getBankProjects]);
 
     const handleGenerateTimeline = async () => {
         if (!genProjectName || !genArea) {
@@ -85,8 +72,10 @@ function DynamicBankTimelineComponent() {
                     id: newId, srNo: newSrNo, projectName: genProjectName, area: genArea, projectHolder: '', allocationDate: '',
                     siteSurveyStart: taskMap['sitesurvey']?.start || '',
                     siteSurveyEnd: taskMap['sitesurvey']?.end || '',
-                    contract: taskMap['contract']?.start || '',
-                    headCount: taskMap['headcountrequirment']?.start || '',
+                    contractStart: taskMap['contract']?.start || '',
+                    contactEnd: taskMap['contract']?.end || '',
+                    headCountStart: taskMap['headcountrequirment']?.start || '',
+                    headCountEnd: taskMap['headcountrequirment']?.end || '',
                     proposalStart: taskMap['proposaldesigndevelopment']?.start || '',
                     proposalEnd: taskMap['proposaldesigndevelopment']?.end || '',
                     threedStart: taskMap['3ds']?.start || '',
@@ -132,7 +121,7 @@ function DynamicBankTimelineComponent() {
         const newSrNo = projectRows.length > 0 ? String(parseInt(projectRows[projectRows.length - 1].srNo) + 1) : '1';
         setProjectRows([...projectRows, {
             id: newId, srNo: newSrNo, projectName: '', area: '', projectHolder: '', allocationDate: '',
-            siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '',
+            siteSurveyStart: '', siteSurveyEnd: '', contactStart: '', contactEnd: '', headCountStart: '', headCountEnd: '',
             proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', tenderArchStart: '', tenderArchEnd: '',
             tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', tenderStatus: '', comparative: '',
             workingDrawingsStart: '', workingDrawingsEnd: '', siteVisitStart: '', siteVisitEnd: '', finalBill: '', projectClosure: ''
@@ -145,8 +134,8 @@ function DynamicBankTimelineComponent() {
     
     const handleSave = () => {
         addRecord({
-            fileName: `${bankName} Timeline`,
-            projectName: `${bankName} Projects`,
+            fileName: 'Residential Timeline',
+            projectName: 'Residential Projects',
             data: [
                 { category: 'Projects', items: projectRows },
                 { category: 'Remarks', items: [{label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
@@ -157,28 +146,22 @@ function DynamicBankTimelineComponent() {
     const handleDownload = () => {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.setFontSize(10);
-        doc.text(`${decodeURIComponent(bankName)} Project Chart`, 14, 15);
+        doc.text("Residential Timeline", 14, 15);
         
         const head = [
-            ['Sr.\nNo', 'Project Name', 'Area\nin Sft', 'Project\nHolder', 'Allocation\nDate / RFP', 
-             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract', 'Head Count\n/ Requirment',
+            ['Sr.No', 'Project Name', 'Area in Sft', 'Project Holder', 'Allocation Date / RFP', 
+             'Site Survey\nStart', 'Site Survey\nEnd', 'Contract\nStart', 'Contract\nEnd', 'Head Count\n/ Requirment\nStart', 'Head Count\n/ Requirment\nEnd',
              'Proposal /\nDesign\nDevelopment\nStart', 'Proposal /\nDesign\nDevelopment\nEnd', '3D\'s\nStart', '3D\'s\nEnd',
              'Tender\nPackage\nArchitectural\nStart', 'Tender\nPackage\nArchitectural\nEnd', 'Tender\nPackage\nMEP\nStart', 'Tender\nPackage\nMEP\nEnd',
-             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 
-             'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 
-             'Site Visit\nStart', 'Site Visit\nEnd', 
-             'Final Bill', 'Project\nClosure']
+             'BOQ\nStart', 'BOQ\nEnd', 'Tender\nStatus', 'Comparative', 'Working\nDrawings\nStart', 'Working\nDrawings\nEnd', 'Site Visit\nStart', 'Site Visit\nEnd', 'Final Bill', 'Project Closure']
         ];
         
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd, p.contract, p.headCount,
+            p.siteSurveyStart, p.siteSurveyEnd, p.contactStart, p.contactEnd, p.headCountStart, p.headCountEnd,
             p.proposalStart, p.proposalEnd, p.threedStart, p.threedEnd,
             p.tenderArchStart, p.tenderArchEnd, p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, 
-            p.workingDrawingsStart, p.workingDrawingsEnd, 
-            p.siteVisitStart, p.siteVisitEnd, 
-            p.finalBill, p.projectClosure
+            p.boqStart, p.boqEnd, p.tenderStatus, p.comparative, p.workingDrawingsStart, p.workingDrawingsEnd, p.siteVisitStart, p.siteVisitEnd, p.finalBill, p.projectClosure
         ]);
 
         (doc as any).autoTable({
@@ -198,14 +181,14 @@ function DynamicBankTimelineComponent() {
 
         doc.text(`Date: ${remarksDate}`, 14, lastY);
 
-        doc.save(`${bankName}_timeline.pdf`);
+        doc.save('residential_timeline.pdf');
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <CardTitle className="text-center font-headline text-3xl text-primary">{decodeURIComponent(bankName)} Project Chart</CardTitle>
+                <CardTitle className="text-center font-headline text-3xl text-primary">Residential Timeline</CardTitle>
                 <div className="flex gap-2">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>
                     <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
@@ -226,7 +209,7 @@ function DynamicBankTimelineComponent() {
                 </Card>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-xs">
-                         <thead>
+                        <thead>
                             <tr className="bg-primary/20">
                                 <th rowSpan={2} className="border p-1">Sr.No</th>
                                 <th rowSpan={2} className="border p-1">Project Name</th>
@@ -234,8 +217,8 @@ function DynamicBankTimelineComponent() {
                                 <th rowSpan={2} className="border p-1">Project Holder</th>
                                 <th rowSpan={2} className="border p-1">Allocation Date / RFP</th>
                                 <th colSpan={2} className="border p-1">Site Survey</th>
-                                <th rowSpan={2} className="border p-1">Contract</th>
-                                <th rowSpan={2} className="border p-1">Head Count / Requirment</th>
+                                <th colSpan={2} className="border p-1">Contract</th>
+                                <th colSpan={2} className="border p-1">Head Count / Requirment</th>
                                 <th colSpan={2} className="border p-1">Proposal / Design Development</th>
                                 <th colSpan={2} className="border p-1">3D's</th>
                                 <th colSpan={2} className="border p-1">Tender Package Architectural</th>
@@ -256,6 +239,8 @@ function DynamicBankTimelineComponent() {
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
+                                <th className="border p-1">Start Date</th><th className="border p-1">End Date</th>
                                 <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                                 <th className="border p-1 font-semibold text-foreground">Start Date</th><th className="border p-1 font-semibold text-foreground">End Date</th>
                             </tr>
@@ -270,8 +255,10 @@ function DynamicBankTimelineComponent() {
                                     <td className="border"><Input type="text" value={row.allocationDate} onChange={e => handleProjectChange(row.id, 'allocationDate', e.target.value)} className="w-28" /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyStart} onChange={e => handleProjectChange(row.id, 'siteSurveyStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.siteSurveyEnd} onChange={e => handleProjectChange(row.id, 'siteSurveyEnd', e.target.value)} /></td>
-                                    <td className="border"><Input type="text" value={row.contract} onChange={e => handleProjectChange(row.id, 'contract', e.target.value)} className="w-28"/></td>
-                                    <td className="border"><Input type="text" value={row.headCount} onChange={e => handleProjectChange(row.id, 'headCount', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.contactStart} onChange={e => handleProjectChange(row.id, 'contactStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.contactEnd} onChange={e => handleProjectChange(row.id, 'contactEnd', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.headCountStart} onChange={e => handleProjectChange(row.id, 'headCountStart', e.target.value)} /></td>
+                                    <td className="border"><Input type="date" value={row.headCountEnd} onChange={e => handleProjectChange(row.id, 'headCountEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalStart} onChange={e => handleProjectChange(row.id, 'proposalStart', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.proposalEnd} onChange={e => handleProjectChange(row.id, 'proposalEnd', e.target.value)} /></td>
                                     <td className="border"><Input type="date" value={row.threedStart} onChange={e => handleProjectChange(row.id, 'threedStart', e.target.value)} /></td>
@@ -307,15 +294,7 @@ function DynamicBankTimelineComponent() {
         </Card>
     );
 }
-=======
-import { Suspense } from 'react';
-import BankTimelinePage from '@/components/timelines/BankTimelinePage';
->>>>>>> origin/main
 
 export default function Page() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64">Loading...</div>}>
-      <BankTimelinePage dashboardType="dashboard" />
-    </Suspense>
-  );
+  return <ResidentialTimelineComponent />;
 }

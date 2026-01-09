@@ -94,7 +94,7 @@ export default function ShopDrawingsRecordPage() {
         }
 
         const dataToSave = {
-            employeeId: currentUser.record,
+            employeeId: currentUser.uid,
             employeeName: currentUser.name,
             fileName: 'Shop Drawing and Sample Record',
             projectName: projectName || 'Untitled Record',
@@ -181,7 +181,7 @@ export default function ShopDrawingsRecordPage() {
                 const isChecked = data.cell.raw === '✓';
                 if (data.section === 'body' && isChecked) {
                     doc.setFillColor(0, 0, 0);
-                    const checkboxSize = 2;
+                    const checkboxSize = 3;
                     const cellCenterY = data.cell.y + data.cell.height / 2;
                     doc.rect(data.cell.x + (data.cell.width / 2) - (checkboxSize / 2), cellCenterY - (checkboxSize / 2), checkboxSize, checkboxSize, 'F');
                     data.cell.text = ''; // Clear the raw value

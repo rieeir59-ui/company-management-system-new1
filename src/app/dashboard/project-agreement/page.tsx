@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download } from 'lucide-react';
+import { Save, Download, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
+import Link from 'next/link';
 
 const Section = ({ title, children, className }: { title?: string; children: React.ReactNode, className?: string }) => (
   <div className={`mb-6 ${className}`}>
@@ -91,7 +92,7 @@ const initialPaymentSchedule = [
 export default function ProjectAgreementPage() {
     const image = PlaceHolderImages.find(p => p.id === 'project-agreement');
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { addRecord, records, updateRecord } = useRecords();
     
     const [day, setDay] = useState('');
     const [owner, setOwner] = useState('');
@@ -154,8 +155,14 @@ export default function ProjectAgreementPage() {
         ]
       };
 
+      const existingRecord = records.find(r => r.fileName === 'Project Agreement' && r.projectName === recordData.projectName);
+
       try {
-        await addRecord(recordData as any);
+        if (existingRecord) {
+            await updateRecord(existingRecord.id, recordData);
+        } else {
+            await addRecord(recordData as any);
+        }
       } catch (error) {
            // Error is handled by the context
       }
@@ -256,7 +263,12 @@ export default function ProjectAgreementPage() {
         <div className="space-y-8">
             <DashboardPageHeader title="Project Agreement" description="Manage project agreements." imageUrl={image?.imageUrl || ''} imageHint={image?.imageHint || ''} />
             <Card>
-                <CardHeader><CardTitle className="text-center font-headline text-3xl text-primary">COMMERCIAL AGREEMENT</CardTitle></CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="font-headline text-3xl text-primary">COMMERCIAL AGREEMENT</CardTitle>
+                    <Link href="/dashboard" passHref>
+                        <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
+                    </Link>
+                </CardHeader>
                 <CardContent className="p-6 md:p-8">
                     <div id="agreement-content">
                         <Section>

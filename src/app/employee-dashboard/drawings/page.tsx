@@ -12,15 +12,13 @@ import { Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
 }
 
-const drawingSections = {
+const initialDrawingSections = {
     architectural: [
         { no: 1, title: "Submission Drawings", id: "arch_submission" },
         { no: 2, title: "Demolition Plan", id: "arch_demolition" },
@@ -75,7 +73,7 @@ const drawingSections = {
     ]
 };
 
-const sampleList = [
+const initialSampleList = [
     { no: 'AR-01', desc: 'General Notes and Conditions', group: 'Introduction (AR-01-AR-10)' },
     { no: 'AR-02', desc: 'Survey Plan', group: 'Introduction (AR-01-AR-10)' },
     { no: 'AR-03', desc: 'Site Setting Drawings', group: 'Introduction (AR-01-AR-10)' },
@@ -169,77 +167,12 @@ const sampleList = [
     ...Array.from({ length: 55 }, (_, i) => ({ no: `AR-${String(i + 201).padStart(2, '0')}`, desc: '', group: 'Other Item Drawings (AR-181-AR-250)' })),
 ];
 
-const groupedSampleList = sampleList.reduce((acc, item) => {
-    const group = item.group;
-    if (!acc[group]) {
-        acc[group] = [];
-    }
-    acc[group].push(item);
-    return acc;
-}, {} as Record<string, typeof sampleList>);
-
-
-const DrawingSection = ({ title, items, idPrefix }: { title: string, items: { no: number, title: string, id: string }[], idPrefix: string }) => (
-    <div>
-        <h3 className="text-lg font-bold mb-2">{title}</h3>
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-16">Serial No.</TableHead>
-                    <TableHead>Drawings Title</TableHead>
-                    <TableHead className="w-40">Starting Date</TableHead>
-                    <TableHead className="w-40">Completion Date</TableHead>
-                    <TableHead>Remarks</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {items.map(item => (
-                    <TableRow key={item.id}>
-                        <TableCell>{item.no}</TableCell>
-                        <TableCell>{item.title}</TableCell>
-                        <TableCell><Input type="date" name={`${idPrefix}_${item.id}_start`} /></TableCell>
-                        <TableCell><Input type="date" name={`${idPrefix}_${item.id}_complete`} /></TableCell>
-                        <TableCell><Textarea name={`${idPrefix}_${item.id}_remarks`} rows={1} /></TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </div>
-);
-
-const SampleListSection = ({ groupTitle, items }: { groupTitle: string, items: typeof sampleList }) => (
-     <div>
-        <h3 className="text-lg font-bold mb-2">{groupTitle}</h3>
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-24">Sr. no.</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="w-40">Start Date</TableHead>
-                    <TableHead className="w-40">End Date</TableHead>
-                    <TableHead>Remarks</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {items.map(item => (
-                    <TableRow key={item.no}>
-                        <TableCell>{item.no}</TableCell>
-                        <TableCell>{item.desc || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                        <TableCell><Input type="date" name={`${item.no}_start`} /></TableCell>
-                        <TableCell><Input type="date" name={`${item.no}_end`} /></TableCell>
-                        <TableCell><Textarea name={`${item.no}_remarks`} rows={1} /></TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </div>
-)
-
-
 export default function DrawingsPage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
+    const [drawingSections, setDrawingSections] = useState(initialDrawingSections);
+    const [sampleList, setSampleList] = useState(initialSampleList);
+
 
     const [projectName, setProjectName] = useState('');
     const [projectDate, setProjectDate] = useState('');
@@ -248,12 +181,40 @@ export default function DrawingsPage() {
     const [projectIncharge, setProjectIncharge] = useState('');
     const [draftsman, setDraftsman] = useState('Mr. Adeel');
 
-    const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
+    const handleMainDrawingChange = (sectionKey: keyof typeof drawingSections, index: number, field: 'no' | 'title', value: string | number) => {
+        setDrawingSections(prev => {
+            const newSections = { ...prev };
+            const newItems = [...newSections[sectionKey]];
+            newItems[index] = { ...newItems[index], [field]: value };
+            newSections[sectionKey] = newItems;
+            return newSections;
+        });
+    };
 
+    const handleSampleListChange = (index: number, field: 'no' | 'desc' | 'group', value: string) => {
+        setSampleList(prev => {
+            const newItems = [...prev];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return newItems;
+        });
+    };
+
+    const handleGroupTitleChange = (oldGroupTitle: string, newGroupTitle: string) => {
+        setSampleList(prev => 
+            prev.map(item => item.group === oldGroupTitle ? { ...item, group: newGroupTitle } : item)
+        );
+    };
+
+    const groupedSampleList = sampleList.reduce((acc, item) => {
+        const group = item.group;
+        if (!acc[group]) {
+            acc[group] = [];
+        }
+        acc[group].push(item);
+        return acc;
+    }, {} as Record<string, typeof sampleList>);
+
+    const handleSave = async () => {
         const form = document.getElementById('drawings-form') as HTMLFormElement;
         const formData = new FormData(form);
         const data: { category: string, items: string[] }[] = [];
@@ -279,7 +240,7 @@ export default function DrawingsPage() {
                 const complete = formData.get(`main_${item.id}_complete`);
                 const remarks = formData.get(`main_${item.id}_remarks`);
                 if (start || complete || remarks) {
-                    sectionData.items.push(`${item.title} (Start: ${start}, Complete: ${complete}, Remarks: ${remarks})`);
+                    sectionData.items.push(`${item.no} - ${item.title} (Start: ${start}, Complete: ${complete}, Remarks: ${remarks})`);
                 }
             });
             if (sectionData.items.length > 0) data.push(sectionData);
@@ -298,24 +259,17 @@ export default function DrawingsPage() {
              if (groupData.items.length > 0) data.push(groupData);
         }
 
-        try {
-            await addDoc(collection(firestore, 'savedRecords'), {
-                employeeId: currentUser.record,
-                employeeName: currentUser.name,
-                fileName: 'Drawings List',
-                projectName: projectName || 'Untitled Drawings List',
-                data: data,
-                createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Record Saved', description: 'The drawings list has been saved.' });
-        } catch (error) {
-            console.error("Error saving document: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
-        }
+        await addRecord({
+            fileName: 'Drawings List',
+            projectName: projectName || 'Untitled Drawings List',
+            data: data,
+        } as any);
     };
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF() as jsPDFWithAutoTable;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 20;
 
         doc.setFontSize(14);
@@ -342,7 +296,7 @@ export default function DrawingsPage() {
 
         const form = document.getElementById('drawings-form') as HTMLFormElement;
 
-        const addTable = (title, items, idPrefix) => {
+        const addTable = (title: string, items: { no: number, title: string, id: string }[], idPrefix: string) => {
             if (yPos > 250) { doc.addPage(); yPos = 20; }
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
@@ -352,9 +306,9 @@ export default function DrawingsPage() {
             const body = items.map(item => [
                 item.no,
                 item.title,
-                form.elements[`${idPrefix}_${item.id}_start`]?.value || '',
-                form.elements[`${idPrefix}_${item.id}_complete`]?.value || '',
-                form.elements[`${idPrefix}_${item.id}_remarks`]?.value || ''
+                (form.elements.namedItem(`${idPrefix}_${item.id}_start`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${idPrefix}_${item.id}_complete`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${idPrefix}_${item.id}_remarks`) as HTMLInputElement)?.value || ''
             ]);
 
             doc.autoTable({
@@ -367,11 +321,10 @@ export default function DrawingsPage() {
             yPos = doc.autoTable.previous.finalY + 10;
         }
 
-        addTable('Architectural Drawings', drawingSections.architectural, 'main');
-        addTable('Details', drawingSections.details, 'main');
-        addTable('Structure Drawings', drawingSections.structure, 'main');
-        addTable('Plumbing Drawings', drawingSections.plumbing, 'main');
-        addTable('Electrification Drawings', drawingSections.electrification, 'main');
+        Object.entries(drawingSections).forEach(([key, items]) => {
+            const title = key.charAt(0).toUpperCase() + key.slice(1) + ' Drawings';
+            addTable(title, items, 'main');
+        });
 
         doc.addPage();
         yPos = 20;
@@ -394,9 +347,9 @@ export default function DrawingsPage() {
             const body = groupedSampleList[groupTitle].map(item => [
                 item.no,
                 item.desc,
-                form.elements[`${item.no}_start`]?.value || '',
-                form.elements[`${item.no}_end`]?.value || '',
-                form.elements[`${item.no}_remarks`]?.value || '',
+                (form.elements.namedItem(`${item.no}_start`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${item.no}_end`) as HTMLInputElement)?.value || '',
+                (form.elements.namedItem(`${item.no}_remarks`) as HTMLInputElement)?.value || '',
             ]);
 
              doc.autoTable({
@@ -408,6 +361,14 @@ export default function DrawingsPage() {
             });
             yPos = doc.autoTable.previous.finalY + 10;
         }
+
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
+
 
         doc.save('drawings-list.pdf');
         toast({ title: 'Download Started', description: 'Your drawings list PDF is being generated.' });
@@ -445,11 +406,36 @@ export default function DrawingsPage() {
                     </div>
                     
                     <h2 className="text-xl font-bold">List of Working Drawings</h2>
-                    <DrawingSection title="Architectural Drawings" items={drawingSections.architectural} idPrefix="main" />
-                    <DrawingSection title="Details" items={drawingSections.details} idPrefix="main" />
-                    <DrawingSection title="Structure Drawings" items={drawingSections.structure} idPrefix="main" />
-                    <DrawingSection title="Plumbing Drawings" items={drawingSections.plumbing} idPrefix="main" />
-                    <DrawingSection title="Electrification Drawings" items={drawingSections.electrification} idPrefix="main" />
+                     {Object.entries(drawingSections).map(([key, items]) => {
+                        const title = key.charAt(0).toUpperCase() + key.slice(1) + ' Drawings';
+                        return (
+                            <div key={key}>
+                                <h3 className="text-lg font-bold mb-2">{title}</h3>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-24">Serial No.</TableHead>
+                                            <TableHead>Drawings Title</TableHead>
+                                            <TableHead className="w-40">Starting Date</TableHead>
+                                            <TableHead className="w-40">Completion Date</TableHead>
+                                            <TableHead>Remarks</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {items.map((item, index) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell><Input value={item.no} onChange={e => handleMainDrawingChange(key as keyof typeof drawingSections, index, 'no', e.target.value)} /></TableCell>
+                                                <TableCell><Input value={item.title} onChange={e => handleMainDrawingChange(key as keyof typeof drawingSections, index, 'title', e.target.value)} /></TableCell>
+                                                <TableCell><Input type="date" name={`main_${item.id}_start`} /></TableCell>
+                                                <TableCell><Input type="date" name={`main_${item.id}_complete`} /></TableCell>
+                                                <TableCell><Textarea name={`main_${item.id}_remarks`} rows={1} /></TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )
+                    })}
 
                     <div className="mt-12 pt-8 border-t-2 border-dashed">
                         <h2 className="text-xl font-bold text-center">SAMPLE LIST - Working Drawings</h2>
@@ -458,8 +444,39 @@ export default function DrawingsPage() {
                             <Input id="draftsman_name" value={draftsman} onChange={e => setDraftsman(e.target.value)} className="max-w-xs" />
                         </div>
                         <div className="space-y-8">
-                           {Object.entries(groupedSampleList).map(([groupTitle, items]) => (
-                               <SampleListSection key={groupTitle} groupTitle={groupTitle} items={items} />
+                           {Object.entries(groupedSampleList).map(([groupTitle, items], groupIndex) => (
+                               <div key={groupTitle}>
+                                    <Input
+                                        value={groupTitle}
+                                        onChange={(e) => handleGroupTitleChange(groupTitle, e.target.value)}
+                                        className="text-lg font-bold mb-2"
+                                    />
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-24">Sr. no.</TableHead>
+                                                <TableHead>Description</TableHead>
+                                                <TableHead className="w-40">Start Date</TableHead>
+                                                <TableHead className="w-40">End Date</TableHead>
+                                                <TableHead>Remarks</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {items.map((item, itemIndex) => {
+                                                const originalIndex = initialSampleList.findIndex(i => i.no === item.no);
+                                                return (
+                                                    <TableRow key={item.no}>
+                                                        <TableCell><Input value={item.no} onChange={e => handleSampleListChange(originalIndex, 'no', e.target.value)} /></TableCell>
+                                                        <TableCell><Input value={item.desc} onChange={e => handleSampleListChange(originalIndex, 'desc', e.target.value)} placeholder='N/A' /></TableCell>
+                                                        <TableCell><Input type="date" name={`${item.no}_start`} /></TableCell>
+                                                        <TableCell><Input type="date" name={`${item.no}_end`} /></TableCell>
+                                                        <TableCell><Textarea name={`${item.no}_remarks`} rows={1} /></TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                               </div>
                            ))}
                         </div>
                     </div>
@@ -473,5 +490,3 @@ export default function DrawingsPage() {
         </Card>
     );
 }
-
-    

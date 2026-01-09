@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
@@ -26,7 +25,8 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCurrentUser } from './UserContext';
 import { allFileNames, getFormUrlFromFileName } from '@/lib/utils';
 import { getIconForFile } from '@/lib/icons';
-import { bankTimelineCategories as btc } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow, bankTimelineCategories as btc } from '@/lib/projects-data';
+import { Building2, Home, Landmark } from 'lucide-react';
 
 export type SavedRecord = {
   id: string;
@@ -64,6 +64,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   
   const isAdmin = useMemo(() => currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d)), [currentUser]);
+  const bankTimelineCategories = useMemo(() => btc, []);
 
   // Fetch records
   useEffect(() => {
@@ -124,8 +125,13 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
         return docRef;
       } catch (err) {
         console.error(err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: dataToSave }));
-        return Promise.reject(err);
+        const permissionError = new FirestorePermissionError({
+            path: 'savedRecords',
+            operation: 'create',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw err;
       }
     },
     [firestore, currentUser, toast]
@@ -240,7 +246,7 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const projectManualItems = useMemo(() => {
     const dashboardPrefix = isAdmin ? 'dashboard' : 'employee-dashboard';
     return allFileNames
-        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File'].includes(name))
+        .filter(name => !name.includes('Timeline') && !['Task Assignment', 'My Projects', 'Daily Work Report', 'Uploaded File', 'Running Projects Summary'].includes(name))
         .map(name => {
             const url = getFormUrlFromFileName(name, dashboardPrefix);
             return {
@@ -250,11 +256,8 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             };
         });
   }, [isAdmin]);
-  
-  const bankTimelineCategories = btc;
-  
-  const value = useMemo(() => {
-    return { 
+
+  const value = useMemo(() => ({ 
       records, 
       addRecord, 
       addOrUpdateRecord, 
@@ -262,11 +265,9 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
       deleteRecord, 
       getRecordById, 
       error, 
-      projectManualItems,
+      projectManualItems, 
       bankTimelineCategories
-    }
-  }, [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems]);
-
+    }), [records, addRecord, addOrUpdateRecord, updateRecord, deleteRecord, getRecordById, error, projectManualItems, bankTimelineCategories]);
 
   return (
     <RecordContext.Provider value={value}>
@@ -280,5 +281,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
-    

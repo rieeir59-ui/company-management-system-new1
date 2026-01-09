@@ -3,50 +3,25 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
-import { Users, Briefcase, XCircle, Clock, CheckCircle2, Trash2, FileText, Check } from 'lucide-react';
+import { Users, Briefcase, XCircle, Clock, CheckCircle2, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { type Employee } from '@/lib/employees';
 import DashboardPageHeader from '@/components/dashboard/PageHeader';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useState, useMemo } from 'react';
-import { useFirebase } from '@/firebase/provider';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMemo, useState } from 'react';
 import { useCurrentUser } from '@/context/UserContext';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { useTasks, type Project as Task } from '@/hooks/use-tasks';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/ui/badge';
-
-const departments = [
-    { name: 'ADMIN', slug: 'admin' },
-    { name: 'HR', slug: 'hr' },
-    { name: 'SOFTWARE ENGINEER', slug: 'software-engineer' },
-    { name: 'DRAFTPERSONS', slug: 'draftpersons' },
-    { name: '3D VISULIZER', slug: '3d-visualizer' },
-    { name: 'ARCHITECTS', slug: 'architects' },
-    { name: 'FINANCE', slug: 'finance' },
-    { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
-];
 
 
 function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }) {
+    const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+
     const taskStats = useMemo(() => {
         let total = 0;
         let overdue = 0;
@@ -71,54 +46,98 @@ function EmployeeCard({ employee, tasks }: { employee: Employee, tasks: Task[] }
 
     return (
          <div className="flex flex-col">
-            <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`} className="flex-grow">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-2 border-primary/80">
-                    <CardContent className="p-4">
-                        <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
-                        <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1"><Briefcase size={14} /><span>Tasks</span></div>
-                                <span>{taskStats.total}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                 <div className="flex items-center gap-1"><XCircle size={14} className="text-red-500" /><span>Overdue</span></div>
-                                <span className="text-red-500">{taskStats.overdue}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1"><Clock size={14} className="text-blue-500" /><span>In Progress</span></div>
-                                <span className="text-blue-500">{taskStats.inProgress}</span>
-                            </div>
-                             <div className="flex justify-between items-center">
-                               <div className="flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /><span>Completed</span></div>
-                                <span className="text-green-500">{taskStats.completed}</span>
-                            </div>
+            <Card className="hover:shadow-lg transition-shadow h-full border-2 border-primary/80 relative">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More options</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                           <Link href={`/dashboard/assign-task/form?employeeId=${employee.record}`}>Assign New Task</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                             <Link href={`/dashboard/department/${employee.departments[0]}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setIsTaskDialogOpen(true)}>
+                            View Assigned Tasks
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <CardContent className="p-4">
+                    <p className="font-bold text-center">{employee.name.toUpperCase()}</p>
+                    <div className="mt-2 text-sm text-muted-foreground space-y-1">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1"><Briefcase size={14} /><span>Tasks</span></div>
+                            <span>{taskStats.total}</span>
                         </div>
-                    </CardContent>
-                </Card>
-            </Link>
+                        <div className="flex justify-between items-center">
+                             <div className="flex items-center gap-1"><XCircle size={14} className="text-red-500" /><span>Overdue</span></div>
+                            <span className="text-red-500">{taskStats.overdue}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1"><Clock size={14} className="text-blue-500" /><span>In Progress</span></div>
+                            <span className="text-blue-500">{taskStats.inProgress}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                           <div className="flex items-center gap-1"><CheckCircle2 size={14} className="text-green-500" /><span>Completed</span></div>
+                            <span className="text-green-500">{taskStats.completed}</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
              <Link href={`/employee-dashboard/my-projects?employeeId=${employee.record}`} className="mt-2 text-center text-sm text-primary hover:underline">
                 View Dashboard
             </Link>
+
+            <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Assigned Tasks for {employee.name}</DialogTitle>
+                        <DialogDescription>A list of all tasks assigned to this employee.</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Project</TableHead>
+                                    <TableHead>Task</TableHead>
+                                    <TableHead>End Date</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tasks.length > 0 ? tasks.map(task => (
+                                    <TableRow key={task.id}>
+                                        <TableCell>{task.projectName}</TableCell>
+                                        <TableCell>{task.taskName}</TableCell>
+                                        <TableCell>{task.endDate || 'N/A'}</TableCell>
+                                        <TableCell><StatusBadge status={task.status} /></TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center">No tasks assigned.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsTaskDialogOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
 export default function AssignTaskPage() {
-    const { user: currentUser, employees, employeesByDepartment } = useCurrentUser();
+    const { employeesByDepartment } = useCurrentUser();
     const image = PlaceHolderImages.find(p => p.id === 'assign-task');
-    const { firestore } = useFirebase();
-    const { toast } = useToast();
     const { tasks } = useTasks(undefined, true); // Fetch all tasks for admin view
-    const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
-
-    const canUpdateStatus = useMemo(() => {
-        if (!currentUser) return false;
-        const allowedDepts = ['architects', 'draftpersons', 'finance', 'quantity-management', 'hr'];
-        return isAdmin || currentUser.departments.some(d => allowedDepts.includes(d));
-    }, [currentUser, isAdmin]);
-
-    const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const tasksByEmployee = useMemo(() => {
         return tasks.reduce((acc, task) => {
@@ -130,61 +149,19 @@ export default function AssignTaskPage() {
             return acc;
         }, {} as Record<string, Task[]>);
     }, [tasks]);
-
-    const getEmployeeName = (employeeId: string) => {
-        const employee = employees.find(e => e.uid === employeeId);
-        return employee?.name || employeeId;
-    };
     
-    const openDeleteDialog = (task: Task) => {
-        setTaskToDelete(task);
-        setIsDeleteDialogOpen(true);
-    };
-    
-    const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
-        if (!firestore || !currentUser) {
-          toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in.' });
-          return;
-        }
+     const departments = useMemo(() => [
+        { name: 'CEO', slug: 'ceo' },
+        { name: 'ADMIN', slug: 'admin' },
+        { name: 'HR', slug: 'hr' },
+        { name: 'SOFTWARE ENGINEER', slug: 'software-engineer' },
+        { name: 'DRAFTPERSONS', slug: 'draftpersons' },
+        { name: '3D VISULIZER', slug: '3d-visualizer' },
+        { name: 'ARCHITECTS', slug: 'architects' },
+        { name: 'FINANCE', slug: 'finance' },
+        { name: 'QUANTITY MANAGEMENT', slug: 'quantity-management' },
+    ], []);
 
-        if (!canUpdateStatus) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to update task statuses.' });
-            return;
-        }
-
-        const taskRef = doc(firestore, 'tasks', task.id);
-        try {
-            await updateDoc(taskRef, { status: newStatus });
-            toast({ title: 'Status Updated', description: 'Task status has been updated.' });
-        } catch (error) {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `tasks/${task.id}`, operation: 'update', requestResourceData: { status: newStatus } }));
-        }
-    };
-    
-    const confirmDelete = () => {
-        if (!taskToDelete || !firestore) return;
-        if (!isAdmin) {
-            toast({ variant: 'destructive', title: 'Permission Denied', description: 'You do not have permission to delete tasks.' });
-            return;
-        }
-
-        deleteDoc(doc(firestore, 'tasks', taskToDelete.id))
-            .then(() => {
-                toast({ title: 'Task Deleted', description: `Task "${taskToDelete.taskName}" has been removed.` });
-                setIsDeleteDialogOpen(false);
-                setTaskToDelete(null);
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: `tasks/${taskToDelete.id}`,
-                    operation: 'delete'
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setIsDeleteDialogOpen(false);
-                setTaskToDelete(null);
-            });
-    };
-    
     return (
         <div className="space-y-8">
             <DashboardPageHeader
@@ -209,85 +186,6 @@ export default function AssignTaskPage() {
                     </div>
                 )
             })}
-             <Card>
-                <CardHeader>
-                    <CardTitle>All Assigned Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="font-semibold">Task Name</TableHead>
-                                <TableHead className="font-semibold">Assigned To</TableHead>
-                                <TableHead className="font-semibold">Assigned By</TableHead>
-                                <TableHead className="font-semibold">Status</TableHead>
-                                <TableHead className="font-semibold text-right">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {tasks.map(task => (
-                                <TableRow key={task.id} className="text-base">
-                                    <TableCell className="text-base">{task.taskName}</TableCell>
-                                    <TableCell className="text-base">{getEmployeeName(task.assignedTo)}</TableCell>
-                                    <TableCell className="text-base">{task.assignedBy}</TableCell>
-                                    <TableCell>
-                                        <Select
-                                            value={task.status}
-                                            onValueChange={(newStatus: Task['status']) => handleStatusChange(task, newStatus)}
-                                            disabled={!canUpdateStatus}
-                                        >
-                                            <SelectTrigger className="w-[180px]">
-                                                <StatusBadge status={task.status} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="not-started">Not Started</SelectItem>
-                                                <SelectItem value="in-progress">In Progress</SelectItem>
-                                                <SelectItem value="pending-approval">Pending Approval</SelectItem>
-                                                <SelectItem value="completed">Completed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex gap-1 justify-end">
-                                            {task.submissionUrl && (
-                                                <Button variant="ghost" size="icon" asChild title="View Submission">
-                                                    <a href={task.submissionUrl} target="_blank" rel="noopener noreferrer">
-                                                        <FileText className="h-4 w-4 text-blue-500" />
-                                                    </a>
-                                                </Button>
-                                            )}
-                                            {isAdmin && task.status === 'pending-approval' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleStatusChange(task, 'completed')} title="Approve Task">
-                                                    <Check className="h-4 w-4 text-green-500" />
-                                                </Button>
-                                            )}
-                                            {isAdmin && (
-                                              <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(task)} title="Delete Task">
-                                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                              </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the task "{taskToDelete?.taskName}". This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/80">Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }

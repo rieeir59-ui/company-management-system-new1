@@ -15,11 +15,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { useRecords } from '@/context/RecordContext';
 
 interface InstructionRow {
   id: number;
@@ -31,8 +27,7 @@ interface InstructionRow {
 export default function InstructionSheetPage() {
   const image = PlaceHolderImages.find(p => p.id === 'instruction-sheet');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user: currentUser } = useCurrentUser();
+  const { addRecord } = useRecords();
   
   const [rows, setRows] = useState<InstructionRow[]>(
     Array.from({ length: 23 }, (_, i) => ({ id: i + 1, what: '', how: '', why: '' }))
@@ -64,14 +59,7 @@ export default function InstructionSheetPage() {
   };
 
   const handleSave = async () => {
-    if (!firestore || !currentUser) {
-        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-        return;
-    }
-
     const dataToSave = {
-        employeeId: currentUser.record,
-        employeeName: currentUser.name,
         fileName: 'Instruction Sheet',
         projectName: header.project || 'Untitled Instruction Sheet',
         data: [{
@@ -84,22 +72,14 @@ export default function InstructionSheetPage() {
                 `To: ${header.to.join(', ')}`,
                 ...rows.map(r => `Row ${r.id}: What - ${r.what}, How - ${r.how}, Why - ${r.why}`)
             ],
-        }],
-        createdAt: serverTimestamp(),
+        }]
     };
-
-    addDoc(collection(firestore, 'savedRecords'), dataToSave)
-        .then(() => {
-            toast({ title: 'Record Saved', description: 'The instruction sheet has been saved.' });
-        })
-        .catch(serverError => {
-            const permissionError = new FirestorePermissionError({
-                path: 'savedRecords',
-                operation: 'create',
-                requestResourceData: dataToSave,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
+    
+    try {
+        await addRecord(dataToSave as any);
+    } catch (error) {
+        // This will be handled by the context's error emitter
+    }
   };
 
   const handleDownloadPdf = () => {
@@ -139,7 +119,7 @@ export default function InstructionSheetPage() {
         const isChecked = header.to.includes(recipient);
         doc.rect(checkboxX, yPos - 3, 4, 4);
         if (isChecked) {
-            doc.text('X', checkboxX + 1, yPos);
+             doc.text('X', checkboxX + 1, yPos);
         }
         doc.text(recipient, checkboxX + 6, yPos);
         checkboxX += 30;

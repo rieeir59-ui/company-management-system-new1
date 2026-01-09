@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Save, Download, ImagePlus, Trash2, ImageUp } from 'lucide-react';
+import { Save, Download, ImagePlus, Trash2, ImageUp, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -19,6 +19,9 @@ import { useFirebase } from '@/firebase/provider';
 import { Progress } from '@/components/ui/progress';
 import { useRecords } from '@/context/RecordContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import DashboardPageHeader from "@/components/dashboard/PageHeader";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
+import Link from 'next/link';
 
 type RemarksState = Record<string, string>;
 
@@ -70,7 +73,7 @@ export default function SiteVisitPage() {
     const { firebaseApp, firestore } = useFirebase();
     const storage = firebaseApp ? getStorage(firebaseApp) : null;
     const { addRecord } = useRecords();
-
+    const image = PlaceHolderImages.find(p => p.id === 'site-visit');
 
     const [basicInfo, setBasicInfo] = useState({
         siteName: '', city: '', date: new Date().toISOString().split('T')[0], visitNumber: '', architectName: ''
@@ -128,7 +131,7 @@ export default function SiteVisitPage() {
             return;
         }
 
-        const dataToSave = {
+        const dataToSave: any = {
             fileName: 'Site Visit Proforma',
             projectName: basicInfo.siteName || `Site Visit ${basicInfo.date}`,
             data: [
@@ -138,51 +141,55 @@ export default function SiteVisitPage() {
                 ...(issues ? [{ category: 'Issues Identified', items: [{ label: 'Details', value: issues }] }] : []),
                 ...(solutions ? [{ category: 'Solutions', items: [{ label: 'Details', value: solutions }] }] : []),
                 ...(recommendations ? [{ category: 'Actions & Recommendations', items: [{ label: 'Details', value: recommendations }] }] : []),
-                { category: 'Pictures', items: [] as { comment: string; url: string }[] } // Placeholder for pictures
+                { category: 'Pictures', items: [] } 
             ]
         };
 
         try {
             const savedDocRef = await addRecord(dataToSave as any);
             
-            pictures.filter(p => p.file).forEach(p => {
+            const pictureUploadPromises = pictures.filter(p => p.file).map(p => {
                 const upload = p as Required<PictureRow>;
                 const filePath = `site-visits/${Date.now()}_${upload.file.name}`;
                 const storageRef = ref(storage, filePath);
                 const uploadTask = uploadBytesResumable(storageRef, upload.file);
 
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress } : up));
-                    },
-                    (error) => {
-                        console.error("Upload failed:", error);
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
-                    },
-                    async () => {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
-                        
-                        if (savedDocRef && firestore) {
-                            const newPictureData = { comment: upload.comment, url: downloadURL };
-                            const currentDoc = await getDoc(savedDocRef);
-                            if (currentDoc.exists()) {
-                                const docData = currentDoc.data().data || [];
-                                const pictureSection = docData.find((s:any) => s.category === 'Pictures');
-                                if (pictureSection) {
-                                    pictureSection.items.push(newPictureData);
-                                    await updateDoc(savedDocRef, { data: docData });
-                                }
-                            }
+                return new Promise((resolve, reject) => {
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: true, progress } : up));
+                        },
+                        (error) => {
+                            console.error("Upload failed:", error);
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, error: 'Upload failed' } : up));
+                            reject(error);
+                        },
+                        async () => {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            setPictures(prev => prev.map(up => up.id === upload.id ? { ...up, isUploading: false, isUploaded: true, downloadURL } : up));
+                            resolve({ comment: upload.comment, url: downloadURL });
                         }
-                    }
-                );
+                    );
+                });
             });
 
+            const uploadedPictures = await Promise.all(pictureUploadPromises);
+
+            if (savedDocRef && firestore && uploadedPictures.length > 0) {
+                 const currentDoc = await getDoc(savedDocRef);
+                if (currentDoc.exists()) {
+                    const docData = currentDoc.data().data || [];
+                    const pictureSection = docData.find((s:any) => s.category === 'Pictures');
+                    if (pictureSection) {
+                        pictureSection.items = uploadedPictures;
+                        await updateDoc(savedDocRef, { data: docData });
+                    }
+                }
+            }
         } catch (error) {
             console.error("An error occurred during save:", error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the initial record.' });
+            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
         }
     };
     
@@ -313,75 +320,86 @@ export default function SiteVisitPage() {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma (Architect Visit)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-                <div className="p-6 border rounded-lg space-y-4">
-                    <h2 className="text-xl font-bold mb-4">Basic Information</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input placeholder="Site / Branch Name" name="siteName" value={basicInfo.siteName} onChange={handleBasicInfoChange} />
-                        <Input placeholder="City" name="city" value={basicInfo.city} onChange={handleBasicInfoChange} />
-                        <Input type="date" name="date" value={basicInfo.date} onChange={handleBasicInfoChange} />
-                        <Input placeholder="Number of visits (e.g., 1, 2, 3)" name="visitNumber" value={basicInfo.visitNumber} onChange={handleBasicInfoChange} />
-                        <Input placeholder="Architect Name" name="architectName" value={basicInfo.architectName} onChange={handleBasicInfoChange} />
+        <div className="space-y-8">
+            <DashboardPageHeader
+                title="Site Visit"
+                description="Conduct and record a detailed site visit."
+                imageUrl={image?.imageUrl || ''}
+                imageHint={image?.imageHint || ''}
+            />
+            <Card>
+                 <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-center font-headline text-2xl text-primary">Detailed Site Visit Proforma (Architect Visit)</CardTitle>
+                    <Link href="/employee-dashboard" passHref>
+                        <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
+                    </Link>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div className="p-6 border rounded-lg space-y-4">
+                        <h2 className="text-xl font-bold mb-4">Basic Information</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input placeholder="Site / Branch Name" name="siteName" value={basicInfo.siteName} onChange={handleBasicInfoChange} />
+                            <Input placeholder="City" name="city" value={basicInfo.city} onChange={handleBasicInfoChange} />
+                            <Input type="date" name="date" value={basicInfo.date} onChange={handleBasicInfoChange} />
+                            <Input placeholder="Number of visits (e.g., 1, 2, 3)" name="visitNumber" value={basicInfo.visitNumber} onChange={handleBasicInfoChange} />
+                            <Input placeholder="Architect Name" name="architectName" value={basicInfo.architectName} onChange={handleBasicInfoChange} />
+                        </div>
                     </div>
-                </div>
 
-                {Object.entries(checklistSections).map(([title, items]) => (
-                    <ChecklistSection 
-                      key={title} 
-                      title={title} 
-                      items={items} 
-                      checklistState={checklistState} 
-                      onCheckboxChange={handleCheckboxChange} 
-                      remarksState={remarksState}
-                      onRemarkChange={handleRemarkChange}
-                    />
-                ))}
+                    {Object.entries(checklistSections).map(([title, items]) => (
+                        <ChecklistSection 
+                          key={title} 
+                          title={title} 
+                          items={items} 
+                          checklistState={checklistState} 
+                          onCheckboxChange={handleCheckboxChange} 
+                          remarksState={remarksState}
+                          onRemarkChange={handleRemarkChange}
+                        />
+                    ))}
 
-                <div className="space-y-4">
-                    <div><Label className="font-semibold text-lg">8. Observations</Label><Textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={4} /></div>
-                    <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Textarea value={issues} onChange={(e) => setIssues(e.target.value)} rows={4} /></div>
-                    <div><Label className="font-semibold text-lg">10. Solutions</Label><Textarea value={solutions} onChange={(e) => setSolutions(e.target.value)} rows={4} /></div>
-                    <div><Label className="font-semibold text-lg">11. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
-                </div>
-
-                <div>
-                    <h3 className="font-semibold text-lg mb-2">12. Pictures with Comments</h3>
                     <div className="space-y-4">
-                        {pictures.map((pic, index) => (
-                            <div key={pic.id} className="flex flex-col gap-2 p-4 border rounded-lg">
-                                <Label htmlFor={`pic-upload-${pic.id}`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted">
-                                    {pic.previewUrl ? (
-                                        <Image src={pic.previewUrl} alt={`Preview ${index + 1}`} width={100} height={100} className="h-full w-auto object-contain" />
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <ImageUp className="w-8 h-8 mb-2 text-gray-500" />
-                                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                            <p className="text-xs text-gray-500">JPG, PNG</p>
-                                        </div>
-                                    )}
-                                    <Input id={`pic-upload-${pic.id}`} type="file" accept="image/jpeg, image/png" className="hidden" onChange={e => handlePictureFileChange(pic.id, e)} />
-                                </Label>
-                                {pic.isUploading && <Progress value={pic.progress} />}
-                                {pic.error && <p className="text-destructive text-sm mt-1">{pic.error}</p>}
-                                <div className="flex items-center gap-2">
-                                    <Textarea placeholder="Comment" value={pic.comment} onChange={e => handlePictureCommentChange(pic.id, e.target.value)} rows={1}/>
-                                    <Button variant="destructive" size="icon" onClick={() => removePictureRow(pic.id)}><Trash2 className="h-4 w-4" /></Button>
-                                </div>
-                            </div>
-                        ))}
+                        <div><Label className="font-semibold text-lg">8. Observations</Label><Textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={4} /></div>
+                        <div><Label className="font-semibold text-lg">9. Issues Identified</Label><Textarea value={issues} onChange={(e) => setIssues(e.target.value)} rows={4} /></div>
+                        <div><Label className="font-semibold text-lg">10. Solutions</Label><Textarea value={solutions} onChange={(e) => setSolutions(e.target.value)} rows={4} /></div>
+                        <div><Label className="font-semibold text-lg">11. Actions & Recommendations</Label><Textarea value={recommendations} onChange={(e) => setRecommendations(e.target.value)} rows={4} /></div>
                     </div>
-                    <Button onClick={addPictureRow} className="mt-2" size="sm" variant="outline"><ImagePlus className="mr-2 h-4 w-4" />Add Picture</Button>
-                </div>
 
-                <div className="flex justify-end gap-4 mt-8">
-                    <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
-                    <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
-                </div>
-            </CardContent>
-        </Card>
+                    <div>
+                        <h3 className="font-semibold text-lg mb-2">12. Pictures with Comments</h3>
+                        <div className="space-y-4">
+                            {pictures.map((pic, index) => (
+                                <div key={pic.id} className="flex flex-col gap-2 p-4 border rounded-lg">
+                                    <Label htmlFor={`pic-upload-${pic.id}`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted">
+                                        {pic.previewUrl ? (
+                                            <Image src={pic.previewUrl} alt={`Preview ${index + 1}`} width={100} height={100} className="h-full w-auto object-contain" />
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <ImageUp className="w-8 h-8 mb-2 text-gray-500" />
+                                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                                <p className="text-xs text-gray-500">JPG, PNG</p>
+                                            </div>
+                                        )}
+                                        <Input id={`pic-upload-${pic.id}`} type="file" accept="image/jpeg, image/png" className="hidden" onChange={e => handlePictureFileChange(pic.id, e)} />
+                                    </Label>
+                                    {pic.isUploading && <Progress value={pic.progress} />}
+                                    {pic.error && <p className="text-destructive text-sm mt-1">{pic.error}</p>}
+                                    <div className="flex items-center gap-2">
+                                        <Textarea placeholder="Comment" value={pic.comment} onChange={e => handlePictureCommentChange(pic.id, e.target.value)} rows={1}/>
+                                        <Button variant="destructive" size="icon" onClick={() => removePictureRow(pic.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <Button onClick={addPictureRow} className="mt-2" size="sm" variant="outline"><ImagePlus className="mr-2 h-4 w-4" />Add Picture</Button>
+                    </div>
+
+                    <div className="flex justify-end gap-4 mt-8">
+                        <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save Record</Button>
+                        <Button onClick={handleDownload}><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

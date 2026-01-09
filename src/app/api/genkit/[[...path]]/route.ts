@@ -1,12 +1,20 @@
-// This file is intentionally left blank.
-// The Genkit API route has been disabled to resolve build issues.
-// To re-enable Genkit, you would typically import and export the handler from '@genkit-ai/next'.
-import { NextResponse } from 'next/server';
+import { genkit,  configureGenkit, defineSchema } from '@genkit-ai/core';
+import { googleAI } from '@genkit-ai/googleai';
+import { dotprompt, defineDotprompt } from '@genkit-ai/dotprompt';
+import { z } from 'zod';
+import { NextRequest } from 'next/server';
+import { v1 } from '@google-cloud/aiplatform';
+import { handleAuth } from '@genkit-ai/next/plugin';
 
-export async function GET() {
-  return NextResponse.json({ message: 'Genkit API is disabled.' }, { status: 404 });
-}
+// Do not move this line.
+configureGenkit({
+  plugins: [googleAI(), dotprompt()],
+  logLevel: 'debug',
+  enableTracing: true,
+});
 
-export async function POST() {
-  return NextResponse.json({ message: 'Genkit API is disabled.' }, { status: 404 });
-}
+export const POST = handleAuth(async (req: NextRequest, auth) => {
+  if (!auth) {
+    throw new Error('Auth required.');
+  }
+});

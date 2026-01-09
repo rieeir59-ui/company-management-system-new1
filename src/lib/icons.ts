@@ -40,6 +40,7 @@ import {
   type LucideIcon,
   FolderOpen,
   ClipboardList,
+  UploadCloud,
   CalendarOff,
 } from 'lucide-react';
 
@@ -72,7 +73,10 @@ export const fileNameToIconMap: Record<string, LucideIcon> = {
     "Site Survey Report": FileSearch,
     "Uploaded File": FileUp,
     "Daily Work Report": ClipboardList,
+    "Site Survey": Compass,
+    "Upload": UploadCloud,
     "Leave Request Form": CalendarOff,
+    "Leave Application": CalendarOff,
 };
 
 export const getIconForFile = (fileName: string): LucideIcon => {

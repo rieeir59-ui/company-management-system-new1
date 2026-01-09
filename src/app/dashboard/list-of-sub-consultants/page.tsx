@@ -73,7 +73,7 @@ export default function ListOfSubConsultantsPage() {
         }
 
         const dataToSave = {
-            employeeId: currentUser.record,
+            employeeId: currentUser.uid,
             employeeName: currentUser.name,
             fileName: 'List of Sub-Consultants',
             projectName: recordName || 'Untitled Sub-Consultant List',

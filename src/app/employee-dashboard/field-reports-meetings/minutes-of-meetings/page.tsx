@@ -68,6 +68,8 @@ export default function MinutesOfMeetingsPage() {
     const handleDownloadPdf = () => {
         const doc = new jsPDF();
         let yPos = 20;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
 
         const getVal = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value || '';
 
@@ -90,7 +92,7 @@ export default function MinutesOfMeetingsPage() {
         yPos = (doc as any).lastAutoTable.finalY + 5;
         
         const addTextAreaContent = (label: string, id: string) => {
-            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
             doc.setFont('helvetica', 'bold');
             doc.text(label, 14, yPos);
             yPos += 6;
@@ -140,6 +142,14 @@ export default function MinutesOfMeetingsPage() {
         addTextAreaContent('Observers:', 'observers');
         addTextAreaContent('Resource Persons:', 'resource_persons');
         addTextAreaContent('Special Notes:', 'special_notes');
+        
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.text(footerText, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
+        }
+
 
         doc.save('minutes-of-meeting.pdf');
         toast({ title: 'Download Started', description: 'Your PDF is being generated.' });

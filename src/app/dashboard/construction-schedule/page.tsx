@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,11 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRecords } from '@/context/RecordContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 interface TaskRow {
   id: number;
@@ -49,8 +48,7 @@ const initialRow: Omit<TaskRow, 'id'> = {
 export default function Page() {
   const image = PlaceHolderImages.find(p => p.id === 'construction-schedule');
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user: currentUser } = useCurrentUser();
+  const { addRecord } = useRecords();
   
   const [headerState, setHeaderState] = useState({
     client: '',
@@ -82,32 +80,23 @@ export default function Page() {
   };
 
   const handleSave = async () => {
-    if (!firestore || !currentUser) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-      return;
-    }
-    
     const dataToSave = {
-      category: 'Construction Activity Schedule',
-      items: [
-        JSON.stringify(headerState),
-        ...rows.map(row => JSON.stringify(row))
-      ]
+        fileName: 'Construction Activity Schedule',
+        projectName: headerState.title || 'Untitled Schedule',
+        data: [{
+            category: 'Construction Activity Schedule',
+            items: [
+                JSON.stringify(headerState),
+                ...rows.map(row => JSON.stringify(row))
+            ]
+        }]
     };
 
     try {
-      await addDoc(collection(firestore, 'savedRecords'), {
-        employeeId: currentUser.record,
-        employeeName: currentUser.name,
-        fileName: 'Construction Activity Schedule',
-        projectName: headerState.title || 'Untitled Schedule',
-        data: [dataToSave],
-        createdAt: serverTimestamp(),
-      });
-      toast({ title: 'Record Saved', description: 'The construction schedule has been saved.' });
+        await addRecord(dataToSave as any);
     } catch (error) {
-      console.error("Error saving document: ", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not save the record.' });
+        // Error is handled by the context's toast
+        console.error("Save failed in component:", error);
     }
   };
 
@@ -222,7 +211,7 @@ export default function Page() {
                 {rows.map(row => (
                   <TableRow key={row.id}>
                     <TableCell><Input value={row.code} onChange={e => handleRowChange(row.id, 'code', e.target.value)} /></TableCell>
-                    <TableCell><Textarea value={row.task} onChange={e => handleRowChange(row.id, 'task', e.target.value)} rows={1}/></TableCell>
+                    <TableCell><Textarea value={row.task} onChange={e => handleRowChange(row.id, 'task', e.target.value)} rows={1} className="min-w-[250px]" /></TableCell>
                     <TableCell><Input value={row.duration} onChange={e => handleRowChange(row.id, 'duration', e.target.value)} /></TableCell>
                     <TableCell><Input type="date" value={row.planStart} onChange={e => handleRowChange(row.id, 'planStart', e.target.value)} /></TableCell>
                     <TableCell><Input type="date" value={row.planFinish} onChange={e => handleRowChange(row.id, 'planFinish', e.target.value)} /></TableCell>

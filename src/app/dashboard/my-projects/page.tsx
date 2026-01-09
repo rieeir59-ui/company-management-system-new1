@@ -60,7 +60,7 @@ type ManualEntry = {
     id: number;
     projectName: string;
     detail: string;
-    status: 'Not Started' | 'In Progress' | 'Completed';
+    status: 'not-started' | 'in-progress' | 'completed';
     startDate: string;
     endDate: string;
 };
@@ -70,7 +70,11 @@ function MyProjectsComponent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { firestore, firebaseApp } = useFirebase();
+<<<<<<< HEAD
+  const { addRecord, updateTaskStatus } = useRecords();
+=======
   const { addOrUpdateRecord, records } = useRecords();
+>>>>>>> origin/main
   const storage = firebaseApp ? getStorage(firebaseApp) : null;
   const isAdmin = currentUser?.departments.some(d => ['admin', 'ceo', 'software-engineer'].includes(d));
 
@@ -137,7 +141,6 @@ function MyProjectsComponent() {
             isManual: false,
         }));
         const manual = manualEntries.map(e => ({ ...e, isManual: true }));
-        // Ensure manual entries have all fields to match Task type for simplicity in table
         const normalizedManual = manual.map(m => ({
             ...m,
             taskName: m.detail,
@@ -152,9 +155,9 @@ function MyProjectsComponent() {
   const projectStats = useMemo(() => {
       const allItems = combinedSchedule;
       const total = allItems.length;
-      const completed = allItems.filter(p => p.status === 'completed' || p.status === 'Completed').length;
-      const inProgress = allItems.filter(p => p.status === 'in-progress' || p.status === 'In Progress' || p.status === 'pending-approval').length;
-      const notStarted = allItems.filter(p => p.status === 'not-started' || p.status === 'Not Started').length;
+      const completed = allItems.filter(p => p.status === 'completed').length;
+      const inProgress = allItems.filter(p => p.status === 'in-progress' || p.status === 'pending-approval').length;
+      const notStarted = allItems.filter(p => p.status === 'not-started').length;
       return { total, completed, inProgress, notStarted };
   }, [combinedSchedule]);
     
@@ -248,6 +251,8 @@ function MyProjectsComponent() {
             }
         );
     };
+<<<<<<< HEAD
+=======
 
     const handleStatusChange = async (task: Task, newStatus: Task['status']) => {
         if (!firestore || !currentUser) return;
@@ -275,6 +280,7 @@ function MyProjectsComponent() {
             errorEmitter.emit('permission-error', permissionError);
         }
     };
+>>>>>>> origin/main
   
     const openViewDialog = (task: Task) => {
         setViewingTask(task);
@@ -334,13 +340,13 @@ function MyProjectsComponent() {
             id: Date.now(),
             projectName: '',
             detail: '',
-            status: 'Not Started',
+            status: 'not-started',
             startDate: '',
             endDate: '',
         }]);
     };
 
-    const handleManualEntryChange = (id: number, field: keyof ManualEntry, value: string) => {
+    const handleManualEntryChange = (id: number, field: keyof ManualEntry, value: any) => {
         setManualEntries(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
     };
 
@@ -424,6 +430,8 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
+<<<<<<< HEAD
+=======
                 <CardTitle>{canEdit && currentUser?.uid === displayUser.uid ? "My" : `${displayUser.name}'s`} Assigned Tasks</CardTitle>
                 <CardDescription>A list of tasks assigned by the administration.</CardDescription>
             </CardHeader>
@@ -499,8 +507,9 @@ function MyProjectsComponent() {
 
         <Card>
             <CardHeader>
+>>>>>>> origin/main
                 <CardTitle>My Project Schedule</CardTitle>
-                <CardDescription>Manually add and track your own project tasks and schedules.</CardDescription>
+                <CardDescription>Track assigned tasks and add your own manual entries.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Table>
@@ -522,16 +531,28 @@ function MyProjectsComponent() {
                                 <TableCell>
                                   <Select
                                     value={item.status}
+<<<<<<< HEAD
+                                    onValueChange={(newStatus: any) => item.isManual ? handleManualEntryChange(item.id as number, 'status', newStatus) : updateTaskStatus(item.id, newStatus)}
+                                    disabled={!canEdit || item.status === 'pending-approval'}
+=======
                                     onValueChange={(val: ManualEntry['status']) => handleManualEntryChange(item.id, 'status', val)}
                                     disabled={!canEdit}
+>>>>>>> origin/main
                                   >
                                     <SelectTrigger className="w-[180px]">
                                       <StatusBadge status={item.status} />
                                     </SelectTrigger>
                                     <SelectContent>
+<<<<<<< HEAD
+                                      <SelectItem value="not-started">Not Started</SelectItem>
+                                      <SelectItem value="in-progress">In Progress</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                      {item.status === 'pending-approval' && <SelectItem value="pending-approval" disabled>Pending Approval</SelectItem>}
+=======
                                       <SelectItem value="Not Started">Not Started</SelectItem>
                                       <SelectItem value="In Progress">In Progress</SelectItem>
                                       <SelectItem value="Completed">Completed</SelectItem>
+>>>>>>> origin/main
                                     </SelectContent>
                                   </Select>
                                 </TableCell>
@@ -548,6 +569,11 @@ function MyProjectsComponent() {
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </>
+                                        )}
+                                        {!item.isManual && (
+                                            <Button variant="ghost" size="icon" onClick={() => openSubmitDialog(item as Task)} disabled={!canEdit}>
+                                                <Upload className="h-4 w-4" />
+                                            </Button>
                                         )}
                                     </div>
                                 </TableCell>
@@ -601,9 +627,9 @@ function MyProjectsComponent() {
                         <Select value={editingEntry.status} onValueChange={(val: ManualEntry['status']) => setEditingEntry({...editingEntry, status: val})}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Not Started">Not Started</SelectItem>
-                                <SelectItem value="In Progress">In Progress</SelectItem>
-                                <SelectItem value="Completed">Completed</SelectItem>
+                                <SelectItem value="not-started">Not Started</SelectItem>
+                                <SelectItem value="in-progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
                             </SelectContent>
                         </Select>
                         <Input type="date" value={editingEntry.startDate} onChange={e => setEditingEntry({...editingEntry, startDate: e.target.value})} />

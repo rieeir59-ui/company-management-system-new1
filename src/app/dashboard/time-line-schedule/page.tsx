@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -87,7 +88,7 @@ const initialTasks: Task[] = [
 
 export default function TimelinePage() {
     const { toast } = useToast();
-    const { addRecord } = useRecords();
+    const { addRecord, records, updateRecord } = useRecords();
     
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [project, setProject] = useState('');
@@ -148,7 +149,13 @@ export default function TimelinePage() {
             }],
         };
         
-        await addRecord(dataToSave as any);
+        const existingRecord = records.find(r => r.fileName === 'Timeline Schedule' && r.projectName === dataToSave.projectName);
+
+        if(existingRecord) {
+            updateRecord(existingRecord.id, dataToSave);
+        } else {
+            await addRecord(dataToSave as any);
+        }
     };
     
     const handleDownloadPdf = () => {

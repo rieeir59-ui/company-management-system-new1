@@ -12,9 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import Image from 'next/image';
-import { useFirebase } from '@/firebase/provider';
 import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 
 interface Personnel {
   id: number;
@@ -36,8 +35,8 @@ interface jsPDFWithAutoTable extends jsPDF {
 
 export default function SiteSurveyReportPage() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
     const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
 
     const [bankName, setBankName] = useState('HABIB BANK LIMITED');
     const [branchName, setBranchName] = useState('EXPO CENTER BRANCH, LAHORE');
@@ -84,14 +83,7 @@ export default function SiteSurveyReportPage() {
 
 
     const handleSave = async () => {
-        if (!currentUser || !firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Site Survey Report',
             projectName: branchName || `Survey Report ${reportDate}`,
             data: [
@@ -99,17 +91,14 @@ export default function SiteSurveyReportPage() {
                 { category: 'Personnel Present', items: personnel.map(p => `${p.name} (${p.designation})`) },
                 { category: 'Observations', items: [observations] },
                 { category: 'Recommendations', items: [recommendations] },
-                { category: 'Pictures', items: pictures.map(p => `Image: ${p.previewUrl}, Description: ${p.description}`) }
+                { category: 'Pictures', items: pictures.map(p => `Description: ${p.description}`) }
             ],
-            createdAt: serverTimestamp(),
         };
-
+        
         try {
-            await addDoc(collection(firestore, 'savedRecords'), dataToSave);
-            toast({ title: "Record Saved", description: "The site survey report has been saved." });
+            await addRecord(dataToSave as any);
         } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the record.' });
+            // error is handled by the context's toast
         }
     };
 
@@ -120,6 +109,19 @@ export default function SiteSurveyReportPage() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 14;
         let yPos = 20;
+
+        const addTextSection = (title: string, text: string) => {
+            if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text(title.toUpperCase(), margin, yPos);
+            yPos += 7;
+            doc.setFont('helvetica', 'normal');
+            const lines = doc.splitTextToSize(text, pageWidth - margin * 2);
+            doc.text(lines, margin, yPos);
+            yPos += lines.length * 5 + 10;
+        };
+
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
@@ -135,13 +137,8 @@ export default function SiteSurveyReportPage() {
         doc.text(reportDate, pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
-        doc.setFont('helvetica', 'bold');
-        doc.text('SITE SURVEY DATE:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        doc.text(`• ${surveyDate}`, margin + 5, yPos);
-        yPos += 12;
-
+        addTextSection('Site Survey Date:', `• ${surveyDate}`);
+        
         doc.setFont('helvetica', 'bold');
         doc.text('PERSONNEL PRESENT DURING SITE VISIT:', margin, yPos);
         yPos += 7;
@@ -160,7 +157,7 @@ export default function SiteSurveyReportPage() {
         
         for (const pic of pictures) {
             if (pic.previewUrl && pic.file) {
-                 if (yPos > 180) { // Check if space is enough for image + text
+                 if (yPos > pageHeight - 80) { // Check if space is enough for image + text
                     doc.addPage();
                     yPos = 20;
                 }
@@ -187,24 +184,21 @@ export default function SiteSurveyReportPage() {
             }
         }
         
-        if (yPos > 240) { doc.addPage(); yPos = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text('OBSERVATIONS AND REMARKS BY KS & ASSOCIATES:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        const obsLines = doc.splitTextToSize(observations, pageWidth - (margin * 2));
-        doc.text(obsLines, margin, yPos);
-        yPos += obsLines.length * 5 + 10;
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+        addTextSection('Observations and Remarks by KS & Associates:', observations);
         
-        if (yPos > 240) { doc.addPage(); yPos = 20; }
-        doc.setFont('helvetica', 'bold');
-        doc.text('RECOMMENDATION:', margin, yPos);
-        yPos += 7;
-        doc.setFont('helvetica', 'normal');
-        const recLines = doc.splitTextToSize(recommendations, pageWidth - (margin * 2));
-        doc.text(recLines, margin, yPos);
-        yPos += recLines.length * 5 + 10;
+        if (yPos > pageHeight - 50) { doc.addPage(); yPos = 20; }
+        addTextSection('Recommendation:', recommendations);
+        
+        if (yPos > pageHeight - 40) { doc.addPage(); yPos = 20; }
+        doc.text('Signatures:', margin, yPos);
+        yPos += 15;
+        doc.text('____________________', margin, yPos);
+        doc.text('____________________', margin + 80, yPos);
+        yPos += 5;
+        doc.text('Architect', margin + 15, yPos);
+        doc.text('KS & Associates', margin + 90, yPos);
+
 
         const pageCount = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
@@ -284,6 +278,20 @@ export default function SiteSurveyReportPage() {
                     <Textarea value={recommendations} onChange={e => setRecommendations(e.target.value)} rows={5} />
                 </div>
 
+                <div className="pt-8">
+                    <Label className="font-bold text-lg">Signatures:</Label>
+                    <div className="flex justify-around items-center mt-12">
+                        <div className="text-center">
+                            <div className="border-b-2 border-foreground w-48"></div>
+                            <p className="mt-2">Architect</p>
+                        </div>
+                         <div className="text-center">
+                            <div className="border-b-2 border-foreground w-48"></div>
+                            <p className="mt-2">KS & Associates</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex justify-end gap-4 pt-8">
                     <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" />Save</Button>
                     <Button onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4" />Download PDF</Button>
@@ -292,4 +300,3 @@ export default function SiteSurveyReportPage() {
         </Card>
     );
 }
-

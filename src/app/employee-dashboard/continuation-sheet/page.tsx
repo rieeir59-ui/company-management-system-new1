@@ -12,9 +12,7 @@ import { Save, Download, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useFirebase } from '@/firebase/provider';
-import { useCurrentUser } from '@/context/UserContext';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useRecords } from '@/context/RecordContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
@@ -26,8 +24,6 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 interface jsPDFWithAutoTable extends jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -55,8 +51,7 @@ const initialRow: Omit<Row, 'id'> = {
 export default function ContinuationSheetPage() {
     const image = PlaceHolderImages.find(p => p.id === 'continuation-sheet');
     const { toast } = useToast();
-    const { firestore } = useFirebase();
-    const { user: currentUser } = useCurrentUser();
+    const { addRecord } = useRecords();
     
     const [rows, setRows] = useState<Row[]>([{ id: 1, ...initialRow }]);
     const [applicationNumber, setApplicationNumber] = useState('');
@@ -95,42 +90,28 @@ export default function ContinuationSheetPage() {
     }, [rows]);
 
     const handleSave = async () => {
-        if (!firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
-            return;
-        }
-
         const dataToSave = {
-            employeeId: currentUser.record,
-            employeeName: currentUser.name,
             fileName: 'Continuation Sheet',
-            projectName: projectName,
+            projectName: projectName || 'Untitled Continuation Sheet',
             data: [{
                 category: 'Continuation Sheet',
                 items: rows.map(row => JSON.stringify(row))
             }],
-            createdAt: serverTimestamp(),
         };
         
-        addDoc(collection(firestore, 'savedRecords'), dataToSave)
-            .then(() => {
-                toast({ title: 'Record Saved', description: 'The continuation sheet has been saved.' });
-                setIsSaveOpen(false);
-            })
-            .catch(serverError => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'savedRecords',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
+        try {
+            await addRecord(dataToSave as any);
+            setIsSaveOpen(false);
+        } catch (error) {
+            // Error is handled by context's toast
+            console.error("Save failed in component:", error);
+        }
     };
 
     const handleDownloadPdf = () => {
         const doc = new jsPDF({ orientation: 'landscape' }) as jsPDFWithAutoTable;
         const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522";
+        const footerText = "M/S Isbah Hassan & Associates Y-101 (Com), Phase-III, DHA Lahore Cantt 0321-6995378, 042-35692522, info@isbahhassan.com, www.isbahhassan.com";
         let yPos = 15;
 
         doc.setFontSize(14);
@@ -244,10 +225,10 @@ export default function ContinuationSheetPage() {
                                         <TableRow key={row.id}>
                                             <TableCell><Input value={row.itemNo} onChange={e => handleRowChange(row.id, 'itemNo', e.target.value)} /></TableCell>
                                             <TableCell><Input value={row.description} onChange={e => handleRowChange(row.id, 'description', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.scheduledValue} onChange={e => handleRowChange(row.id, 'scheduledValue', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.fromPrevious} onChange={e => handleRowChange(row.id, 'fromPrevious', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.thisPeriod} onChange={e => handleRowChange(row.id, 'thisPeriod', e.target.value)} /></TableCell>
-                                            <TableCell><Input type="number" value={row.materialsStored} onChange={e => handleRowChange(row.id, 'materialsStored', e.target.value)} /></TableCell>
+                                            <TableCell><Input type="number" value={row.scheduledValue} onChange={e => handleRowChange(row.id, 'scheduledValue', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.fromPrevious} onChange={e => handleRowChange(row.id, 'fromPrevious', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.thisPeriod} onChange={e => handleRowChange(row.id, 'thisPeriod', Number(e.target.value))} /></TableCell>
+                                            <TableCell><Input type="number" value={row.materialsStored} onChange={e => handleRowChange(row.id, 'materialsStored', Number(e.target.value))} /></TableCell>
                                             <TableCell>{G.toFixed(2)}</TableCell>
                                             <TableCell>{H}</TableCell>
                                             <TableCell>{I.toFixed(2)}</TableCell>

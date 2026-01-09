@@ -10,16 +10,15 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  // useMemo with an empty dependency array ensures this runs only once on the client-side after mount.
+  // This is a safer way to initialize client-side libraries in Next.js App Router.
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
-    // This check ensures it does not run on the server.
     if (typeof window !== 'undefined') {
       return initializeFirebase();
     }
-    // On the server, return a non-functional structure to avoid errors.
     // @ts-ignore
     return { firebaseApp: null, firestore: null, auth: null, storage: null };
-  }, []);
+  }, []); 
 
   return (
     <FirebaseProvider services={firebaseServices}>

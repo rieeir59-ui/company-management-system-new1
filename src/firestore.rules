@@ -8,17 +8,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper: Check if user is an admin
+    // Helper: Check if user is admin
     function isAdmin() {
-      // Use exists for performance and safety over get.
+      // Use `exists` for performance and safety over `get`.
       return isLoggedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
              && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departments.hasAny(['admin','ceo','software-engineer']);
     }
 
     // Helper: Check if the user is the one the task is assigned to
-    function isAssignee() {
+    function isAssignee(taskId) {
       return request.auth != null &&
-             resource.data.assignedTo == request.auth.uid;
+             get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedTo == request.auth.uid;
     }
 
     // USERS collection
@@ -29,10 +29,24 @@ service cloud.firestore {
 
     // SAVED RECORDS collection
     match /savedRecords/{recordId} {
-      allow get, list: if isLoggedIn();
+      allow read: if isLoggedIn(); 
       allow create: if isLoggedIn() && request.resource.data.employeeId == request.auth.uid;
+<<<<<<< HEAD
+      allow update, delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
+    }
+
+    // TASKS collection
+    match /tasks/{taskId} {
+      allow read: if isLoggedIn();
+      allow create: if isAdmin();
+      // Admins or the assigned user can update tasks
+      allow update: if isAdmin() || isAssignee(taskId);
+      // Only admins can delete tasks.
+      allow delete: if isAdmin();
+=======
       allow update: if isAdmin() || (isLoggedIn() && (resource.data.employeeId == request.auth.uid || request.resource.data.employeeId == request.auth.uid));
       allow delete: if isAdmin() || (isLoggedIn() && resource.data.employeeId == request.auth.uid);
+>>>>>>> origin/main
     }
 
     // UPLOADED FILES collection
