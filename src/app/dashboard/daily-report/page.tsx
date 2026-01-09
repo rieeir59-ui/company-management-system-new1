@@ -442,58 +442,6 @@ function DailyReportPageComponent() {
         <CardDescription className="text-center">Manage your daily work entries and generate reports.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {isAdmin && (
-            <Card className="p-4 bg-background border-primary/30 shadow-md">
-                <CardHeader className="p-2">
-                    <CardTitle className="text-xl flex items-center gap-2">
-                        <User /> Admin Controls
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2">
-                    <Label htmlFor="employee-select" className="font-semibold">View Report For:</Label>
-                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={comboboxOpen}
-                            className="w-full justify-between mt-2"
-                            >
-                            {selectedEmployee
-                                ? selectedEmployee.name
-                                : "Select an employee"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search employee..." />
-                                <CommandList>
-                                    <CommandEmpty>No employee found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {employees.map((employee) => (
-                                            <CommandItem
-                                            key={employee.uid}
-                                            value={employee.name}
-                                            onSelect={() => handleEmployeeChange(employee.uid)}
-                                            >
-                                            <Check
-                                                className={cn(
-                                                "mr-2 h-4 w-4",
-                                                selectedEmployeeId === employee.uid ? "opacity-100" : "opacity-0"
-                                                )}
-                                            />
-                                            {employee.name}
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
-                </CardContent>
-            </Card>
-        )}
         <Card className="p-4 bg-muted/50">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div className="space-y-2 p-4 border rounded-md">
@@ -772,4 +720,3 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
-
