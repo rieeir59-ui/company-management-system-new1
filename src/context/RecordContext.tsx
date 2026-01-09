@@ -169,16 +169,16 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
-                where('employeeId', '==', recordData.employeeId)
+                where('employeeId', '==', currentUser.uid)
             );
         }
     
         const querySnapshot = await getDocs(q);
     
         const employeeInfo = {
-            employeeId: recordData.employeeId || currentUser.uid,
-            employeeName: recordData.employeeName || currentUser.name,
-            employeeRecord: recordData.employeeRecord || currentUser.record,
+            employeeId: currentUser.uid,
+            employeeName: currentUser.name,
+            employeeRecord: currentUser.record,
         };
 
         if (!querySnapshot.empty) {

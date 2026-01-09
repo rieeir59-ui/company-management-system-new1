@@ -43,7 +43,9 @@ export const useFirebase = (): FirebaseContextType => {
   if (!context.areServicesAvailable) {
     // This could be triggered in a server component trying to access the context.
     // We throw a more specific error to guide developers.
-    throw new Error('Firebase services are not available. Ensure useFirebase is called within a client component wrapped by FirebaseProvider.');
+    if (typeof window === 'undefined') {
+        throw new Error('useFirebase must be used on the client side. Make sure the component using this hook has a "use client" directive.');
+    }
   }
   return context;
 };
