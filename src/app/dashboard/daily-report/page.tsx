@@ -697,7 +697,3 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
-
-    
-
-    
