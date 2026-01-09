@@ -39,6 +39,53 @@ export interface ProjectRow {
   siteVisitEnd?: string;
 }
 
+export const bankTableHeaders = [
+    { name: 'Sr.No', span: 1, rowSpan: 2 },
+    { name: 'Project Name', span: 1, rowSpan: 2 },
+    { name: 'Area in Sft', span: 1, rowSpan: 2 },
+    { name: 'Project Holder', span: 1, rowSpan: 2 },
+    { name: 'Allocation Date / RFP', span: 1, rowSpan: 2 },
+    { name: 'Site Survey', span: 2, rowSpan: 1 },
+    { name: 'Contract', span: 1, rowSpan: 2 },
+    { name: 'Head Count / Requirement', span: 1, rowSpan: 2 },
+    { name: 'Proposal / Design Development', span: 2, rowSpan: 1 },
+    { name: '3D\'s', span: 2, rowSpan: 1 },
+    { name: 'Tender Package Architectural', span: 2, rowSpan: 1 },
+    { name: 'Tender Package MEP', span: 2, rowSpan: 1 },
+    { name: 'BOQ', span: 2, rowSpan: 1 },
+    { name: 'Tender Status', span: 1, rowSpan: 2 },
+    { name: 'Comparative', span: 1, rowSpan: 2 },
+    { name: 'Working Drawings', span: 2, rowSpan: 1 },
+    { name: 'Site Visit', span: 1, rowSpan: 2 },
+    { name: 'Final Bill', span: 1, rowSpan: 2 },
+    { name: 'Project Closure', span: 1, rowSpan: 2 },
+    { name: 'Action', span: 1, rowSpan: 2 },
+];
+
+export const tableHeaders = [
+    { name: 'Sr.No', span: 1, rowSpan: 2 },
+    { name: 'Project Name', span: 1, rowSpan: 2 },
+    { name: 'Area in Sft', span: 1, rowSpan: 2 },
+    { name: 'Project Holder', span: 1, rowSpan: 2 },
+    { name: 'Allocation Date / RFP', span: 1, rowSpan: 2 },
+    { name: 'Site Survey', span: 2, rowSpan: 1 },
+    { name: 'Contract', span: 2, rowSpan: 1 },
+    { name: 'Head Count / Requirement', span: 2, rowSpan: 1 },
+    { name: 'Proposal / Design Development', span: 2, rowSpan: 1 },
+    { name: "3D's", span: 2, rowSpan: 1 },
+    { name: 'Design Lock Date', span: 1, rowSpan: 2 },
+    { name: 'Submission Drawing', span: 2, rowSpan: 1 },
+    { name: 'Architecture working drawing', span: 2, rowSpan: 1 },
+    { name: 'MEP drawing', span: 2, rowSpan: 1 },
+    { name: 'BOQ', span: 2, rowSpan: 1 },
+    { name: 'Interior', span: 1, rowSpan: 2 },
+    { name: 'Site Visit', span: 2, rowSpan: 1 },
+    { name: 'Project Closure', span: 1, rowSpan: 2 },
+    { name: 'Remarks', span: 1, rowSpan: 2 },
+    { name: 'Action', span: 1, rowSpan: 2 },
+];
+
+
 export let askariBankProjects: ProjectRow[] = [
     { id: 1, srNo: '1', projectName: 'AKBL F6 MARKAZ', area: '14,000', projectHolder: 'Noman Asad', allocationDate: '5813', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '', proposalStart: '', proposalEnd: '', threedStart: '', threedEnd: '', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: 'final drawings has been sent only animation need to amend and resend.', siteVisit: '', finalBill: '', projectClosure: '', remarks: '' },
     { id: 2, srNo: '2', projectName: 'AKBL AWT SADDAR RWP', area: '14,000', projectHolder: 'Noman Asad Mohsin', allocationDate: '2025-10-06', siteSurveyStart: '', siteSurveyEnd: '', contract: '', headCount: '', proposalStart: '2025-10-14', proposalEnd: '2025-10-17', threedStart: '2025-10-17', threedEnd: '2025-10-21', designLockDate: '', submissionDrawingStart: '', submissionDrawingEnd: '', tenderArchStart: '', tenderArchEnd: '', tenderMepStart: '', tenderMepEnd: '', boqStart: '', boqEnd: '', interior: '', siteVisit: '', finalBill: '', projectClosure: '', remarks: '' },
@@ -182,6 +229,7 @@ export const bankTimelineCategories = [
 
 
   
+
 
 
 
