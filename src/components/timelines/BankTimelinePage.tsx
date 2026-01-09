@@ -57,13 +57,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             const statusAndRemarks = record.data.find((d: any) => d.category === 'Status & Remarks')?.items || [];
             
             if (projects.length > 0) {
-                // Only set project rows if they are different to avoid overwriting local changes
-                setProjectRows(currentRows => {
-                    if (JSON.stringify(currentRows) !== JSON.stringify(projects)) {
-                        return projects;
-                    }
-                    return currentRows;
-                });
+                setProjectRows(projects);
             } else if(isInitialLoad) {
                 setProjectRows(initialData);
             }
@@ -82,7 +76,10 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     }, [formattedBankName, initialData, records, isInitialLoad]);
     
     const handleSave = useCallback(() => {
-        if (!currentUser || !isAdmin) return;
+        if (!currentUser || !isAdmin) {
+            toast({ variant: "destructive", title: "Permission Denied", description: "You are not authorized to save changes." });
+            return;
+        };
 
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
@@ -94,17 +91,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Projects', items: projectRows },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
-        } as any, false);
-    }, [addOrUpdateRecord, currentUser, isAdmin, formattedBankName, projectRows, overallStatus, remarks, remarksDate]);
-
-    useEffect(() => {
-        if (isInitialLoad || !isAdmin) return;
-        const timer = setTimeout(() => {
-            handleSave();
-        }, 3000); 
-
-        return () => clearTimeout(timer);
-    }, [projectRows, overallStatus, remarks, remarksDate, handleSave, isInitialLoad, isAdmin]);
+        } as any, true); // showToast is true now
+    }, [addOrUpdateRecord, currentUser, isAdmin, formattedBankName, projectRows, overallStatus, remarks, remarksDate, toast]);
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -394,6 +382,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
+                    {isAdmin && <Button onClick={handleSave} variant="outline"><Save className="mr-2 h-4 w-4" /> Save</Button>}
                     <Button onClick={handleDownload} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
