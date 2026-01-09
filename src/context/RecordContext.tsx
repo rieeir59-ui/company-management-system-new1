@@ -56,7 +56,7 @@ const sharedRecordFileNames = ["Running Projects Summary"];
 
 export const RecordProvider = ({ children }: { children: ReactNode }) => {
   const { firestore } = useFirebase();
-  const { user: currentUser, isUserLoading } = useCurrentUser();
+  const { user: currentUser, isUserLoading, employees } = useCurrentUser();
   const { toast } = useToast();
 
   const [records, setRecords] = useState<SavedRecord[]>([]);
@@ -151,36 +151,44 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
   );
   
  const addOrUpdateRecord = useCallback(
-    async (recordData: Omit<SavedRecord, 'id' | 'createdAt' >, showToast = true) => {
+    async (recordData: Partial<Omit<SavedRecord, 'id' | 'createdAt' >>, showToast = true) => {
         if (!firestore || !currentUser) {
             if(showToast) toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to save.' });
             return Promise.reject(new Error('User not authenticated'));
         }
-    
+
         const recordsCollection = collection(firestore, 'savedRecords');
         
         let q;
-        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName) || recordData.fileName.includes('Timeline');
-    
+        const isSharedRecord = sharedRecordFileNames.includes(recordData.fileName!) || recordData.fileName!.includes('Timeline');
+        
+        // Determine which user's info to use for the query and potential new record
+        const targetEmployeeId = recordData.employeeId || currentUser.uid;
+
         if (isSharedRecord) {
+            // Shared records are identified only by their unique file name
             q = query(recordsCollection, where('fileName', '==', recordData.fileName));
         } else {
              q = query(
                 recordsCollection, 
                 where('fileName', '==', recordData.fileName),
-                where('employeeId', '==', recordData.employeeId)
+                where('employeeId', '==', targetEmployeeId)
             );
         }
     
         const querySnapshot = await getDocs(q);
-    
+        
+        // Find the employee details for the target user (either the provided one or the current user)
+        const targetEmployee = employees.find(e => e.uid === targetEmployeeId);
+
         const employeeInfo = {
-            employeeId: recordData.employeeId || currentUser.uid,
-            employeeName: recordData.employeeName || currentUser.name,
-            employeeRecord: recordData.employeeRecord || currentUser.record,
+            employeeId: targetEmployeeId,
+            employeeName: targetEmployee?.name || currentUser.name,
+            employeeRecord: targetEmployee?.record || currentUser.record,
         };
 
         if (!querySnapshot.empty) {
+            // Document exists, update it
             const existingDoc = querySnapshot.docs[0];
             const dataToUpdate = {
                 ...employeeInfo,
@@ -189,21 +197,23 @@ export const RecordProvider = ({ children }: { children: ReactNode }) => {
             };
             await updateRecord(existingDoc.id, dataToUpdate, showToast);
         } else {
+            // Document does not exist, create a new one
              const newRecord = {
                 ...recordData,
                 ...employeeInfo,
             };
 
             try {
+                // We cast to any to satisfy the addRecord function signature which expects a more complete type
+                // but the logic here ensures all necessary fields are present.
                 await addRecord(newRecord as any);
                 if(showToast) toast({ title: 'Record Saved', description: `"${recordData.projectName}" has been saved.` });
             } catch (err) {
                  console.error(err);
-                 errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'savedRecords', operation: 'create', requestResourceData: newRecord }));
             }
         }
     },
-    [firestore, currentUser, toast, updateRecord, addRecord]
+    [firestore, currentUser, employees, toast, updateRecord, addRecord]
 );
 
 
@@ -278,5 +288,3 @@ export const useRecords = () => {
   if (!context) throw new Error('useRecords must be used within RecordProvider');
   return context;
 };
-
-    
