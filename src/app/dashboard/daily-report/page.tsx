@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,6 +122,7 @@ function DailyReportPageComponent() {
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
   }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
 
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     if (isAdmin) {
@@ -148,8 +149,31 @@ function DailyReportPageComponent() {
   const [entries, setEntries] = useState<ReportEntry[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+  const handleSave = useCallback(async (showToast = true) => {
+    if (!currentUser) return;
+    
+    const employeeToSaveFor = selectedEmployee || currentUser;
+    if (!employeeToSaveFor) return;
+
+    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
+        if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
+        return;
+    }
+    
+    await addOrUpdateRecord({
+        employeeId: employeeToSaveFor.uid,
+        employeeName: employeeToSaveFor.name,
+        fileName: 'Daily Work Report',
+        projectName: `Work Report for ${employeeToSaveFor.name}`,
+        data: [{
+            category: 'Work Entries',
+            items: entries,
+        }],
+    } as any, showToast);
+  }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries]);
+
   useEffect(() => {
-    if (!selectedEmployee) {
+    if (!selectedEmployee || isInitialLoad) {
         setEntries([]);
         return;
     }
@@ -166,7 +190,18 @@ function DailyReportPageComponent() {
     } else {
         setEntries([]);
     }
-  }, [records, selectedEmployee]);
+    setIsInitialLoad(false);
+  }, [records, selectedEmployee, isInitialLoad]);
+
+  useEffect(() => {
+      if(isInitialLoad) return;
+      const timer = setTimeout(() => {
+          handleSave(false); // auto-save without toast
+      }, 3000);
+
+      return () => clearTimeout(timer);
+  }, [entries, handleSave, isInitialLoad]);
+
 
   const dateInterval = useMemo(() => {
     try {
@@ -267,29 +302,6 @@ function DailyReportPageComponent() {
         return;
     }
       setEntries(entries.filter(entry => entry.id !== id));
-  };
-  
-  const handleSave = async (showToast = true) => {
-    if (!currentUser) return;
-    
-    const employeeToSaveFor = selectedEmployee || currentUser;
-    if (!employeeToSaveFor) return;
-
-    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
-        if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
-        return;
-    }
-    
-    await addOrUpdateRecord({
-        employeeId: employeeToSaveFor.uid,
-        employeeName: employeeToSaveFor.name,
-        fileName: 'Daily Work Report',
-        projectName: `Work Report for ${employeeToSaveFor.name}`,
-        data: [{
-            category: 'Work Entries',
-            items: entries,
-        }],
-    } as any, showToast);
   };
   
   const handleDownload = (reportUser: Employee | null, reportEntries: ReportEntry[]) => {
@@ -678,7 +690,6 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
-                                    <Button onClick={() => handleSave(true)} size="sm" variant="outline"><Save className="mr-2 h-4 w-4" /> Save Day</Button>
                                 </div>
                            </div>
                         </AccordionContent>
@@ -761,3 +772,4 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
+

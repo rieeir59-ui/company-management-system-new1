@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
-import { bankProjectsMap, type ProjectRow, bankTimelineCategories } from '@/lib/projects-data';
+import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -46,6 +46,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
+    
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
@@ -66,17 +68,14 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             setOverallStatus(savedOverallStatus || '');
             setRemarks(savedRemarks || '');
             if (savedDate) setRemarksDate(savedDate);
-            
         } else {
             setProjectRows(initialData);
         }
+        setIsInitialLoad(false);
     }, [bankName, formattedBankName, initialData, records]);
     
-    const handleSave = () => {
-        if (!currentUser) {
-             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
-             return;
-        }
+    const handleSave = useCallback(() => {
+        if (!currentUser) return;
 
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
@@ -88,8 +87,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Projects', items: projectRows },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
-        } as any, true);
-    };
+        } as any, false); // showToast is false for auto-save
+    }, [addOrUpdateRecord, currentUser, formattedBankName, projectRows, overallStatus, remarks, remarksDate]);
+
+    useEffect(() => {
+        if (isInitialLoad) return;
+        const timer = setTimeout(() => {
+            handleSave();
+        }, 3000); // Auto-save after 3 seconds of inactivity
+
+        return () => clearTimeout(timer);
+    }, [projectRows, overallStatus, remarks, remarksDate, handleSave, isInitialLoad]);
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -263,35 +271,52 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             [
                 { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
                 { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
-                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: isCommercialOrResidential ? 2 : 1, rowSpan: isCommercialOrResidential ? 1 : 2 },
                 { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
-                { content: "3D's", colSpan: 2 }, { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
-                { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
-                { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
-                { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+                { content: "3D's", colSpan: 2 }, 
+                ...(isCommercialOrResidential ? [{ content: 'Design Lock Date', span: 1, rowSpan: 2 }, { content: 'Submission Drawing', span: 2, rowSpan: 1 }] : []),
+                { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
+                { content: 'BOQ', colSpan: 2 },
+                ...(isCommercialOrResidential ? [] : [{ content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 }]),
+                ...(isCommercialOrResidential ? [{ content: 'Interior', rowSpan: 2 }] : []),
+                { content: 'Site Visit', colSpan: 2 }, 
+                ...(isCommercialOrResidential ? [] : [{ content: 'Final Bill', rowSpan: 2 }]),
+                { content: 'Project Closure', rowSpan: 2 }, { content: 'Remarks', rowSpan: 2 }, { content: 'Action', rowSpan: 2 }
             ],
             [
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End',
+                'Start', 'End', // Site Survey
+                ... (isCommercialOrResidential ? ['Start', 'End'] : []), // Contract
+                'Start', 'End', // Head Count
+                'Start', 'End', // Proposal
+                'Start', 'End', // 3D's
+                ...(isCommercialOrResidential ? ['Start', 'End'] : []), // Submission
+                'Start', 'End', // Arch
+                'Start', 'End', // MEP
+                'Start', 'End', // BOQ
+                'Start', 'End', // Site Visit
             ]
         ];
         
-        const body = projectRows.map(p => [
-            p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
-            p.siteSurveyStart, p.siteSurveyEnd,
-            p.contract,
-            p.headCountStart || '', p.headCountEnd || '',
-            p.proposalStart, p.proposalEnd,
-            p.threedStart, p.threedEnd,
-            p.tenderArchStart, p.tenderArchEnd,
-            p.tenderMepStart, p.tenderMepEnd,
-            p.boqStart, p.boqEnd,
-            p.tenderStatus, p.comparative,
-            p.workingDrawingsStart || '', p.workingDrawingsEnd || '',
-            p.siteVisit,
-            p.finalBill, p.projectClosure
-        ]);
+        const body = projectRows.map(p => {
+             const row = [
+                p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+                p.siteSurveyStart, p.siteSurveyEnd,
+                ...(isCommercialOrResidential ? [p.contractStart || '', p.contractEnd || ''] : [p.contract]),
+                p.headCountStart || '', p.headCountEnd || '',
+                p.proposalStart, p.proposalEnd,
+                p.threedStart, p.threedEnd,
+                ...(isCommercialOrResidential ? [p.designLockDate, p.submissionDrawingStart, p.submissionDrawingEnd] : []),
+                p.tenderArchStart, p.tenderArchEnd,
+                p.tenderMepStart, p.tenderMepEnd,
+                p.boqStart, p.boqEnd,
+                ...(isCommercialOrResidential ? [p.interior] : [p.tenderStatus, p.comparative]),
+                 p.siteVisitStart || '', p.siteVisitEnd || '',
+                ...(isCommercialOrResidential ? [] : [p.finalBill]),
+                p.projectClosure,
+                p.remarks
+            ];
+            return row;
+        });
 
         (doc as any).autoTable({
             head: head,
@@ -324,7 +349,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
-    if (!initialData.length && !projectRows.length) {
+    if (!initialData.length && !projectRows.length && !isInitialLoad) {
          return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <Card className="w-full max-w-md text-center">
@@ -345,51 +370,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         );
     }
         
-    const tableHeaders = [
-        { name: "Sr.No", span: 1, rowSpan: 2 },
-        { name: "Project Name", span: 1, rowSpan: 2 },
-        { name: "Area in Sft", span: 1, rowSpan: 2 },
-        { name: "Project Holder", span: 1, rowSpan: 2 },
-        { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Site Survey", span: 2, rowSpan: 1 },
-        { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
-        { name: "3D's", span: 2, rowSpan: 1 },
-        { name: "Design Lock Date", span: 1, rowSpan: 2 },
-        { name: "Submission Drawing", span: 2, rowSpan: 1 },
-        { name: "Architecture working drawing", span: 2, rowSpan: 1 },
-        { name: "MEP drawing", span: 2, rowSpan: 1 },
-        { name: "BOQ", span: 2, rowSpan: 1 },
-        { name: "Interior", span: 1, rowSpan: 2 },
-        { name: "Site Visit", span: 2, rowSpan: 1 },
-        { name: "Project Closure", span: 1, rowSpan: 2 },
-        { name: "Remarks", span: 1, rowSpan: 2 },
-        { name: "Action", span: 1, rowSpan: 2 }
-    ];
-
-    const bankTableHeaders = [
-        { name: "Sr.No", span: 1, rowSpan: 2 },
-        { name: "Project Name", span: 1, rowSpan: 2 },
-        { name: "Area in Sft", span: 1, rowSpan: 2 },
-        { name: "Project Holder", span: 1, rowSpan: 2 },
-        { name: "Allocation Date / RFP", span: 1, rowSpan: 2 },
-        { name: "Site Survey", span: 2, rowSpan: 1 },
-        { name: "Contract", span: 1, rowSpan: 2 },
-        { name: "Head Count / Requirement", span: 1, rowSpan: 2 },
-        { name: "Proposal / Design Development", span: 2, rowSpan: 1 },
-        { name: "3D's", span: 2, rowSpan: 1 },
-        { name: "Architecture working drawing", span: 2, rowSpan: 1 },
-        { name: "MEP drawing", span: 2, rowSpan: 1 },
-        { name: "BOQ", span: 2, rowSpan: 1 },
-        { name: "Tender Status", span: 1, rowSpan: 2 },
-        { name: "Comparative", span: 1, rowSpan: 2 },
-        { name: "Working Drawings", span: 2, rowSpan: 1 },
-        { name: "Site Visit", span: 1, rowSpan: 2 },
-        { name: "Final Bill", span: 1, rowSpan: 2 },
-        { name: "Project Closure", span: 1, rowSpan: 2 },
-        { name: "Action", span: 1, rowSpan: 2 }
-    ];
-    
     const displayHeaders = isCommercialOrResidential ? tableHeaders : bankTableHeaders;
 
     return (
@@ -402,7 +382,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    {currentUser && <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save All</Button>}
                     <Button onClick={handleDownload} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>
