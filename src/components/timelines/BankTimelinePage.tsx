@@ -14,7 +14,11 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRecords } from '@/context/RecordContext';
 import { generateTimeline } from '@/ai/flows/generate-timeline-flow';
+<<<<<<< HEAD
 import { bankProjectsMap, residentialProjects, type ProjectRow } from '@/lib/projects-data';
+=======
+import { bankProjectsMap, type ProjectRow } from '@/lib/projects-data';
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
 import Link from 'next/link';
 import { format, parseISO, isValid } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -48,6 +52,8 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
     const [overallStatus, setOverallStatus] = useState('');
     const [remarks, setRemarks] = useState('');
     const [remarksDate, setRemarksDate] = useState(new Date().toISOString().split('T')[0]);
+    
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         const record = records.find(r => r.fileName === `${formattedBankName} Timeline`);
@@ -68,16 +74,28 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 if (savedDate) setRemarksDate(savedDate);
             }
             
+<<<<<<< HEAD
+=======
+            const savedOverallStatus = statusAndRemarks.find((i:any) => i.label === 'Overall Status')?.value;
+            const savedRemarks = statusAndRemarks.find((i:any) => i.label === 'Maam Isbah Remarks & Order')?.value;
+            const savedDate = statusAndRemarks.find((i:any) => i.label === 'Date')?.value;
+
+            setOverallStatus(savedOverallStatus || '');
+            setRemarks(savedRemarks || '');
+            if (savedDate) setRemarksDate(savedDate);
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
         } else {
             setProjectRows(initialData.map((p,i) => ({...p, id: p.id || i, srNo: p.srNo || String(i+1)})));
         }
+<<<<<<< HEAD
     }, [bankName, formattedBankName, records, initialData]);
+=======
+        setIsInitialLoad(false);
+    }, [bankName, formattedBankName, initialData, records]);
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
     
-    const handleSave = () => {
-        if (!currentUser) {
-             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You must be logged in to save.' });
-             return;
-        }
+    const handleSave = useCallback(() => {
+        if (!currentUser) return;
 
         addOrUpdateRecord({
             fileName: `${formattedBankName} Timeline`,
@@ -86,8 +104,17 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { category: 'Projects', items: projectRows },
                 { category: 'Status & Remarks', items: [{label: 'Overall Status', value: overallStatus}, {label: 'Maam Isbah Remarks & Order', value: remarks}, {label: 'Date', value: remarksDate}] },
             ]
-        } as any, true);
-    };
+        } as any, false); // showToast is false for auto-save
+    }, [addOrUpdateRecord, currentUser, formattedBankName, projectRows, overallStatus, remarks, remarksDate]);
+
+    useEffect(() => {
+        if (isInitialLoad) return;
+        const timer = setTimeout(() => {
+            handleSave();
+        }, 3000); // Auto-save after 3 seconds of inactivity
+
+        return () => clearTimeout(timer);
+    }, [projectRows, overallStatus, remarks, remarksDate, handleSave, isInitialLoad]);
 
 
     const [genProjectName, setGenProjectName] = useState('');
@@ -257,6 +284,7 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         
         const head = [
             [
+<<<<<<< HEAD
                 { content: 'Sr. No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
                 { content: 'Project\nHolder', rowSpan: 2 }, { content: 'Allocation\nDate / RFP', rowSpan: 2 },
                 { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: 2 },
@@ -265,14 +293,37 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                 { content: 'BOQ', colSpan: 2 }, { content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 },
                 { content: 'Working Drawings', colSpan: 2 }, { content: 'Site Visit', colSpan: 2 },
                 { content: 'Final Bill', rowSpan: 2 }, { content: 'Project Closure', rowSpan: 2 }
+=======
+                { content: 'Sr.No', rowSpan: 2 }, { content: 'Project Name', rowSpan: 2 }, { content: 'Area in Sft', rowSpan: 2 },
+                { content: 'Project Holder', rowSpan: 2 }, { content: 'Allocation Date / RFP', rowSpan: 2 },
+                { content: 'Site Survey', colSpan: 2 }, { content: 'Contract', colSpan: isCommercialOrResidential ? 2 : 1, rowSpan: isCommercialOrResidential ? 1 : 2 },
+                { content: 'Head Count / Requirement', colSpan: 2 }, { content: 'Proposal / Design Development', colSpan: 2 },
+                { content: "3D's", colSpan: 2 }, 
+                ...(isCommercialOrResidential ? [{ content: 'Design Lock Date', span: 1, rowSpan: 2 }, { content: 'Submission Drawing', span: 2, rowSpan: 1 }] : []),
+                { content: 'Architecture working drawing', colSpan: 2 }, { content: 'MEP drawing', colSpan: 2 },
+                { content: 'BOQ', colSpan: 2 },
+                ...(isCommercialOrResidential ? [] : [{ content: 'Tender Status', rowSpan: 2 }, { content: 'Comparative', rowSpan: 2 }]),
+                ...(isCommercialOrResidential ? [{ content: 'Interior', rowSpan: 2 }] : []),
+                { content: 'Site Visit', colSpan: 2 }, 
+                ...(isCommercialOrResidential ? [] : [{ content: 'Final Bill', rowSpan: 2 }]),
+                { content: 'Project Closure', rowSpan: 2 }, { content: 'Remarks', rowSpan: 2 }, { content: 'Action', rowSpan: 2 }
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
             ],
             [
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End', 'Start', 'End', 'Start', 'End',
-                'Start', 'End', 'Start', 'End',
+                'Start', 'End', // Site Survey
+                ... (isCommercialOrResidential ? ['Start', 'End'] : []), // Contract
+                'Start', 'End', // Head Count
+                'Start', 'End', // Proposal
+                'Start', 'End', // 3D's
+                ...(isCommercialOrResidential ? ['Start', 'End'] : []), // Submission
+                'Start', 'End', // Arch
+                'Start', 'End', // MEP
+                'Start', 'End', // BOQ
+                'Start', 'End', // Site Visit
             ]
         ];
         
+<<<<<<< HEAD
         const body = projectRows.map(p => [
             p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
             p.siteSurveyStart, p.siteSurveyEnd, 
@@ -287,6 +338,28 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
             p.siteVisit, '',
             p.finalBill, p.projectClosure
         ]);
+=======
+        const body = projectRows.map(p => {
+             const row = [
+                p.srNo, p.projectName, p.area, p.projectHolder, p.allocationDate,
+                p.siteSurveyStart, p.siteSurveyEnd,
+                ...(isCommercialOrResidential ? [p.contractStart || '', p.contractEnd || ''] : [p.contract]),
+                p.headCountStart || '', p.headCountEnd || '',
+                p.proposalStart, p.proposalEnd,
+                p.threedStart, p.threedEnd,
+                ...(isCommercialOrResidential ? [p.designLockDate, p.submissionDrawingStart, p.submissionDrawingEnd] : []),
+                p.tenderArchStart, p.tenderArchEnd,
+                p.tenderMepStart, p.tenderMepEnd,
+                p.boqStart, p.boqEnd,
+                ...(isCommercialOrResidential ? [p.interior] : [p.tenderStatus, p.comparative]),
+                 p.siteVisitStart || '', p.siteVisitEnd || '',
+                ...(isCommercialOrResidential ? [] : [p.finalBill]),
+                p.projectClosure,
+                p.remarks
+            ];
+            return row;
+        });
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
 
         (doc as any).autoTable({
             head: head,
@@ -319,7 +392,11 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         toast({ title: 'Downloaded', description: 'Timeline has been downloaded as PDF.' });
     };
 
+<<<<<<< HEAD
     if (!projectRows) {
+=======
+    if (!initialData.length && !projectRows.length && !isInitialLoad) {
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
          return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <Card className="w-full max-w-md text-center">
@@ -340,8 +417,13 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
         );
     }
         
+<<<<<<< HEAD
     const isCommercialOrResidential = useMemo(() => bankName === 'commercial' || bankName === 'residential', [bankName]);
     
+=======
+    const displayHeaders = isCommercialOrResidential ? tableHeaders : bankTableHeaders;
+
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
     return (
         <Card>
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -352,7 +434,6 @@ export default function BankTimelinePage({ dashboardType }: { dashboardType: Das
                     <CardTitle className="text-center font-headline text-3xl text-primary">{formattedBankName} Timeline</CardTitle>
                 </div>
                 <div className="flex gap-2">
-                    {currentUser && <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save All</Button>}
                     <Button onClick={handleDownload} variant="outline"><Download className="mr-2 h-4 w-4" /> Download PDF</Button>
                 </div>
             </CardHeader>

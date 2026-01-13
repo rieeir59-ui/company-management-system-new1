@@ -126,9 +126,15 @@ function DailyReportPageComponent() {
   
   const selectedEmployee = useMemo(() => {
     return employees.find(e => e.uid === selectedEmployeeId) || currentUser;
+<<<<<<< HEAD
   }, [selectedEmployeeId, employees, currentUser]);
   
   const [entries, setEntries] = useState<ReportEntry[]>([]);
+=======
+  }, [selectedEmployeeId, employees, currentUser, isAdmin, employeeIdFromUrl]);
+
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
 
   useEffect(() => {
       if (!selectedEmployee) return;
@@ -157,6 +163,7 @@ function DailyReportPageComponent() {
   
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
+<<<<<<< HEAD
   const canEdit = useMemo(() => {
     if (!currentUser || !selectedEmployee) return false;
     return isAdmin || currentUser.uid === selectedEmployee.uid;
@@ -171,6 +178,34 @@ function DailyReportPageComponent() {
     const dayEntries = entries.filter(e => e.date === day);
     if (dayEntries.length === 0) {
         toast({ variant: 'destructive', title: 'No entries', description: 'There are no entries for this day to save.' });
+=======
+  const handleSave = useCallback(async (showToast = true) => {
+    if (!currentUser) return;
+    
+    const employeeToSaveFor = selectedEmployee || currentUser;
+    if (!employeeToSaveFor) return;
+
+    if (!isAdmin && currentUser.uid !== employeeToSaveFor.uid) {
+        if(showToast) toast({ variant: 'destructive', title: 'Permission Denied', description: "You cannot save another employee's report."});
+        return;
+    }
+    
+    await addOrUpdateRecord({
+        employeeId: employeeToSaveFor.uid,
+        employeeName: employeeToSaveFor.name,
+        fileName: 'Daily Work Report',
+        projectName: `Work Report for ${employeeToSaveFor.name}`,
+        data: [{
+            category: 'Work Entries',
+            items: entries,
+        }],
+    } as any, showToast);
+  }, [addOrUpdateRecord, currentUser, isAdmin, selectedEmployee, entries]);
+
+  useEffect(() => {
+    if (!selectedEmployee || isInitialLoad) {
+        setEntries([]);
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
         return;
     }
     
@@ -186,7 +221,32 @@ function DailyReportPageComponent() {
         }],
     } as any, true);
     
+<<<<<<< HEAD
   }, [addOrUpdateRecord, canEdit, selectedEmployee, entries, toast]);
+=======
+    if (dailyReportRecord && Array.isArray(dailyReportRecord.data)) {
+        const workEntries = dailyReportRecord.data.find((d: any) => d.category === 'Work Entries');
+        if (workEntries && Array.isArray(workEntries.items)) {
+            setEntries(workEntries.items.map((item:any) => ({...item, id: item.id || Math.random()})));
+        } else {
+            setEntries([]);
+        }
+    } else {
+        setEntries([]);
+    }
+    setIsInitialLoad(false);
+  }, [records, selectedEmployee, isInitialLoad]);
+
+  useEffect(() => {
+      if(isInitialLoad) return;
+      const timer = setTimeout(() => {
+          handleSave(false); // auto-save without toast
+      }, 3000);
+
+      return () => clearTimeout(timer);
+  }, [entries, handleSave, isInitialLoad]);
+
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
 
   const dateInterval = useMemo(() => {
     try {
@@ -623,7 +683,10 @@ function DailyReportPageComponent() {
                                 {!isDaySunday && canEdit && <Button onClick={() => addEntry(dayString)} size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Add Entry</Button>}
                                 <div className="flex items-center gap-4 ml-auto">
                                     <div className="font-bold text-lg">Total: {totalHours}:{String(totalMinutes).padStart(2, '0')}</div>
+<<<<<<< HEAD
                                     {canEdit && <Button onClick={() => handleSaveDay(dayString)} variant="outline" size="sm" disabled={isDaySunday}><Save className="mr-2 h-4 w-4" /> Save Day</Button>}
+=======
+>>>>>>> 1c87225 (daily report or timeline of projects ma sara data usi pages p show hota)
                                 </div>
                            </div>
                         </AccordionContent>
@@ -706,3 +769,4 @@ export default function DailyReportPage() {
         </Suspense>
     )
 }
+
